@@ -1,0 +1,27 @@
+language: python
+dist: xenial
+
+matrix:
+  include:
+    - os: linux
+      python: 3.7
+    - os: linux
+      python: 3.8
+
+install:
+  - pip install pycodestyle pyflakes mypy
+  - pip install pytest pytest-cov coveralls mkdocs
+  - pip install -e .
+
+before_script:
+  - pycodestyle mkapi
+  - pyflakes mkapi
+  - mypy mkapi
+  - pycodestyle tests
+  - pyflakes tests
+
+script:
+  - pytest
+
+after_success:
+  - coveralls
