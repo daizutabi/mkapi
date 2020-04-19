@@ -1,2 +1,2 @@
 def test_main():
-    assert 1
+    assert 2
