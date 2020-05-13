@@ -63,9 +63,9 @@ if sys.argv[-1] == "check":
 setup(
     name="mkapi",
     version=get_version("mkapi"),
-    description="Auto API Documentation tool.",
+    description="An Auto API Documentation tool.",
     long_description=long_description,
-    url="https://mkapi.daizutabi.net",
+    url="https://github.com/daizutabi/mkapi",
     author="daizutabi",
     author_email="daizutabi@gmail.com",
     license="MIT",

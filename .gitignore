@@ -12,3 +12,4 @@ htmlcov/
 .mypy_cache/
 tests/docs/site/
 .pheasant_cache/
+notebooks/

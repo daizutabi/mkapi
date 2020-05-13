@@ -1,8 +1,8 @@
 site_name: mkapi
-site_url: https://mkapi.daizutabi.net/
+site_url: https://github.com/daizutabi/mkapi/
 site_description: API documentation with MkDocs.
 site_author: daizutabi
-site_dir: ../mkapi-site/site
+site_dir: ../mkapi-site
 
 repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
@@ -11,8 +11,8 @@ theme: ivory
 
 plugins:
   - search
-  - pheasant:
-      version: pheasant
+  - mkapi:
+      autoapi_dirs: [examples]
 
 nav:
   - Home: index.md

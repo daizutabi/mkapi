@@ -7,6 +7,8 @@
 
 # mkapi
 
+An Auto API Documentation tool.
+
 <!-- ## Setup
 
 Install the plugin using pip:
