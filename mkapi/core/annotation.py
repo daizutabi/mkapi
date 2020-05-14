@@ -22,7 +22,6 @@ def to_string(obj) -> Tuple[Dict[str, str], str, str]:
 
 
 def convert(annotation, kind: str) -> str:
-    print(annotation)
     if hasattr(annotation, "__name__"):
         return annotation.__name__
     if kind == "yields":

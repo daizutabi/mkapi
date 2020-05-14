@@ -18,37 +18,46 @@ h2, h3, h4, h5 {
   margin-bottom: 10px;
 }
 
+/**************************************************
+ Node
+**************************************************/
 .mkapi-node {
   margin: 2px;
   padding: 2px;
   border: 1px solid pink;
 }
 
-.mkapi-header {
+.mkapi-node-header {
   margin: 2px;
   padding: 2px;
   border: 1px solid magenta;
   display: flex;
 }
 
-.mkapi-kind {
+.mkapi-node-kind {
   margin: 2px;
   padding: 2px;
   border: 1px solid green;
 }
 
-.mkapi-name {
+.mkapi-node-name {
   margin: 2px;
   padding: 2px;
   border: 1px solid blue;
 }
 
+/**************************************************
+ Docstring
+**************************************************/
 .mkapi-docstring {
   margin: 2px;
   padding: 2px;
   border: 1px solid black;
 }
 
+/**************************************************
+ Members
+**************************************************/
 .mkapi-members {
   margin: 2px;
   padding: 2px;

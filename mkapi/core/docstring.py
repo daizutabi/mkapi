@@ -190,8 +190,6 @@ def postprocess(doc: Docstring, obj: Any):
         return
 
     annotations = annotation.to_string(obj)
-    print(obj, annotations)
-
     if doc.args:
         for item in doc.args:
             if item.type == "" and item.name in annotations[0]:

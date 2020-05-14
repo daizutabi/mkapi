@@ -5,12 +5,12 @@ from typing import Dict, List, Optional
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.core.inspect import Node
+from mkapi.core.docstring import Docstring
+from mkapi.core.node import Node
 
 
 @dataclass
 class Renderer:
-    name: str = ""
     templates: Dict[str, Template] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
@@ -21,17 +21,20 @@ class Renderer:
             template = env.get_template(name)
             name = os.path.splitext(name)[0]
             self.templates[name] = template
-        if len(self.templates) == 1:
-            self.name = name
 
     def render_node(
-        self, node: Node, members: List[str], parent: Optional[Node]
+        self, node: Node, docstring: str, members: List[str], parent: Optional[Node]
     ) -> str:
-        template = self.templates[self.name]
+        template = self.templates["node"]
         return template.render(node=node, members=members, parent=parent)
 
+    def render_docstring(self, docstring: Docstring) -> str:
+        template = self.templates["docstring"]
+        return template.render(docstring=docstring)
+
     def render(self, node: Node, parent: Optional[Node] = None) -> str:
+        docstring = self.render_docstring(node.docstring)
         members = []
         if node.members:
             members = [self.render(member, node) for member in node.members]
-        return self.render_node(node, members, parent)
+        return self.render_node(node, docstring, members, parent)
