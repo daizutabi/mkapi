@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, Iterable, Iterator, List
 
-from mkapi.core import inspect
+from mkapi.core.node import get_node
 from mkapi.core.page import Page
 from mkapi.core.renderer import Renderer
 
@@ -62,7 +62,7 @@ class Converter:
             if cursor < start:
                 yield source[cursor:start]
             name = match.group(1)
-            node = inspect.get_node(name)
+            node = get_node(name)
             yield self.renderer.render(node)
             cursor = end
         if cursor < len(source):

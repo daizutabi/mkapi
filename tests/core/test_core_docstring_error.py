@@ -4,7 +4,7 @@ def test_docstring_error(node):
     assert len(sections) == 4
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -14,7 +14,7 @@ def test_docstring_error(node):
     assert item.markdown.endswith("\ndocstring.")
 
     section = sections[1]
-    assert section.name == "note"
+    assert section.name == "Note"
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -24,7 +24,7 @@ def test_docstring_error(node):
     assert item.markdown.endswith("section.")
 
     section = sections[2]
-    assert section.name == "args"
+    assert section.name == "Parameters"
     assert len(section.items) == 2
 
     item = section.items[0]
@@ -40,7 +40,7 @@ def test_docstring_error(node):
     assert item.markdown.endswith("code.")
 
     section = sections[3]
-    assert section.name == "attributes"
+    assert section.name == "Attributes"
     assert len(section.items) == 2
 
     item = section.items[0]

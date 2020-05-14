@@ -1,0 +1,10 @@
+<div class="mkapi-docstring">
+  {% for section in docstring.sections %}
+    <div class="mkapi-docstring-section{% if section.name %} mkapi-docstring-section-{{ section.name|lower }}{% endif %}">
+      {% if section.name %}<div class="mkapi-docstring-section-name">{{ section.name|upper }}</div>{% endif %}
+      {% for item in section.items %}
+        {{ item.html|safe }}
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>

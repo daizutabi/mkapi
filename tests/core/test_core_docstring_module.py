@@ -4,7 +4,7 @@ def test_docstring_module(node):
     assert len(sections) == 5
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -14,7 +14,7 @@ def test_docstring_module(node):
     assert item.markdown.endswith(" text.")
 
     section = sections[1]
-    assert section.name == "example"
+    assert section.name == "Example"
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -24,7 +24,7 @@ def test_docstring_module(node):
     assert item.markdown.endswith(".py")
 
     section = sections[2]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -34,7 +34,7 @@ def test_docstring_module(node):
     assert item.markdown.endswith("starts.")
 
     section = sections[3]
-    assert section.name == "attributes"
+    assert section.name == "Attributes"
     assert len(section.items) == 2
 
     item = section.items[0]
@@ -50,7 +50,7 @@ def test_docstring_module(node):
     assert item.markdown.endswith("it. ABC.")
 
     section = sections[4]
-    assert section.name == "todo"
+    assert section.name == "Todo"
     assert len(section.items) == 1
 
     item = section.items[0]

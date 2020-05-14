@@ -1,9 +1,10 @@
 import importlib
 import inspect
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Optional
 
 from mkapi.core.docstring import Docstring, parse_docstring
+from mkapi.core.inspect import Signature
 
 ISFUNCTIONS = {}
 for x in dir(inspect):
@@ -11,6 +12,12 @@ for x in dir(inspect):
         name = x[2:]
         if name not in ["routine", "builtin", "code"]:
             ISFUNCTIONS[name] = getattr(inspect, x)
+
+
+def get_kind(kinds: List[str]) -> str:
+    if "generatorfunction" in kinds:
+        return "generator"
+    return kinds[-1]
 
 
 @dataclass
@@ -21,11 +28,12 @@ class Node:
     prefix: str
     kinds: List[str]
     lineno: int
+    signature: Optional[Signature]
     docstring: Docstring
     members: List["Node"]
 
     def __post_init__(self):
-        self.kind = self.kinds[0]
+        self.kind = get_kind(self.kinds)
         if self.name.startswith("__"):
             self.type = "special"
         elif self.name.startswith("_"):
@@ -79,7 +87,11 @@ def walk(name, obj, prefix="", depth=0) -> Node:
             if member.type == "normal" or member.docstring:
                 members.append(member)
         members.sort(key=lambda x: x.lineno)
-    return Node(obj, name, depth, prefix, kinds, lineno, docstring, members)
+    if callable(obj):
+        signature = Signature(obj)
+    else:
+        signature = None  # type:ignore
+    return Node(obj, name, depth, prefix, kinds, lineno, signature, docstring, members)
 
 
 def get_attr(path: str):

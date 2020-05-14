@@ -4,7 +4,7 @@ def test_docstring_module_level_function(node):
     assert len(sections) == 4
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -14,7 +14,7 @@ def test_docstring_module_level_function(node):
     assert item.markdown.endswith(" obvious.")
 
     section = sections[1]
-    assert section.name == "args"
+    assert section.name == "Parameters"
     assert len(section.items) == 4
 
     item = section.items[0]
@@ -42,7 +42,7 @@ def test_docstring_module_level_function(node):
     assert item.markdown.endswith("arguments.")
 
     section = sections[2]
-    assert section.name == "returns"
+    assert section.name == "Returns"
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -52,7 +52,7 @@ def test_docstring_module_level_function(node):
     assert item.markdown.endswith("the first line.")
 
     section = sections[3]
-    assert section.name == "raises"
+    assert section.name == "Raises"
     assert len(section.items) == 2
 
     item = section.items[0]

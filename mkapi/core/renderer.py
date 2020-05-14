@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.core.docstring import Docstring
+from mkapi.core.docstring import Docstring, Item, Section
 from mkapi.core.node import Node
 
 
@@ -22,19 +22,32 @@ class Renderer:
             name = os.path.splitext(name)[0]
             self.templates[name] = template
 
-    def render_node(
-        self, node: Node, docstring: str, members: List[str], parent: Optional[Node]
-    ) -> str:
-        template = self.templates["node"]
-        return template.render(node=node, members=members, parent=parent)
-
-    def render_docstring(self, docstring: Docstring) -> str:
-        template = self.templates["docstring"]
-        return template.render(docstring=docstring)
-
     def render(self, node: Node, parent: Optional[Node] = None) -> str:
         docstring = self.render_docstring(node.docstring)
         members = []
         if node.members:
             members = [self.render(member, node) for member in node.members]
         return self.render_node(node, docstring, members, parent)
+
+    def render_node(
+        self, node: Node, docstring: str, members: List[str], parent: Optional[Node]
+    ) -> str:
+        template = self.templates["node"]
+        return template.render(
+            node=node, docstring=docstring, members=members, parent=parent
+        )
+
+    def render_docstring(self, docstring: Docstring) -> str:
+        template = self.templates["docstring"]
+        for section in docstring.sections:
+            section.html = self.render_section(section)
+        return template.render(docstring=docstring)
+
+    def render_section(self, section: Section) -> str:
+        if section.name in ["Parameters", "Attributes", "Raises"]:
+            template = self.templates["args"]
+        elif section.name in ["Returns", "Yields"]:
+            template = self.templates["returns"]
+        else:
+            template = self.templates["plain"]
+        return template.render(section=section)

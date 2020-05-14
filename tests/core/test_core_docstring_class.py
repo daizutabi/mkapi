@@ -4,7 +4,7 @@ def test_docstring_function_with_types_in_docstring(node):
     assert len(sections) == 4
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -14,15 +14,15 @@ def test_docstring_function_with_types_in_docstring(node):
     assert item.markdown.endswith("getter method.")
 
     section = sections[1]
-    assert section.name == "attributes"
+    assert section.name == "Attributes"
     assert len(section.items) == 2
 
     section = sections[2]
-    assert section.name == "note"
+    assert section.name == "Note"
     assert len(section.items) == 1
 
     section = sections[3]
-    assert section.name == "args"
+    assert section.name == "Parameters"
     assert len(section.items) == 3
 
     item = section.items[1]
@@ -38,7 +38,7 @@ def test_docstring_property(node):
     assert len(sections) == 1
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -52,7 +52,7 @@ def test_docstring_property(node):
     assert len(sections) == 1
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -66,7 +66,7 @@ def test_docstring_property(node):
     assert len(sections) == 4
 
     section = sections[2]
-    assert section.name == "args"
+    assert section.name == "Parameters"
     assert len(section.items) == 2
 
     item = section.items[0]
@@ -82,7 +82,7 @@ def test_docstring_property(node):
     assert item.markdown.endswith("parameter.")
 
     section = sections[3]
-    assert section.name == "returns"
+    assert section.name == "Returns"
     assert len(section.items) == 1
 
     item = section.items[0]

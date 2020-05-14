@@ -3,11 +3,11 @@ import sys
 
 import pytest
 
-import mkapi.core.inspect
+import mkapi.core.node
 
 sys.path.insert(0, os.path.abspath("examples"))
 
 
 @pytest.fixture(scope="session")
 def node():
-    return mkapi.core.inspect.get_node("example.google")
+    return mkapi.core.node.get_node("example.google")

@@ -4,7 +4,7 @@ def test_docstring_function_with_types_in_docstring(node):
     assert len(sections) == 3
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -14,7 +14,7 @@ def test_docstring_function_with_types_in_docstring(node):
     assert item.markdown.endswith(" docstring:")
 
     section = sections[1]
-    assert section.name == "args"
+    assert section.name == "Parameters"
     assert len(section.items) == 2
 
     item = section.items[0]
@@ -30,7 +30,7 @@ def test_docstring_function_with_types_in_docstring(node):
     assert item.markdown.endswith("parameter.")
 
     section = sections[2]
-    assert section.name == "returns"
+    assert section.name == "Returns"
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -46,7 +46,7 @@ def test_docstring_function_with_pep484_type_annotations(node):
     assert len(sections) == 3
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -56,7 +56,7 @@ def test_docstring_function_with_pep484_type_annotations(node):
     assert item.markdown.endswith(" annotations.")
 
     section = sections[1]
-    assert section.name == "args"
+    assert section.name == "Parameters"
     assert len(section.items) == 2
 
     item = section.items[0]
@@ -72,7 +72,7 @@ def test_docstring_function_with_pep484_type_annotations(node):
     assert item.markdown.endswith("parameter.")
 
     section = sections[2]
-    assert section.name == "returns"
+    assert section.name == "Returns"
     assert len(section.items) == 1
 
     item = section.items[0]

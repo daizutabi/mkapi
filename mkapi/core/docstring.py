@@ -3,7 +3,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional, Tuple
 
-from mkapi.core import annotation
+from mkapi.core import markdown
+from mkapi.core.inspect import Signature
 
 SECTIONS = [
     "Args",
@@ -30,7 +31,6 @@ def get_indent(line: str) -> int:
     for x in line:
         if x != " ":
             return indent
-            print(line, indent)
         indent += 1
     return -1
 
@@ -40,10 +40,16 @@ def join(lines):
     return "\n".join(line[indent:] for line in lines)
 
 
+def rename_section(name: str) -> str:
+    if name == "Args":
+        return "Parameters"
+    return name
+
+
 def split_section(doc: str) -> Iterator[Tuple[str, str]]:
     """Yields section name and its contents."""
     lines = [x.rstrip() for x in doc.split("\n")]
-    name = "Default"
+    name = ""
     start = indent = 0
     for stop, line in enumerate(lines, 1):
         if stop == len(lines):
@@ -53,11 +59,11 @@ def split_section(doc: str) -> Iterator[Tuple[str, str]]:
         if not line and next_indent < indent:
             yield name, join(lines[start : stop - 1])
             start = stop
-            name = "Default"
+            name = ""
         elif line.endswith(":") and line[:-1] in SECTIONS:
             if start < stop - 1:
                 yield name, join(lines[start : stop - 1])
-            name = line[:-1]
+            name = rename_section(line[:-1])
             start = stop
             indent = next_indent
     if start < len(lines):
@@ -138,6 +144,15 @@ class Item:
 class Section:
     name: str
     items: List[Item]
+    type: str = ""
+    html: str = ""
+
+    def __post_init__(self):
+        inline = False
+        if self.name in ["Parameters", "Attributes", "Raises"]:
+            inline = True
+        for item in self.items:
+            item.html = markdown.convert(item.markdown, inline)
 
     def __getitem__(self, index):
         return self.items[index]
@@ -166,15 +181,15 @@ class Docstring:
 
 
 def create_section(name: str, doc: str) -> Section:
-    if name in ["Args", "Attributes"]:
+    if name in ["Parameters", "Attributes"]:
         items = [Item(n, t, m) for n, t, m in parse_parameters(doc)]
     elif name == "Raises":
-        items = [Item("", t, m) for t, m in parse_raises(doc)]
+        items = [Item(t, "", m) for t, m in parse_raises(doc)]
     elif name in ["Returns", "Yields"]:
         items = [Item("", t, m) for t, m in [parse_returns(doc)]]
     else:
         items = [Item("", "", doc)]
-    return Section(name.lower(), items)
+    return Section(name, items)
 
 
 def postprocess(doc: Docstring, obj: Any):
@@ -185,21 +200,26 @@ def postprocess(doc: Docstring, obj: Any):
             index = line.index(":")
             item.type = line[:index].strip()
             item.markdown = item.markdown[index + 1 :].strip()
+            item.html = markdown.convert(item.markdown, False)
 
     if not callable(obj):
         return
 
-    annotations = annotation.to_string(obj)
-    if doc.args:
-        for item in doc.args:
+    annotations = Signature(obj).annotations
+    if doc["Parameters"]:
+        for item in doc["Parameters"]:
             if item.type == "" and item.name in annotations[0]:
                 item.type = annotations[0][item.name]
 
-    for k, section in enumerate(["returns", "yields"], 1):
-        if doc[section]:
-            item = doc[section].items[0]
+    for k, name in enumerate(["Returns", "Yields"], 1):
+        if doc[name]:
+            item = doc[name].items[0]
             if item.type == "":
                 item.type = annotations[k]  # type:ignore
+
+    for section in doc.sections:
+        if section.name in ["Returns", "Yields"]:
+            section.type = section.items[0].type
 
 
 def parse_docstring(obj: Any) -> Docstring:

@@ -2,10 +2,11 @@ import inspect
 import sys
 from typing import Iterator,List,Any
 
-import mkapi.core.inspect
+import mkapi.core.node
 
 if "examples" not in sys.path:
     sys.path.insert(0, "examples")
 
-node = mkapi.core.inspect.get_node("example.google")
-doc = node.members[3].docstring
+node = mkapi.core.node.get_node("example.google")
+doc = node.members[5].members[1]
+doc

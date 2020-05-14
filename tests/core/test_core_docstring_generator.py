@@ -4,7 +4,7 @@ def test_docstring_generator(node):
     assert len(sections) == 4
 
     section = sections[0]
-    assert section.name == "default"
+    assert section.name == ""
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -14,7 +14,7 @@ def test_docstring_generator(node):
     assert item.markdown.endswith(" section.")
 
     section = sections[1]
-    assert section.name == "args"
+    assert section.name == "Parameters"
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -24,7 +24,7 @@ def test_docstring_generator(node):
     assert item.markdown.endswith("- 1.")
 
     section = sections[2]
-    assert section.name == "yields"
+    assert section.name == "Yields"
     assert len(section.items) == 1
 
     item = section.items[0]
@@ -34,7 +34,7 @@ def test_docstring_generator(node):
     assert item.markdown.endswith("- 1.")
 
     section = sections[3]
-    assert section.name == "examples"
+    assert section.name == "Examples"
     assert len(section.items) == 1
 
     item = section.items[0]

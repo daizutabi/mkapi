@@ -1,71 +1,144 @@
 /**************************************************
  Main
 **************************************************/
+.mkapi-node p {
+  line-height: 1.3em;
+}
+
+.mkapi-node li {
+  line-height: 1.3em;
+}
+
 code {
-  color: #069;
-  border: none;
-  font-size: 0.9rem;
-  margin: 0px;
-  padding: 0px;
-}
-
-p {
-  margin-bottom: 10px;
-}
-
-h2, h3, h4, h5 {
-  margin-top: 20px;
-  margin-bottom: 10px;
+  font-size: 90%;
+  color: #0044EE;
 }
 
 /**************************************************
  Node
 **************************************************/
 .mkapi-node {
-  margin: 2px;
-  padding: 2px;
-  border: 1px solid pink;
+  margin-left: 30px;
+  margin-bottom: 20px;
+}
+
+.mkapi-node-depth-0 {
+  margin-left: 10px;
 }
 
 .mkapi-node-header {
-  margin: 2px;
-  padding: 2px;
-  border: 1px solid magenta;
+  background: #DDDDFF;
+  border-left: solid 3px #7777FF;
   display: flex;
+  align-items: baseline;
+  padding: 3px;
 }
 
 .mkapi-node-kind {
-  margin: 2px;
-  padding: 2px;
-  border: 1px solid green;
+  margin-left: 0.5em;
+  font-size: 70%;
+  font-weight: bold;
+  color: #888888;
 }
 
 .mkapi-node-name {
-  margin: 2px;
-  padding: 2px;
-  border: 1px solid blue;
+  margin-left: 0.3em;
+  font-weight: bold;
+}
+
+.mkapi-node-prefix {
+  font-size: 75%;
+  color: #4444AA;
+}
+
+.mkapi-node-basename {
+  font-size: 90%;
+  color: #333333;
+}
+
+.mkapi-node-signature {
+  font-weight: normal;
+  font-size: 85%;
+  color: #0000EE;
 }
 
 /**************************************************
  Docstring
 **************************************************/
 .mkapi-docstring {
-  margin: 2px;
-  padding: 2px;
-  border: 1px solid black;
+  margin-left: 15px;
 }
+
+.mkapi-docstring-section-named {
+  margin-left: 30px;
+}
+
+.mkapi-docstring-section-name {
+  background: #EEEEFF;
+  padding: 3px 8px;
+  border-bottom: solid 1px #7777FF;
+  font-size: 90%;
+  font-weight: bold;
+}
+
+.mkapi-docstring-section-body {
+  margin-left: 10px;
+
+}
+
+/**************************************************
+ Args
+**************************************************/
+.mkapi-args-list {
+  padding-left: 10px;
+}
+
+.mkapi-args-list li {
+  list-style: none;
+  padding-left: 2em;
+  text-indent: -2em;
+}
+
+.mkapi-args-name {
+  font-weight: bold;
+  color: #7700FF;
+}
+
+.mkapi-args-type {
+  color: #8888EE;
+  font-weight: normal;
+}
+
+.mkapi-args-dash {
+  color: #AABBAA;
+}
+
+/**************************************************
+ Note
+**************************************************/
+/* .mkapi-docstring-section-note {
+  border-radius: 15px;
+  background: #EEEEEE;
+  margin-bottom: 1px;
+}
+
+.mkapi-docstring-section-note div {
+  border-radius: 5px 5px 0px 0px;
+  border: 1px solid green;
+  /* padding-bottom: 1px;
+  padding-top: 1px;
+  margin-top: 1px; */
+/* }
+
+.mkapi-docstring-section-note p {
+  background: blue;
+} */ */
 
 /**************************************************
  Members
 **************************************************/
 .mkapi-members {
-  margin: 2px;
-  padding: 2px;
-  border: 1px dashed red;
 }
 
 .mkapi-member {
-  margin: 2px;
-  padding: 2px;
-  border: 1px dashed blue;
 }
