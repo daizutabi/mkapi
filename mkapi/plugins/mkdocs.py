@@ -71,7 +71,7 @@ class MkapiPlugin(BasePlugin):
         paths = [page.file.abs_src_path for page in nav.pages]
         logger.info(f"[MkAPI] Converting {len(paths)} pages.")
         self.converter.convert_from_files(paths)
-        logger.info(f"[MkAPI] Conversion finished.")
+        logger.info("[MkAPI] Conversion finished.")
         return nav
 
     def on_page_read_source(self, page, config):
