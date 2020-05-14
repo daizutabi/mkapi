@@ -1,8 +1,9 @@
 import inspect
 import re
-import sys
 from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional, Tuple
+
+from mkapi.core import annotation
 
 SECTIONS = [
     "Args",
@@ -129,11 +130,39 @@ class Item:
     markdown: str
     html: str = ""
 
+    def __post_init__(self):
+        self.markdown = self.markdown.strip()
+
 
 @dataclass
 class Section:
     name: str
     items: List[Item]
+
+    def __getitem__(self, index):
+        return self.items[index]
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getattr__(self, name):
+        for item in self.items:
+            if item.name == name:
+                return item
+
+
+@dataclass
+class Docstring:
+    obj: Optional[Any] = field(repr=False)
+    sections: List[Section]
+
+    def __getattr__(self, name):
+        for section in self.sections:
+            if section.name == name:
+                return section
+
+    def __getitem__(self, name):
+        return getattr(self, name)
 
 
 def create_section(name: str, doc: str) -> Section:
@@ -148,15 +177,31 @@ def create_section(name: str, doc: str) -> Section:
     return Section(name.lower(), items)
 
 
-@dataclass
-class Docstring:
-    obj: Optional[Any] = field(repr=False)
-    sections: List[Section]
+def postprocess(doc: Docstring, obj: Any):
+    if isinstance(obj, property):
+        item = doc.sections[0].items[0]
+        line = item.markdown.split("\n")[0]
+        if ":" in line:
+            index = line.index(":")
+            item.type = line[:index].strip()
+            item.markdown = item.markdown[index + 1 :].strip()
 
-    def __getattr__(self, name):
-        for section in self.sections:
-            if section.name == name:
-                return section
+    if not callable(obj):
+        return
+
+    annotations = annotation.to_string(obj)
+    print(obj, annotations)
+
+    if doc.args:
+        for item in doc.args:
+            if item.type == "" and item.name in annotations[0]:
+                item.type = annotations[0][item.name]
+
+    for k, section in enumerate(["returns", "yields"], 1):
+        if doc[section]:
+            item = doc[section].items[0]
+            if item.type == "":
+                item.type = annotations[k]  # type:ignore
 
 
 def parse_docstring(obj: Any) -> Docstring:
@@ -166,17 +211,6 @@ def parse_docstring(obj: Any) -> Docstring:
     sections = []
     for section in split_section(doc):
         sections.append(create_section(*section))
-    return Docstring(obj, sections)
-
-
-if __name__ == "__main__":
-    import sys
-
-    sys.path.insert(0, "examples")
-    from example import google
-
-    import mkapi.core.inspect
-
-    node = mkapi.core.inspect.get_node("example.google")
-    doc = node.docstring
-    doc.attributes
+    docstring = Docstring(obj, sections)
+    postprocess(docstring, obj)
+    return docstring

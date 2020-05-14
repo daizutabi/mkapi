@@ -28,12 +28,13 @@ Attributes:
 
         Either form is acceptable, but the two should not be mixed. Choose
         one convention to document module level variables and be consistent
-        with it.
+        with it. ABC.
 
 Todo:
     * For module TODOs
     * You have to also use `sphinx.ext.todo` extension
 """
+from typing import Iterator
 
 module_level_variable1 = 12345
 
@@ -109,14 +110,14 @@ def module_level_function(param1, param2=None, *args, **kwargs):
     return True
 
 
-def example_generator(n):
+def example_generator(n: int) -> Iterator[int]:
     """Generators have a `Yields` section instead of a `Returns` section.
 
     Args:
-        n (int): The upper limit of the range to generate, from 0 to `n` - 1.
+        n: The upper limit of the range to generate, from 0 to `n` - 1.
 
     Yields:
-        int: The next number in the range of 0 to `n` - 1.
+        The next number in the range of 0 to `n` - 1.
 
     Examples:
         Examples should be written in doctest format, and should illustrate how
@@ -206,7 +207,7 @@ class ExampleClass(object):
     def readwrite_property(self, value):
         value
 
-    def example_method(self, param1, param2):
+    def example_method(self, param1: int, param2) -> bool:
         """Class methods are similar to regular functions.
 
         Note:
@@ -214,7 +215,7 @@ class ExampleClass(object):
 
         Args:
             param1: The first parameter.
-            param2: The second parameter.
+            param2 (str): The second parameter.
 
         Returns:
             True if successful, False otherwise.
