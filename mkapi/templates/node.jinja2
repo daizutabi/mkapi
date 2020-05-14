@@ -1,0 +1,14 @@
+<div class="mkapi-node mkapi-node-depth-{{ node.depth }}">
+  <div class="mkapi-node-header">
+    <div class="mkapi-node-kind mkapi-node-kind-{{ node.kind }}">{{ node.kind }}</div>
+    <div class="mkapi-node-name">{{ node.name }}</div>
+  </div>
+  {{ docstring|safe }}
+  <div class="mkapi-members">
+    {%- for member in members %}
+      <div class="mkapi-member">
+        {{ member|safe }}
+      </div>
+    {%- endfor %}
+  </div>
+</div>

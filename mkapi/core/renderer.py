@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
@@ -24,13 +24,14 @@ class Renderer:
         if len(self.templates) == 1:
             self.name = name
 
-    def render_node(self, node: Node, members: List[str]) -> str:
+    def render_node(
+        self, node: Node, members: List[str], parent: Optional[Node]
+    ) -> str:
         template = self.templates[self.name]
-        return template.render(node=node, members=members)
+        return template.render(node=node, members=members, parent=parent)
 
-    def render(self, node):
-        print(node.name)
+    def render(self, node: Node, parent: Optional[Node] = None) -> str:
         members = []
         if node.members:
-            members = [self.render(member) for member in node.members]
-        return self.render_node(node, members)
+            members = [self.render(member, node) for member in node.members]
+        return self.render_node(node, members, parent)

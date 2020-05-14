@@ -1,0 +1,7 @@
+<div class="mkapi-docstring">
+  {% for section in docstring.sections %}
+    <div class="mkapi-docstring-section mkapi-docstring-section-{{ section.name|lower }}">
+      <div class="mkapi-docstring-section-name">{{ section.name }}</div>
+    </div>
+  {% endfor %}
+</div>

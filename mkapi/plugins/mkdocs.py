@@ -31,6 +31,7 @@ class MkapiPlugin(BasePlugin):
             paths.append(path)
             sys.path.insert(0, path)
         self.config["paths"] = paths
+        self.converter.dirty = self.config["dirty"]
         return config
 
     def on_files(self, files, config):
@@ -83,10 +84,11 @@ class MkapiPlugin(BasePlugin):
         return html
 
     def on_serve(self, server, config, builder):
-        self.converter.dirty = self.config["dirty"]
         watcher = server.watcher
         for root in self.config["paths"]:
             server.watch(root, builder)
+        root = os.path.join(os.path.dirname(mkapi.__file__), "theme")
+        server.watch(root, builder)
         watcher.ignore_dirs("__pycache__")
         return server
 

@@ -72,12 +72,9 @@ setup(
     packages=get_packages("mkapi"),
     include_package_data=True,
     install_requires=[
-        "click",
-        "ipykernel",
         "markdown",
         "jinja2",
-        "termcolor",
-        "colorama",
+        "docstring_parser",
     ],
     python_requires=">=3.7",
     entry_points={
