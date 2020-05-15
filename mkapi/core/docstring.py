@@ -15,8 +15,8 @@ SECTIONS = [
     "Notes",
     "Returns",
     "Raises",
-    "References",
-    "See Also",
+    # "References",
+    # "See Also",
     "Warning",
     "Warnings",
     "Warns",
@@ -43,6 +43,8 @@ def join(lines):
 def rename_section(name: str) -> str:
     if name == "Args":
         return "Parameters"
+    if name == "Warns":
+        return "Warnings"
     return name
 
 

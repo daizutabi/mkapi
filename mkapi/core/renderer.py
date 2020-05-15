@@ -1,12 +1,10 @@
 import os
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.core.docstring import Docstring, Item, Section
-from mkapi.core.node import Node
 
 
 @dataclass
@@ -22,28 +20,30 @@ class Renderer:
             name = os.path.splitext(name)[0]
             self.templates[name] = template
 
-    def render(self, node: Node, parent: Optional[Node] = None) -> str:
+    def render(self, node, parent=None) -> str:
         docstring = self.render_docstring(node.docstring)
         members = []
         if node.members:
             members = [self.render(member, node) for member in node.members]
         return self.render_node(node, docstring, members, parent)
 
-    def render_node(
-        self, node: Node, docstring: str, members: List[str], parent: Optional[Node]
-    ) -> str:
+    def render_node(self, node, docstring: str, members: List[str], parent) -> str:
         template = self.templates["node"]
         return template.render(
             node=node, docstring=docstring, members=members, parent=parent
         )
 
-    def render_docstring(self, docstring: Docstring) -> str:
+    def render_docstring(self, docstring) -> str:
         template = self.templates["docstring"]
         for section in docstring.sections:
             section.html = self.render_section(section)
         return template.render(docstring=docstring)
 
-    def render_section(self, section: Section) -> str:
+    def render_code(self, code: str) -> str:
+        template = self.templates["code"]
+        return template.render(code=code)
+
+    def render_section(self, section) -> str:
         if section.name in ["Parameters", "Attributes", "Raises"]:
             template = self.templates["args"]
         elif section.name in ["Returns", "Yields"]:

@@ -1,4 +1,5 @@
 import inspect
+import re
 
 
 class Signature:
@@ -6,7 +7,11 @@ class Signature:
         self.obj = obj
         signature = inspect.signature(obj)
         parameters = signature.parameters
-        self.signature = str(signature)
+        s = str(signature)
+        s = re.sub(r":.*?(,|\))", r"\1", s)
+        s = re.sub(r" ->.*", r"", s)
+        s = re.sub(r"(self|cls)(, |)", "", s)
+        self.signature = s
         parameters_str = {}
         for name in parameters:
             annotation = parameters[name].annotation

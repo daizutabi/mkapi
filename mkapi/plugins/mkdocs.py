@@ -84,13 +84,14 @@ class MkapiPlugin(BasePlugin):
         return html
 
     def on_serve(self, server, config, builder):
-        watcher = server.watcher
-        for root in self.config["paths"]:
+        for path in ['theme', 'templates']:
+            root = os.path.join(os.path.dirname(mkapi.__file__), path)
             server.watch(root, builder)
-        root = os.path.join(os.path.dirname(mkapi.__file__), "theme")
-        server.watch(root, builder)
-        watcher.ignore_dirs("__pycache__")
         return server
+        # for root in self.config["paths"]:
+        #     server.watch(root, builder)
+        # watcher = server.watcher
+        # watcher.ignore_dirs("__pycache__")
 
 
 NORMALIZE_PATTERN = re.compile(r"(^|[\\/])\w*[0-9]+[._ ](.*?)")

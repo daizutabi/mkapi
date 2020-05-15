@@ -136,7 +136,7 @@ class ExampleError(Exception):
     The __init__ method should be documented in the class level
     docstring.
 
-    Note:
+    Warns:
         Do not include the `self` parameter in the `Args` section.
 
     Args:

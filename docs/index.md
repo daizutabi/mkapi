@@ -1,7 +1,3 @@
-# Mkapi
-
-testdd
+# MkApi Demo
 
 [mkapi](example.google)
-
-abc

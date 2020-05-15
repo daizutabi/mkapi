@@ -2,7 +2,29 @@
  Main
 **************************************************/
 .mkapi-node p {
+  margin-top: 2px;
+  margin-bottom: 12px;
   line-height: 1.3em;
+}
+
+.mkapi-node pre {
+  background: none;
+  border: none;
+  padding: 0px;
+}
+
+.mkapi-node code {
+  background: none;
+  border: none;
+  padding: 0px;
+}
+
+.mkapi-node pre code {
+  font-size: 100%;
+}
+
+.mkapi-node p:last-child {
+  margin-bottom: 2px;
 }
 
 .mkapi-node li {
@@ -14,16 +36,20 @@ code {
   color: #0044EE;
 }
 
+.mkapi-node ul {
+  margin-top: 5px;
+}
+
 /**************************************************
  Node
 **************************************************/
 .mkapi-node {
-  margin-left: 30px;
+  margin-left: 50px;
   margin-bottom: 20px;
 }
 
 .mkapi-node-depth-0 {
-  margin-left: 10px;
+  margin-left: 0px;
 }
 
 .mkapi-node-header {
@@ -31,7 +57,13 @@ code {
   border-left: solid 3px #7777FF;
   display: flex;
   align-items: baseline;
-  padding: 3px;
+  padding: 5px;
+}
+
+.mkapi-node-header-module {
+  background: none;
+  border-left: none;
+  font-size: 150%;
 }
 
 .mkapi-node-kind {
@@ -41,6 +73,10 @@ code {
   color: #888888;
 }
 
+.mkapi-node-kind-module {
+  margin-left: 3px;
+}
+
 .mkapi-node-name {
   margin-left: 0.3em;
   font-weight: bold;
@@ -48,7 +84,7 @@ code {
 
 .mkapi-node-prefix {
   font-size: 75%;
-  color: #4444AA;
+  color: #666666;
 }
 
 .mkapi-node-basename {
@@ -57,8 +93,8 @@ code {
 }
 
 .mkapi-node-signature {
-  font-weight: normal;
-  font-size: 85%;
+  font-weight: bold;
+  font-size: 80%;
   color: #0000EE;
 }
 
@@ -66,30 +102,89 @@ code {
  Docstring
 **************************************************/
 .mkapi-docstring {
-  margin-left: 15px;
+}
+
+.mkapi-docstring-section {
+  margin-top: 10px;
+  margin-bottom: 15px;
+  padding: 0px;
 }
 
 .mkapi-docstring-section-named {
-  margin-left: 30px;
+  margin-left: 50px;
 }
 
 .mkapi-docstring-section-name {
-  background: #EEEEFF;
-  padding: 3px 8px;
-  border-bottom: solid 1px #7777FF;
+  padding: 4px 8px;
   font-size: 90%;
   font-weight: bold;
+  color: #333333;
+  letter-spacing: 0.05em;
+}
+
+.mkapi-docstring-section-name-parameters,
+.mkapi-docstring-section-name-attributes,
+.mkapi-docstring-section-name-returns,
+.mkapi-docstring-section-name-yields,
+.mkapi-docstring-section-name-raises {
+  background: #EEEEFF;
+  border-bottom: solid 2px #7777FF;
+}
+
+
+.mkapi-docstring-section-name-note, .mkapi-docstring-section-name-notes {
+  color: white;
+  background: #33AA33;
+}
+
+.mkapi-docstring-section-name-note:before,
+.mkapi-docstring-section-name-notes:before {
+  font-family: "Font Awesome 5 Free";
+  content: "\f303";
+  font-weight: 900;
+  padding-right: 3px;
+  color: white;
+}
+
+.mkapi-docstring-section-name-warning, .mkapi-docstring-section-name-warnings {
+  color: white;
+  background: #FF6666;
+}
+
+.mkapi-docstring-section-name-warning:before,
+.mkapi-docstring-section-name-warnings:before {
+  font-family: "Font Awesome 5 Free";
+  content: "\f071";
+  font-weight: 900;
+  padding-right: 3px;
+  color: white;
 }
 
 .mkapi-docstring-section-body {
-  margin-left: 10px;
-
+  padding: 4px 8px;
 }
+
+.mkapi-docstring-section-body-note, .mkapi-docstring-section-body-notes {
+  background: #EEFFEE;
+  padding: 8px 12px;
+}
+
+.mkapi-docstring-section-body-warning, .mkapi-docstring-section-body-warnings {
+  background: #FFEEEE;
+  padding: 8px 12px;
+}
+
+.mkapi-docstring-section-body-example, .mkapi-docstring-section-body-examples {
+  background: #EEEEEE;
+  padding: 8px 12px;
+}
+
 
 /**************************************************
  Args
 **************************************************/
 .mkapi-args-list {
+  margin-top: 5px;
   padding-left: 10px;
 }
 
@@ -112,27 +207,6 @@ code {
 .mkapi-args-dash {
   color: #AABBAA;
 }
-
-/**************************************************
- Note
-**************************************************/
-/* .mkapi-docstring-section-note {
-  border-radius: 15px;
-  background: #EEEEEE;
-  margin-bottom: 1px;
-}
-
-.mkapi-docstring-section-note div {
-  border-radius: 5px 5px 0px 0px;
-  border: 1px solid green;
-  /* padding-bottom: 1px;
-  padding-top: 1px;
-  margin-top: 1px; */
-/* }
-
-.mkapi-docstring-section-note p {
-  background: blue;
-} */ */
 
 /**************************************************
  Members

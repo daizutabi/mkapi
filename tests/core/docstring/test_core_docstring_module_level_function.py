@@ -56,13 +56,13 @@ def test_docstring_module_level_function(node):
     assert len(section.items) == 2
 
     item = section.items[0]
-    assert item.name == ""
-    assert item.type == "AttributeError"
+    assert item.name == "AttributeError"
+    assert item.type == ""
     assert item.markdown.startswith("The `Raises`")
     assert item.markdown.endswith("interface.")
 
     item = section.items[1]
-    assert item.name == ""
-    assert item.type == "ValueError"
+    assert item.name == "ValueError"
+    assert item.type == ""
     assert item.markdown.startswith("If")
     assert item.markdown.endswith("`param1`.")

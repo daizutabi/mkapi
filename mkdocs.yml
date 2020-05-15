@@ -7,7 +7,7 @@ site_dir: ../mkapi-site
 repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 
-theme: ivory
+# theme: ivory
 
 plugins:
   - search

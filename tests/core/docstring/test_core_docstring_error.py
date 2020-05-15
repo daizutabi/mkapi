@@ -14,7 +14,7 @@ def test_docstring_error(node):
     assert item.markdown.endswith("\ndocstring.")
 
     section = sections[1]
-    assert section.name == "Note"
+    assert section.name == "Warnings"
     assert len(section.items) == 1
 
     item = section.items[0]

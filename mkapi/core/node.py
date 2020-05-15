@@ -91,7 +91,13 @@ def walk(name, obj, prefix="", depth=0) -> Node:
         signature = Signature(obj)
     else:
         signature = None  # type:ignore
-    return Node(obj, name, depth, prefix, kinds, lineno, signature, docstring, members)
+    node = Node(obj, name, depth, prefix, kinds, lineno, signature, docstring, members)
+    if isinstance(obj, property):
+        if docstring.sections:
+            node.type = docstring.sections[0].items[0].type
+        else:
+            node.type = ""
+    return node
 
 
 def get_attr(path: str):
