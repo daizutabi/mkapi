@@ -38,7 +38,7 @@ For example, if you use PyTorch, you can check the functionality of MkApi:
 [mkapi](torch.optim)
 ```
 
-If you run MkDocs, an API documentation is created.
+If you run MkDocs, an API documentation is created as below:
 
 (Off course, reStructuredText is not correctly rendered because MkApi
 and MkDocs only support Markdown. This example is just a demo.)
