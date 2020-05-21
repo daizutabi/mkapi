@@ -8,7 +8,7 @@
 # MkApi
 
 MkApi is a [MkDocs](https://www.mkdocs.org/) plugin for auto API documentation.
-MkApi supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) partially
+MkApi supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) partially.
 
 Install the plugin using pip:
 
@@ -41,7 +41,7 @@ For example, if you use PyTorch, you can check the functionality of MkApi:
 If you run MkDocs, an API documentation is created.
 
 (Off course, reStructuredText is not correctly rendered because MkApi
-and MkDocs only support Markdown.)
+and MkDocs only support Markdown. This example is just a demo.)
 
 ![png](demo.png)
 
