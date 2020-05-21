@@ -38,12 +38,12 @@ For example, if you use PyTorch, you can check the functionality of MkApi:
 [mkapi](torch.optim)
 ```
 
-If you run MkDocs, an API documentation is created:
+If you run MkDocs, an API documentation is created.
+
+(Off course, reStructuredText is not correctly rendered because MkApi
+and MkDocs only support Markdown.)
 
 ![png](demo.png)
-
-
-
 
 
 [pypi-image]: https://badge.fury.io/py/mkapi.svg
