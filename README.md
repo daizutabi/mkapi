@@ -40,7 +40,7 @@ For example, if you use PyTorch, you can check the functionality of MkApi:
 
 If you run MkDocs, an API documentation is created:
 
-[png](demo.png)
+![png](demo.png)
 
 
 
