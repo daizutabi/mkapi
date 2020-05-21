@@ -5,10 +5,18 @@ import re
 class Signature:
     def __init__(self, obj):
         self.obj = obj
-        signature = inspect.signature(obj)
+        try:
+            signature = inspect.signature(obj)
+        except ValueError:
+            self.signature = ""
+            self.annotations = "", "", ""
+            return
+
         parameters = signature.parameters
         s = str(signature)
-        s = re.sub(r":.*?(,|\))", r"\1", s)
+        s = re.sub(r"\[[^:->]*\]", "", s)
+        s = re.sub(r":.*?(,|= |\))", r"\1", s)
+        s = s.replace("= ", "=")
         s = re.sub(r" ->.*", r"", s)
         s = re.sub(r"(self|cls)(, |)", "", s)
         self.signature = s
@@ -34,5 +42,6 @@ def to_string(annotation, kind: str) -> str:
     if hasattr(annotation, "__name__"):
         return annotation.__name__
     if kind == "yields":
-        return to_string(annotation.__args__[0], kind)
+        if hasattr(annotation, "__args__") and annotation.__args__:
+            return to_string(annotation.__args__[0], kind)
     return ""

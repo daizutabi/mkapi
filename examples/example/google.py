@@ -33,6 +33,12 @@ Attributes:
 Todo:
     * For module TODOs
     * You have to also use `sphinx.ext.todo` extension
+
+See Also:
+    a b c
+
+References:
+    e d g
 """
 from typing import Iterator
 

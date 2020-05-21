@@ -1,29 +1,13 @@
 from typing import Iterator
 
-from markdown import Markdown
 
-from mkapi.core.renderer import Renderer
-
-converter = Markdown()
-renderer = Renderer()
-
-
-def convert(text: str, inline: bool) -> str:
+def convert(text: str) -> str:
     blocks = []
     for block in split(text):
         if block.startswith(">>>"):
-            block = renderer.render_code(block)
-        else:
-            block = converter.convert(block).strip()
+            block = f"~~~python\n{block}\n~~~\n"
         blocks.append(block)
-    text = "\n\n".join(blocks)
-    html = converter.convert(text).strip()
-    if inline:
-        html = html.replace("<p>", "")
-        html = html.replace("</p>", "<br>")
-        if html.endswith("<br>"):
-            html = html[:-4]
-    return html
+    return "\n".join(blocks)
 
 
 def delete_indent(lines, start, stop):
@@ -34,7 +18,6 @@ def delete_indent(lines, start, stop):
 
 
 def split(text: str) -> Iterator[str]:
-
     start = 0
     in_code = False
     lines = text.split("\n")

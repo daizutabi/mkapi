@@ -9,29 +9,33 @@ from mkdocs.plugins import BasePlugin
 from mkdocs.structure.files import get_files
 
 import mkapi
-import mkapi.core.converter
+import mkapi.plugins.preprocess
+from mkapi.core.page import Page
 
 logger = logging.getLogger("mkdocs")
 
 
 class MkapiPlugin(BasePlugin):
     config_scheme = (
-        ("autoapi_dirs", config_options.Type(list, default=["."])),
-        ("dirty", config_options.Type(bool, default=False)),
+        ("api_dir", config_options.Type(str, default="api")),
+        ("src_dir", config_options.Type(str, default="")),
     )
-    converter = mkapi.core.converter.Converter()
 
     def on_config(self, config):
-        logger.info(f"[MkAPI] Current directory: {os.getcwd()}")
-        logger.info(f"[MkAPI] Watching directories: {self.config['autoapi_dirs']}")
-        paths = []
-        for path in self.config["autoapi_dirs"]:
-            path = os.path.join(os.getcwd(), path)
-            path = os.path.normpath(path)
-            paths.append(path)
-            sys.path.insert(0, path)
-        self.config["paths"] = paths
-        self.converter.dirty = self.config["dirty"]
+        self.pages = {}
+        api_dir = os.path.join(config["docs_dir"], self.config["api_dir"])
+        dirname = os.path.dirname(config["config_file_path"])
+        nav = config["nav"]
+        for page in nav:
+            for key, value in page.items():
+                if isinstance(value, str) and value.startswith("mkapi:"):
+                    root = value.split(":")[1]
+                    root = os.path.join(dirname, root)
+                    contents = mkapi.plugins.preprocess.make_pages(root, api_dir)
+                    page[key] = contents
+        src_dir = self.config["src_dir"]
+        if src_dir and src_dir not in sys.path:
+            sys.path.insert(0, src_dir)
         return config
 
     def on_files(self, files, config):
@@ -67,31 +71,22 @@ class MkapiPlugin(BasePlugin):
 
         return files
 
-    def on_nav(self, nav, config, files):
-        paths = [page.file.abs_src_path for page in nav.pages]
-        logger.info(f"[MkAPI] Converting {len(paths)} pages.")
-        self.converter.convert_from_files(paths)
-        logger.info("[MkAPI] Conversion finished.")
-        return nav
-
-    def on_page_read_source(self, page, config):
-        try:
-            return self.converter.pages[page.file.abs_src_path].source
-        except KeyError:
-            return
+    def on_page_markdown(self, markdown, page, config, files):
+        path = page.file.abs_src_path
+        page = Page(markdown)
+        self.pages[path] = page
+        return page.markdown
 
     def on_page_content(self, html, page, config, files):
-        return html
+        path = page.file.abs_src_path
+        page = self.pages[path]
+        return page.content(html)
 
     def on_serve(self, server, config, builder):
-        for path in ['theme', 'templates']:
+        for path in ["theme", "templates"]:
             root = os.path.join(os.path.dirname(mkapi.__file__), path)
             server.watch(root, builder)
         return server
-        # for root in self.config["paths"]:
-        #     server.watch(root, builder)
-        # watcher = server.watcher
-        # watcher.ignore_dirs("__pycache__")
 
 
 NORMALIZE_PATTERN = re.compile(r"(^|[\\/])\w*[0-9]+[._ ](.*?)")

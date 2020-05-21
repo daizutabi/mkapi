@@ -1,4 +1,4 @@
-site_name: mkapi
+site_name: MkApi
 site_url: https://github.com/daizutabi/mkapi/
 site_description: API documentation with MkDocs.
 site_author: daizutabi
@@ -7,15 +7,17 @@ site_dir: ../mkapi-site
 repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 
-# theme: ivory
+theme: readthedocs
 
 plugins:
   - search
   - mkapi:
-      autoapi_dirs: [examples]
+      api_dir: api
+      src_dir: examples
 
 nav:
-  - Home: index.md
+  - MkApi Documentation: index.md
+  # - API: mkapi:mkapi
 
 markdown_extensions:
   - admonition

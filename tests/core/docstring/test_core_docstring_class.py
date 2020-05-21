@@ -35,6 +35,7 @@ def test_docstring_function_with_types_in_docstring(node):
 def test_docstring_property(node):
     doc = node.members[5].members[1].docstring
     sections = doc.sections
+    print(doc.sections)
     assert len(sections) == 1
 
     section = sections[0]

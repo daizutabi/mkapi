@@ -3,8 +3,9 @@ import inspect
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
+import mkapi.core.markdown
 from mkapi.core.docstring import Docstring, parse_docstring
-from mkapi.core.inspect import Signature
+from mkapi.core.signature import Signature
 
 ISFUNCTIONS = {}
 for x in dir(inspect):
@@ -41,12 +42,32 @@ class Node:
         else:
             self.type = "normal"
 
+    def __iter__(self):
+        yield from self.docstring
+        for member in self.members:
+            yield from member
+
+    def get_markdown(self):
+        markdowns = []
+        for x in self:
+            markdowns.append(mkapi.core.markdown.convert(x.markdown))
+        return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
+
+    def set_html(self, html: str):
+        for x, html in zip(self, html.split("<!-- mkapi:sep -->")):
+            x.set_html(html.strip())
+
 
 def get_kinds(obj) -> List[str]:
     kinds = []
+    if hasattr(obj, "__dataclass_fields__"):
+        return ["dataclass"]
     for kind, func in ISFUNCTIONS.items():
         if func(obj):
             kinds.append(kind)
+    if "function" in kinds and "generatorfunction" not in kinds:
+        if "self" in inspect.signature(obj).parameters:
+            kinds = ["method"]
     if isinstance(obj, property):
         if obj.fset:
             kinds.append("readwrite_property")
@@ -94,7 +115,7 @@ def walk(name, obj, prefix="", depth=0) -> Node:
     node = Node(obj, name, depth, prefix, kinds, lineno, signature, docstring, members)
     if isinstance(obj, property):
         if docstring.sections:
-            node.type = docstring.sections[0].items[0].type
+            node.type = docstring.sections[0].type
         else:
             node.type = ""
     return node

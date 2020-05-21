@@ -36,7 +36,8 @@ class Renderer:
     def render_docstring(self, docstring) -> str:
         template = self.templates["docstring"]
         for section in docstring.sections:
-            section.html = self.render_section(section)
+            if section.items:
+                section.html = self.render_section(section)
         return template.render(docstring=docstring)
 
     def render_code(self, code: str) -> str:
@@ -45,9 +46,6 @@ class Renderer:
 
     def render_section(self, section) -> str:
         if section.name in ["Parameters", "Attributes", "Raises"]:
-            template = self.templates["args"]
-        elif section.name in ["Returns", "Yields"]:
-            template = self.templates["returns"]
+            return self.templates["args"].render(section=section)
         else:
-            template = self.templates["plain"]
-        return template.render(section=section)
+            raise ValueError(f"Invalid section name: {section.name}")
