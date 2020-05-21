@@ -11,12 +11,12 @@ theme: readthedocs
 
 plugins:
   - search
-  - mkapi:
-      api_dir: api
-      src_dir: examples
+  - mkapi
+      # api_dir: api
+      # src_dir: examples
 
 nav:
-  - MkApi Documentation: index.md
+  - MkApi Demo: index.md
   # - API: mkapi:mkapi
 
 markdown_extensions:

@@ -5,11 +5,10 @@
 [![Coverage Status][coveralls-image]][coveralls-link]
 [![Code style: black][black-image]][black-link]
 
-# mkapi
+# MkApi
 
-An Auto API Documentation tool.
-
-<!-- ## Setup
+MkApi is a [MkDocs](https://www.mkdocs.org/) plugin for auto API documentation.
+MkApi supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) partially
 
 Install the plugin using pip:
 
@@ -25,11 +24,27 @@ plugins:
   - mkapi
 ```
 
-> If you have no `plugins` entry in your config file yet, you'll likely also want to add the `search` plugin. MkDocs enables it by default if there is no `plugins` entry set.
+(If you have no `plugins` entry in your config file yet, you'll likely also want to add the `search` plugin. MkDocs enables it by default if there is no `plugins` entry set.)
 
-## Documentation -->
+Then, in your markdown file, write a link like normal Markdown to an package, module, or other object:
 
-<!-- See [Pheasant documentation](https://mkapi.daizutabi.net). -->
+```markdown
+[mkapi](<something>)
+```
+
+For example, if you use PyTorch, you can check the functionality of MkApi:
+
+```markdown
+[mkapi](torch.optim)
+```
+
+If you run MkDocs, an API documentation is created:
+
+[png](demo.png)
+
+
+
+
 
 [pypi-image]: https://badge.fury.io/py/mkapi.svg
 [pypi-link]: https://pypi.org/project/mkapi
