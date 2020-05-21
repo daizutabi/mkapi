@@ -7,6 +7,7 @@ from mkapi.core.signature import Signature
 
 SECTIONS = [
     "Args",
+    "Arguments",
     "Attributes",
     "Example",
     "Examples",
@@ -40,7 +41,7 @@ def join(lines):
 
 
 def rename_section(name: str) -> str:
-    if name == "Args":
+    if name in ["Args", "Arguments"]:
         return "Parameters"
     if name == "Warns":
         return "Warnings"
@@ -58,7 +59,8 @@ def split_section(doc: str) -> Iterator[Tuple[str, str]]:
         else:
             next_indent = get_indent(lines[stop])
         if not line and next_indent < indent:
-            yield name, join(lines[start : stop - 1])
+            if start < stop - 1:
+                yield name, join(lines[start : stop - 1])
             start = stop
             name = ""
         elif line.endswith(":") and line[:-1] in SECTIONS:
@@ -87,7 +89,7 @@ def split_parameter(doc: str) -> Iterator[List[str]]:
 
 def parse_parameter(lines: List[str]) -> Tuple[str, str, str]:
     """Yields (name, type, markdown)."""
-    name, line = lines[0].split(":")
+    name, _, line = lines[0].partition(":")
     name = name.strip()
     line = line.strip()
     parsed = [line]
@@ -112,7 +114,7 @@ def parse_returns(doc: str) -> Tuple[str, str]:
     """Returns (type, markdown)."""
     lines = doc.split("\n")
     if ":" in lines[0]:
-        type, lines[0] = lines[0].split(":")
+        type, _, lines[0] = lines[0].partition(":")
         type = type.strip()
         lines[0] = lines[0].strip()
     else:
@@ -140,7 +142,7 @@ class Item:
     def set_html(self, html):
         html = html.replace("<p>", "").replace("</p>", "<br>")
         if html.endswith("<br>"):
-            html = html[:-5]
+            html = html[:-4]
         self.html = html
 
 
@@ -185,6 +187,9 @@ class Docstring:
 
     def __getitem__(self, name):
         return getattr(self, name)
+
+    def __len__(self):
+        return len(self.sections)
 
     def __iter__(self):
         for section in self.sections:

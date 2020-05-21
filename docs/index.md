@@ -1,5 +1,1 @@
-# MkApi Demo
-
-[mkapi](example.google)
-
-text
+[mkapi](torch.optim)

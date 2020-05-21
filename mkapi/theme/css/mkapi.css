@@ -52,7 +52,7 @@
   padding: 5px;
 }
 
-.mkapi-node-header-module {
+.mkapi-node-header-package, .mkapi-node-header-module {
   background: none;
   border-left: none;
   font-size: 150%;
@@ -65,7 +65,7 @@
   font-size: 70%;
 }
 
-.mkapi-node-kind-module {
+.mkapi-node-kind-package, .mkapi-node-kind-module {
   margin-left: 3px;
 }
 

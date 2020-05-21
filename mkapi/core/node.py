@@ -1,7 +1,8 @@
 import importlib
 import inspect
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from functools import partial
+from typing import Any, List, Optional, Tuple
 
 import mkapi.core.markdown
 from mkapi.core.docstring import Docstring, parse_docstring
@@ -66,8 +67,11 @@ def get_kinds(obj) -> List[str]:
         if func(obj):
             kinds.append(kind)
     if "function" in kinds and "generatorfunction" not in kinds:
-        if "self" in inspect.signature(obj).parameters:
-            kinds = ["method"]
+        try:
+            if "self" in inspect.signature(obj).parameters:
+                kinds = ["method"]
+        except ValueError:
+            kinds = []
     if isinstance(obj, property):
         if obj.fset:
             kinds.append("readwrite_property")
@@ -76,42 +80,75 @@ def get_kinds(obj) -> List[str]:
     return kinds
 
 
-def get_lineno(obj) -> int:
+def get_sourcefile_and_lineno(obj) -> Tuple[str, int]:
     if isinstance(obj, property):
         obj = obj.fget
-    return inspect.getsourcelines(obj)[1]
+    sourcefile = inspect.getsourcefile(obj) or ""
+    lineno = inspect.getsourcelines(obj)[1]
+    return sourcefile, lineno
 
 
-def filter(obj) -> bool:
+def filter(obj, sourcefile, lineno, qualname) -> bool:
     if not get_kinds(obj):
         return False
     try:
-        get_lineno(obj)
-    except TypeError:
+        sourcefile_, lineno_ = get_sourcefile_and_lineno(obj)
+    except Exception:
         return False
-    else:
+    if not hasattr(obj, "__qualname__"):
+        return False
+    if obj.__qualname__.startswith(qualname):
         return True
+    if sourcefile_ is None:
+        return False
+    elif sourcefile_ == sourcefile and lineno_ > lineno:
+        return True
+    else:
+        return False
+
+
+def ignore_name(name: str) -> bool:
+    if name.startswith("_"):
+        return True
+    return False
 
 
 def walk(name, obj, prefix="", depth=0) -> Node:
     kinds = get_kinds(obj)
-    lineno = get_lineno(obj)
+    sourcefile, lineno = get_sourcefile_and_lineno(obj)
+    if sourcefile.endswith("__init__.py"):
+        kinds = ["package"]
     docstring = parse_docstring(obj)
     if prefix:
         next_prefix = ".".join([prefix, name])
     else:
         next_prefix = name
+    if hasattr(obj, "__qualname__"):
+        qualname = obj.__qualname__
+    else:
+        qualname = ""
     members = []
     if not isinstance(obj, property):
-        for x in inspect.getmembers(obj, filter):
-            member = walk(*x, prefix=next_prefix, depth=depth + 1)
-            if member.type == "normal" or member.docstring:
-                members.append(member)
-        members.sort(key=lambda x: x.lineno)
+        func = partial(filter, sourcefile=sourcefile, lineno=lineno, qualname=qualname)
+        for x in inspect.getmembers(obj, func):
+            if not ignore_name(x[0]):
+                member = walk(*x, prefix=next_prefix, depth=depth + 1)
+                if member.type == "normal" or member.docstring:
+                    members.append(member)
     if callable(obj):
         signature = Signature(obj)
     else:
         signature = None  # type:ignore
+
+    if "class" in kinds:
+        if not len(docstring):
+            for member in members:
+                if member.name == "__init__" and len(member.docstring):
+                    markdown = member.docstring.sections[0].markdown
+                    if not markdown.startswith("Initialize self"):
+                        docstring = member.docstring
+        members = [member for member in members if member.name != "__init__"]
+
     node = Node(obj, name, depth, prefix, kinds, lineno, signature, docstring, members)
     if isinstance(obj, property):
         if docstring.sections:
