@@ -74,7 +74,6 @@ setup(
     install_requires=[
         "markdown",
         "jinja2",
-        "docstring_parser",
     ],
     python_requires=">=3.7",
     entry_points={
