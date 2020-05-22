@@ -7,13 +7,16 @@ site_dir: ../mkapi-site
 repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 
+extra_css: [extra.css]
+
 theme: readthedocs
 
 plugins:
   - search
-  - mkapi
-      # api_dir: api
-      # src_dir: examples
+  - pheasant
+  - mkapi:
+      src_dir: examples
+      api_dir: api
 
 nav:
   - MkApi Demo: index.md

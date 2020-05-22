@@ -167,7 +167,7 @@ def get_attr(path: str):
 def get_object(name: str):
     try:
         return get_attr(name)
-    except (ModuleNotFoundError, AttributeError):
+    except (ModuleNotFoundError, AttributeError, ValueError):
         return importlib.import_module(name)
 
 
