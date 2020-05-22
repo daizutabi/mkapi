@@ -91,15 +91,19 @@ def get_sourcefile_and_lineno(obj) -> Tuple[str, int]:
 def filter(obj, sourcefile, lineno, qualname) -> bool:
     if isinstance(obj, property):
         return True
-    if not get_kinds(obj):
+    kinds = get_kinds(obj)
+    if not qualname and 'dataclass' in kinds:
+        return True
+    if not kinds:
         return False
+
     try:
         sourcefile_, lineno_ = get_sourcefile_and_lineno(obj)
     except Exception:
         return False
     if not hasattr(obj, "__qualname__"):
         return False
-    if obj.__qualname__.startswith(qualname):
+    if qualname and obj.__qualname__.startswith(qualname):
         return True
     if sourcefile_ is None:
         return False

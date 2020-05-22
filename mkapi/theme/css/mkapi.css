@@ -176,6 +176,7 @@ code.mkapi-node-signature {
 .mkapi-node ul.mkapi-args-list li {
   margin-left: 40px;
   text-indent: -20px;
+  list-style: none;
 }
 
 code.mkapi-args-name {
