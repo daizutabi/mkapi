@@ -5,7 +5,7 @@ from typing import Iterator, List
 from mkapi.core.node import Node, get_node
 from mkapi.core.renderer import Renderer
 
-MKAPI_PATTERN = re.compile(r"^\[mkapi\]\((.*?)\)$", re.MULTILINE)
+MKAPI_PATTERN = re.compile(r"^!\[mkapi\]\((.*?)\)$", re.MULTILINE)
 
 HTML_PATTERN = re.compile(
     r"<!-- mkapi:(\d+):begin -->(.*?)<!-- mkapi:end -->", re.MULTILINE | re.DOTALL

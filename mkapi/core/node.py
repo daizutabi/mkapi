@@ -89,6 +89,8 @@ def get_sourcefile_and_lineno(obj) -> Tuple[str, int]:
 
 
 def filter(obj, sourcefile, lineno, qualname) -> bool:
+    if isinstance(obj, property):
+        return True
     if not get_kinds(obj):
         return False
     try:
@@ -108,6 +110,8 @@ def filter(obj, sourcefile, lineno, qualname) -> bool:
 
 
 def ignore_name(name: str) -> bool:
+    if name == '__init__':
+        return False
     if name.startswith("_"):
         return True
     return False

@@ -17,13 +17,12 @@ logger = logging.getLogger("mkdocs")
 
 class MkapiPlugin(BasePlugin):
     config_scheme = (
-        ("api_dir", config_options.Type(str, default="api")),
-        ("src_dir", config_options.Type(str, default="")),
+        ("src_dirs", config_options.Type(list, default=[])),
     )
 
     def on_config(self, config):
         self.pages = {}
-        api_dir = os.path.join(config["docs_dir"], self.config["api_dir"])
+        # api_dir = os.path.join(config["docs_dir"], self.config["api_dir"])
         dirname = os.path.dirname(config["config_file_path"])
         nav = config["nav"]
         for page in nav:
@@ -31,11 +30,11 @@ class MkapiPlugin(BasePlugin):
                 if isinstance(value, str) and value.startswith("mkapi:"):
                     root = value.split(":")[1]
                     root = os.path.join(dirname, root)
-                    contents = mkapi.plugins.preprocess.make_pages(root, api_dir)
-                    page[key] = contents
-        src_dir = self.config["src_dir"]
-        if src_dir and src_dir not in sys.path:
-            sys.path.insert(0, src_dir)
+                    # contents = mkapi.plugins.preprocess.make_pages(root, api_dir)
+                    # page[key] = contents
+        for src_dir in self.config["src_dirs"]:
+            if src_dir not in sys.path:
+                sys.path.insert(0, src_dir)
         return config
 
     def on_files(self, files, config):

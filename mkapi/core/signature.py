@@ -44,4 +44,4 @@ def to_string(annotation, kind: str) -> str:
     if kind == "yields":
         if hasattr(annotation, "__args__") and annotation.__args__:
             return to_string(annotation.__args__[0], kind)
-    return ""
+    return str(annotation).replace('typing.', '')

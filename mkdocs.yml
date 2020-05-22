@@ -1,5 +1,5 @@
 site_name: MkApi
-site_url: https://github.com/daizutabi/mkapi/
+site_url: https://mkapi.daizutabi.net/
 site_description: API documentation with MkDocs.
 site_author: daizutabi
 site_dir: ../mkapi-site/site
@@ -15,13 +15,16 @@ plugins:
   - search
   - pheasant
   - mkapi:
-      src_dir: examples
-      api_dir: api
+      src_dirs: [examples]
 
 nav:
-  - MkApi Demo: index.md
+  - MkApi: index.md
+  - Examples: examples.md
   # - API: mkapi:mkapi
 
 markdown_extensions:
   - admonition
   - pymdownx.arithmatex
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML

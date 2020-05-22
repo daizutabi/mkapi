@@ -1,0 +1,127 @@
+# Examples
+
+Let's start realistic examples. Here, sample Python source scripts are stored under the `examples` directory relative to `mkdocs.yml`, so you should configure `mkdocs.yml` like below. In addition, we add two extensions and extra javascript for demonstration.
+
+~~~yml
+plugins:
+  - search
+  - mkapi:
+      src_dirs: [examples]
+
+markdown_extensions:
+  - admonition
+  - pymdownx.arithmatex
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML
+~~~
+
+## Function
+
+A Python module `example.py` defines a simple function `add`.
+
+```python hide
+import sys
+
+if '../examples' not in sys.path:
+  sys.path.insert(0, '../examples')
+import example
+```
+
+#Code example.add {{ example.add # inspect }}
+
+Then, you can write an entry to generate API for the function anywhere in your Markdown source:
+
+~~~markdown
+![mkapi][example.add]
+~~~
+
+MkApi generates the API document for the `add` function.
+
+![mkapi](example.add)
+
+!!! note
+    In the above example, green dashed border is just to show the region of MkApi's document generation for convenience.
+
+In this simple example, you can see MkApi's features.
+
+* Auto detection of the type of `add` (FUNCTION prefix).
+* Type annotation and docstring update for both Parameters and Returns sections.
+* External hyperlink.
+* Use of MkDocs extensions: MathJax rendering and admonition.
+
+## Generator
+
+`example.py` alse defines a simple generator `gen`.
+
+#Code example.gen {{ example.gen # inspect }}
+
+Then,
+
+~~~markdown
+![mkapi][example.gen]
+~~~
+
+creates the API document for the `gen` generator.
+
+![mkapi](example.gen)
+
+Here, the parameter `n` has no type annotation but you can specify it in the `Args` section directly.
+
+## Class
+
+`example.py` alse defines a simple class `ExampleClass`.
+
+#Code example.ExampleClass {{ example.ExampleClass # inspect }}
+
+As usual,
+
+~~~markdown
+![mkapi][example.ExampleClass]
+~~~
+
+creates the API document for the `ExampleClass` class.
+
+![mkapi](example.ExampleClass)
+
+In this example, notice that:
+
+* Docstring of `__init__` function is treated as a class-level docstring.
+* Type annotation using `typing` package (`List` and `Tuple` in this case) is directly rendered. This behavior may be changed to more readable style in the future version .
+* Bound method (`message` in this case) has a `METHOD` prefix instead of a `FUNCTION` prefix.
+* Type detection from type annotation for property has not been supported.
+* Read-only property and read-write property are automatically determined.
+
+## Data Class
+
+#Code example.ExampleDataClass {{ example.ExampleDataClass # inspect }}
+
+~~~markdown
+![mkapi][example.ExampleDataClass]
+~~~
+
+creates the API document for the `ExampleDataClass` class.
+
+![mkapi](example.ExampleDataClass)
+
+In this example, notice that:
+
+* `DATACLASS` prefix instead of `CLASS`.
+* TODO: Attributes type annotation.
+* TODO: Default value detection.
+
+## Module
+
+You can also get a whole module API documentation.
+
+~~~markdown
+![mkapi][example]
+~~~
+
+creates the API document for the entire `example` module.
+
+![mkapi](example)
+
+
+!!! warning
+    The `dataclass` function is not from the `example` module. Filtering objects has not been complete yet.

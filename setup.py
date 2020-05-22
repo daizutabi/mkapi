@@ -65,16 +65,13 @@ setup(
     version=get_version("mkapi"),
     description="An Auto API Documentation tool.",
     long_description=long_description,
-    url="https://github.com/daizutabi/mkapi",
+    url="https://mkapi.daizutabi.net",
     author="daizutabi",
     author_email="daizutabi@gmail.com",
     license="MIT",
     packages=get_packages("mkapi"),
     include_package_data=True,
-    install_requires=[
-        "markdown",
-        "jinja2",
-    ],
+    install_requires=["markdown", "jinja2"],
     python_requires=">=3.7",
     entry_points={
         "console_scripts": ["mkapi = mkapi.main:cli"],
