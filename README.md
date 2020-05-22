@@ -10,6 +10,15 @@
 MkApi is a [MkDocs](https://www.mkdocs.org/) plugin for auto API documentation.
 MkApi supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) partially.
 
+MkApi can:
+
+* Type annotation. If you write your function such as `def func(x: int) -> str:`, you don't need write type in `Args`, `Returns`, or `Yields` section. 
+* Automatica object type detection. MkApi can create `CLASS`, `FUNCTION`, `METHOD`, or `PROPERTY` prefix for each object.
+
+TODO:
+
+* Hyperlink.
+
 Install the plugin using pip:
 
 ```bash
