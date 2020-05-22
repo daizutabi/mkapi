@@ -12,6 +12,7 @@ MkApi supports the [Google Python Style Guide](http://google.github.io/styleguid
 
 Features of MkApi are:
 
+* Supported sections: `Args`, `Arguments`, `Attributes`, `Example(s)`, `Note(s)`, `Raises`, `Returns`, `References`, `Todo`, `Warning(s)`, `Warns`, `Yields`.
 * Type annotation. If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in `Args`, `Returns`, or `Yields` section. 
 * Automatic type detection. MkApi can create `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, `METHOD`, or `PROPERTY` prefix for each object.
 
