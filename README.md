@@ -10,6 +10,16 @@
 MkApi is a [MkDocs](https://www.mkdocs.org/) plugin for auto API documentation.
 MkApi supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) partially.
 
+Features of MkApi are:
+
+* Supported sections: `Args`, `Arguments`, `Attributes`, `Example(s)`, `Note(s)`, `Raises`, `Returns`, `References`, `Todo`, `Warning(s)`, `Warns`, `Yields`.
+* Type annotation. If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in `Args`, `Returns`, or `Yields` section. You can overwrite them in your docstring.
+* Automatic type detection. MkApi can create `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, `METHOD`, or `PROPERTY` prefix for each object.
+
+TODO:
+
+* Hyperlink.
+
 Install the plugin using pip:
 
 ```bash
@@ -26,16 +36,16 @@ plugins:
 
 (If you have no `plugins` entry in your config file yet, you'll likely also want to add the `search` plugin. MkDocs enables it by default if there is no `plugins` entry set.)
 
-Then, in your markdown file, write a link like normal Markdown to an package, module, or other object:
+Then, in your markdown file, write a link to an package, module, or other object, just like image embedding:
 
 ```markdown
-[mkapi](<something>)
+![mkapi](<something>)
 ```
 
 For example, if you use PyTorch, you can check the functionality of MkApi:
 
 ```markdown
-[mkapi](torch.optim)
+![mkapi](torch.optim)
 ```
 
 If you run MkDocs, an API documentation is created as below:
