@@ -39,13 +39,13 @@ plugins:
 Then, in your markdown file, write a link to an package, module, or other object, just like normal Markdown:
 
 ```markdown
-[mkapi](<something>)
+![mkapi](<something>)
 ```
 
 For example, if you use PyTorch, you can check the functionality of MkApi:
 
 ```markdown
-[mkapi](torch.optim)
+![mkapi](torch.optim)
 ```
 
 If you run MkDocs, an API documentation is created as below:
