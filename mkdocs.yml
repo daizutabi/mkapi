@@ -2,7 +2,7 @@ site_name: MkApi
 site_url: https://github.com/daizutabi/mkapi/
 site_description: API documentation with MkDocs.
 site_author: daizutabi
-site_dir: ../mkapi-site
+site_dir: ../mkapi-site/site
 
 repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
