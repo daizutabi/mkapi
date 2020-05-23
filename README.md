@@ -59,7 +59,7 @@ and MkDocs only support Markdown. This example is just a demo. Enjoy writing you
 
 ## MkApi Documentation
 
-See also: [MkApi Documentation](https://mkapi.daizutabi/net)
+See also: [MkApi Documentation](https://mkapi.daizutabi.net)
 
 
 [pypi-image]: https://badge.fury.io/py/mkapi.svg
