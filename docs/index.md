@@ -32,13 +32,13 @@ plugins:
 
 ## MkApi usage
 
-In your markdown file, write a link to an package, module, or other object, just like normal Markdown's image embedding:
+In your Markdown file, write a embedding of an package, module, function, or other object, just like normal Markdown's image embedding:
 
 ~~~markdown
 ![mkapi](<object.qualname>)
 ~~~
 
-MkApi imports the module, function, or any object that you specify. If they aren't in `sys.path`, configure `mkdocs.yml` like below:
+MkApi imports objects that you specify. If they aren't in `sys.path`, configure `mkdocs.yml` like below:
 
 ~~~yml
 plugins:
@@ -47,4 +47,4 @@ plugins:
       src_dirs: [<path_1>, <path_2>, ...]
 ~~~
 
-Here, `path_X`s are inserted to `sys.path`. `path_X`s are relative to `mkdocs.yml`.
+Here, `path_X`s are inserted to `sys.path`. `path_X`s are relative paths from the directory in which `mkdocs.yml` exists.

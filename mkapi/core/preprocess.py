@@ -7,7 +7,7 @@ def convert(text: str) -> str:
         if block.startswith(">>>"):
             block = f"~~~python\n{block}\n~~~\n"
         blocks.append(block)
-    return "\n".join(blocks)
+    return "\n".join(blocks).strip() + "\n"
 
 
 def delete_indent(lines, start, stop):

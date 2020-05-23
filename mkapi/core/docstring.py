@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional, Tuple
 
-from mkapi.core.signature import Signature
+from mkapi.core.inspect import Signature
 
 SECTIONS = [
     "Args",

@@ -1,6 +1,9 @@
 import inspect
 import re
 
+# class Annotation:
+#     def __init__(self, annotation):
+
 
 class Signature:
     def __init__(self, obj):

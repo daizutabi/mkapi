@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterator, List, Tuple
 
 
@@ -18,7 +18,7 @@ def add(x: int, y: int) -> int:
 
     !!! note
         You can use the [admonition extension of
-        MkDocs](https://squidfunk.github.io/mkdocs-material/extensions/admonition/)
+        MkDocs](https://squidfunk.github.io/mkdocs-material/extensions/admonition/).
 
     Note:
         But you should use `Note` section instead for consistency.
@@ -33,7 +33,7 @@ def gen(n) -> Iterator[str]:
         n (int): The length of iteration.
 
     Yields:
-       A numbered string
+       A numbered string.
     """
     for x in range(n):
         yield f"a{x}"
@@ -61,10 +61,10 @@ class ExampleClass:
         """A bound method.
 
         Args:
-            n: Repeatation
+            n: Repeatation.
 
         Returns:
-            A message
+            A message.
         """
         return self.z * n
 
@@ -88,10 +88,12 @@ class ExampleDataClass:
     """A dataclass.
 
     Args:
-        x: The first parameter
+        x: The first parameter.
 
     Attributes:
-        x: The first attribute
+        x: The first attribute.
+        y: The second attribute.
     """
 
     x: int = 0
+    y: int = field(default=1, init=False)
