@@ -29,6 +29,7 @@ class Node:
     depth: int
     prefix: str
     kinds: List[str]
+    sourcefile: str
     lineno: int
     signature: Optional[Signature]
     docstring: Docstring
@@ -149,6 +150,7 @@ def walk(name, obj, prefix="", depth=0) -> Node:
                 member = walk(*x, prefix=next_prefix, depth=depth + 1)
                 if member.type == "normal" or member.docstring:
                     members.append(member)
+        members = sorted(members, key=lambda x: (x.sourcefile, x.lineno))
     if callable(obj):
         signature = Signature(obj)
     else:
@@ -163,7 +165,18 @@ def walk(name, obj, prefix="", depth=0) -> Node:
                         docstring = member.docstring
         members = [member for member in members if member.name != "__init__"]
 
-    node = Node(obj, name, depth, prefix, kinds, lineno, signature, docstring, members)
+    node = Node(
+        obj=obj,
+        name=name,
+        depth=depth,
+        prefix=prefix,
+        kinds=kinds,
+        sourcefile=sourcefile,
+        lineno=lineno,
+        signature=signature,
+        docstring=docstring,
+        members=members,
+    )
     if isinstance(obj, property):
         if docstring.sections:
             node.type = docstring.sections[0].type
