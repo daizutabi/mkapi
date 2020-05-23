@@ -64,7 +64,7 @@ class ExampleClass:
             n: Repeatation.
 
         Returns:
-            A message.
+            A message list.
         """
         return [self.z] * n
 
