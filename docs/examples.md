@@ -36,7 +36,7 @@ Then, you can write an entry to generate API for the function anywhere in your M
 ![mkapi][example.add]
 ~~~
 
-MkApi generates the API document for the `add` function.
+MkApi generates the API documentation for the `add` function.
 
 ![mkapi](example.add)
 
@@ -64,7 +64,7 @@ Then,
 ![mkapi][example.gen]
 ~~~
 
-creates the API document for the `gen` generator.
+creates the API documentation for the `gen` generator.
 
 ![mkapi](example.gen)
 
@@ -82,7 +82,7 @@ As usual,
 ![mkapi][example.ExampleClass]
 ~~~
 
-creates the API document for the `ExampleClass` class.
+creates the API documentation for the `ExampleClass` class.
 
 ![mkapi](example.ExampleClass)
 
@@ -103,7 +103,7 @@ In this example, notice that:
 ![mkapi][example.ExampleDataClass]
 ~~~
 
-creates the API document for the `ExampleDataClass` class.
+creates the API documentation for the `ExampleDataClass` class.
 
 ![mkapi](example.ExampleDataClass)
 
