@@ -1,6 +1,5 @@
 import inspect
 import re
-from typing import List, Tuple
 
 
 class Signature:
