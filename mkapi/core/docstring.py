@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional, Tuple
 
-from mkapi.core.inspect import Signature
+from mkapi.core.inspect import Annotation
 
 SECTIONS = [
     "Args",
@@ -224,17 +224,25 @@ def postprocess(doc: Docstring, obj: Any):
     if not callable(obj):
         return
 
-    annotations = Signature(obj).annotations
-    if doc["Parameters"]:
+    annotation = Annotation(obj)
+    if doc["Parameters"] is not None:
         for item in doc["Parameters"]:
-            if item.type == "" and item.name in annotations[0]:
-                item.type = annotations[0][item.name]
+            if item.type == "" and item.name in annotation:
+                item.type = annotation[item.name]
+            if "{default}" in item.markdown and item.name in annotation.defaults:
+                default = annotation.defaults[item.name]
+                item.markdown = item.markdown.replace("{default}", default)
 
-    for k, name in enumerate(["Returns", "Yields"], 1):
+    if doc["Attributes"] is not None and annotation.attributes:
+        for item in doc["Attributes"]:
+            if item.type == "" and item.name in annotation.attributes:
+                item.type = annotation.attributes[item.name]
+
+    for name in ["Returns", "Yields"]:
         if doc[name] is not None:
             section = doc[name]
             if section.type == "":
-                section.type = annotations[k]  # type:ignore
+                section.type = getattr(annotation, name.lower())
 
 
 def parse_docstring(obj: Any) -> Docstring:

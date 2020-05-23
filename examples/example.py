@@ -2,12 +2,12 @@ from dataclasses import dataclass, field
 from typing import Iterator, List, Tuple
 
 
-def add(x: int, y: int) -> int:
+def add(x: int, y: int = 1) -> int:
     """Returns $x + y$.
 
     Args:
         x: The first parameter.
-        y: The second parameter.
+        y: The second parameter. Default={default}.
 
     Returns:
         Added value.
@@ -57,7 +57,7 @@ class ExampleClass:
             raise ValueError()
         self.z = "abc"
 
-    def message(self, n: int) -> str:
+    def message(self, n: int) -> List[str]:
         """A bound method.
 
         Args:
@@ -66,7 +66,7 @@ class ExampleClass:
         Returns:
             A message.
         """
-        return self.z * n
+        return [self.z] * n
 
     @property
     def readonly_property(self):
