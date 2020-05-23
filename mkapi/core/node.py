@@ -38,6 +38,17 @@ class Node:
         self.kind = get_kind(self.kinds)
         self.type = ""
 
+    def __getitem__(self, index):
+        return self.members[index]
+
+    def __len__(self):
+        return len(self.members)
+
+    def __getattr__(self, name):
+        for member in self.members:
+            if member.name == name:
+                return member
+
     def __iter__(self):
         yield from self.docstring
         for member in self.members:

@@ -1,8 +1,27 @@
+import sys
+
 import pytest
 
-import mkapi.core.node
+sys.path.insert(0, "examples")
+
+import example  # isort:skip
 
 
 @pytest.fixture(scope="session")
-def example():
-    return mkapi.core.node.get_node("example")
+def add():
+    return example.add
+
+
+@pytest.fixture(scope="session")
+def gen():
+    return example.gen
+
+
+@pytest.fixture(scope="session")
+def ExampleClass():
+    return example.ExampleClass
+
+
+@pytest.fixture(scope="session")
+def ExampleDataClass():
+    return example.ExampleDataClass
