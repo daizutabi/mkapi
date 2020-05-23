@@ -1,3 +1,4 @@
+"""Module level docstring."""
 from dataclasses import dataclass, field
 from typing import Iterator, List, Tuple
 
@@ -58,29 +59,26 @@ class ExampleClass:
         self.z = "abc"
 
     def message(self, n: int) -> List[str]:
-        """A bound method.
+        """Returns a message list.
 
         Args:
             n: Repeatation.
-
-        Returns:
-            A message list.
         """
         return [self.z] * n
 
     @property
-    def readonly_property(self):
+    def readonly_property(self) -> str:
         """str: Read-only property documentation."""
         return "readonly_property"
 
     @property
-    def readwrite_property(self):
-        """list of int: Read-write property documentation."""
+    def readwrite_property(self) -> List[int]:
+        """Read-write property documentation."""
         return [1, 2, 3]
 
     @readwrite_property.setter
     def readwrite_property(self, value):
-        pass
+        """Docstring in setter is ignored."""
 
 
 @dataclass

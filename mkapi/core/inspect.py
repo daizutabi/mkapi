@@ -58,7 +58,7 @@ def to_string(annotation, kind: str = "") -> str:
         else:
             return ""
 
-    if annotation == inspect.Parameter.empty:
+    if annotation == inspect.Parameter.empty or annotation is None:
         return ""
     if hasattr(annotation, "__name__"):
         return annotation.__name__
@@ -70,7 +70,7 @@ def to_string(annotation, kind: str = "") -> str:
     if annotation.__origin__ == tuple:
         args = [to_string(x) for x in annotation.__args__]
         if args:
-            return ", ".join(args)
+            return "(" + ", ".join(args) + ")"
         else:
             return "tuple"
     return str(annotation).replace("typing.", "")

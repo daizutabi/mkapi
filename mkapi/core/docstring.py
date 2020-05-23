@@ -220,6 +220,8 @@ def postprocess(doc: Docstring, obj: Any):
             index = line.index(":")
             section.type = line[:index].strip()
             section.markdown = markdown[index + 1 :].strip()
+        if not section.type and hasattr(obj, "fget"):
+            section.type = Annotation(obj.fget).returns
 
     if not callable(obj):
         return
@@ -229,6 +231,8 @@ def postprocess(doc: Docstring, obj: Any):
         for item in doc["Parameters"]:
             if item.type == "" and item.name in annotation:
                 item.type = annotation[item.name]
+                if item.type.startswith("("):
+                    item.type = item.type[1:-1]
             if "{default}" in item.markdown and item.name in annotation.defaults:
                 default = annotation.defaults[item.name]
                 item.markdown = item.markdown.replace("{default}", default)
@@ -237,12 +241,17 @@ def postprocess(doc: Docstring, obj: Any):
         for item in doc["Attributes"]:
             if item.type == "" and item.name in annotation.attributes:
                 item.type = annotation.attributes[item.name]
+                if item.type.startswith("("):
+                    item.type = item.type[1:-1]
 
     for name in ["Returns", "Yields"]:
         if doc[name] is not None:
             section = doc[name]
             if section.type == "":
                 section.type = getattr(annotation, name.lower())
+
+    if doc["Returns"] is None and doc["Yields"] is None and annotation.returns:
+        doc.sections[0].type = annotation.returns
 
 
 def parse_docstring(obj: Any) -> Docstring:

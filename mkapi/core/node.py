@@ -36,12 +36,7 @@ class Node:
 
     def __post_init__(self):
         self.kind = get_kind(self.kinds)
-        if self.name.startswith("__"):
-            self.type = "special"
-        elif self.name.startswith("_"):
-            self.type = "private"
-        else:
-            self.type = "normal"
+        self.type = ""
 
     def __iter__(self):
         yield from self.docstring
@@ -92,7 +87,7 @@ def filter(obj, sourcefile, lineno, qualname) -> bool:
     if isinstance(obj, property):
         return True
     kinds = get_kinds(obj)
-    if not qualname and 'dataclass' in kinds:
+    if not qualname and "dataclass" in kinds:
         return True
     if not kinds:
         return False
@@ -114,7 +109,7 @@ def filter(obj, sourcefile, lineno, qualname) -> bool:
 
 
 def ignore_name(name: str) -> bool:
-    if name == '__init__':
+    if name == "__init__":
         return False
     if name.startswith("_"):
         return True
@@ -163,6 +158,8 @@ def walk(name, obj, prefix="", depth=0) -> Node:
             node.type = docstring.sections[0].type
         else:
             node.type = ""
+    if callable(obj) and docstring.sections and docstring.sections[0].type:
+        node.type = docstring.sections[0].type
     return node
 
 

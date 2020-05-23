@@ -90,8 +90,9 @@ In this example, notice that:
 
 * Docstring of `__init__` function is treated as a class-level docstring.
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style. So far, only `List` and `Tuple` are supported.
-* Bound method (`message` in this case) has a `METHOD` prefix instead of a `FUNCTION` prefix.
-* Type detection from type annotation for property has not been supported.
+* Bound methods (`message` in this case) have a `METHOD` prefix instead of a `FUNCTION` prefix.
+* If callable objects have neither `Returns` nor `Yields`, the type appears on the object definition line like type annotation.
+* For properties, the type can be written at the beginning of the docstring or type annotation as well as functions.
 * Read-only property and read-write property are automatically determined.
 
 ## Data Class
@@ -113,12 +114,16 @@ In this example, notice that:
 
 ## Module
 
-You can also get a whole module API documentation.
+Finally, let's generate the API documentation for `example` module. The module has a module level docstring like below:
+
+#File example.py (line 1~10) {%=/examples/example.py[0:10]%}
+
+So,
 
 ~~~markdown
 ![mkapi][example]
 ~~~
 
-creates the API document for the entire `example` module.
+creates the API documentation for the entire `example` module.
 
 ![mkapi](example)

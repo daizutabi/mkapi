@@ -50,23 +50,18 @@
   display: flex;
   align-items: baseline;
   padding: 5px;
+  font-size: 0.7rem;
 }
 
 .mkapi-node-header-package, .mkapi-node-header-module {
   background: none;
   border-left: none;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 .mkapi-node-kind {
-  margin-left: 0.5em;
   font-weight: bold;
   color: #888888;
-  font-size: 0.7rem;
-}
-
-.mkapi-node-kind-package, .mkapi-node-kind-module {
-  margin-left: 3px;
 }
 
 .mkapi-node-name {
