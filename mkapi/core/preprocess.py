@@ -33,3 +33,15 @@ def split(text: str) -> Iterator[str]:
             in_code = False
     if start < len(lines):
         yield delete_indent(lines, start, len(lines))
+
+
+# def collect(top):
+#     base = os.path.basename(top)
+#     for root, dirs, files in os.walk(top):
+#         for file in files:
+#             if file.endswith(".py") and not file.startswith("__"):
+#                 middle = root[len(top) :].replace("/", ".").replace("\\", ".")
+#                 yield ".".join([base + middle, file[:-3]])
+#         for x in dirs:
+#             if x.startswith("__"):
+#                 dirs.remove(x)

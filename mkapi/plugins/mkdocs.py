@@ -9,29 +9,16 @@ from mkdocs.plugins import BasePlugin
 from mkdocs.structure.files import get_files
 
 import mkapi
-import mkapi.plugins.preprocess
 from mkapi.core.page import Page
 
 logger = logging.getLogger("mkdocs")
 
 
 class MkapiPlugin(BasePlugin):
-    config_scheme = (
-        ("src_dirs", config_options.Type(list, default=[])),
-    )
+    config_scheme = (("src_dirs", config_options.Type(list, default=[])),)
 
     def on_config(self, config):
         self.pages = {}
-        # api_dir = os.path.join(config["docs_dir"], self.config["api_dir"])
-        dirname = os.path.dirname(config["config_file_path"])
-        nav = config["nav"]
-        for page in nav:
-            for key, value in page.items():
-                if isinstance(value, str) and value.startswith("mkapi:"):
-                    root = value.split(":")[1]
-                    root = os.path.join(dirname, root)
-                    # contents = mkapi.plugins.preprocess.make_pages(root, api_dir)
-                    # page[key] = contents
         for src_dir in self.config["src_dirs"]:
             if src_dir not in sys.path:
                 sys.path.insert(0, src_dir)

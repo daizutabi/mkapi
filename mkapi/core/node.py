@@ -103,7 +103,6 @@ def filter(obj, sourcefile, lineno, qualname) -> bool:
         return True
     if not kinds:
         return False
-
     try:
         sourcefile_, lineno_ = get_sourcefile_and_lineno(obj)
     except Exception:
@@ -151,11 +150,13 @@ def walk(name, obj, prefix="", depth=0) -> Node:
                 if member.type == "normal" or member.docstring:
                     members.append(member)
         members = sorted(members, key=lambda x: (x.sourcefile, x.lineno))
-    if callable(obj):
-        signature = Signature(obj)
-    else:
-        signature = None  # type:ignore
 
+    signature = None
+    if callable(obj):
+        try:
+            signature = Signature(obj)
+        except ValueError:
+            pass
     if "class" in kinds:
         if not len(docstring):
             for member in members:
@@ -164,7 +165,6 @@ def walk(name, obj, prefix="", depth=0) -> Node:
                     if not markdown.startswith("Initialize self"):
                         docstring = member.docstring
         members = [member for member in members if member.name != "__init__"]
-
     node = Node(
         obj=obj,
         name=name,

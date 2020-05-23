@@ -226,7 +226,11 @@ def postprocess(doc: Docstring, obj: Any):
     if not callable(obj):
         return
 
-    annotation = Annotation(obj)
+    try:
+        annotation = Annotation(obj)
+    except ValueError:
+        return
+
     if doc["Parameters"] is not None:
         for item in doc["Parameters"]:
             if item.type == "" and item.name in annotation:
