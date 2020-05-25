@@ -45,7 +45,7 @@ For example, if you use PyTorch, you can check the functionality of MkApi:
 
 ## MkApi Documentation
 
-See also: [MkApi Documentation](https://mkapi.daizutabi.net)
+For more details see [MkApi Documentation](https://mkapi.daizutabi.net)
 
 
 [pypi-image]: https://badge.fury.io/py/mkapi.svg
