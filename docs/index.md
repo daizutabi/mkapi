@@ -6,7 +6,7 @@ Features of the MkApi plugin are:
 
 * Section syntax of the Goole style guide. Supported sections are `Args`, `Arguments`, `Attributes`, `Example[s]`, `Note[s]`, `Raises`, `Returns`, `References`, `Todo`, `Warning[s]`, `Warns`, and `Yields`.
 * Type annotation. If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in `Args`, `Returns`, or `Yields` section again. You can overwrite the type annotation in the corresponding docstring.
-* Automatic object type inspection. The MkApi plugin creates `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, `METHOD`, or `PROPERTY` prefix for each object.
+* Object type inspection. The MkApi plugin creates `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, `METHOD`, or `PROPERTY` prefix for each object.
 
 ## Installation
 

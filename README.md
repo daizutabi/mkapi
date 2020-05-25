@@ -7,20 +7,15 @@
 
 # MkApi
 
+The MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. The MkApi plugin supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) only and partially.
+
+Features of the MkApi plugin are:
+
+* Section syntax of the Goole style guide. Supported sections are `Args`, `Arguments`, `Attributes`, `Example[s]`, `Note[s]`, `Raises`, `Returns`, `References`, `Todo`, `Warning[s]`, `Warns`, and `Yields`.
+* Type annotation. If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in `Args`, `Returns`, or `Yields` section again. You can overwrite the type annotation in the corresponding docstring.
+* Object type inspection. The MkApi plugin creates `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, `METHOD`, or `PROPERTY` prefix for each object.
+
 ## Quickstart
-
-MkApi is a [MkDocs](https://www.mkdocs.org/) plugin for auto API documentation.
-MkApi supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) partially.
-
-Features of MkApi are:
-
-* Supported sections: `Args`, `Arguments`, `Attributes`, `Example(s)`, `Note(s)`, `Raises`, `Returns`, `References`, `Todo`, `Warning(s)`, `Warns`, `Yields`.
-* Type annotation. If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in `Args`, `Returns`, or `Yields` section. You can overwrite them in your docstring.
-* Automatic type detection. MkApi can create `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, `METHOD`, or `PROPERTY` prefix for each object.
-
-TODO:
-
-* Hyperlink.
 
 Install the plugin using pip:
 
