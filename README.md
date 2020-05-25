@@ -31,8 +31,7 @@ plugins:
   - mkapi
 ```
 
-Then, in your markdown file, add a tag to generate API docu
- for an package, module, or other objects.
+Then, in your markdown file, add a tag to generate API documentation for an package, module, or other objects.
 
 ```markdown
 ![mkapi](<something>)
