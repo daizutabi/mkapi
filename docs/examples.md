@@ -45,9 +45,9 @@ MkApi generates the API documentation for the `add()` function.
 
 In this simple example, you can see some features of MkApi.
 
-* Auto type inspection of `add` (FUNCTION prefix is added before `example.add`).
+* Type inspection of `add` (FUNCTION prefix is added before `example.add`).
 * Use of type annotation for both Parameters and Returns sections.
-* Add 'optional' if parameters have default values.
+* Add *optional* if parameters have default values.
 * Default value replacement by the `{default}` keyword in the `Args` section.
 * External hyperlink.
 * Use of MkDocs extensions: MathJax rendering and admonition.
