@@ -1,13 +1,12 @@
 # MkApi Documentation
 
-MkApi is a [MkDocs](https://www.mkdocs.org/) plugin for auto API documentation.
-MkApi supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) partially.
+The MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. The MkApi plugin supports the [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) only and partially.
 
-Features of MkApi are:
+Features of the MkApi plugin are:
 
-* Supported sections: `Args`, `Arguments`, `Attributes`, `Example(s)`, `Note(s)`, `Raises`, `Returns`, `References`, `Todo`, `Warning(s)`, `Warns`, `Yields`.
-* Type annotation. If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in `Args`, `Returns`, or `Yields` section. You can overwrite them in your docstring.
-* Automatic type detection. MkApi can create `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, `METHOD`, or `PROPERTY` prefix for each object.
+* Section syntax of the Goole style guide. Supported sections are `Args`, `Arguments`, `Attributes`, `Example[s]`, `Note[s]`, `Raises`, `Returns`, `References`, `Todo`, `Warning[s]`, `Warns`, and `Yields`.
+* Type annotation. If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in `Args`, `Returns`, or `Yields` section again. You can overwrite the type annotation in the corresponding docstring.
+* Automatic object type inspection. The MkApi plugin creates `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, `METHOD`, or `PROPERTY` prefix for each object.
 
 ## Installation
 
@@ -17,28 +16,25 @@ Install the plugin using pip:
 pip install mkapi
 ~~~
 
-## MkDocs setting
+## Configuration
 
-Add the following lines to your `mkdocs.yml`:
+Add the following lines to `mkdocs.yml`:
 
 ~~~yml
 plugins:
-  - search
+  - search # necessary for search to work
   - mkapi
 ~~~
 
-!!! note
-    If you have no `plugins` entry in your config file yet, you'll likely also want to add the `search` plugin. MkDocs enables it by default if there is no `plugins` entry set.
+## Usage
 
-## MkApi usage
-
-In your Markdown file, write a embedding of an package, module, function, or other object, just like normal Markdown's image embedding:
+To generate the API documentation, add an exclamation mark (!), followed by `mkapi` in brackets, and the object qualname in parentheses. Yes, this is like adding an image. The object can be a package, module, function, class, *etc*.
 
 ~~~markdown
 ![mkapi](<object.qualname>)
 ~~~
 
-MkApi imports objects that you specify. If they aren't in `sys.path`, configure `mkdocs.yml` like below:
+The MkApi plugin imports objects that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:
 
 ~~~yml
 plugins:
@@ -47,4 +43,4 @@ plugins:
       src_dirs: [<path_1>, <path_2>, ...]
 ~~~
 
-Here, `path_X`s are inserted to `sys.path`. `path_X`s are relative paths from the directory in which `mkdocs.yml` exists.
+Here, `path_X`s are inserted to `sys.path`. These `path_X`s are relative paths to the directory in which `mkdocs.yml` exists.
