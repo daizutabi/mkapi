@@ -34,7 +34,7 @@ plugins:
 Then, in your markdown file, add a tag to generate API documentation for an package, module, or other objects.
 
 ```markdown
-![mkapi](<something>)
+![mkapi](<object.qualname>)
 ```
 
 For example, if you use PyTorch, you can check the functionality of MkApi:
