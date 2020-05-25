@@ -54,7 +54,7 @@ In this simple example, you can see some features of MkApi.
 
 ## Generator
 
-`example.py` alse defines a simple generator `gen`.
+`example.py` also defines a simple generator `gen`.
 
 #Code example.gen {{ example.gen # inspect }}
 
@@ -72,7 +72,7 @@ Here, the parameter `n` has no type annotation but you can specify it in the `Ar
 
 ## Class
 
-`example.py` alse defines a simple class `ExampleClass`.
+`example.py` also defines a simple class `ExampleClass`.
 
 #Code example.ExampleClass {{ example.ExampleClass # inspect }}
 
