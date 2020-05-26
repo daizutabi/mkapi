@@ -4,7 +4,7 @@
     <div class="mkapi-node-name">
       {% if node.kind == 'module' or node.kind == 'package' %}{% if node.depth == 1 and node.prefix %}<span class="mkapi-node-prefix">{{ node.prefix }}.</span>{% endif %}<span class="mkapi-node-basename">{{ node.name }}</span>
       {% else %}
-        {% if node.depth == 1 and node.prefix %}<code class="mkapi-node-prefix">{{ node.prefix }}.</code>{% endif %}<code class="mkapi-node-basename">{{ node.name }}</code>{% if node.signature %}<code class="mkapi-node-signature">{{ node.signature }}</code>{% endif %}
+        {% if node.depth == 1 and node.prefix and node.kind not in ['method', 'readonly_property', 'readwrite_property'] %}<code class="mkapi-node-prefix">{{ node.prefix }}.</code>{% endif %}<code class="mkapi-node-basename">{{ node.name }}</code>{% if node.signature %}<code class="mkapi-node-signature">{{ node.signature }}</code>{% endif %}
         {% if node.type %}<span class="mkapi-args-type">&#x2192; {{ node.type }}</span>{% endif %}
       {% endif %}
     </div>
