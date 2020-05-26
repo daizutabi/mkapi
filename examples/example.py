@@ -67,7 +67,7 @@ class ExampleClass:
         return [self.z] * n
 
     @property
-    def readonly_property(self) -> str:
+    def readonly_property(self):
         """str: Read-only property documentation."""
         return "readonly_property"
 
