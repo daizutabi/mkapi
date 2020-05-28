@@ -9,7 +9,7 @@ edit_uri: ""
 
 extra_css: [extra.css]
 
-theme: readthedocs
+theme: ivory
 
 plugins:
   - search
