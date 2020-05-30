@@ -13,7 +13,8 @@ theme: ivory
 
 plugins:
   - search
-  - pheasant
+  - pheasant:
+      version: mkapi
   - mkapi:
       src_dirs: [examples]
 
