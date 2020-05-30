@@ -58,7 +58,7 @@ def split_section(doc: str) -> Iterator[Tuple[str, str]]:
             next_indent = -1
         else:
             next_indent = get_indent(lines[stop])
-        if not line and next_indent < indent:
+        if not line and next_indent < indent and name:
             if start < stop - 1:
                 yield name, join(lines[start : stop - 1])
             start = stop
