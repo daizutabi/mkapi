@@ -65,6 +65,10 @@
   color: #888888;
 }
 
+.mkapi-node-kind-package, .mkapi-node-kind-module {
+  font-size: 1.1rem;
+}
+
 .mkapi-node-name {
   margin-left: 0.3rem;
   font-weight: bold;
