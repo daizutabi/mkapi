@@ -11,25 +11,26 @@
 }
 
 .mkapi-node pre {
-  background: none;
-  border: none;
-  padding: 0px;
-  margin: 5px;
+  /* background: none; */
+  /* border: none; */
+  /* padding: 0px; */
+  /* margin: 5px; */
 }
 
 .mkapi-node code {
-  background: none;
-  border: none;
-  padding: 0px;
-  color: #0044EE;
-  font-size: 0.95rem;
+  /* background: none; */
+  /* border: none; */
+  /* padding: 0px 2px; */
+  /* color: #0044EE; */
+  /* font-size: 0.95rem; */
 }
 
 .mkapi-node pre code {
-  background: none;
-  font-size: 0.90rem;
-  padding: 0px;
+  /* background: none; */
+  /* font-size: 0.80rem; */
+  /* padding: 10px; */
   margin-left: 20px;
+  line-height: 1.3em;
 }
 
 /**************************************************
