@@ -9,7 +9,11 @@ edit_uri: ""
 
 extra_css: [extra.css]
 
-theme: ivory
+theme:
+  name: ivory
+  highlightjs: true
+  hljs_languages:
+    - yaml
 
 plugins:
   - search
