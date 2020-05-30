@@ -37,6 +37,10 @@ class Node:
 
     def __post_init__(self):
         self.kind = get_kind(self.kinds)
+        if self.prefix:
+            self.id = ".".join([self.prefix, self.name])
+        else:
+            self.id = self.name
         self.type = ""
 
     def __getitem__(self, index):

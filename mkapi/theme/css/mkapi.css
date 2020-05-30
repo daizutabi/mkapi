@@ -183,7 +183,7 @@ code.mkapi-node-signature {
 .mkapi-section-body-examples code {
   background: none;
   border: none;
-  padding: 0px 2px;
+  padding: 0px 0px;
   font-size: 0.9rem;
 }
 
