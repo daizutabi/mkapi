@@ -193,6 +193,7 @@ code.mkapi-node-signature {
 **************************************************/
 .mkapi-node ul.mkapi-args-list {
   margin: 0px;
+  padding-left: 0px;
 }
 
 .mkapi-node ul.mkapi-args-list li {
@@ -204,6 +205,9 @@ code.mkapi-node-signature {
 code.mkapi-args-name {
   font-weight: bold;
   color: #000000;
+  border: none;
+  font-size: 0.9rem;
+  padding: 0px;
 }
 
 .mkapi-args-type {
