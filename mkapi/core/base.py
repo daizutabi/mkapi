@@ -68,6 +68,7 @@ class Node(Base):
     signature: Optional[Signature] = None
     docstring: Optional[Docstring] = None
     members: List["Node"] = field(default_factory=list)
+    headless: bool = False
 
     def __post_init__(self):
         if self.prefix:

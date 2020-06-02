@@ -27,6 +27,7 @@ from mkdocs.plugins import BasePlugin
 from mkdocs.structure.files import get_files
 
 import mkapi
+import mkapi.plugins.api
 from mkapi.core.page import Page
 
 logger = logging.getLogger("mkdocs")
@@ -34,13 +35,18 @@ logger = logging.getLogger("mkdocs")
 
 class MkapiPlugin(BasePlugin):
     config_scheme = (("src_dirs", config_options.Type(list, default=[])),)
+    server = None
 
     def on_config(self, config):
         """Inserts `src_dirs` to `sys.path`."""
         self.pages = {}
+        config_dir = os.path.dirname(config["config_file_path"])
         for src_dir in self.config["src_dirs"]:
-            if src_dir not in sys.path:
-                sys.path.insert(0, src_dir)
+            path = os.path.join(config_dir, src_dir)
+            if path not in sys.path:
+                sys.path.insert(0, path)
+        if not self.server:
+            config = mkapi.plugins.api.create_nav(config)
         return config
 
     def on_files(self, files, config):
@@ -94,6 +100,7 @@ class MkapiPlugin(BasePlugin):
         for path in ["theme", "templates"]:
             root = os.path.join(os.path.dirname(mkapi.__file__), path)
             server.watch(root, builder)
+        self.__class__.server = server
         return server
 
 

@@ -1,7 +1,7 @@
 import importlib
 import inspect
 from functools import partial
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 from mkapi.core.base import Node
 from mkapi.core.docstring import parse_docstring
@@ -84,45 +84,43 @@ def filter(obj, qualname, sourcefile="") -> bool:
     return False
 
 
-def ignore_name(name: str) -> bool:
-    if name == "__init__":
-        return False
-    if name.startswith("_"):
-        return True
-    return False
+def get_members(obj, kind, sourcefile, prefix, depth, max_depth=-1) -> List[Node]:
+    if max_depth != -1 and depth > max_depth:
+        return []
+    if isinstance(obj, property):
+        return []
+
+    qualname = getattr(obj, "__qualname__", "")
+    if kind in ["package", "module"]:
+        func = partial(filter, qualname=qualname, sourcefile=sourcefile)
+    else:
+        func = partial(filter, qualname=qualname)
+
+    members = []
+    for x in inspect.getmembers(obj, func):
+        if x[0].startswith("_"):
+            continue
+        member = walk(*x, prefix=prefix, depth=depth, max_depth=max_depth)
+        if member.kind in ["class", "dataclass"] and not member.docstring:
+            docstring = parse_docstring(x[1].__init__)
+            if docstring:
+                markdown = docstring.sections[0].markdown
+                if not markdown.startswith("Initialize self"):
+                    member.docstring = docstring
+        if member.docstring:
+            members.append(member)
+    return sorted(members, key=lambda x: (x.sourcefile, x.lineno))
 
 
-def walk(name, obj, prefix="", depth=0) -> Node:
+def walk(name, obj, prefix="", depth=0, max_depth=-1) -> Node:
     member_prefix = name
     if prefix:
         member_prefix = ".".join([prefix, member_prefix])
-    qualname = getattr(obj, "__qualname__", "")
-    members = []
-
     kind = get_kind(obj)
     sourcefile, lineno = get_sourcefile_and_lineno(obj)
-    if not isinstance(obj, property):
-        if kind in ["package", "module"]:
-            func = partial(filter, qualname=qualname, sourcefile=sourcefile)
-        else:
-            func = partial(filter, qualname=qualname)
-        for x in inspect.getmembers(obj, func):
-            if not ignore_name(x[0]):
-                member = walk(*x, prefix=member_prefix, depth=depth + 1)
-                if member.docstring:
-                    members.append(member)
-        members = sorted(members, key=lambda x: (x.sourcefile, x.lineno))
-
-    docstring = parse_docstring(obj)
     signature = get_signature(obj)
-
-    if kind in ["class", "dataclass"] and docstring is None:
-        for member in members:
-            if member.name == "__init__" and member.docstring:
-                markdown = member.docstring.sections[0].markdown
-                if not markdown.startswith("Initialize self"):
-                    docstring = member.docstring
-        members = [member for member in members if member.name != "__init__"]
+    docstring = parse_docstring(obj)
+    members = get_members(obj, kind, sourcefile, member_prefix, depth + 1, max_depth)
 
     node = Node(
         obj=obj,
@@ -154,7 +152,11 @@ def get_object(name: str):
         return importlib.import_module(name)
 
 
-def get_node(name: str) -> Node:
-    obj = get_object(name)
-    node = walk(name, obj)
+def get_node(name: Any, max_depth: int = -1, headless: bool = False) -> Node:
+    if isinstance(name, str):
+        obj = get_object(name)
+    else:
+        obj = name
+    node = walk(name, obj, max_depth=max_depth)
+    node.headless = headless
     return node
