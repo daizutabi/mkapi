@@ -92,6 +92,8 @@ class MkapiPlugin(BasePlugin):
 
     def on_page_content(self, html, page, config, files):
         """Merges html and MkApi's node structure."""
+        if page.title:
+            page.title = re.sub(r"<.*?>", "", page.title)
         path = page.file.abs_src_path
         page = self.pages[path]
         return page.content(html)

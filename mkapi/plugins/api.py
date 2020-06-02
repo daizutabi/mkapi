@@ -8,12 +8,9 @@ import sys
 from typing import Iterator, List
 
 from mkapi.core.node import get_node
-from mkapi.core.renderer import Renderer
+from mkapi.core.renderer import renderer
 
 logger = logging.getLogger("mkdocs")
-
-
-renderer = Renderer()
 
 
 def create_nav(config):
@@ -93,8 +90,6 @@ def create_page(abs_path, module: str):
 
 def create_markdown(module: str) -> str:
     node = get_node(module, max_depth=1)
-    header = renderer.render_header(node)
-    markdown = f"{header}\n\n![mkapi](#{module})\n"
-    for member in node.members:
-        markdown += f"\n![mkapi]({member.id})\n"
+    members = [member.id for member in node.members]
+    markdown = renderer.render_page(node, module, members)
     return markdown

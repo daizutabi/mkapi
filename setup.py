@@ -60,6 +60,7 @@ if sys.argv[-1] == "publish":
 if sys.argv[-1] == "check":
     check()
 
+
 setup(
     name="mkapi",
     version=get_version("mkapi"),
@@ -69,7 +70,7 @@ setup(
     author="daizutabi",
     author_email="daizutabi@gmail.com",
     license="MIT",
-    packages=get_packages("mkapi"),
+    packages=get_packages("mkapi") + ["mkapi/templates", "mkapi/theme"],  # FIXME
     include_package_data=True,
     install_requires=["markdown", "jinja2"],
     python_requires=">=3.7",

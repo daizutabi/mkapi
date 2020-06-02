@@ -27,10 +27,9 @@ class Renderer:
             members = [self.render(member, node) for member in node.members]
         return self.render_node(node, docstring, members, parent)
 
-    def render_header(self, node) -> str:
-        template = self.templates["header"]
-        docstring = self.render_docstring(node.docstring)
-        return template.render(node=node, docstring=docstring)
+    def render_page(self, node, module: str, members: List[str]) -> str:
+        template = self.templates["page"]
+        return template.render(node=node, module=module, members=members)
 
     def render_node(self, node, docstring: str, members: List[str], parent) -> str:
         template = self.templates["node"]
@@ -52,3 +51,6 @@ class Renderer:
             return self.templates["args"].render(section=section)
         else:
             raise ValueError(f"Invalid section name: {section.name}")
+
+
+renderer = Renderer()

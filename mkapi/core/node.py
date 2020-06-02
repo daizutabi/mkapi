@@ -98,7 +98,7 @@ def get_members(obj, kind, sourcefile, prefix, depth, max_depth=-1) -> List[Node
 
     members = []
     for x in inspect.getmembers(obj, func):
-        if x[0].startswith("_"):
+        if x[0].startswith("_") and x[0] != "__init__":
             continue
         member = walk(*x, prefix=prefix, depth=depth, max_depth=max_depth)
         if member.kind in ["class", "dataclass"] and not member.docstring:
@@ -121,6 +121,14 @@ def walk(name, obj, prefix="", depth=0, max_depth=-1) -> Node:
     signature = get_signature(obj)
     docstring = parse_docstring(obj)
     members = get_members(obj, kind, sourcefile, member_prefix, depth + 1, max_depth)
+
+    if kind in ["class", "dataclass"] and not docstring:
+        for member in members:
+            if member.name == "__init__" and member.docstring:
+                markdown = member.docstring.sections[0].markdown
+                if not markdown.startswith("Initialize self"):
+                    docstring = member.docstring
+        members = [member for member in members if member.name != "__init__"]
 
     node = Node(
         obj=obj,

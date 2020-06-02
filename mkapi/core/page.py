@@ -3,16 +3,13 @@ from dataclasses import dataclass, field
 from typing import Iterator, List
 
 from mkapi.core.node import Node, get_node
-from mkapi.core.renderer import Renderer
+from mkapi.core.renderer import renderer
 
 MKAPI_PATTERN = re.compile(r"^!\[mkapi\]\((.*?)\)$", re.MULTILINE)
 
 HTML_PATTERN = re.compile(
     r"<!-- mkapi:(\d+):begin -->(.*?)<!-- mkapi:end -->", re.MULTILINE | re.DOTALL
 )
-
-
-renderer = Renderer()
 
 
 @dataclass
