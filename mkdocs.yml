@@ -23,8 +23,10 @@ plugins:
       src_dirs: [examples]
 
 nav:
-  - MkApi: index.md
-  - Examples: examples.md
+  - index.md
+  - Examples:
+    - google_style.md
+    - numpy_style.md
 
 markdown_extensions:
   - admonition

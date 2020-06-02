@@ -25,8 +25,7 @@ class Page:
 
     def split(self, source) -> Iterator[str]:
         cursor = 0
-        index = 0
-        for match in MKAPI_PATTERN.finditer(source):
+        for index, match in enumerate(MKAPI_PATTERN.finditer(source)):
             start, end = match.start(), match.end()
             if cursor < start:
                 markdown = source[cursor:start].strip()
@@ -38,7 +37,6 @@ class Page:
             markdown = node.get_markdown()
             yield f"<!-- mkapi:{index}:begin -->\n\n{markdown}\n\n<!-- mkapi:end -->"
             cursor = end
-            index += 1
         if cursor < len(source):
             markdown = source[cursor:].strip()
             if markdown:

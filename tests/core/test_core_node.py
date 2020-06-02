@@ -2,26 +2,23 @@ from mkapi.core.node import get_node
 
 
 def test_generator():
-    node = get_node("example.gen")
+    node = get_node("google_style.gen")
     assert node.kind == "generator"
 
 
 def test_class():
-    node = get_node("example.ExampleClass")
-    assert node.name == "example.ExampleClass"
+    node = get_node("google_style.ExampleClass")
+    assert node.name == "google_style.ExampleClass"
     assert node.kind == "class"
     assert node.depth == 0
-    assert node.message is node[0]
-    assert node.message.type == "list of str"
     assert len(node) == 3
-    for x in node:
-        pass
-    assert x.type == 'list of int'
-    assert x.markdown.startswith('Read-write property')
+    p = node.members[-1]
+    assert p.type == "list of int"
+    assert p.docstring.sections[0].markdown.startswith("Read-write property")
 
 
 def test_dataclass():
-    node = get_node("example.ExampleDataClass")
-    assert node.name == "example.ExampleDataClass"
+    node = get_node("google_style.ExampleDataClass")
+    assert node.name == "google_style.ExampleDataClass"
     assert node.kind == "dataclass"
     assert node.depth == 0

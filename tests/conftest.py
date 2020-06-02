@@ -4,7 +4,7 @@ import pytest
 
 sys.path.insert(0, "examples")
 
-import example  # isort:skip
+import google_style as example  # isort:skip
 
 
 @pytest.fixture(scope="session")

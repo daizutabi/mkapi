@@ -34,6 +34,8 @@ class Renderer:
         )
 
     def render_docstring(self, docstring) -> str:
+        if docstring is None:
+            return ""
         template = self.templates["docstring"]
         for section in docstring.sections:
             if section.items:

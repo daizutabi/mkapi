@@ -1,12 +1,11 @@
 import importlib
 import inspect
-from dataclasses import dataclass, field
 from functools import partial
-from typing import Any, List, Optional, Tuple
+from typing import List, Tuple
 
-import mkapi.core.preprocess
-from mkapi.core.docstring import Docstring, parse_docstring
-from mkapi.core.inspect import Signature
+from mkapi.core.base import Node
+from mkapi.core.docstring import parse_docstring
+from mkapi.core.inspect import get_signature
 
 ISFUNCTIONS = {}
 for x in dir(inspect):
@@ -16,111 +15,73 @@ for x in dir(inspect):
             ISFUNCTIONS[name] = getattr(inspect, x)
 
 
-def get_kind(kinds: List[str]) -> str:
-    if "generatorfunction" in kinds:
-        return "generator"
-    return kinds[-1]
-
-
-@dataclass
-class Node:
-    obj: Any = field(repr=False)
-    name: str
-    depth: int
-    prefix: str
-    kinds: List[str]
-    sourcefile: str
-    lineno: int
-    signature: Optional[Signature]
-    docstring: Docstring
-    members: List["Node"]
-
-    def __post_init__(self):
-        self.kind = get_kind(self.kinds)
-        if self.prefix:
-            self.id = ".".join([self.prefix, self.name])
-        else:
-            self.id = self.name
-        self.type = ""
-
-    def __getitem__(self, index):
-        return self.members[index]
-
-    def __len__(self):
-        return len(self.members)
-
-    def __getattr__(self, name):
-        for member in self.members:
-            if member.name == name:
-                return member
-
-    def __iter__(self):
-        yield from self.docstring
-        for member in self.members:
-            yield from member
-
-    def get_markdown(self):
-        markdowns = []
-        for x in self:
-            markdowns.append(mkapi.core.preprocess.convert(x.markdown))
-        return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
-
-    def set_html(self, html: str):
-        for x, html in zip(self, html.split("<!-- mkapi:sep -->")):
-            x.set_html(html.strip())
-
-
 def get_kinds(obj) -> List[str]:
     kinds = []
-    if hasattr(obj, "__dataclass_fields__"):
-        return ["dataclass"]
     for kind, func in ISFUNCTIONS.items():
         if func(obj):
             kinds.append(kind)
-    if "function" in kinds and "generatorfunction" not in kinds:
-        try:
-            if "self" in inspect.signature(obj).parameters:
-                kinds = ["method"]
-        except ValueError:
-            kinds = []
+    return kinds
+
+
+def get_kind(obj) -> str:
+    if hasattr(obj, "__dataclass_fields__"):
+        return "dataclass"
     if isinstance(obj, property):
         if obj.fset:
-            kinds.append("readwrite_property")
+            return "readwrite_property"
         else:
-            kinds.append("readonly_property")
-    return kinds
+            return "readonly_property"
+    kinds = get_kinds(obj)
+    if not kinds:
+        return ""
+    if "generatorfunction" in kinds:
+        return "generator"
+    if "function" in kinds:
+        try:
+            parameters = inspect.signature(obj).parameters
+        except (ValueError, TypeError):
+            return ""
+        if parameters:
+            arg = list(parameters)[0]
+            if arg == "self":
+                return "method"
+    kind = kinds[-1]
+    if kind == "module":
+        sourcefile = inspect.getsourcefile(obj)
+        if sourcefile and sourcefile.endswith("__init__.py"):
+            kind = "package"
+    return kind
 
 
 def get_sourcefile_and_lineno(obj) -> Tuple[str, int]:
     if isinstance(obj, property):
         obj = obj.fget
-    sourcefile = inspect.getsourcefile(obj) or ""
-    lineno = inspect.getsourcelines(obj)[1]
+    try:
+        sourcefile = inspect.getsourcefile(obj) or ""
+        lineno = inspect.getsourcelines(obj)[1]
+    except (TypeError, OSError):
+        return "", -1
     return sourcefile, lineno
 
 
-def filter(obj, sourcefile, lineno, qualname) -> bool:
+def filter(obj, qualname, sourcefile="") -> bool:
     if isinstance(obj, property):
         return True
-    kinds = get_kinds(obj)
-    if not qualname and "dataclass" in kinds:
+    kind = get_kind(obj)
+    if kind == "":
+        return False
+
+    if kind == "dataclass" and not qualname:
         return True
-    if not kinds:
+    sourcefile_, _ = get_sourcefile_and_lineno(obj)
+    if sourcefile_ == "" or (sourcefile and sourcefile != sourcefile_):
         return False
-    try:
-        sourcefile_, lineno_ = get_sourcefile_and_lineno(obj)
-    except Exception:
-        return False
-    if not hasattr(obj, "__qualname__"):
-        return False
-    if qualname and obj.__qualname__.startswith(qualname):
-        return True
-    if sourcefile_ is None:
-        return False
-    elif sourcefile_ == sourcefile and lineno_ > lineno:
-        return True
-    else:
-        return False
+    if hasattr(obj, "__qualname__"):
+        if not qualname:
+            return True
+        if obj.__qualname__.startswith(qualname):
+            return True
+    return False
 
 
 def ignore_name(name: str) -> bool:
@@ -132,62 +93,51 @@ def ignore_name(name: str) -> bool:
 
 
 def walk(name, obj, prefix="", depth=0) -> Node:
-    kinds = get_kinds(obj)
-    sourcefile, lineno = get_sourcefile_and_lineno(obj)
-    if sourcefile.endswith("__init__.py"):
-        kinds = ["package"]
-    docstring = parse_docstring(obj)
+    member_prefix = name
     if prefix:
-        next_prefix = ".".join([prefix, name])
-    else:
-        next_prefix = name
-    if hasattr(obj, "__qualname__"):
-        qualname = obj.__qualname__
-    else:
-        qualname = ""
+        member_prefix = ".".join([prefix, member_prefix])
+    qualname = getattr(obj, "__qualname__", "")
     members = []
+
+    kind = get_kind(obj)
+    sourcefile, lineno = get_sourcefile_and_lineno(obj)
     if not isinstance(obj, property):
-        func = partial(filter, sourcefile=sourcefile, lineno=lineno, qualname=qualname)
+        if kind in ["package", "module"]:
+            func = partial(filter, qualname=qualname, sourcefile=sourcefile)
+        else:
+            func = partial(filter, qualname=qualname)
         for x in inspect.getmembers(obj, func):
             if not ignore_name(x[0]):
-                member = walk(*x, prefix=next_prefix, depth=depth + 1)
-                if member.type == "normal" or member.docstring:
+                member = walk(*x, prefix=member_prefix, depth=depth + 1)
+                if member.docstring:
                     members.append(member)
         members = sorted(members, key=lambda x: (x.sourcefile, x.lineno))
 
-    signature = None
-    if callable(obj):
-        try:
-            signature = Signature(obj)
-        except ValueError:
-            pass
-    if "class" in kinds:
-        if not len(docstring):
-            for member in members:
-                if member.name == "__init__" and len(member.docstring):
-                    markdown = member.docstring.sections[0].markdown
-                    if not markdown.startswith("Initialize self"):
-                        docstring = member.docstring
+    docstring = parse_docstring(obj)
+    signature = get_signature(obj)
+
+    if kind in ["class", "dataclass"] and docstring is None:
+        for member in members:
+            if member.name == "__init__" and member.docstring:
+                markdown = member.docstring.sections[0].markdown
+                if not markdown.startswith("Initialize self"):
+                    docstring = member.docstring
         members = [member for member in members if member.name != "__init__"]
+
     node = Node(
         obj=obj,
         name=name,
         depth=depth,
         prefix=prefix,
-        kinds=kinds,
+        kind=kind,
         sourcefile=sourcefile,
         lineno=lineno,
         signature=signature,
         docstring=docstring,
         members=members,
     )
-    if isinstance(obj, property):
-        if docstring.sections:
-            node.type = docstring.sections[0].type
-        else:
-            node.type = ""
-    if callable(obj) and docstring.sections and docstring.sections[0].type:
-        node.type = docstring.sections[0].type
+    if docstring and docstring.type:
+        node.type = docstring.type
     return node
 
 

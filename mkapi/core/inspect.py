@@ -1,12 +1,18 @@
 import inspect
 import re
+from typing import Optional
 
 
 class Signature:
     def __init__(self, obj):
-        self.signature = inspect.signature(obj)
+        try:
+            self.signature = inspect.signature(obj)
+        except (TypeError, ValueError):
+            self.signature = None
 
     def __str__(self):
+        if self.signature is None:
+            return ""
         s = str(self.signature)
         s = re.sub(r"\[[^:->]*\]", "", s)
         s = re.sub(r":.*?(,|= |\))", r"\1", s)
@@ -14,6 +20,15 @@ class Signature:
         s = re.sub(r" ->.*", r"", s)
         s = re.sub(r"(self|cls)(, |)", "", s)
         return s
+
+
+def get_signature(obj) -> Optional[Signature]:
+    if not callable(obj):
+        return None
+    signature = Signature(obj)
+    if signature.signature:
+        return signature
+    return None
 
 
 class Annotation:
@@ -62,7 +77,7 @@ def to_string(annotation, kind: str = "") -> str:
         return ""
     if hasattr(annotation, "__name__"):
         return annotation.__name__
-    if hasattr(annotation, '__origin__'):
+    if hasattr(annotation, "__origin__"):
         if annotation.__origin__ == list:
             type = "list of " + to_string(annotation.__args__[0])
             if type.endswith(" of T"):

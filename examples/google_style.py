@@ -14,6 +14,8 @@ def add(x: int, y: int = 1) -> int:
         Added value.
 
     Examples:
+        Examples should be written in doctest format
+
         >>> add(1, 2)
         3
 

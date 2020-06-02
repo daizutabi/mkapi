@@ -1,8 +1,8 @@
 import inspect
 import re
-from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional, Tuple
 
+from mkapi.core.base import Docstring, Item, Section
 from mkapi.core.inspect import Annotation
 
 SECTIONS = [
@@ -13,6 +13,7 @@ SECTIONS = [
     "Examples",
     "Note",
     "Notes",
+    "Parameters",
     "Raises",
     "Returns",
     "References",
@@ -37,7 +38,7 @@ def get_indent(line: str) -> int:
 
 def join(lines):
     indent = get_indent(lines[0])
-    return "\n".join(line[indent:] for line in lines)
+    return "\n".join(line[indent:] for line in lines).strip()
 
 
 def rename_section(name: str) -> str:
@@ -48,10 +49,21 @@ def rename_section(name: str) -> str:
     return name
 
 
-def split_section(doc: str) -> Iterator[Tuple[str, str]]:
-    """Yields section name and its contents."""
+def section_header(line: str) -> Tuple[str, str]:
+    """Returns a tuple of (section name, style name)."""
+    if line in SECTIONS:
+        return line, "numpy"
+    elif line.endswith(":") and line[:-1] in SECTIONS:
+        return line[:-1], "google"
+    else:
+        return "", ""
+
+
+def split_section(doc: str) -> Iterator[Tuple[str, str, str]]:
+    """Yields a tuple of (section name, contents, style)."""
     lines = [x.rstrip() for x in doc.split("\n")]
     name = ""
+    style = ""
     start = indent = 0
     for stop, line in enumerate(lines, 1):
         if stop == len(lines):
@@ -60,17 +72,22 @@ def split_section(doc: str) -> Iterator[Tuple[str, str]]:
             next_indent = get_indent(lines[stop])
         if not line and next_indent < indent and name:
             if start < stop - 1:
-                yield name, join(lines[start : stop - 1])
+                yield name, join(lines[start : stop - 1]), style
             start = stop
             name = ""
-        elif line.endswith(":") and line[:-1] in SECTIONS:
-            if start < stop - 1:
-                yield name, join(lines[start : stop - 1])
-            name = rename_section(line[:-1])
-            start = stop
-            indent = next_indent
+        else:
+            section, style_ = section_header(line)
+            if section:
+                style = style_
+                if start < stop - 1:
+                    yield name, join(lines[start : stop - 1]), style
+                name = rename_section(section)
+                start = stop
+                if style == "numpy":  # skip underline without counting the length.
+                    start += 1
+                indent = next_indent
     if start < len(lines):
-        yield name, join(lines[start:])
+        yield name, join(lines[start:]), style
 
 
 def split_parameter(doc: str) -> Iterator[List[str]]:
@@ -87,17 +104,22 @@ def split_parameter(doc: str) -> Iterator[List[str]]:
             start = stop
 
 
-def parse_parameter(lines: List[str]) -> Tuple[str, str, str]:
+def parse_parameter(lines: List[str], style: str) -> Tuple[str, str, str]:
     """Yields (name, type, markdown)."""
-    name, _, line = lines[0].partition(":")
-    name = name.strip()
-    line = line.strip()
-    parsed = [line]
+    if style == "google":
+        name, _, line = lines[0].partition(":")
+        name = name.strip()
+        parsed = [line.strip()]
+        pattern = r"(.*?)\s*?\((.*?)\)"
+    else:
+        name = lines[0].strip()
+        parsed = []
+        pattern = r"([^ ]*?)\s*:\s*(.*)"
     if len(lines) > 1:
         indent = get_indent(lines[1])
         for line in lines[1:]:
             parsed.append(line[indent:])
-    m = re.match(r"(.*?)\s*?\((.*?)\)", name)
+    m = re.match(pattern, name)
     if m:
         name, type = m.group(1), m.group(2)
     else:
@@ -105,124 +127,67 @@ def parse_parameter(lines: List[str]) -> Tuple[str, str, str]:
     return name, type, "\n".join(parsed)
 
 
-def parse_parameters(doc: str) -> List[Tuple[str, str, str]]:
+def parse_parameters(doc: str, style: str) -> List[Tuple[str, str, str]]:
     """Returns list of (name, type, markdown)."""
-    return [parse_parameter(lines) for lines in split_parameter(doc)]
+    return [parse_parameter(lines, style) for lines in split_parameter(doc)]
 
 
-def parse_returns(doc: str) -> Tuple[str, str]:
+def parse_raise(lines: List[str], style: str) -> Tuple[str, str]:
     """Returns (type, markdown)."""
-    lines = doc.split("\n")
-    if ":" in lines[0]:
-        type, _, lines[0] = lines[0].partition(":")
-        type = type.strip()
-        lines[0] = lines[0].strip()
-    else:
-        type = ""
-    return type, "\n".join(lines)
-
-
-def parse_raise(lines: List[str]) -> Tuple[str, str]:
-    """Returns (type, markdown)."""
-    type, _, markdown = parse_parameter(lines)
+    type, _, markdown = parse_parameter(lines, style)
     return type, markdown
 
 
-def parse_raises(doc: str) -> List[Tuple[str, str]]:
-    return [parse_raise(lines) for lines in split_parameter(doc)]
+def parse_raises(doc: str, style: str) -> List[Tuple[str, str]]:
+    return [parse_raise(lines, style) for lines in split_parameter(doc)]
 
 
-@dataclass
-class Item:
-    name: str
-    type: str
-    markdown: str
-    html: str = ""
-
-    def set_html(self, html):
-        html = html.replace("<p>", "").replace("</p>", "<br>")
-        if html.endswith("<br>"):
-            html = html[:-4]
-        self.html = html
-
-
-@dataclass
-class Section:
-    name: str
-    type: str = ""
-    markdown: str = ""
-    items: List[Item] = field(default_factory=list)
-    html: str = ""
-
-    def __getitem__(self, index):
-        return self.items[index]
-
-    def __len__(self):
-        return len(self.items)
-
-    def __getattr__(self, name):
-        for item in self.items:
-            if item.name == name:
-                return item
-
-    def __iter__(self):
-        if self.markdown:
-            yield self
+def parse_returns(doc: str, style: str) -> Tuple[str, str]:
+    """Returns (type, markdown)."""
+    lines = doc.split("\n")
+    if style == "google":
+        if ":" in lines[0]:
+            type, _, lines[0] = lines[0].partition(":")
+            type = type.strip()
+            lines[0] = lines[0].strip()
         else:
-            yield from self.items
-
-    def set_html(self, html):
-        self.html = html
-
-
-@dataclass
-class Docstring:
-    obj: Optional[Any] = field(repr=False)
-    sections: List[Section]
-
-    def __getattr__(self, name):
-        for section in self.sections:
-            if section.name == name:
-                return section
-
-    def __getitem__(self, name):
-        return getattr(self, name)
-
-    def __len__(self):
-        return len(self.sections)
-
-    def __iter__(self):
-        for section in self.sections:
-            yield from section
+            type = ""
+    else:
+        type = lines[0].strip()
+        lines = lines[1:]
+    return type, join(lines)
 
 
-def create_section(name: str, doc: str) -> Section:
+def create_section(name: str, doc: str, style: str) -> Section:
     type = ""
     markdown = ""
     items = []
     if name in ["Parameters", "Attributes"]:
-        items = [Item(n, t, m) for n, t, m in parse_parameters(doc)]
+        items = [Item(n, t, m) for n, t, m in parse_parameters(doc, style)]
     elif name == "Raises":
-        items = [Item(t, "", m) for t, m in parse_raises(doc)]
+        items = [Item(t, "", m) for t, m in parse_raises(doc, style)]
     elif name in ["Returns", "Yields"]:
-        type, markdown = parse_returns(doc)
+        type, markdown = parse_returns(doc, style)
     else:
         markdown = doc
     return Section(name, type=type, markdown=markdown, items=items)
 
 
+def parse_property(doc: Docstring, obj: Any):
+    section = doc.sections[0]
+    markdown = section.markdown
+    line = markdown.split("\n")[0]
+    if ":" in line:
+        index = line.index(":")
+        doc.type = line[:index].strip()
+        section.markdown = markdown[index + 1 :].strip()
+    if not doc.type and hasattr(obj, "fget"):
+        doc.type = Annotation(obj.fget).returns
+
+
 def postprocess(doc: Docstring, obj: Any):
     if isinstance(obj, property):
-        section = doc.sections[0]
-        markdown = section.markdown
-        line = markdown.split("\n")[0]
-        if ":" in line:
-            index = line.index(":")
-            section.type = line[:index].strip()
-            section.markdown = markdown[index + 1 :].strip()
-        if not section.type and hasattr(obj, "fget"):
-            section.type = Annotation(obj.fget).returns
-
+        parse_property(doc, obj)
     if not callable(obj):
         return
 
@@ -235,7 +200,7 @@ def postprocess(doc: Docstring, obj: Any):
         for item in doc["Parameters"]:
             if item.type == "" and item.name in annotation:
                 item.type = annotation[item.name]
-                if item.type.startswith("("):
+                if item.type.startswith("("):  # tuple
                     item.type = item.type[1:-1]
             if "{default}" in item.markdown and item.name in annotation.defaults:
                 default = annotation.defaults[item.name]
@@ -249,22 +214,21 @@ def postprocess(doc: Docstring, obj: Any):
                     item.type = item.type[1:-1]
 
     for name in ["Returns", "Yields"]:
-        if doc[name] is not None:
-            section = doc[name]
-            if section.type == "":
-                section.type = getattr(annotation, name.lower())
+        section = doc[name]
+        if section is not None and section.type == "":
+            section.type = getattr(annotation, name.lower())
 
-    if doc["Returns"] is None and doc["Yields"] is None and annotation.returns:
-        doc.sections[0].type = annotation.returns
+    if doc["Returns"] is None and doc["Yields"] is None:
+        doc.type = annotation.returns
 
 
-def parse_docstring(obj: Any) -> Docstring:
+def parse_docstring(obj: Any) -> Optional[Docstring]:
     doc = inspect.getdoc(obj)
     if not doc:
-        return Docstring(obj, [])
+        return None
     sections = []
     for section in split_section(doc):
         sections.append(create_section(*section))
-    docstring = Docstring(obj, sections)
+    docstring = Docstring(sections)
     postprocess(docstring, obj)
     return docstring
