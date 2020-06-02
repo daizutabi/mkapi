@@ -98,7 +98,7 @@ In this example, notice that:
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style. So far, only `List` and `Tuple` are supported.
 * Bound methods (`message` in this case) have a `METHOD` prefix instead of a `FUNCTION` prefix.
 * If callable objects have neither `Returns` nor `Yields`, the type appears on the object definition line like type annotation.
-* For properties, the type can be written at the beginning of the docstring or type annotation as well as functions.
+* For properties, the type can be written at the beginning of the docstring or as type annotation.
 * Whether a property is read-only or read-write is inspected.
 
 ## Data Class

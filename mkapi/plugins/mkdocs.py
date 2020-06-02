@@ -1,3 +1,21 @@
+"""This module provides the MkapiPlugin class.
+
+MkapiPlugin is a MkDocs plugin that generates Python API documentation.
+
+Configure your mkdocs.yml like below:
+
+    - plugins:
+        - search
+        - mkapi
+
+If you want to refer objects that don't exist in the `sys.path`, configure
+a `src_dirs` option:
+
+    - plugins:
+        - search
+        - mkapi
+            - src_dirs: [<path1>, <path2>, ...]
+"""
 import logging
 import os
 import re
@@ -18,6 +36,7 @@ class MkapiPlugin(BasePlugin):
     config_scheme = (("src_dirs", config_options.Type(list, default=[])),)
 
     def on_config(self, config):
+        """Inserts `src_dirs` to `sys.path`."""
         self.pages = {}
         for src_dir in self.config["src_dirs"]:
             if src_dir not in sys.path:
@@ -25,6 +44,7 @@ class MkapiPlugin(BasePlugin):
         return config
 
     def on_files(self, files, config):
+        """Collects plugin css ans js and appends them to `files`."""
         root = os.path.join(os.path.dirname(mkapi.__file__), "theme")
         docs_dir = config["docs_dir"]
         config["docs_dir"] = root
@@ -58,12 +78,14 @@ class MkapiPlugin(BasePlugin):
         return files
 
     def on_page_markdown(self, markdown, page, config, files):
+        """Converts markdown to intermidiate version."""
         path = page.file.abs_src_path
         page = Page(markdown)
         self.pages[path] = page
         return page.markdown
 
     def on_page_content(self, html, page, config, files):
+        """Merges html and MkApi's node structure."""
         path = page.file.abs_src_path
         page = self.pages[path]
         return page.content(html)
