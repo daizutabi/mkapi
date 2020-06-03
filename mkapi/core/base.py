@@ -4,6 +4,7 @@ from typing import Any, Iterator, List, Optional
 
 import mkapi.core.preprocess
 from mkapi.core.inspect import Signature
+from mkapi.core.renderer import renderer
 
 
 @dataclass
@@ -78,6 +79,7 @@ class Section(Base):
         markdown: Markdown source.
         html: HTML after conversion.
     """
+
     items: List[Item] = field(default_factory=list)
 
     def __iter__(self) -> Iterator[Base]:
@@ -95,6 +97,7 @@ class Docstring:
         sections: List of Section instance
         type: Type for Returns and Yields sections.
     """
+
     sections: List[Section]
     type: str = ""
 
@@ -125,6 +128,7 @@ class Node(Base):
         members: Member objects. For example, methods of class.
         headless: Used in page mode.
     """
+
     obj: Any = field(default=None, repr=False)
     depth: int = 0
     prefix: str = ""
@@ -171,3 +175,6 @@ class Node(Base):
         """Sets HTML to `Base` instances recursively."""
         for base, html in zip(self, html.split("<!-- mkapi:sep -->")):
             base.set_html(html.strip())
+
+    def render(self) -> str:
+        return renderer.render(self)

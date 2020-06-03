@@ -26,6 +26,8 @@ nav:
     - google_style.md
     - numpy_style.md
     - options.md
+  - Library Usage:
+    - library.py
   - API: mkapi/api/mkapi
 
 markdown_extensions:

@@ -102,6 +102,7 @@ def get_members(obj, kind, sourcefile, prefix, depth, max_depth=-1) -> List[Node
         if x[0].startswith("_") and x[0] != "__init__":
             continue
         member = walk(*x, prefix=prefix, depth=depth, max_depth=max_depth)
+        # Below is needed for max_depth.
         if member.kind in ["class", "dataclass"] and not member.docstring:
             docstring = parse_docstring(x[1].__init__)
             if docstring:
@@ -129,7 +130,7 @@ def walk(name, obj, prefix="", depth=0, max_depth=-1) -> Node:
                 markdown = member.docstring.sections[0].markdown
                 if not markdown.startswith("Initialize self"):
                     docstring = member.docstring
-        members = [member for member in members if member.name != "__init__"]
+    members = [member for member in members if member.name != "__init__"]
 
     node = Node(
         obj=obj,
@@ -166,6 +167,7 @@ def get_node(name: Any, max_depth: int = -1, headless: bool = False) -> Node:
         obj = get_object(name)
     else:
         obj = name
+        name = obj.__name__
     node = walk(name, obj, max_depth=max_depth)
     node.headless = headless
     return node

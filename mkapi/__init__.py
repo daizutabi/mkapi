@@ -1,1 +1,5 @@
-__version__ = "0.5.0"
+__version__ = "0.5.1"
+
+from mkapi.core.node import get_node
+
+__all__ = ["get_node"]
