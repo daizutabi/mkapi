@@ -40,8 +40,9 @@ def _walk(top: str) -> Iterator[List[str]]:
 def walk(value: str, docs_dir: str, config_dir) -> list:
     _, api_path, *tops = value.split("/")
     abs_api_path = os.path.join(docs_dir, api_path)
-    if not os.path.exists(abs_api_path):
-        os.mkdir(abs_api_path)
+    if os.path.exists(abs_api_path):
+        logger.error(f'[MkApi] {abs_api_path} exists: Delete manually for safety.')
+    os.mkdir(abs_api_path)
     atexit.register(lambda path=abs_api_path: rmtree(path))
 
     top = os.path.join(config_dir, *tops)

@@ -27,7 +27,7 @@ nav:
   - Examples:
     - google_style.md
     - numpy_style.md
-  - Python API: mkapi/api/examples/package
+  - Package Example: mkapi/api/examples/package
 
 markdown_extensions:
   - admonition

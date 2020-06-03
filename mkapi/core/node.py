@@ -47,7 +47,10 @@ def get_kind(obj) -> str:
                 return "method"
     kind = kinds[-1]
     if kind == "module":
-        sourcefile = inspect.getsourcefile(obj)
+        try:
+            sourcefile = inspect.getsourcefile(obj)
+        except TypeError:
+            return ""
         if sourcefile and sourcefile.endswith("__init__.py"):
             kind = "package"
     return kind
