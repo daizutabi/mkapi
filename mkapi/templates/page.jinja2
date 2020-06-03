@@ -1,6 +1,14 @@
-# <span id="{{ node.id }}">{{ node.name }}</span>
+# <span class="mkapi-header mkapi-header-{{ node.kind }}" id="{{ node.id }}">{{ node.name|upper }}</span>
 
 ![mkapi](#{{ module }})
+
+{% if children %}
+MODULES
+
+{% for child in children %}
+* [{{ child }}](../{{ node.name}}.{{ child }})
+{% endfor %}
+{% endif %}
 
 {% for member in members %}
 ![mkapi]({{ member }})

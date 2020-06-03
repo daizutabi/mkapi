@@ -41,7 +41,7 @@ def walk(value: str, docs_dir: str, config_dir) -> list:
     _, api_path, *tops = value.split("/")
     abs_api_path = os.path.join(docs_dir, api_path)
     if os.path.exists(abs_api_path):
-        logger.error(f'[MkApi] {abs_api_path} exists: Delete manually for safety.')
+        logger.error(f"[MkApi] {abs_api_path} exists: Delete manually for safety.")
         sys.exit(1)
     os.mkdir(abs_api_path)
     atexit.register(lambda path=abs_api_path: rmtree(path))
@@ -68,9 +68,13 @@ def walk(value: str, docs_dir: str, config_dir) -> list:
             else:
                 module = package
             abs_path = "/".join([abs_api_path, module]) + ".md"
-            create_page(abs_path, module)
+            if path == "":
+                children = paths[1:]
+            else:
+                children = []
+            create_page(abs_path, module, children)
             page = os.path.relpath(abs_path, docs_dir).replace("\\", "/")
-            pages.append(page)
+            pages.append({page[:-3].split(".")[-1]: page})
         nav.append({package: pages})
 
     return nav
@@ -85,13 +89,13 @@ def rmtree(path):
         logger.warning(f"[MkApi] Couldn't delete directory: {path}")
 
 
-def create_page(abs_path, module: str):
+def create_page(abs_path, module: str, children: List[str]):
     with open(abs_path, "w") as f:
-        f.write(create_markdown(module))
+        f.write(create_markdown(module, children))
 
 
-def create_markdown(module: str) -> str:
+def create_markdown(module: str, children: List[str]) -> str:
     node = get_node(module, max_depth=1)
     members = [member.id for member in node.members]
-    markdown = renderer.render_page(node, module, members)
+    markdown = renderer.render_page(node, module, members, children)
     return markdown

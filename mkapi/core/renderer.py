@@ -27,9 +27,13 @@ class Renderer:
             members = [self.render(member, node) for member in node.members]
         return self.render_node(node, docstring, members, parent)
 
-    def render_page(self, node, module: str, members: List[str]) -> str:
+    def render_page(
+        self, node, module: str, members: List[str], children: List[str]
+    ) -> str:
         template = self.templates["page"]
-        return template.render(node=node, module=module, members=members)
+        return template.render(
+            node=node, module=module, members=members, children=children
+        )
 
     def render_node(self, node, docstring: str, members: List[str], parent) -> str:
         template = self.templates["node"]
