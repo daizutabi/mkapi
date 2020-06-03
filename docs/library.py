@@ -85,7 +85,7 @@ print(markdown)
 
 # ## Converting Markdown
 
-# For simplicity, we uses (Python-Markdown)[https://python-markdown.github.io/] library
+# For simplicity, we use [Python-Markdown](https://python-markdown.github.io/) library
 # instead of `MkDocs`.
 
 from markdown import Markdown  # isort:skip
@@ -96,11 +96,11 @@ print(html)
 
 # ## Distributing HTML
 
-# `Node.set_html()` distributs HTML into docstring and members.
+# `Node.set_html()` distributes HTML into docstring and members.
 
 node.set_html(html)
 
-# Take a look at what happend.
+# Take a look at what happened.
 
 section = node.docstring.sections[0]  # type:ignore
 section.markdown
