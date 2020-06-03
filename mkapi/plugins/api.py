@@ -42,6 +42,7 @@ def walk(value: str, docs_dir: str, config_dir) -> list:
     abs_api_path = os.path.join(docs_dir, api_path)
     if os.path.exists(abs_api_path):
         logger.error(f'[MkApi] {abs_api_path} exists: Delete manually for safety.')
+        sys.exit(1)
     os.mkdir(abs_api_path)
     atexit.register(lambda path=abs_api_path: rmtree(path))
 
