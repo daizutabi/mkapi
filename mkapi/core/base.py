@@ -72,11 +72,13 @@ class Section(Base):
         name: Object name.
         type: Object type.
         markdown: Markdown source.
+        items: List for arguments, attributes, or exceptions.
 
     Attributes:
         name: Object name.
         type: Object type.
         markdown: Markdown source.
+        items: List for arguments, attributes, or exceptions.
         html: HTML after conversion.
     """
 
@@ -94,6 +96,10 @@ class Docstring:
     """Docstring class represents a docstring of an object.
 
     Args:
+        sections: List of Section instance
+        type: Type for Returns and Yields sections.
+
+    Attributes:
         sections: List of Section instance
         type: Type for Returns and Yields sections.
     """
@@ -127,6 +133,7 @@ class Node(Base):
         docstring: Docstring instance.
         members: Member objects. For example, methods of class.
         headless: Used in page mode.
+        html: HTML after rendering.
     """
 
     obj: Any = field(default=None, repr=False)
@@ -177,4 +184,5 @@ class Node(Base):
             base.set_html(html.strip())
 
     def render(self) -> str:
-        return renderer.render(self)
+        self.html = renderer.render(self)
+        return self.html

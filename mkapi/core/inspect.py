@@ -78,15 +78,28 @@ def to_string(annotation, kind: str = "") -> str:
     if hasattr(annotation, "__name__"):
         return annotation.__name__
     if hasattr(annotation, "__origin__"):
-        if annotation.__origin__ == list:
-            type = "list of " + to_string(annotation.__args__[0])
-            if type.endswith(" of T"):
-                return "list"
-            return type
-        if annotation.__origin__ == tuple:
+        origin = annotation.__origin__
+        if origin in [list, set]:
+            return a_of_b(annotation)
+        if origin == tuple:
             args = [to_string(x) for x in annotation.__args__]
             if args:
                 return "(" + ", ".join(args) + ")"
             else:
                 return "tuple"
+        if origin == dict:
+            args = [to_string(x) for x in annotation.__args__]
+            if args:
+                return "dict(" + ": ".join(args) + ")"
+            else:
+                return "dict"
     return str(annotation).replace("typing.", "")
+
+
+def a_of_b(annotation) -> str:
+    origin = annotation.__origin__
+    name = origin.__name__
+    type = f"{name} of " + to_string(annotation.__args__[0])
+    if type.endswith(" of T"):
+        return name
+    return type
