@@ -78,7 +78,7 @@ creates the API documentation for the `gen()` generator.
 
 ![mkapi](google_style.gen)
 
-In this simple example, notice that:
+In this simple example, note that:
 
 * A GENERATOR prefix instead of a FUNCTION prefix.
 * The parameter `n` has no type annotation but you can specify it in the `Args` section directly.
@@ -100,7 +100,7 @@ creates the API documentation for the `ExampleClass` class.
 
 ![mkapi](google_style.ExampleClass)
 
-In this example, notice that:
+In this example, note that:
 
 * Docstring of `__init__` function is treated as a class-level docstring.
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style. So far, only `List` and `Tuple` are supported.
@@ -125,7 +125,7 @@ creates the API documentation for the `ExampleDataClass` class.
 
 ![mkapi](google_style.ExampleDataClass)
 
-In this example, notice that:
+In this example, note that:
 
 * A DATACLASS prefix instead of a CLASS prefix.
 * Attributes type inspection as well as parameters if they are data class fields.
