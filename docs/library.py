@@ -1,18 +1,20 @@
 """md
 # Using MkApi within Python
 
-MkApi is a normal library as well as a MkDocs plugin.
+MkApi is a standalone library as well as a MkDocs plugin, so that you can use it
+within Python.
 
-First, import the library.
+First, import MkApi:
 
 {{ # cache:clear }}
 """
+
 
 import mkapi
 
 # ## Node object
 
-# `mkapi.get_node()` generates a object tree structure.
+# Define a simple class to show how MkApi works.
 
 
 class A:
@@ -35,10 +37,14 @@ class A:
         return str(x)
 
 
+# `mkapi.get_node()` generates a `Node` object that has tree structure.
+
 # -
 node = mkapi.get_node(A)
 type(node)
-# -
+
+# Some attributes:
+
 node.kind, node.name
 # -
 docstring = node.docstring
@@ -50,7 +56,7 @@ section.name, section.markdown
 section = docstring.sections[1]  # type:ignore
 section.name, section.markdown
 
-# The `members` attribute gives children.
+# The `members` attribute gives children, for example, bound methods of a class.
 
 len(node.members)
 # -
@@ -69,10 +75,15 @@ section.name, section.markdown
 # -
 section = docstring.sections[1]  # type:ignore
 section.name, section.markdown
-# -
+
+# Parameters section has no `markdown` but `items` that represent argument list:
+
 section.items
 
-# `Node.get_markdown()` creates a joint Markdown for this node.
+# You can see that the type of argument `x` is inspected. Note that the `markdown`
+# attribute is set from docstring, while the `html` attribute is empty.
+
+# `Node.get_markdown()` creates a *joint* Markdown of this node.
 
 markdown = node.get_markdown()
 print(markdown)
@@ -80,7 +91,7 @@ print(markdown)
 # Where is Note or Parameters section header, *etc.*? No problem. The
 # `Node.get_markdown()` divides docstring into two parts. One is a plain Markdown that
 # will be converted into HTML by any Markdown converter, for example, MkDocs. The other
-# is the outline of a docstring structure such as sections or arguments that is
+# is the outline structure of a docstring such as sections or arguments that will be
 # processed by MkApi itself.
 
 # ## Converting Markdown
@@ -94,6 +105,7 @@ converter = Markdown()
 html = converter.convert(markdown)
 print(html)
 
+
 # ## Distributing HTML
 
 # `Node.set_html()` distributes HTML into docstring and members.
@@ -103,35 +115,29 @@ node.set_html(html)
 # Take a look at what happened.
 
 section = node.docstring.sections[0]  # type:ignore
-section.markdown
-# -
-section.html
+section.markdown, section.html
 # -
 section = node.docstring.sections[1]  # type:ignore
-section.markdown
-# -
-section.html
+section.markdown, section.html
 # -
 child = node.members[0]
 section = child.docstring.sections[0]  # type:ignore
-section.markdown
-# -
-section.html
+section.markdown, section.html
 # -
 section = child.docstring.sections[1]  # type:ignore
-section.items[0].markdown
-# -
-section.items[0].html  # A <p> tag is deleted.
+item = section.items[0]
+item.markdown, item.html  # A <p> tag is deleted.
 
 # ## Constructing HTML
 
-# Finally, construct one HTML using
-# [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) library.
+# Finally, construct one HTML calling `Node.render()` that internally uses
+# [Jinja](https://jinja.palletsprojects.com/en/2.11.x/) library.
 
 html = node.render()
 print(html[:300].strip())
 
-# Using [Jupyter](https://jupyter.org/), we can display the rendered HTML.
+# [Jupyter](https://jupyter.org/) allows us to see the rendered HTML.
 
-from IPython.display import HTML
+from IPython.display import HTML  # isort:skip
+
 HTML(html)
