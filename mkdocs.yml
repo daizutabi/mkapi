@@ -26,7 +26,7 @@ nav:
     - google_style.md
     - numpy_style.md
   - Advanced Usage:
-    - options.md
+    - depth.md
     - library.py
     - type.py
   - API: mkapi/api/mkapi

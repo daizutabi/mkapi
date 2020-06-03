@@ -58,9 +58,8 @@ def builtin_default(i: int = 1, f: float = 1.0, s: str = "abc", t: tuple = (1, 2
         i: Integer.
         f: Float.
         s: String.
-        t: String.
+        t: Tuple.
     """
-    return True
 
 
 render(builtin_default)
@@ -69,7 +68,7 @@ render(builtin_default)
 
 
 def basic(l: List[int], t: Tuple[str, int, float], d: Dict[str, int], s: Set[int]):
-    """Function with basic generic type annotation.
+    """Function with basic collection type annotation.
 
     Args:
         l: List of int.
@@ -77,7 +76,6 @@ def basic(l: List[int], t: Tuple[str, int, float], d: Dict[str, int], s: Set[int
         d: Dictionary from str to int.
         s: Set of int.
     """
-    return set([1, 2, 3])
 
 
 render(basic)

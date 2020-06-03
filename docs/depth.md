@@ -1,3 +1,5 @@
+# Depth Limitation
+
 <style type="text/css">
 <!--
 .mkapi-node-depth-0 {
@@ -5,10 +7,6 @@
 }
 -->
 </style>
-
-# Options
-
-## Depth Limitation
 
 By default, MkApi searchs objects to unlimited depth. You can control the depth by adding ":(depth)" to the object name.
 
