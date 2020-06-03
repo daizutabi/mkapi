@@ -74,8 +74,6 @@ def filter(obj, qualname, sourcefile="") -> bool:
     if kind == "":
         return False
 
-    if kind == "dataclass" and not qualname:
-        return True
     sourcefile_, _ = get_sourcefile_and_lineno(obj)
     if sourcefile_ == "" or (sourcefile and sourcefile != sourcefile_):
         return False

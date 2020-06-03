@@ -31,7 +31,11 @@ plugins:
 
 ## Usage
 
-To generate the API documentation, add an exclamation mark (!), followed by `mkapi` in brackets, and the object qualname in parentheses. Yes, this is like adding an image. The object can be a package, module, function, class, *etc*.
+MkApi provides two modes to generate API documentation: Embedding mode and Page mode.
+
+### Embedding Mode
+
+To generate the API documentation in a Markdown source, add an exclamation mark (!), followed by `mkapi` in brackets, and the object qualname in parentheses. Yes, this is like adding an image. The object can be a package, module, function, class, *etc*.
 
 ~~~markdown
 ![mkapi](<object.qualname>)
@@ -47,3 +51,24 @@ plugins:
 ~~~
 
 Here, `path_X`s are inserted to `sys.path`. These `path_X`s are relative paths to the directory in which `mkdocs.yml` exists.
+
+The embedding mode is useful to embed object interface in a arbitrary position of a Markdown source.
+
+### Page Mode
+
+Using the page mode, you can construct a comprehensive API documentation for a package. The following YAML is `nav` part of MkApi's own `mkdocs.yml`:
+
+~~~yaml
+nav:
+  - index.md
+  - Examples:
+    - google_style.md
+    - numpy_style.md
+  - API: mkapi/api/mkapi
+~~~
+
+MkApi scans the `nav` to find an entry that starts with `'mkapi/'`. This entry must includes two or more slashs (`'/'`). Second string (`'api'`) splitted by slash is a directory name. MkApi automatically creates this directory in the `docs` directory at the beginning of the process and deletes after the process.
+The rest string(`'mkapi'`) is a directory path to a package that exists in the config directory. MkApi searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the API documentation of MkApi in nav area.
+
+!!! note
+    If a package or module has no package- or module-level docstring, MkApi doesn't process it.

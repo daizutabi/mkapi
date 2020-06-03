@@ -7,8 +7,6 @@ site_dir: ../mkapi-site/site
 repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 
-extra_css: [extra.css]
-
 theme:
   name: ivory
   highlightjs: true
@@ -27,7 +25,8 @@ nav:
   - Examples:
     - google_style.md
     - numpy_style.md
-  - Package Example: mkapi/api/examples/package
+    - options.md
+  - API: mkapi/api/mkapi
 
 markdown_extensions:
   - admonition

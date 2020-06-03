@@ -1,3 +1,11 @@
+<style type="text/css">
+<!--
+.mkapi-node-depth-0 {
+  border: 2px dashed #88AA88;
+}
+-->
+</style>
+
 # Google Style
 
 Let's start realistic examples. Here, a sample Python file `google_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so you should configure `mkdocs.yml` like below. In addition, we add two extensions and an extra javascript for demonstration.

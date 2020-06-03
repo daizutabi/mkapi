@@ -1,3 +1,4 @@
+"""This module provides entity classes to represent docstring structure."""
 from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional
 
@@ -7,12 +8,26 @@ from mkapi.core.inspect import Signature
 
 @dataclass
 class Base:
+    """Base class.
+
+    Args:
+        name: Object name.
+        type: Object type.
+        markdown: Markdown source.
+
+    Attributes:
+        name: Object name.
+        type: Object type.
+        markdown: Markdown source.
+        html: HTML after conversion.
+    """
+
     name: str
     type: str = ""
     markdown: str = ""
-    html: str = ""
+    html: str = field(default="", init=False)
 
-    def set_html(self, html):
+    def set_html(self, html: str):
         """Sets `html` attribute according to the givin `html` argument.
 
         In the simplest case, just store the argument to the attribute. But modify
@@ -23,7 +38,25 @@ class Base:
 
 @dataclass
 class Item(Base):
-    def set_html(self, html):
+    """Item class represents an item in Parameters, Attributes, and Raises sections.
+
+    Args:
+        name: Object name.
+        type: Object type.
+        markdown: Markdown source.
+
+    Attributes:
+        name: Object name.
+        type: Object type.
+        markdown: Markdown source.
+        html: HTML after conversion.
+    """
+
+    def set_html(self, html: str):
+        """Sets `html` attribute according to the givin `html` argument.
+
+        `p` tags are removed and `br` tags are inserted.
+        """
         html = html.replace("<p>", "").replace("</p>", "<br>")
         if html.endswith("<br>"):
             html = html[:-4]
@@ -32,6 +65,19 @@ class Item(Base):
 
 @dataclass
 class Section(Base):
+    """Section class represents a section in docstring.
+
+    Args:
+        name: Object name.
+        type: Object type.
+        markdown: Markdown source.
+
+    Attributes:
+        name: Object name.
+        type: Object type.
+        markdown: Markdown source.
+        html: HTML after conversion.
+    """
     items: List[Item] = field(default_factory=list)
 
     def __iter__(self) -> Iterator[Base]:
@@ -43,6 +89,12 @@ class Section(Base):
 
 @dataclass
 class Docstring:
+    """Docstring class represents a docstring of an object.
+
+    Args:
+        sections: List of Section instance
+        type: Type for Returns and Yields sections.
+    """
     sections: List[Section]
     type: str = ""
 
@@ -59,6 +111,20 @@ class Docstring:
 
 @dataclass
 class Node(Base):
+    """Node class represents an object.
+
+    Attributes:
+        obj: Object.
+        depth: Current depth of object searching.
+        prefix: Prefix.
+        kind: Kind such as `function`, `class`, `module`, etc.
+        sourcefile: Souce filename thats defines this object.
+        lineno: Line number.
+        signature: Signature instance.
+        docstring: Docstring instance.
+        members: Member objects. For example, methods of class.
+        headless: Used in page mode.
+    """
     obj: Any = field(default=None, repr=False)
     depth: int = 0
     prefix: str = ""
@@ -94,6 +160,7 @@ class Node(Base):
             yield from member
 
     def get_markdown(self) -> str:
+        """Returns a Markdown source for docstring of this object."""
         markdowns = []
         for base in self:
             markdown = mkapi.core.preprocess.convert(base.markdown)
@@ -101,5 +168,6 @@ class Node(Base):
         return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
     def set_html(self, html: str):
+        """Sets HTML to `Base` instances recursively."""
         for base, html in zip(self, html.split("<!-- mkapi:sep -->")):
             base.set_html(html.strip())

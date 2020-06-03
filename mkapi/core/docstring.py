@@ -1,3 +1,4 @@
+"""This module provides functions that parse docstring."""
 import inspect
 import re
 from typing import Any, Iterator, List, Optional, Tuple
@@ -50,7 +51,19 @@ def rename_section(name: str) -> str:
 
 
 def section_header(line: str) -> Tuple[str, str]:
-    """Returns a tuple of (section name, style name)."""
+    """Returns a tuple of (section name, style name).
+
+    Args:
+        line: Docstring line.
+
+    Examples:
+        >>> section_header("Args:")
+        ('Args', 'google')
+        >>> section_header("Raises")
+        ('Raises', 'numpy')
+        >>> section_header("other")
+        ('', '')
+    """
     if line in SECTIONS:
         return line, "numpy"
     elif line.endswith(":") and line[:-1] in SECTIONS:
@@ -60,7 +73,19 @@ def section_header(line: str) -> Tuple[str, str]:
 
 
 def split_section(doc: str) -> Iterator[Tuple[str, str, str]]:
-    """Yields a tuple of (section name, contents, style)."""
+    """Yields a tuple of (section name, contents, style).
+
+    Args:
+        doc: Docstring
+
+    Examples:
+        >>> doc = "abc\\n\\nArgs:\\n    x: X\\n"
+        >>> it = split_section(doc)
+        >>> next(it)
+        ('', 'abc', '')
+        >>> next(it)
+        ('Parameters', 'x: X', 'google')
+    """
     lines = [x.rstrip() for x in doc.split("\n")]
     name = ""
     style = ""
@@ -78,9 +103,9 @@ def split_section(doc: str) -> Iterator[Tuple[str, str, str]]:
         else:
             section, style_ = section_header(line)
             if section:
-                style = style_
                 if start < stop - 1:
                     yield name, join(lines[start : stop - 1]), style
+                style = style_
                 name = rename_section(section)
                 start = stop
                 if style == "numpy":  # skip underline without counting the length.
@@ -91,7 +116,11 @@ def split_section(doc: str) -> Iterator[Tuple[str, str, str]]:
 
 
 def split_parameter(doc: str) -> Iterator[List[str]]:
-    """Yields list of parameter string."""
+    """Yields list of parameter string.
+
+    Args:
+        doc: Docstring
+    """
     lines = [x.rstrip() for x in doc.split("\n")]
     start = stop = 0
     for stop, line in enumerate(lines, 1):
@@ -105,7 +134,12 @@ def split_parameter(doc: str) -> Iterator[List[str]]:
 
 
 def parse_parameter(lines: List[str], style: str) -> Tuple[str, str, str]:
-    """Yields (name, type, markdown)."""
+    """Yields (name, type, markdown).
+
+    Args:
+        lines: Splitted parameter docstring lines.
+        style: Docstring style. `google` or `numpy`.
+    """
     if style == "google":
         name, _, line = lines[0].partition(":")
         name = name.strip()
@@ -139,6 +173,7 @@ def parse_raise(lines: List[str], style: str) -> Tuple[str, str]:
 
 
 def parse_raises(doc: str, style: str) -> List[Tuple[str, str]]:
+    """Returns list of (type, markdown)."""
     return [parse_raise(lines, style) for lines in split_parameter(doc)]
 
 
@@ -159,6 +194,7 @@ def parse_returns(doc: str, style: str) -> Tuple[str, str]:
 
 
 def create_section(name: str, doc: str, style: str) -> Section:
+    """Returns a `Section` instance."""
     type = ""
     markdown = ""
     items = []
@@ -174,6 +210,7 @@ def create_section(name: str, doc: str, style: str) -> Section:
 
 
 def parse_property(doc: Docstring, obj: Any):
+    """Parses property's docstring to inspect type."""
     section = doc.sections[0]
     markdown = section.markdown
     line = markdown.split("\n")[0]
@@ -223,6 +260,7 @@ def postprocess(doc: Docstring, obj: Any):
 
 
 def parse_docstring(obj: Any) -> Optional[Docstring]:
+    """Parses docstring of the object and returns a `Docstring` instance."""
     doc = inspect.getdoc(obj)
     if not doc:
         return None

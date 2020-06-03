@@ -1,20 +1,6 @@
 """This module provides the MkapiPlugin class.
 
 MkapiPlugin is a MkDocs plugin that generates Python API documentation.
-
-Configure your mkdocs.yml like below:
-
-    - plugins:
-        - search
-        - mkapi
-
-If you want to refer objects that don't exist in the `sys.path`, configure
-a `src_dirs` option:
-
-    - plugins:
-        - search
-        - mkapi
-            - src_dirs: [<path1>, <path2>, ...]
 """
 import logging
 import os
@@ -34,6 +20,7 @@ logger = logging.getLogger("mkdocs")
 
 
 class MkapiPlugin(BasePlugin):
+    """MkapiPlugin class for API generation."""
     config_scheme = (("src_dirs", config_options.Type(list, default=[])),)
     server = None
 
@@ -84,7 +71,7 @@ class MkapiPlugin(BasePlugin):
         return files
 
     def on_page_markdown(self, markdown, page, config, files):
-        """Converts markdown to intermidiate version."""
+        """Converts Markdown source to intermidiate version."""
         path = page.file.abs_src_path
         page = Page(markdown)
         self.pages[path] = page
