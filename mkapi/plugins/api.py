@@ -55,16 +55,19 @@ def walk(value: str, docs_dir: str, config_dir) -> list:
     for paths in _walk(top):
         package = os.path.relpath(paths[0], root)
         package = package.replace("/", ".").replace("\\", ".")
-        pages = []
         package_obj = importlib.import_module(package)
         if inspect.getdoc(package_obj):
             paths[0] = ""
         else:
             paths = paths[1:]
 
+        pages = []
         for path in paths:
             if path:
                 module = ".".join([package, path])
+                module_obj = importlib.import_module(module)
+                if not inspect.getdoc(module_obj):
+                    continue
             else:
                 module = package
             abs_path = "/".join([abs_api_path, module]) + ".md"
@@ -75,7 +78,8 @@ def walk(value: str, docs_dir: str, config_dir) -> list:
             create_page(abs_path, module, children)
             page = os.path.relpath(abs_path, docs_dir).replace("\\", "/")
             pages.append({page[:-3].split(".")[-1]: page})
-        nav.append({package: pages})
+        if pages:
+            nav.append({package: pages})
 
     return nav
 
