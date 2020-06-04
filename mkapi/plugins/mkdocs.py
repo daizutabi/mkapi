@@ -17,25 +17,32 @@ import mkapi.plugins.api
 from mkapi.core.page import Page
 
 logger = logging.getLogger("mkdocs")
+global_config = {}
 
 
 class MkapiPlugin(BasePlugin):
     """MkapiPlugin class for API generation."""
+
     config_scheme = (("src_dirs", config_options.Type(list, default=[])),)
     server = None
 
     def on_config(self, config):
         """Inserts `src_dirs` to `sys.path`."""
-        self.pages = {}
         config_dir = os.path.dirname(config["config_file_path"])
         for src_dir in self.config["src_dirs"]:
             path = os.path.join(config_dir, src_dir)
             if path not in sys.path:
                 sys.path.insert(0, path)
+
+        self.pages = {}
+        self.api_roots = []
         if not self.server:
-            config, pages = mkapi.plugins.api.create_nav(config)
-            # print(pages)
-            # sys.exit()
+            config, self.api_roots = mkapi.plugins.api.create_nav(config)
+            global_config["config"] = config
+            global_config["api_roots"] = self.api_roots
+        else:
+            config = global_config["config"]
+            self.api_roots = global_config["api_roots"]
         return config
 
     def on_files(self, files, config):
@@ -74,17 +81,17 @@ class MkapiPlugin(BasePlugin):
 
     def on_page_markdown(self, markdown, page, config, files):
         """Converts Markdown source to intermidiate version."""
-        path = page.file.abs_src_path
-        page = Page(markdown)
-        self.pages[path] = page
+        abs_src_path = page.file.abs_src_path
+        page = Page(markdown, abs_src_path, self.api_roots)
+        self.pages[abs_src_path] = page
         return page.markdown
 
     def on_page_content(self, html, page, config, files):
         """Merges html and MkApi's node structure."""
         if page.title:
             page.title = re.sub(r"<.*?>", "", page.title)
-        path = page.file.abs_src_path
-        page = self.pages[path]
+        abs_src_path = page.file.abs_src_path
+        page = self.pages[abs_src_path]
         return page.content(html)
 
     def on_serve(self, server, config, builder):

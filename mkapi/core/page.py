@@ -2,10 +2,11 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterator, List
 
+from mkapi.core.linker import resolve_markdown_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.renderer import renderer
 
-MKAPI_PATTERN = re.compile(r"^!\[mkapi\]\((.*?)\)$", re.MULTILINE)
+MKAPI_PATTERN = re.compile(r"^!\[mkapi\]\((.+?)\)$", re.MULTILINE)
 
 HTML_PATTERN = re.compile(
     r"<!-- mkapi:(\d+):begin -->(.*?)<!-- mkapi:end -->", re.MULTILINE | re.DOTALL
@@ -15,10 +16,15 @@ HTML_PATTERN = re.compile(
 @dataclass
 class Page:
     source: str
+    abs_src_path: str
+    api_roots: List[str] = field(default_factory=list)
     nodes: List[Node] = field(default_factory=list, init=False)
 
     def __post_init__(self):
-        self.markdown = "\n\n".join(self.split(self.source))
+        markdown = "\n\n".join(self.split(self.source))
+        self.markdown = resolve_markdown_link(
+            markdown, self.abs_src_path, self.api_roots
+        )
 
     def split(self, source) -> Iterator[str]:
         cursor = 0
@@ -40,6 +46,7 @@ class Page:
             else:
                 headless = False
             node = get_node(name, max_depth, headless)
+            node.resolve_link(self.abs_src_path, self.api_roots)
             self.nodes.append(node)
             markdown = node.get_markdown()
             yield f"<!-- mkapi:{index}:begin -->\n\n{markdown}\n\n<!-- mkapi:end -->"
@@ -50,9 +57,9 @@ class Page:
                 yield markdown
 
     def content(self, html):
-        return re.sub(HTML_PATTERN, self.replace, html)
+        def replace(match):
+            node = self.nodes[int(match.group(1))]
+            node.set_html(match.group(2))
+            return renderer.render(node)
 
-    def replace(self, match):
-        node = self.nodes[int(match.group(1))]
-        node.set_html(match.group(2))
-        return renderer.render(node)
+        return re.sub(HTML_PATTERN, replace, html)

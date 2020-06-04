@@ -1,4 +1,5 @@
 """This module provides functions that parse docstring."""
+
 import inspect
 import re
 from typing import Any, Iterator, List, Optional, Tuple

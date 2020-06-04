@@ -73,14 +73,14 @@ def walk(value: str, docs_dir: str, config_dir) -> Tuple[list, list]:
                     continue
             else:
                 module = package
-            abs_path = "/".join([abs_api_path, module]) + ".md"
+            abs_path = os.path.normpath("/".join([abs_api_path, module]) + ".md")
             if path == "":
                 children = paths[1:]
             else:
                 children = []
             create_page(abs_path, module, children)
             page = os.path.relpath(abs_path, docs_dir).replace("\\", "/")
-            pages_all.append(page[:-3])
+            pages_all.append(abs_path)
             pages.append({page[:-3].split(".")[-1]: page})
         if pages:
             nav.append({package: pages})

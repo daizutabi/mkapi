@@ -23,13 +23,13 @@ plugins:
 nav:
   - index.md
   - Examples:
-    - google_style.md
-    - numpy_style.md
+    - examples/google_style.md
+    - examples/numpy_style.md
   - Advanced Usage:
-    - library.py
-    - type.py
-    # - link.py
-    - depth.md
+    - usage/library.py
+    - usage/page.md
+    - usage/type.py
+    - usage/depth.md
   - API: mkapi/api/mkapi
 
 markdown_extensions:

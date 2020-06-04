@@ -1,7 +1,7 @@
 <ul class="mkapi-args-list">
 {% for item in section.items %}
   <li>{% if item.name %}<code class="mkapi-args-name">{{ item.name }}</code>{% endif %}
-         {% if item.type %}<span class="mkapi-args-type">({{ item.type }})</span>{% endif %}
+         {% if item.type %}<span class="mkapi-args-type">({{ item.type|safe }})</span>{% endif %}
          <span class="mkapi-args-dash">&mdash;</span>
          <span class="mkapi-args-desc">{{ item.html|safe }}</span></li>
 {% endfor %}

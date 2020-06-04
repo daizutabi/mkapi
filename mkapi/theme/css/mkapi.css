@@ -78,8 +78,24 @@ code.mkapi-node-prefix {
   color: #333333;
 }
 
+code.mkapi-node-prefix a {
+  color: inherit;
+}
+
+code.mkapi-node-prefix a:hover {
+  background: #FFDDCC;
+}
+
 code.mkapi-node-basename {
   color: #333333;
+}
+
+code.mkapi-node-basename a {
+  color: inherit;
+}
+
+code.mkapi-node-basename a:hover {
+  background: #FFDDCC;
 }
 
 code.mkapi-node-signature {
@@ -206,7 +222,10 @@ code.mkapi-node-signature {
   text-indent: -20px;
   list-style: none;
   padding-top: 1px;
-  padding-bottom: 2px;
+  padding-bottom: 1px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  line-height: 1.25em;
 }
 
 code.mkapi-args-name {
@@ -221,6 +240,15 @@ code.mkapi-args-name {
   color: #8888EE;
   font-weight: normal;
   font-size: 0.9rem;
+}
+
+.mkapi-args-type a {
+  color: inherit;
+  font-weight: bold;
+}
+
+.mkapi-args-type a:hover {
+  background: #FFDDCC;
 }
 
 .mkapi-args-dash {

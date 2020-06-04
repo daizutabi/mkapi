@@ -96,11 +96,11 @@ class Docstring:
     """Docstring class represents a docstring of an object.
 
     Args:
-        sections: List of Section instance
+        sections: List of Section instance.
         type: Type for Returns and Yields sections.
 
     Attributes:
-        sections: List of Section instance
+        sections: List of Section instance.
         type: Type for Returns and Yields sections.
     """
 
@@ -146,6 +146,8 @@ class Node(Base):
     docstring: Optional[Docstring] = None
     members: List["Node"] = field(default_factory=list)
     headless: bool = False
+    prefix_url: str = ""
+    name_url: str = ""
 
     def __post_init__(self):
         if self.prefix:
@@ -169,6 +171,13 @@ class Node(Base):
             yield from self.docstring
         for member in self.members:
             yield from member
+
+    def resolve_link(self, abs_src_path, api_roots):
+        from mkapi.core.linker import resolve_link
+
+        resolve_link(self, abs_src_path, api_roots)
+        for base in self:
+            resolve_link(base, abs_src_path, api_roots)
 
     def get_markdown(self) -> str:
         """Returns a Markdown source for docstring of this object."""

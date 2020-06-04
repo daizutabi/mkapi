@@ -1,15 +1,18 @@
 {% if not node.headless %}
 <div class="mkapi-node mkapi-node-depth-{{ node.depth }}" id="{{ node.id }}">
-  <div class="mkapi-node-header mkapi-node-header-{{ node.kind }}">
-    <div class="mkapi-node-kind mkapi-node-kind-{{ node.kind }}">{{ node.kind|upper }}</div>
-    <div class="mkapi-node-name">
-      {% if node.kind == 'module' or node.kind == 'package' %}{% if node.prefix and node.depth == 1 %}<span class="mkapi-node-prefix">{{ node.prefix }}.</span>{% endif %}<span class="mkapi-node-basename">{{ node.name }}</span>
-      {% else %}
-        {% if node.prefix and node.kind not in ['method', 'readonly_property', 'readwrite_property'] %}<code class="mkapi-node-prefix">{{ node.prefix }}.</code>{% endif %}<code class="mkapi-node-basename">{{ node.name }}</code>{% if node.signature %}<code class="mkapi-node-signature">{{ node.signature }}</code>{% endif %}
-        {% if node.type %}<span class="mkapi-args-type">&#x2192; {{ node.type }}</span>{% endif %}
-      {% endif %}
-    </div>
-  </div>
+<div class="mkapi-node-header mkapi-node-header-{{ node.kind }}">
+<div class="mkapi-node-kind mkapi-node-kind-{{ node.kind }}">{{ node.kind|upper }}</div>
+<div class="mkapi-node-name">
+{% if node.kind == 'module' or node.kind == 'package' %}
+{% if node.prefix and node.depth == 1 %}
+<span class="mkapi-node-prefix">{% if node.prefix_url %}<a href="{{ node.prefix_url }}">{% endif %}{{ node.prefix }}{% if node.prefix_url %}</a>{% endif %}.</span>{% endif %}<span class="mkapi-node-basename">{% if node.name_url and node.id != node.name_url[1:] %}<a href="{{ node.name_url }}">{% endif %}{{ node.name }}{% if node.name_url and node.id != node.name_url[1:] %}</a>{% endif %}</span>
+{% else %}
+{% if node.prefix and node.kind not in ['method', 'readonly_property', 'readwrite_property'] %}
+<code class="mkapi-node-prefix">{% if node.prefix_url %}<a href="{{ node.prefix_url }}">{% endif %}{{ node.prefix }}{% if node.prefix_url %}</a>{% endif %}.</code>{% endif %}<code class="mkapi-node-basename">{% if node.name_url and node.id != node.name_url[1:] %}<a href="{{ node.name_url }}">{% endif %}{{ node.name }}{% if node.name_url and node.id != node.name_url[1:] %}</a>{% endif %}</code>{% if node.signature %}<code class="mkapi-node-signature">{{ node.signature }}</code>{% endif %}
+{% if node.type %}<span class="mkapi-args-type">&#x2192; {{ node.type|safe }}</span>{% endif %}
+{% endif %}
+</div>
+</div>
   {{ docstring|safe }}
   {% if members %}
     <div class="mkapi-members">
