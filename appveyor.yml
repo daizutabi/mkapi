@@ -18,6 +18,7 @@ install:
   - conda create -q -n test-environment python=%PYTHON_VERSION%
   - activate test-environment
   - pip install pytest pytest-cov mkdocs
+  - pip install jupyter
   - pip install -e .
 
 test_script:
