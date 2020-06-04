@@ -203,9 +203,12 @@ def split_prefix_and_basename(obj) -> Tuple[str, str]:
         module = obj.__module__
         qualname = obj.__qualname__
         if "." not in qualname:
-            return module, qualname
-        prefix, _, basename = qualname.rpartition(".")
-        prefix = ".".join([module, prefix])
+            prefix, basename = module, qualname
+        else:
+            prefix, _, basename = qualname.rpartition(".")
+            prefix = ".".join([module, prefix])
+        if prefix == "__main__":
+            prefix = ""
         return prefix, basename
 
 
