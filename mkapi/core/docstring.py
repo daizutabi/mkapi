@@ -256,7 +256,13 @@ def postprocess(doc: Docstring, obj: Any):
             section.type = getattr(annotation, name.lower())
 
     if doc["Returns"] is None and doc["Yields"] is None:
-        doc.type = annotation.returns
+        from mkapi.core.node import get_kind
+
+        kind = get_kind(obj)
+        if kind == "generator":
+            doc.type = annotation.yields
+        else:
+            doc.type = annotation.returns
 
 
 def parse_docstring(obj: Any) -> Optional[Docstring]:

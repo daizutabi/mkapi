@@ -5,7 +5,7 @@ import logging
 import os
 import shutil
 import sys
-from typing import Iterator, List
+from typing import Iterator, List, Tuple
 
 from mkapi.core.node import get_node
 from mkapi.core.renderer import renderer
@@ -17,12 +17,14 @@ def create_nav(config):
     nav = config["nav"]
     docs_dir = config["docs_dir"]
     config_dir = os.path.dirname(config["config_file_path"])
+    pages_all = []
     for page in nav:
         if isinstance(page, dict):
             for key, value in page.items():
                 if isinstance(value, str) and value.startswith("mkapi/"):
-                    page[key] = walk(value, docs_dir, config_dir)
-    return config
+                    page[key], pages = walk(value, docs_dir, config_dir)
+                    pages_all.extend(pages)
+    return config, pages_all
 
 
 def _walk(top: str) -> Iterator[List[str]]:
@@ -37,7 +39,7 @@ def _walk(top: str) -> Iterator[List[str]]:
         yield paths
 
 
-def walk(value: str, docs_dir: str, config_dir) -> list:
+def walk(value: str, docs_dir: str, config_dir) -> Tuple[list, list]:
     _, api_path, *tops = value.split("/")
     abs_api_path = os.path.join(docs_dir, api_path)
     if os.path.exists(abs_api_path):
@@ -52,6 +54,7 @@ def walk(value: str, docs_dir: str, config_dir) -> list:
     if root not in sys.path:
         sys.path.insert(0, root)
     nav = []
+    pages_all = []
     for paths in _walk(top):
         package = os.path.relpath(paths[0], root)
         package = package.replace("/", ".").replace("\\", ".")
@@ -77,11 +80,12 @@ def walk(value: str, docs_dir: str, config_dir) -> list:
                 children = []
             create_page(abs_path, module, children)
             page = os.path.relpath(abs_path, docs_dir).replace("\\", "/")
+            pages_all.append(page[:-3])
             pages.append({page[:-3].split(".")[-1]: page})
         if pages:
             nav.append({package: pages})
 
-    return nav
+    return nav, pages_all
 
 
 def rmtree(path):

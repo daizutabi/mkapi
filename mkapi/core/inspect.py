@@ -1,6 +1,6 @@
 import inspect
 import re
-from typing import Optional
+from typing import ForwardRef, Optional, Union  # type:ignore
 
 
 class Signature:
@@ -54,7 +54,8 @@ class Annotation:
     def __getitem__(self, name):
         type = to_string(self.parameters[name].annotation)
         if self.defaults[name] != inspect.Parameter.empty:
-            type += ", optional"
+            if not type.endswith(", optional"):
+                type += ", optional"
         return type
 
     @property
@@ -73,33 +74,82 @@ def to_string(annotation, kind: str = "") -> str:
         else:
             return ""
 
+    if isinstance(annotation, ForwardRef):
+        return annotation.__forward_arg__
     if annotation == inspect.Parameter.empty or annotation is None:
         return ""
     if hasattr(annotation, "__name__"):
-        return annotation.__name__
-    if hasattr(annotation, "__origin__"):
-        origin = annotation.__origin__
-        if origin in [list, set]:
-            return a_of_b(annotation)
-        if origin == tuple:
-            args = [to_string(x) for x in annotation.__args__]
-            if args:
-                return "(" + ", ".join(args) + ")"
-            else:
-                return "tuple"
-        if origin == dict:
-            args = [to_string(x) for x in annotation.__args__]
-            if args:
-                return "dict(" + ": ".join(args) + ")"
-            else:
-                return "dict"
-    return str(annotation).replace("typing.", "")
+        name = annotation.__name__
+        if not hasattr(annotation, '__module__'):
+            return name
+        module = annotation.__module__
+        if module == 'builtins':
+            return name
+        return f"[{name}]({module}.{name})"
+    if not hasattr(annotation, "__origin__"):
+        return str(annotation).replace("typing.", "")
+    origin = annotation.__origin__
+    if origin is Union:
+        return union(annotation)
+    if origin is tuple:
+        args = [to_string(x) for x in annotation.__args__]
+        if args:
+            return "(" + ", ".join(args) + ")"
+        else:
+            return "tuple"
+    if origin is dict:
+        args = [to_string(x) for x in annotation.__args__]
+        if args:
+            return "dict(" + ": ".join(args) + ")"
+        else:
+            return "dict"
+    if hasattr(annotation, "__args__") and len(annotation.__args__) <= 1:
+        return a_of_b(annotation)
+    return ""
 
 
 def a_of_b(annotation) -> str:
     origin = annotation.__origin__
-    name = origin.__name__
+    if not hasattr(origin, "__name__"):
+        return ""
+    name = origin.__name__.lower()
     type = f"{name} of " + to_string(annotation.__args__[0])
     if type.endswith(" of T"):
         return name
     return type
+
+
+def union(annotation) -> str:
+    """Returns a string for union annotation.
+
+    Examples:
+        >>> from typing import List, Optional, Tuple, Union
+        >>> a = Optional[List[str]]
+        >>> union(a)
+        'list of str, optional'
+        >>> a = Union[str, int]
+        >>> union(a)
+        'str or int'
+        >>> a = Union[str, int, float]
+        >>> union(a)
+        'str, int, or float'
+        >>> a = Union[List[str], Tuple[int, int]]
+        >>> union(a)
+        'Union(list of str, (int, int))'
+    """
+    args = annotation.__args__
+    if (
+        len(args) == 2
+        and hasattr(args[1], "__name__")
+        and args[1].__name__ == "NoneType"
+    ):
+        return to_string(args[0]) + ", optional"
+    else:
+        args = [to_string(x) for x in args]
+        if all(" " not in arg for arg in args):
+            if len(args) == 2:
+                return " or ".join(args)
+            else:
+                return ", ".join(args[:-1]) + ", or " + args[-1]
+        else:
+            return "Union(" + ", ".join(to_string(x) for x in args) + ")"

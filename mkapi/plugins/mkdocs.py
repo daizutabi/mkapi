@@ -33,7 +33,9 @@ class MkapiPlugin(BasePlugin):
             if path not in sys.path:
                 sys.path.insert(0, path)
         if not self.server:
-            config = mkapi.plugins.api.create_nav(config)
+            config, pages = mkapi.plugins.api.create_nav(config)
+            # print(pages)
+            # sys.exit()
         return config
 
     def on_files(self, files, config):

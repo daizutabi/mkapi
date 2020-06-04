@@ -76,7 +76,8 @@ section.name, section.markdown
 section = docstring.sections[1]  # type:ignore
 section.name, section.markdown
 
-# Parameters section has no `markdown` but `items` that represent argument list:
+# The above Parameters section has an empty `markdown`, while its `items` represent
+# argument list:
 
 section.items
 

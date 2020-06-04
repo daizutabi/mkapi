@@ -26,9 +26,10 @@ nav:
     - google_style.md
     - numpy_style.md
   - Advanced Usage:
-    - depth.md
     - library.py
     - type.py
+    # - link.py
+    - depth.md
   - API: mkapi/api/mkapi
 
 markdown_extensions:

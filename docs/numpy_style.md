@@ -104,11 +104,24 @@ creates the API documentation for the `ExampleClass` class.
 In this example, note that:
 
 * Docstring of `__init__` function is treated as a class-level docstring.
-* Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style. So far, only `List` and `Tuple` are supported.
+* Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style.
 * Bound methods (`message` in this case) have a `METHOD` prefix instead of a `FUNCTION` prefix.
 * If callable objects have neither `Returns` nor `Yields`, the type appears on the object definition line like type annotation.
 * For properties, the type can be written at the beginning of the docstring or as type annotation.
 * Whether a property is read-only or read-write is inspected.
+
+## Method
+
+You can select a method of class (or any other attribute that can have docstring) to generate API.
+
+~~~markdown
+![mkapi][numpy_style.ExampleClass.message]
+~~~
+
+creates the API documentation for the `message()` of `ExampleClass` class.
+
+![mkapi](numpy_style.ExampleClass.message)
+
 
 ## Data Class
 

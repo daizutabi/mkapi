@@ -98,13 +98,13 @@ def get_members(obj, kind, sourcefile, prefix, depth, max_depth=-1) -> List[Node
         func = partial(filter, qualname=qualname)
 
     members = []
-    for x in inspect.getmembers(obj, func):
-        if x[0].startswith("_") and x[0] != "__init__":
+    for name, obj in inspect.getmembers(obj, func):
+        if name.startswith("_") and name != "__init__":
             continue
-        member = walk(*x, prefix=prefix, depth=depth, max_depth=max_depth)
+        member = walk(obj, prefix, name, depth=depth, max_depth=max_depth)
         # Below is needed for max_depth.
         if member.kind in ["class", "dataclass"] and not member.docstring:
-            docstring = parse_docstring(x[1].__init__)
+            docstring = parse_docstring(obj.__init__)
             if docstring:
                 markdown = docstring.sections[0].markdown
                 if not markdown.startswith("Initialize self"):
@@ -114,7 +114,7 @@ def get_members(obj, kind, sourcefile, prefix, depth, max_depth=-1) -> List[Node
     return sorted(members, key=lambda x: (x.sourcefile, x.lineno))
 
 
-def walk(name, obj, prefix="", depth=0, max_depth=-1) -> Node:
+def walk(obj, prefix, name, depth=0, max_depth=-1) -> Node:
     member_prefix = name
     if prefix:
         member_prefix = ".".join([prefix, member_prefix])
@@ -134,9 +134,9 @@ def walk(name, obj, prefix="", depth=0, max_depth=-1) -> Node:
 
     node = Node(
         obj=obj,
+        prefix=prefix,
         name=name,
         depth=depth,
-        prefix=prefix,
         kind=kind,
         sourcefile=sourcefile,
         lineno=lineno,
@@ -149,17 +149,64 @@ def walk(name, obj, prefix="", depth=0, max_depth=-1) -> Node:
     return node
 
 
-def get_attr(path: str):
-    module_path, _, name = path.rpartition(".")
-    module = importlib.import_module(module_path)
-    return getattr(module, name)
+def get_object(name: str) -> Any:
+    """Reutrns an object specified `name`.
+
+    Examples:
+        >>> import inspect
+        >>> obj = get_object('mkapi.core')
+        >>> inspect.ismodule(obj)
+        True
+        >>> obj = get_object('mkapi.core.base')
+        >>> inspect.ismodule(obj)
+        True
+        >>> obj = get_object('mkapi.core.base.Node')
+        >>> inspect.isclass(obj)
+        True
+        >>> obj = get_object('mkapi.core.base.Node.get_markdown')
+        >>> inspect.isfunction(obj)
+        True
+    """
+    names = name.split(".")
+    for k in range(len(names), 0, -1):
+        module_name = ".".join(names[:k])
+        try:
+            obj = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            continue
+        for name in names[k:]:
+            obj = getattr(obj, name)
+        return obj
 
 
-def get_object(name: str):
-    try:
-        return get_attr(name)
-    except (ModuleNotFoundError, AttributeError, ValueError):
-        return importlib.import_module(name)
+def split_prefix_and_basename(obj) -> Tuple[str, str]:
+    """Split an object name into prefix and basename.
+
+    Examples:
+        >>> import inspect
+        >>> obj = get_object('mkapi.core')
+        >>> split_prefix_and_basename(obj)
+        ('', 'mkapi.core')
+        >>> obj = get_object('mkapi.core.base')
+        >>> split_prefix_and_basename(obj)
+        ('', 'mkapi.core.base')
+        >>> obj = get_object('mkapi.core.base.Node')
+        >>> split_prefix_and_basename(obj)
+        ('mkapi.core.base', 'Node')
+        >>> obj = get_object('mkapi.core.base.Node.get_markdown')
+        >>> split_prefix_and_basename(obj)
+        ('mkapi.core.base.Node', 'get_markdown')
+    """
+    if inspect.ismodule(obj):
+        return "", obj.__name__
+    else:
+        module = obj.__module__
+        qualname = obj.__qualname__
+        if "." not in qualname:
+            return module, qualname
+        prefix, _, basename = qualname.rpartition(".")
+        prefix = ".".join([module, prefix])
+        return prefix, basename
 
 
 def get_node(name: Any, max_depth: int = -1, headless: bool = False) -> Node:
@@ -167,7 +214,7 @@ def get_node(name: Any, max_depth: int = -1, headless: bool = False) -> Node:
         obj = get_object(name)
     else:
         obj = name
-        name = obj.__name__
-    node = walk(name, obj, max_depth=max_depth)
+    prefix, basename = split_prefix_and_basename(obj)
+    node = walk(obj, prefix, basename, max_depth=max_depth)
     node.headless = headless
     return node
