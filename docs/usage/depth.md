@@ -8,6 +8,9 @@
 -->
 </style>
 
+!!! warning
+    The feature of depth limitatoin will be removed in the future version in favor of "[Page mode](../usage/page.md)".
+
 By default, MkApi searchs objects to unlimited depth. You can control the depth by adding ":(depth)" to the object name.
 
 ~~~markdown

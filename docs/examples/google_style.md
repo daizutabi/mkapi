@@ -145,6 +145,9 @@ In this example, note that:
 
 ## Module
 
+!!! warning
+    The feature of generation of module level docstring will be removed in the future version in favor of "[Page mode](../usage/page.md)".
+
 Finally, let's generate the API documentation for the `google_style` module. The module has a module level docstring like below:
 
 #File google_style.py (line 1~10) {%=/examples/google_style.py[0:10]%}
