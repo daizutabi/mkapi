@@ -1,4 +1,3 @@
-from IPython.display import HTML
 from markdown import Markdown
 
 from mkapi.core.base import Node
@@ -17,4 +16,6 @@ def get_html(node):
 
 
 def display(name):
+    from IPython.display import HTML
+
     return HTML(get_html(name))
