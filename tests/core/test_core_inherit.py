@@ -73,18 +73,3 @@ def test_get_params_after(b, name):
     b_doc_params, b_sig_params = get_params(b, name)
     assert len(b_doc_params) == 3
     assert len(b_sig_params) == 3
-
-
-
-from mkapi.core.base import Section
-
-import mkapi
-
-node = mkapi.get_node(Section)
-node.members
-
-import inspect
-inspect.getmembers(Section)
-Section.set_html.__module__
-
-Section.__module__
