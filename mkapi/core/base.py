@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional
 
 import mkapi.core.preprocess
-from mkapi.core.inspect import Signature
+from mkapi.core.inspect import Annotation, Signature
 from mkapi.core.renderer import renderer
 
 
@@ -29,7 +29,7 @@ class Base:
     html: str = field(default="", init=False)
 
     def set_html(self, html: str):
-        """Sets `html` attribute according to the givin `html` argument.
+        """Sets `html` attribute according to the given `html` argument.
 
         In the simplest case, just store the argument to the attribute. But modify
         the attribute if necessary.
@@ -54,7 +54,7 @@ class Item(Base):
     """
 
     def set_html(self, html: str):
-        """Sets `html` attribute according to the givin `html` argument.
+        """Sets `html` attribute according to the given `html` argument.
 
         `p` tags are removed and `br` tags are inserted.
         """
@@ -117,6 +117,9 @@ class Docstring:
         for section in self.sections:
             yield from section
 
+    def __bool__(self):
+        return len(self.sections) > 0
+
 
 @dataclass
 class Node(Base):
@@ -142,8 +145,9 @@ class Node(Base):
     kind: str = ""
     sourcefile: str = ""
     lineno: int = 0
-    signature: Optional[Signature] = None
-    docstring: Optional[Docstring] = None
+    signature: Signature = field(default_factory=lambda: Signature())
+    annotation: Annotation = field(default_factory=lambda: Annotation())
+    docstring: Docstring = field(default_factory=lambda: Docstring([]))
     members: List["Node"] = field(default_factory=list)
     headless: bool = False
     prefix_url: str = ""
@@ -195,3 +199,10 @@ class Node(Base):
     def render(self) -> str:
         self.html = renderer.render(self)
         return self.html
+
+    @property
+    def parameters(self) -> Optional[Section]:
+        for section in self.docstring.sections:
+            if section.name == "Parameters":
+                return section
+        return None

@@ -1,6 +1,6 @@
 import importlib
 import inspect
-from functools import partial
+from functools import lru_cache, partial
 from typing import Any, List, Tuple
 
 from mkapi.core.base import Node
@@ -174,9 +174,12 @@ def get_object(name: str) -> Any:
             obj = importlib.import_module(module_name)
         except ModuleNotFoundError:
             continue
-        for name in names[k:]:
-            obj = getattr(obj, name)
+        for attr in names[k:]:
+            obj = getattr(obj, attr)
         return obj
+    # if "." not in name and "\n" not in name and " " not in name:
+    #     return eval(name)
+    raise ValueError(f"Could not find object: {name}")
 
 
 def split_prefix_and_basename(obj) -> Tuple[str, str]:
@@ -212,6 +215,7 @@ def split_prefix_and_basename(obj) -> Tuple[str, str]:
         return prefix, basename
 
 
+@lru_cache(maxsize=1000)
 def get_node(name: Any, max_depth: int = -1, headless: bool = False) -> Node:
     if isinstance(name, str):
         obj = get_object(name)

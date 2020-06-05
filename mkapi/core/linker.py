@@ -20,9 +20,15 @@ def resolve_node_link(node: Node, abs_src_path: str, api_roots: List[str]):
 
 
 def resolve_type_link(base: Base, abs_src_path: str, api_roots: List[str]):
+    if "page" in abs_src_path:
+        print('==================',base.name)
     def replace(match):
         name = match.group(1)
         href = resolve_href(match.group(2), abs_src_path, api_roots)
+        if 'page' in abs_src_path:
+            print("--------------")
+            print(name, href, abs_src_path, api_roots[0])
+            print("+++++++++++++++")
         if href:
             title = href.split('#')[1]
             return f'<a href="{href}" title="{title}">{match.group(1)}</a>'

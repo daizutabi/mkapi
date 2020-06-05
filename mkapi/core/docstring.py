@@ -2,7 +2,7 @@
 
 import inspect
 import re
-from typing import Any, Iterator, List, Optional, Tuple
+from typing import Any, Iterator, List, Tuple
 
 from mkapi.core.base import Docstring, Item, Section
 from mkapi.core.inspect import Annotation
@@ -266,11 +266,11 @@ def postprocess(doc: Docstring, obj: Any):
             doc.type = annotation.returns
 
 
-def parse_docstring(obj: Any) -> Optional[Docstring]:
+def parse_docstring(obj: Any) -> Docstring:
     """Parses docstring of the object and returns a `Docstring` instance."""
     doc = inspect.getdoc(obj)
     if not doc:
-        return None
+        return Docstring([])
     sections = []
     for section in split_section(doc):
         sections.append(create_section(*section))

@@ -1,10 +1,12 @@
 import inspect
 import re
-from typing import ForwardRef, Optional, Union  # type:ignore
+from typing import ForwardRef, Union  # type:ignore
 
 
 class Signature:
-    def __init__(self, obj):
+    def __init__(self, obj=None):
+        if obj is None:
+            self.signature = None
         try:
             self.signature = inspect.signature(obj)
         except (TypeError, ValueError):
@@ -22,17 +24,17 @@ class Signature:
         return s
 
 
-def get_signature(obj) -> Optional[Signature]:
+def get_signature(obj) -> Signature:
     if not callable(obj):
-        return None
-    signature = Signature(obj)
-    if signature.signature:
-        return signature
-    return None
+        return Signature()
+    else:
+        return Signature(obj)
 
 
 class Annotation:
-    def __init__(self, obj):
+    def __init__(self, obj=None):
+        if obj is None:
+            return
         signature = inspect.signature(obj)
         self.parameters = signature.parameters
         self.defaults = {}
@@ -80,10 +82,10 @@ def to_string(annotation, kind: str = "") -> str:
         return ""
     if hasattr(annotation, "__name__"):
         name = annotation.__name__
-        if not hasattr(annotation, '__module__'):
+        if not hasattr(annotation, "__module__"):
             return name
         module = annotation.__module__
-        if module == 'builtins':
+        if module == "builtins":
             return name
         return f"[{name}]({module}.{name})"
     if not hasattr(annotation, "__origin__"):
