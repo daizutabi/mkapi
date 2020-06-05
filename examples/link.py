@@ -2,5 +2,5 @@ def func():
     """Internal link example.
 
     See Also:
-        [Item](mkapi.core.base.Item)
+        [a method](mkapi.core.base.Item.set_html)
     """

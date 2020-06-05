@@ -2,7 +2,7 @@
   {% for section in docstring.sections %}
     <div class="mkapi-section{% if section.name %} mkapi-section-named mkapi-section-{{ section.name|lower }}{% endif %}">
       {% if section.name %}<div class="mkapi-section-name mkapi-section-name-{{ section.name|lower|replace(' ', '-') }}">
-      <span class="mkapi-section-name-body">{{ section.name }}</span>{% if section.type %} <span class="mkapi-args-type">({{ section.type|safe }})</span>{% endif %}</div>{% endif %}
+      <span class="mkapi-section-name-body">{{ section.name }}</span>{% if section.type %} <span class="mkapi-args-type">({% if section.type_html %}{{ section.type_html|safe }}{% else %}{{ section.type}}{% endif %})</span>{% endif %}</div>{% endif %}
       <div class="mkapi-section-body{% if section.name %} mkapi-section-body-{{ section.name|lower }}{% endif %}">{{ section.html|safe }}</div>
     </div>
   {% endfor %}

@@ -2,7 +2,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterator, List
 
-from mkapi.core.linker import resolve_markdown_link
+from mkapi.core.inherit import inherit
+from mkapi.core.linker import resolve_link, resolve_markdown_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.renderer import renderer
 
@@ -46,7 +47,9 @@ class Page:
             else:
                 headless = False
             node = get_node(name, max_depth, headless)
-            node.resolve_link(self.abs_src_path, self.api_roots)
+            if node.kind in ["class", "dataclass"]:
+                inherit(node)
+            resolve_link(node, self.abs_src_path, self.api_roots)
             self.nodes.append(node)
             markdown = node.get_markdown()
             yield f"<!-- mkapi:{index}:begin -->\n\n{markdown}\n\n<!-- mkapi:end -->"

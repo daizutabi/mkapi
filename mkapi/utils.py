@@ -1,13 +1,15 @@
 from IPython.display import HTML
 from markdown import Markdown
 
+from mkapi.core.base import Node
 from mkapi.core.node import get_node
 
 converter = Markdown()
 
 
-def get_html(name):
-    node = get_node(name)
+def get_html(node):
+    if not isinstance(node, Node):
+        node = get_node(node)
     markdown = node.get_markdown()
     html = converter.convert(markdown)
     node.set_html(html)

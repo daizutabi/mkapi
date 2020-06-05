@@ -4,8 +4,8 @@ from functools import lru_cache, partial
 from typing import Any, List, Tuple
 
 from mkapi.core.base import Node
-from mkapi.core.docstring import parse_docstring
-from mkapi.core.inspect import get_signature
+from mkapi.core.docstring import get_docstring
+from mkapi.core.signature import get_signature
 
 ISFUNCTIONS = {}
 for x in dir(inspect):
@@ -73,6 +73,8 @@ def filter(obj, qualname, sourcefile="") -> bool:
     kind = get_kind(obj)
     if kind == "":
         return False
+    if kind == 'method':
+        return True
 
     sourcefile_, _ = get_sourcefile_and_lineno(obj)
     if sourcefile_ == "" or (sourcefile and sourcefile != sourcefile_):
@@ -104,7 +106,7 @@ def get_members(obj, kind, sourcefile, prefix, depth, max_depth=-1) -> List[Node
         member = walk(obj, prefix, name, depth=depth, max_depth=max_depth)
         # Below is needed for max_depth.
         if member.kind in ["class", "dataclass"] and not member.docstring:
-            docstring = parse_docstring(obj.__init__)
+            docstring = get_docstring(obj.__init__)
             if docstring:
                 markdown = docstring.sections[0].markdown
                 if not markdown.startswith("Initialize self"):
@@ -121,7 +123,7 @@ def walk(obj, prefix, name, depth=0, max_depth=-1) -> Node:
     kind = get_kind(obj)
     sourcefile, lineno = get_sourcefile_and_lineno(obj)
     signature = get_signature(obj)
-    docstring = parse_docstring(obj)
+    docstring = get_docstring(obj)
     members = get_members(obj, kind, sourcefile, member_prefix, depth + 1, max_depth)
 
     if kind in ["class", "dataclass"] and not docstring:
@@ -177,8 +179,6 @@ def get_object(name: str) -> Any:
         for attr in names[k:]:
             obj = getattr(obj, attr)
         return obj
-    # if "." not in name and "\n" not in name and " " not in name:
-    #     return eval(name)
     raise ValueError(f"Could not find object: {name}")
 
 

@@ -5,7 +5,7 @@ import re
 from typing import Any, Iterator, List, Tuple
 
 from mkapi.core.base import Docstring, Item, Section
-from mkapi.core.inspect import Annotation
+from mkapi.core.signature import Signature
 
 SECTIONS = [
     "Args",
@@ -220,7 +220,7 @@ def parse_property(doc: Docstring, obj: Any):
         doc.type = line[:index].strip()
         section.markdown = markdown[index + 1 :].strip()
     if not doc.type and hasattr(obj, "fget"):
-        doc.type = Annotation(obj.fget).returns
+        doc.type = Signature(obj.fget).returns
 
 
 def postprocess(doc: Docstring, obj: Any):
@@ -228,49 +228,47 @@ def postprocess(doc: Docstring, obj: Any):
         parse_property(doc, obj)
     if not callable(obj):
         return
-
-    try:
-        annotation = Annotation(obj)
-    except ValueError:
+    signature = Signature(obj)
+    if signature.signature is None:
         return
 
     if doc["Parameters"] is not None:
         for item in doc["Parameters"]:
-            if item.type == "" and item.name in annotation:
-                item.type = annotation[item.name]
+            if item.type == "" and item.name in signature:
+                item.type = signature.parameters[item.name]
                 if item.type.startswith("("):  # tuple
                     item.type = item.type[1:-1]
-            if "{default}" in item.markdown and item.name in annotation.defaults:
-                default = annotation.defaults[item.name]
+            if "{default}" in item.markdown and item.name in signature:
+                default = signature.defaults[item.name]
                 item.markdown = item.markdown.replace("{default}", default)
 
-    if doc["Attributes"] is not None and annotation.attributes:
+    if doc["Attributes"] is not None and signature.attributes:
         for item in doc["Attributes"]:
-            if item.type == "" and item.name in annotation.attributes:
-                item.type = annotation.attributes[item.name]
+            if item.type == "" and item.name in signature.attributes:
+                item.type = signature.attributes[item.name]
                 if item.type.startswith("("):
                     item.type = item.type[1:-1]
 
     for name in ["Returns", "Yields"]:
         section = doc[name]
         if section is not None and section.type == "":
-            section.type = getattr(annotation, name.lower())
+            section.type = getattr(signature, name.lower())
 
     if doc["Returns"] is None and doc["Yields"] is None:
         from mkapi.core.node import get_kind
 
         kind = get_kind(obj)
         if kind == "generator":
-            doc.type = annotation.yields
+            doc.type = signature.yields
         else:
-            doc.type = annotation.returns
+            doc.type = signature.returns
 
 
-def parse_docstring(obj: Any) -> Docstring:
-    """Parses docstring of the object and returns a `Docstring` instance."""
+def get_docstring(obj: Any) -> Docstring:
+    """Returns a `Docstring` instance."""
     doc = inspect.getdoc(obj)
     if not doc:
-        return Docstring([])
+        return Docstring()
     sections = []
     for section in split_section(doc):
         sections.append(create_section(*section))

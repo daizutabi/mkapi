@@ -1,72 +1,61 @@
 import inspect
-import re
-from typing import ForwardRef, Union  # type:ignore
+from dataclasses import dataclass, field
+from functools import lru_cache
+from typing import Any, Dict, Mapping, Optional, Union
 
 
+@dataclass
 class Signature:
-    def __init__(self, obj=None):
-        if obj is None:
-            self.signature = None
-        try:
-            self.signature = inspect.signature(obj)
-        except (TypeError, ValueError):
-            self.signature = None
+    obj: Any = field(default=None, repr=False)
+    signature: Optional[inspect.Signature] = None
+    parameters: Mapping[str, str] = field(default_factory=dict, init=False)
+    defaults: Dict[str, Any] = field(default_factory=dict, init=False)
+    attributes: Dict[str, str] = field(default_factory=dict, init=False)
+    returns: str = ""
+    yields: str = ""
 
-    def __str__(self):
-        if self.signature is None:
-            return ""
-        s = str(self.signature)
-        s = re.sub(r"\[[^:->]*\]", "", s)
-        s = re.sub(r":.*?(,|= |\))", r"\1", s)
-        s = s.replace("= ", "=")
-        s = re.sub(r" ->.*", r"", s)
-        s = re.sub(r"(self|cls)(, |)", "", s)
-        return s
-
-
-def get_signature(obj) -> Signature:
-    if not callable(obj):
-        return Signature()
-    else:
-        return Signature(obj)
-
-
-class Annotation:
-    def __init__(self, obj=None):
-        if obj is None:
+    def __post_init__(self):
+        if self.obj is None or not callable(self.obj):
             return
-        signature = inspect.signature(obj)
-        self.parameters = signature.parameters
-        self.defaults = {}
-        for name, param in self.parameters.items():
-            if param.default == inspect.Parameter.empty:
-                self.defaults[name] = param.default
+        try:
+            self.signature = inspect.signature(self.obj)
+        except (TypeError, ValueError):
+            pass
+
+        for name, parameter in self.signature.parameters.items():
+            if name == "self":
+                continue
+            type = to_string(parameter.annotation)
+            default = parameter.default
+            if default == inspect.Parameter.empty:
+                self.defaults[name] = default
             else:
-                self.defaults[name] = str(param.default)
-        self.return_annotation = signature.return_annotation
-        if hasattr(obj, "__dataclass_fields__"):
-            values = obj.__dataclass_fields__.values()
+                self.defaults[name] = f"{default!r}"
+                if not type.endswith(", optional"):
+                    type += ", optional"
+            self.parameters[name] = type
+
+        return_annotation = self.signature.return_annotation
+        self.returns = to_string(return_annotation, "returns")
+        self.yields = to_string(return_annotation, "yields")
+
+        if hasattr(self.obj, "__dataclass_fields__"):
+            values = self.obj.__dataclass_fields__.values()
             self.attributes = {f.name: to_string(f.type) for f in values}
-        else:
-            self.attributes = None
 
     def __contains__(self, name):
         return name in self.parameters
 
     def __getitem__(self, name):
-        type = to_string(self.parameters[name].annotation)
-        if self.defaults[name] != inspect.Parameter.empty:
-            if not type.endswith(", optional"):
-                type += ", optional"
-        return type
+        return getattr(self, name.lower())
 
-    @property
-    def returns(self):
-        return to_string(self.return_annotation)
-
-    @property
-    def yields(self):
-        return to_string(self.return_annotation, "yields")
+    def __str__(self):
+        args = []
+        for arg in self.parameters:
+            if self.defaults[arg] != inspect.Parameter.empty:
+                arg += "=" + self.defaults[arg]
+            args.append(arg)
+        return "(" + ", ".join(args) + ")"
 
 
 def to_string(annotation, kind: str = "") -> str:
@@ -76,7 +65,7 @@ def to_string(annotation, kind: str = "") -> str:
         else:
             return ""
 
-    if isinstance(annotation, ForwardRef):
+    if hasattr(annotation, "__forward_arg__"):
         return annotation.__forward_arg__
     if annotation == inspect.Parameter.empty or annotation is None:
         return ""
@@ -111,6 +100,20 @@ def to_string(annotation, kind: str = "") -> str:
 
 
 def a_of_b(annotation) -> str:
+    """Returns A of B style string.
+
+    Examples:
+        >>> from typing import List, Iterable, Iterator
+        >>> a = List[str]
+        >>> a_of_b(a)
+        'list of str'
+        >>> a = Iterable[int]
+        >>> a_of_b(a)
+        'iterable of int'
+        >>> a = Iterator[float]
+        >>> a_of_b(a)
+        'iterator of float'
+    """
     origin = annotation.__origin__
     if not hasattr(origin, "__name__"):
         return ""
@@ -155,3 +158,8 @@ def union(annotation) -> str:
                 return ", ".join(args[:-1]) + ", or " + args[-1]
         else:
             return "Union(" + ", ".join(to_string(x) for x in args) + ")"
+
+
+@lru_cache(maxsize=1000)
+def get_signature(obj: Any) -> Signature:
+    return Signature(obj)

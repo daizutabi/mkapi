@@ -57,7 +57,7 @@ class D:
 
 def test_without_docstring():
     node = get_node(D)
-    assert node.docstring is None
+    assert not node.docstring
     assert len(node.members) == 1
 
 

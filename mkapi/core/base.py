@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional
 
 import mkapi.core.preprocess
-from mkapi.core.inspect import Annotation, Signature
+from mkapi.core.signature import Signature
 from mkapi.core.renderer import renderer
 
 
@@ -19,6 +19,7 @@ class Base:
     Attributes:
         name: Object name.
         type: Object type.
+        type_html: Object type html after adding links.
         markdown: Markdown source.
         html: HTML after conversion.
     """
@@ -27,37 +28,19 @@ class Base:
     type: str = ""
     markdown: str = ""
     html: str = field(default="", init=False)
+    type_html: str = field(default="", init=False)
 
     def set_html(self, html: str):
-        """Sets `html` attribute according to the given `html` argument.
-
-        In the simplest case, just store the argument to the attribute. But modify
-        the attribute if necessary.
-        """
+        """Sets `html` attribute."""
         self.html = html
 
 
 @dataclass
 class Item(Base):
-    """Item class represents an item in Parameters, Attributes, and Raises sections.
-
-    Args:
-        name: Object name.
-        type: Object type.
-        markdown: Markdown source.
-
-    Attributes:
-        name: Object name.
-        type: Object type.
-        markdown: Markdown source.
-        html: HTML after conversion.
-    """
+    """Item class represents an item in Parameters, Attributes, and Raises sections."""
 
     def set_html(self, html: str):
-        """Sets `html` attribute according to the given `html` argument.
-
-        `p` tags are removed and `br` tags are inserted.
-        """
+        """Sets `html` attribute cleaning `p` tags."""
         html = html.replace("<p>", "").replace("</p>", "<br>")
         if html.endswith("<br>"):
             html = html[:-4]
@@ -69,17 +52,31 @@ class Section(Base):
     """Section class represents a section in docstring.
 
     Args:
-        name: Object name.
-        type: Object type.
-        markdown: Markdown source.
-        items: List for arguments, attributes, or exceptions.
+        items: List for Arguments, Attributes, or Exceptions sections.
 
     Attributes:
-        name: Object name.
-        type: Object type.
-        markdown: Markdown source.
-        items: List for arguments, attributes, or exceptions.
-        html: HTML after conversion.
+        items: List for Arguments, Attributes, or Exceptions sections.
+
+    Examples:
+        `Section` is iterable:
+        >>> section = Section('Returns', markdown='Returns an integer.')
+        >>> for x in section:
+        ...     assert x is section
+
+        >>> items = [Item('x'), Item('y'), Item('z')]
+        >>> section = Section('Parameters', items=items)
+        >>> [item.name for item in section]
+        ['x', 'y', 'z']
+
+        Indexing:
+        >>> isinstance(section['y'], Item)
+        True
+        >>> section['z'].name
+        'z'
+
+        Contains:
+        >>> 'x' in section
+        True
     """
 
     items: List[Item] = field(default_factory=list)
@@ -89,6 +86,15 @@ class Section(Base):
             yield self
         else:
             yield from self.items
+
+    def __getitem__(self, name) -> Optional[Item]:
+        for item in self.items:
+            if item.name == name:
+                return item
+        return None
+
+    def __contains__(self, name) -> bool:
+        return self[name] is not None
 
 
 @dataclass
@@ -102,23 +108,55 @@ class Docstring:
     Attributes:
         sections: List of Section instance.
         type: Type for Returns and Yields sections.
+
+    Examples:
+        Empty docstring:
+        >>> docstring = Docstring()
+        >>> assert not docstring
+
+        Docstring with 3 sections:
+        >>> default = Section("", markdown="Default")
+        >>> parameters = Section("Parameters", items=[Item("a"), Item("b")])
+        >>> returns = Section("Returns", markdown="Returned Value")
+        >>> docstring = Docstring([default, parameters, returns])
+
+        `Docstring` is iterable:
+        >>> [base.name for base in docstring]
+        ['', 'a', 'b', 'Returns']
+
+        Indexing:
+        >>> docstring["Parameters"].items[0].name
+        'a'
     """
 
-    sections: List[Section]
+    sections: List[Section] = field(default_factory=list)
     type: str = ""
 
-    def __getitem__(self, name) -> Optional[Section]:
-        for section in self.sections:
-            if section.name == name:
-                return section
-        return None
+    def __bool__(self):
+        return len(self.sections) > 0
 
     def __iter__(self) -> Iterator[Base]:
         for section in self.sections:
             yield from section
 
-    def __bool__(self):
-        return len(self.sections) > 0
+    def __getitem__(self, name: str) -> Optional[Section]:
+        for section in self.sections:
+            if section.name == name:
+                return section
+        return None
+
+    def __setitem__(self, name: str, section: Section):
+        for k, section_ in enumerate(self.sections):
+            if section_.name == name:
+                self.sections[k] = section
+                return
+            if name == "Parameters" and section_.name != "":
+                self.sections.insert(k, section)
+                return
+            if section_.name in ["Raises", "Yields", "Returns"]:
+                self.sections.insert(k, section)
+                return
+        self.sections.append(section)
 
 
 @dataclass
@@ -146,8 +184,7 @@ class Node(Base):
     sourcefile: str = ""
     lineno: int = 0
     signature: Signature = field(default_factory=lambda: Signature())
-    annotation: Annotation = field(default_factory=lambda: Annotation())
-    docstring: Docstring = field(default_factory=lambda: Docstring([]))
+    docstring: Docstring = field(default_factory=lambda: Docstring())
     members: List["Node"] = field(default_factory=list)
     headless: bool = False
     prefix_url: str = ""
@@ -176,13 +213,6 @@ class Node(Base):
         for member in self.members:
             yield from member
 
-    def resolve_link(self, abs_src_path, api_roots):
-        from mkapi.core.linker import resolve_link
-
-        resolve_link(self, abs_src_path, api_roots)
-        for base in self:
-            resolve_link(base, abs_src_path, api_roots)
-
     def get_markdown(self) -> str:
         """Returns a Markdown source for docstring of this object."""
         markdowns = []
@@ -199,10 +229,3 @@ class Node(Base):
     def render(self) -> str:
         self.html = renderer.render(self)
         return self.html
-
-    @property
-    def parameters(self) -> Optional[Section]:
-        for section in self.docstring.sections:
-            if section.name == "Parameters":
-                return section
-        return None

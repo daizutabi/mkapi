@@ -1,4 +1,4 @@
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 from mkapi.core.node import get_node
 from mkapi.utils import display, get_html

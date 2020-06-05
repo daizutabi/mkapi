@@ -1,8 +1,8 @@
-from mkapi.core.docstring import parse_docstring
+from mkapi.core.docstring import get_docstring
 
 
 def test_function(add):
-    doc = parse_docstring(add)
+    doc = get_docstring(add)
     assert len(doc.sections) == 6
     assert doc.sections[0].name == ""
     assert doc.sections[0].markdown.startswith("Returns $")
@@ -14,5 +14,5 @@ def test_function(add):
 
 
 def test_class(ExampleClass):
-    doc = parse_docstring(ExampleClass)
-    assert doc is None
+    doc = get_docstring(ExampleClass)
+    assert not doc

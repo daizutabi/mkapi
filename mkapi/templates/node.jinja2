@@ -9,7 +9,7 @@
 {% else %}
 {% if node.prefix and node.kind not in ['method', 'readonly_property', 'readwrite_property'] %}
 <code class="mkapi-node-prefix">{% if node.prefix_url %}<a href="{{ node.prefix_url }}">{% endif %}{{ node.prefix }}{% if node.prefix_url %}</a>{% endif %}.</code>{% endif %}<code class="mkapi-node-basename">{% if node.name_url and node.id != node.name_url[1:] %}<a href="{{ node.name_url }}">{% endif %}{{ node.name }}{% if node.name_url and node.id != node.name_url[1:] %}</a>{% endif %}</code>{% if node.signature %}<code class="mkapi-node-signature">{{ node.signature }}</code>{% endif %}
-{% if node.type %}<span class="mkapi-args-type">&#x2192; {{ node.type|safe }}</span>{% endif %}
+{% if node.type %}<span class="mkapi-args-type">&#x2192; {% if node.type_html %}{{ node.type_html|safe }}{% else %}{{ node.type }}{% endif %}</span>{% endif %}
 {% endif %}
 </div>
 </div>

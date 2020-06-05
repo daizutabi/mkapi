@@ -142,3 +142,23 @@ print(html[:300].strip())
 from IPython.display import HTML  # isort:skip
 
 HTML(html)
+
+
+# ## Summary
+
+# In summary, all you need to get API documentation of an object is described by the
+# following function.
+
+
+def get_html(obj) -> str:
+    # Construct a node tree structure.
+    node = mkapi.get_node(obj)
+
+    # Create a joint Markdown from components of the node.
+    markdown = node.get_markdown()
+
+    # Convert into HTML by any external converter.
+    html = converter.convert(markdown)
+
+    # Split and distribute the HTML into original components.
+    return node.set_html(html)
