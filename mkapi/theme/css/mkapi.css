@@ -37,12 +37,8 @@
  Node
 **************************************************/
 .mkapi-node {
-  margin-left: 30px;
-  margin-bottom: 20px;
-}
-
-.mkapi-node-depth-0 {
   margin-left: 0px;
+  margin-bottom: 20px;
 }
 
 .mkapi-node-header {

@@ -1,7 +1,8 @@
 from typing import Dict, Tuple
 
 import mkapi
-from mkapi.core.base import Item, Node, Section
+from mkapi.core.base import Item, Section
+from mkapi.core.node import Node
 
 
 def get_params(node: Node, name: str) -> Tuple[Dict[str, str], Dict[str, str]]:

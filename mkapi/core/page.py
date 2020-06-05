@@ -36,17 +36,7 @@ class Page:
                 if markdown:
                     yield markdown
             name = match.group(1)
-            if ":" in name:
-                name, max_depth_str = name.split(":")
-                max_depth = int(max_depth_str)
-            else:
-                max_depth = -1
-            if name[0] == "#":
-                headless = True
-                name = name[1:]
-            else:
-                headless = False
-            node = get_node(name, max_depth, headless)
+            node = get_node(name)
             if node.kind in ["class", "dataclass"]:
                 inherit(node)
             resolve_link(node, self.abs_src_path, self.api_roots)

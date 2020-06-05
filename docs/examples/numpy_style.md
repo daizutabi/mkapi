@@ -2,7 +2,7 @@
 
 <style type="text/css">
 <!--
-.mkapi-node-depth-0 {
+.mkapi-node {
   border: 2px dashed #88AA88;
 }
 -->
@@ -143,19 +143,3 @@ In this example, note that:
 
 * A DATACLASS prefix instead of a CLASS prefix.
 * Attributes type inspection as well as parameters if they are data class fields.
-
-## Module
-
-Finally, let's generate the API documentation for the `numpy_style` module. The module has a module level docstring like below:
-
-#File numpy_style.py (line 1~10) {%=/examples/numpy_style.py[0:10]%}
-
-Then,
-
-~~~markdown
-![mkapi][numpy_style]
-~~~
-
-creates the API documentation for the entire `numpy_style` module.
-
-![mkapi](numpy_style)

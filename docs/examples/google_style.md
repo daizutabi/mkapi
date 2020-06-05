@@ -2,7 +2,7 @@
 
 <style type="text/css">
 <!--
-.mkapi-node-depth-0 {
+.mkapi-node {
   border: 2px dashed #88AA88;
 }
 -->
@@ -142,19 +142,3 @@ In this example, note that:
 
 * A DATACLASS prefix instead of a CLASS prefix.
 * Attributes type inspection as well as parameters if they are data class fields.
-
-## Module
-
-Finally, let's generate the API documentation for the `google_style` module. The module has a module level docstring like below:
-
-#File google_style.py (line 1~10) {%=/examples/google_style.py[0:10]%}
-
-Then,
-
-~~~markdown
-![mkapi][google_style]
-~~~
-
-creates the API documentation for the entire `google_style` module.
-
-![mkapi](google_style)

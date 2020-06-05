@@ -11,7 +11,6 @@ def test_class():
     assert node.prefix == "google_style"
     assert node.name == "ExampleClass"
     assert node.kind == "class"
-    assert node.depth == 0
     assert len(node) == 3
     p = node.members[-1]
     assert p.type == "list of int"
@@ -23,4 +22,3 @@ def test_dataclass():
     assert node.prefix == "google_style"
     assert node.name == "ExampleDataClass"
     assert node.kind == "dataclass"
-    assert node.depth == 0
