@@ -1,56 +1,40 @@
 import inspect
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Iterator, List
+from typing import Iterator, List, Union
 
 import mkapi.core.preprocess
-from mkapi.core.base import Base
-from mkapi.core.docstring import Docstring, get_docstring
-from mkapi.core.object import (get_object, get_sourcefile_and_lineno,
-                               split_prefix_and_name)
+from mkapi.core.base import Base, Type
+from mkapi.core.object import get_object
 from mkapi.core.renderer import renderer
 from mkapi.core.signature import Signature, get_signature
+from mkapi.core.tree import Tree
 
 
 @dataclass
-class Node(Base):
+class Node(Tree):
     """Node class represents an object.
 
     Attributes:
         obj: Object.
         prefix: Prefix.
-        kind: Kind such as `function`, `class`, `module`, etc.
+        id: ID for CSS.
+        kind: Kind such as `function`, `class`, `method`, etc.
         signature: Signature instance.
         docstring: Docstring instance.
         members: Member objects. For example, methods of class.
-        headless: Used in page mode.
         html: HTML after rendering.
     """
 
-    obj: Any = field(default=None, repr=False)
-    prefix: str = field(init=False)
-    id: str = field(init=False)
-    kind: str = field(init=False)
-    signature: Signature = field(init=False)
-    docstring: Docstring = field(init=False)
-    sourcefile: str = field(init=False)
-    lineno: int = field(init=False)
     members: List["Node"] = field(init=False)
-    name_url: str = field(default="", init=False)
-    prefix_url: str = field(default="", init=False)
+    signature: Signature = field(init=False)
+    type: Type = Type()
 
     def __post_init__(self):
-        obj = self.obj
-        self.prefix, self.name = split_prefix_and_name(obj)
-        self.id = self.name
-        if self.prefix:
-            self.id = ".".join([self.prefix, self.name])
-        self.kind = get_kind(obj)
-        self.signature = get_signature(obj)
-        self.docstring = get_docstring(obj)
-        self.sourcefile, self.lineno = get_sourcefile_and_lineno(obj)
+        super().__post_init__()
+        self.signature = get_signature(self.obj)
 
-        members = get_members(obj)
+        members = self.members
         if self.kind in ["class", "dataclass"] and not self.docstring:
             for member in members:
                 if member.name == "__init__" and member.docstring:
@@ -61,35 +45,38 @@ class Node(Base):
         if self.docstring and self.docstring.type:
             self.type = self.docstring.type
 
-    def __getitem__(self, index):
-        return self.members[index]
-
-    def __len__(self):
-        return len(self.members)
-
-    def __getattr__(self, name):
-        for member in self.members:
-            if member.name == name:
-                return member
-
-    def __iter__(self) -> Iterator[Base]:
-        if self.docstring:
-            yield from self.docstring
+    def __iter__(self) -> Iterator[Union[Base, "Node"]]:
+        yield self
+        yield from self.docstring
         for member in self.members:
             yield from member
 
-    def get_markdown(self) -> str:
+    def get_kind(self) -> str:
+        return get_kind(self.obj)
+
+    def get_members(self) -> List["Node"]:  # type:ignore
+        return get_members(self.obj)
+
+    def get_markdown(self, level: int = 0) -> str:
         """Returns a Markdown source for docstring of this object."""
         markdowns = []
         for base in self:
-            markdown = mkapi.core.preprocess.convert(base.markdown)
+            if isinstance(base, Node):
+                markdown = base.markdown
+                if level:
+                    markdown = "#" * level + " " + markdown
+            else:
+                markdown = mkapi.core.preprocess.convert(base.markdown)
             markdowns.append(markdown)
         return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
     def set_html(self, html: str):
         """Sets HTML to `Base` instances recursively."""
         for base, html in zip(self, html.split("<!-- mkapi:sep -->")):
-            base.set_html(html.strip())
+            if isinstance(base, Node):
+                self.html = html  # FIXME
+            else:
+                base.set_html(html.strip())
 
     def render(self) -> str:
         self.html = renderer.render(self)
@@ -117,8 +104,7 @@ def get_kind(obj) -> str:
             arg = list(parameters)[0]
             if arg == "self":
                 return "method"
-        else:
-            return "function"
+        return "function"
     return ""
 
 
@@ -132,17 +118,17 @@ def get_members(obj) -> List[Node]:
             continue
         if not get_kind(obj):
             continue
-        member = Node(obj=obj)
+        member = Node(obj)
         if member.docstring:
             members.append(member)
-    return sorted(members, key=lambda x: (x.sourcefile, x.lineno))
+    return sorted(members, key=lambda x: x.lineno)
 
 
 @lru_cache(maxsize=1000)
-def get_node(name: Any) -> Node:
+def get_node(name) -> Node:
     if isinstance(name, str):
         obj = get_object(name)
     else:
         obj = name
 
-    return Node(obj=obj)
+    return Node(obj)

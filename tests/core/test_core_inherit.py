@@ -37,8 +37,6 @@ class B(A):
     markdown: str = ""
 
 
-mkapi.get_node(A)
-
 @pytest.fixture()
 def a():
     return mkapi.get_node(A)

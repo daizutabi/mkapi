@@ -1,6 +1,13 @@
 from typing import Iterator
 
 
+def strip_ptags(html: str) -> str:
+    html = html.replace("<p>", "").replace("</p>", "<br>")
+    if html.endswith("<br>"):
+        html = html[:-4]
+    return html
+
+
 def convert(text: str) -> str:
     blocks = []
     for block in split(text):

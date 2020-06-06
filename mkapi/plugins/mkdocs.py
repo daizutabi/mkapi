@@ -1,6 +1,6 @@
 """This module provides the MkapiPlugin class.
 
-MkapiPlugin is a MkDocs plugin that generates Python API documentation.
+MkapiPlugin is a MkDocs plugin that creates Python API documentation from Docstring.
 """
 import logging
 import os

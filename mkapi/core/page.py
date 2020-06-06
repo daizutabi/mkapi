@@ -5,13 +5,8 @@ from typing import Iterator, List
 from mkapi.core.inherit import inherit
 from mkapi.core.linker import resolve_link, resolve_markdown_link
 from mkapi.core.node import Node, get_node
+from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
 from mkapi.core.renderer import renderer
-
-MKAPI_PATTERN = re.compile(r"^!\[mkapi\]\((.+?)\)$", re.MULTILINE)
-
-HTML_PATTERN = re.compile(
-    r"<!-- mkapi:(\d+):begin -->(.*?)<!-- mkapi:end -->", re.MULTILINE | re.DOTALL
-)
 
 
 @dataclass
@@ -42,7 +37,7 @@ class Page:
             resolve_link(node, self.abs_src_path, self.api_roots)
             self.nodes.append(node)
             markdown = node.get_markdown()
-            yield f"<!-- mkapi:{index}:begin -->\n\n{markdown}\n\n<!-- mkapi:end -->"
+            yield node_markdown(index, markdown)
             cursor = end
         if cursor < len(source):
             markdown = source[cursor:].strip()
@@ -55,4 +50,4 @@ class Page:
             node.set_html(match.group(2))
             return renderer.render(node)
 
-        return re.sub(HTML_PATTERN, replace, html)
+        return re.sub(NODE_PATTERN, replace, html)

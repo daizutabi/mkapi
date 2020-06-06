@@ -7,6 +7,7 @@ import shutil
 import sys
 from typing import Iterator, List, Tuple
 
+from mkapi.core.module import get_module
 from mkapi.core.node import get_node
 from mkapi.core.renderer import renderer
 
@@ -17,30 +18,18 @@ def create_nav(config):
     nav = config["nav"]
     docs_dir = config["docs_dir"]
     config_dir = os.path.dirname(config["config_file_path"])
-    pages_all = []
+    api_roots = []
     for page in nav:
         if isinstance(page, dict):
             for key, value in page.items():
                 if isinstance(value, str) and value.startswith("mkapi/"):
-                    page[key], pages = walk(value, docs_dir, config_dir)
-                    pages_all.extend(pages)
-    return config, pages_all
+                    page[key], pages = collect(value, docs_dir, config_dir)
+                    api_roots.extend(pages)
+    return config, api_roots
 
 
-def _walk(top: str) -> Iterator[List[str]]:
-    for root, dirs, files in os.walk(top):
-        paths = [root]
-        for x in dirs:
-            if x.startswith("__"):
-                dirs.remove(x)
-        for file in files:
-            if file.endswith(".py") and not file.startswith("_"):
-                paths.append(file[:-3])
-        yield paths
-
-
-def walk(value: str, docs_dir: str, config_dir) -> Tuple[list, list]:
-    _, api_path, *tops = value.split("/")
+def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
+    _, api_path, *paths, package = path.split("/")
     abs_api_path = os.path.join(docs_dir, api_path)
     if os.path.exists(abs_api_path):
         logger.error(f"[MkApi] {abs_api_path} exists: Delete manually for safety.")
@@ -48,14 +37,13 @@ def walk(value: str, docs_dir: str, config_dir) -> Tuple[list, list]:
     os.mkdir(abs_api_path)
     atexit.register(lambda path=abs_api_path: rmtree(path))
 
-    top = os.path.join(config_dir, *tops)
-    root = os.path.dirname(top)
-
+    root = os.path.join(config_dir, *paths)
     if root not in sys.path:
         sys.path.insert(0, root)
+
     nav = []
     pages_all = []
-    for paths in _walk(top):
+    for paths in walk(top):
         package = os.path.relpath(paths[0], root)
         package = package.replace("/", ".").replace("\\", ".")
         package_obj = importlib.import_module(package)

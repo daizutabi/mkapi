@@ -1,6 +1,6 @@
 import pytest
 
-from mkapi.core.docstring import (parse_parameter, parse_raise, parse_returns,
+from mkapi.core.docstring import (parse_parameter, parse_returns,
                                   split_parameter, split_section)
 
 doc = {}
@@ -103,35 +103,16 @@ def test_parse_parameter(style):
     it = split_parameter(body)
     lines = next(it)
     assert len(lines) == 4 if style == "goole" else 5
-    name, type, markdown = parse_parameter(lines, style)
+    name, markdown, type = parse_parameter(lines, style)
     assert name == "x"
-    assert type == "int"
     assert markdown == "The first\nparameter\n\nwith type."
+    assert type == "int"
     lines = next(it)
     assert len(lines) == 4 if style == "goole" else 5
-    name, type, markdown = parse_parameter(lines, style)
+    name, markdown, type = parse_parameter(lines, style)
     assert name == "y"
-    assert type == ""
     assert markdown == "The second\nparameter\n\nwithout type."
-
-
-@pytest.mark.parametrize("style", ["google", "numpy"])
-def test_parse_raise(style):
-    it = split_section(doc[style])
-    next(it)
-    next(it)
-    section, body, style = next(it)
-    it = split_parameter(body)
-    lines = next(it)
-    assert len(lines) == 2 if style == "goole" else 3
-    type, markdown = parse_raise(lines, style)
-    assert type == "ValueError"
-    assert markdown == "a\nb"
-    lines = next(it)
-    assert len(lines) == 2 if style == "goole" else 3
-    type, markdown = parse_raise(lines, style)
-    assert type == "TypeError"
-    assert markdown == "c\nd"
+    assert type == ""
 
 
 @pytest.mark.parametrize("style", ["google", "numpy"])
@@ -141,9 +122,9 @@ def test_parse_returns(style):
     next(it)
     next(it)
     section, body, style = next(it)
-    type, markdown = parse_returns(body, style)
-    assert type == "int"
+    markdown, type = parse_returns(body, style)
     assert markdown == "e\n\nf"
+    assert type == "int"
     # lines = next(it)
     # assert len(lines) == 2 if style == "goole" else 3
     # type, markdown = parse_raise(lines, style)

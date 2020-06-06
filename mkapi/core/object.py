@@ -44,10 +44,10 @@ def split_prefix_and_name(obj) -> Tuple[str, str]:
         >>> import inspect
         >>> obj = get_object('mkapi.core')
         >>> split_prefix_and_name(obj)
-        ('', 'mkapi.core')
+        ('mkapi', 'core')
         >>> obj = get_object('mkapi.core.base')
         >>> split_prefix_and_name(obj)
-        ('', 'mkapi.core.base')
+        ('mkapi.core', 'base')
         >>> obj = get_object('mkapi.core.node.Node')
         >>> split_prefix_and_name(obj)
         ('mkapi.core.node', 'Node')
@@ -58,7 +58,7 @@ def split_prefix_and_name(obj) -> Tuple[str, str]:
     if isinstance(obj, property):
         obj = obj.fget
     if inspect.ismodule(obj):
-        return "", obj.__name__
+        prefix, _, name = obj.__name__.rpartition(".")
     else:
         module = obj.__module__
         qualname = obj.__qualname__
@@ -69,7 +69,7 @@ def split_prefix_and_name(obj) -> Tuple[str, str]:
             prefix = ".".join([module, prefix])
         if prefix == "__main__":
             prefix = ""
-        return prefix, name
+    return prefix, name
 
 
 def get_sourcefile_and_lineno(obj) -> Tuple[str, int]:
@@ -77,7 +77,10 @@ def get_sourcefile_and_lineno(obj) -> Tuple[str, int]:
         obj = obj.fget
     try:
         sourcefile = inspect.getsourcefile(obj) or ""
+    except TypeError:
+        sourcefile = ""
+    try:
         lineno = inspect.getsourcelines(obj)[1]
     except (TypeError, OSError):
-        return "", -1
+        lineno = -1
     return sourcefile, lineno

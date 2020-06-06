@@ -161,4 +161,7 @@ def get_html(obj) -> str:
     html = converter.convert(markdown)
 
     # Split and distribute the HTML into original components.
-    return node.set_html(html)
+    node.set_html(html)
+
+    # Render node to create final HTML.
+    node.render()

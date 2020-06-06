@@ -20,26 +20,23 @@ class Renderer:
             name = os.path.splitext(name)[0]
             self.templates[name] = template
 
-    def render(self, node, parent=None) -> str:
+    def render(self, node, level=0) -> str:
         docstring = self.render_docstring(node.docstring)
         members = []
         if node.members:
-            members = [self.render(member, node) for member in node.members]
-        return self.render_node(node, docstring, members, parent)
+            members = [self.render(member) for member in node.members]
+        return self.render_node(node, docstring, members, level)
 
-    def render_page(
-        self, node, module: str, members: List[str], children: List[str]
-    ) -> str:
-        template = self.templates["page"]
-        return template.render(
-            node=node, module=module, members=members, children=children
-        )
-
-    def render_node(self, node, docstring: str, members: List[str], parent) -> str:
-        template = self.templates["node"]
-        return template.render(
-            node=node, docstring=docstring, members=members, parent=parent
-        )
+    def render_node(self, node, docstring: str, members: List[str], level) -> str:
+        if level:
+            prefix = "#" * level
+            template = self.templates["node_header"]
+            return template.render(
+                node=node, docstring=docstring, members=members, prefix=prefix
+            )
+        else:
+            template = self.templates["node_div"]
+            return template.render(node=node, docstring=docstring, members=members)
 
     def render_docstring(self, docstring) -> str:
         if docstring is None:
@@ -55,6 +52,10 @@ class Renderer:
             return self.templates["args"].render(section=section)
         else:
             raise ValueError(f"Invalid section name: {section.name}")
+
+    def render_module(self, module) -> str:
+        template = self.templates["module"]
+        return template.render(module=module)
 
 
 renderer = Renderer()

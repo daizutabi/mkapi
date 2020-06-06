@@ -53,10 +53,12 @@
 .mkapi-node-header-package, .mkapi-node-header-module {
   background: none;
   border-left: none;
+
   font-size: 1.2rem;
 }
 
 .mkapi-node-kind {
+  margin-right: 0.3rem;
   font-weight: bold;
   color: #888888;
 }
@@ -65,12 +67,8 @@
   font-size: 1.1rem;
 }
 
-.mkapi-node-name {
-  margin-left: 0.3rem;
-  font-weight: bold;
-}
-
 code.mkapi-node-prefix {
+  font-weight: bold;
   color: #333333;
 }
 
@@ -82,15 +80,16 @@ code.mkapi-node-prefix a:hover {
   background: #FFDDCC;
 }
 
-code.mkapi-node-basename {
+code.mkapi-node-name {
+  font-weight: bold;
   color: #333333;
 }
 
-code.mkapi-node-basename a {
+code.mkapi-node-name a {
   color: inherit;
 }
 
-code.mkapi-node-basename a:hover {
+code.mkapi-node-name a:hover {
   background: #FFDDCC;
 }
 

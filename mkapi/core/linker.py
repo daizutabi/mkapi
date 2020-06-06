@@ -1,11 +1,10 @@
 import os
 import re
-from typing import List
+from typing import List, Union
 
 from mkapi.core.base import Base
 from mkapi.core.node import Node
-
-LINK_PATTERN = re.compile(r"\[(.+?)\]\((.+?)\)")
+from mkapi.core.regex import LINK_PATTERN
 
 
 def resolve_link(node: Node, abs_src_path: str, api_roots: List[str]):
@@ -23,7 +22,7 @@ def resolve_node_link(node: Node, abs_src_path: str, api_roots: List[str]):
         resolve_node_link(member, abs_src_path, api_roots)
 
 
-def resolve_type_link(base: Base, abs_src_path: str, api_roots: List[str]):
+def resolve_type_link(base: Union[Base, Node], abs_src_path: str, api_roots: List[str]):
     def replace(match):
         name = match.group(1)
         href = resolve_href(match.group(2), abs_src_path, api_roots, is_html=True)

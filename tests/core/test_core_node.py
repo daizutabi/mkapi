@@ -13,7 +13,7 @@ def test_class():
     assert node.kind == "class"
     assert len(node) == 3
     p = node.members[-1]
-    assert p.type == "list of int"
+    assert p.type.name == "list of int"
     assert p.docstring.sections[0].markdown.startswith("Read-write property")
 
 

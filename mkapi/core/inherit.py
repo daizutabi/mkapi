@@ -1,8 +1,7 @@
 from typing import Dict, Tuple
 
-import mkapi
 from mkapi.core.base import Item, Section
-from mkapi.core.node import Node
+from mkapi.core.node import Node, get_node
 
 
 def get_params(node: Node, name: str) -> Tuple[Dict[str, str], Dict[str, str]]:
@@ -79,7 +78,7 @@ def inherit(node: Node):
     if is_complete(node):
         return
     for cls in node.obj.mro()[:-1]:
-        base = mkapi.get_node(cls)
+        base = get_node(cls)
         inherit_base(node, base)
         if is_complete(node):
             return

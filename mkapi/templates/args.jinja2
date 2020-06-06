@@ -1,8 +1,9 @@
+{% from 'macros.jinja2' import base_type %}
+
 <ul class="mkapi-args-list">
 {% for item in section.items %}
-  <li>{% if item.name %}<code class="mkapi-args-name">{{ item.name }}</code>{% endif %}
-         {% if item.type %}<span class="mkapi-args-type">({% if item.type_html %}{{ item.type_html|safe }}{% else %}{{ item.type }}{% endif %})</span>{% endif %}
-         <span class="mkapi-args-dash">&mdash;</span>
-         <span class="mkapi-args-desc">{{ item.html|safe }}</span></li>
+<li>{% if item.name %}<code class="mkapi-args-name">{{ item.name }}</code>{% endif %}
+{{ base_type(item) }}
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">{{ item.html|safe }}</span></li>
 {% endfor %}
 </ul>

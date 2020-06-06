@@ -1,0 +1,39 @@
+
+
+
+{% macro node_prefix(node) -%}
+  {% if node.prefix_url %}<a href="{{ node.prefix_url }}">{% endif -%}
+    {{ node.prefix }}
+  {%- if node.prefix_url %}</a>{% endif %}.
+{%- endmacro %}
+
+{% macro node_name(node) -%}
+  {% if node.name_url and node.id != node.name_url[1:] %}<a href="{{ node.name_url }}">{% endif -%}
+    {{ node.name }}
+  {%- if node.name_url and node.id != node.name_url[1:] %}</a>{% endif %}
+{%- endmacro %}
+
+{% macro node_body(docstring, members) -%}
+  {{ docstring|safe }}
+  {% if members %}
+    <div class="mkapi-members">
+      {% for member in members %}
+        <div class="mkapi-member">
+          {{ member|safe }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{%- endmacro %}
+
+{% macro select_type(base) -%}
+  {% if base.type_html %}{{ base.type_html|safe }}{% else %}{{ base.type }}{% endif %}
+{%- endmacro %}
+
+{% macro node_type(node) -%}
+  {% if node.type %}<span class="mkapi-args-type">&#x2192; {{ select_type(node) }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro base_type(base) -%}
+  {% if base.type %}<span class="mkapi-args-type">({{ select_type(base) }})</span>{% endif %}
+{%- endmacro %}

@@ -2,6 +2,9 @@
 from dataclasses import dataclass, field
 from typing import Iterator, List, Optional
 
+from mkapi.core.preprocess import strip_ptags
+from mkapi.core.regex import LINK_PATTERN
+
 
 @dataclass
 class Base:
@@ -9,22 +12,17 @@ class Base:
 
     Args:
         name: Object name.
-        type: Object type.
         markdown: Markdown source.
 
     Attributes:
         name: Object name.
-        type: Object type.
-        type_html: Object type html after adding links.
         markdown: Markdown source.
         html: HTML after conversion.
     """
 
     name: str = ""
-    type: str = ""
     markdown: str = ""
     html: str = field(default="", init=False)
-    type_html: str = field(default="", init=False)
 
     def set_html(self, html: str):
         """Sets `html` attribute."""
@@ -32,15 +30,38 @@ class Base:
 
 
 @dataclass
-class Item(Base):
-    """Item class represents an item in Parameters, Attributes, and Raises sections."""
+class Type(Base):
+    """Type class represents type for other classes."""
+
+    def __post_init__(self):
+        if not self.markdown:
+            self.markdown = self.name
+
+    def __bool__(self):
+        return self.name != ""
+
+    def __iter__(self) -> Iterator[Base]:
+        if LINK_PATTERN.search(self.markdown):
+            yield self
 
     def set_html(self, html: str):
         """Sets `html` attribute cleaning `p` tags."""
-        html = html.replace("<p>", "").replace("</p>", "<br>")
-        if html.endswith("<br>"):
-            html = html[:-4]
-        self.html = html
+        self.html = strip_ptags(html)
+
+
+@dataclass
+class Item(Base):
+    """Item class represents an item in Parameters, Attributes, and Raises sections."""
+
+    type: Type = Type()
+
+    def __iter__(self) -> Iterator[Base]:
+        yield from self.type
+        yield self
+
+    def set_html(self, html: str):
+        """Sets `html` attribute cleaning `p` tags."""
+        self.html = strip_ptags(html)
 
 
 @dataclass
@@ -48,14 +69,14 @@ class Section(Base):
     """Section class represents a section in docstring.
 
     Args:
-        items: List for Arguments, Attributes, or Exceptions sections.
+        items: List for Arguments, Attributes, or Raises sections.
 
     Attributes:
-        items: List for Arguments, Attributes, or Exceptions sections.
+        items: List for Arguments, Attributes, or Raises sections.
 
     Examples:
         `Section` is iterable:
-        >>> section = Section('Returns', markdown='Returns an integer.')
+        >>> section = Section('Returns', markdown='An integer.')
         >>> for x in section:
         ...     assert x is section
 
@@ -76,12 +97,14 @@ class Section(Base):
     """
 
     items: List[Item] = field(default_factory=list)
+    type: Type = Type()
 
     def __iter__(self) -> Iterator[Base]:
+        yield from self.type
         if self.markdown:
             yield self
-        else:
-            yield from self.items
+        for item in self.items:
+            yield from item
 
     def __getitem__(self, name) -> Optional[Item]:
         for item in self.items:
@@ -113,7 +136,7 @@ class Docstring:
         Docstring with 3 sections:
         >>> default = Section("", markdown="Default")
         >>> parameters = Section("Parameters", items=[Item("a"), Item("b")])
-        >>> returns = Section("Returns", markdown="Returned Value")
+        >>> returns = Section("Returns", markdown="Results")
         >>> docstring = Docstring([default, parameters, returns])
 
         `Docstring` is iterable:
@@ -126,12 +149,13 @@ class Docstring:
     """
 
     sections: List[Section] = field(default_factory=list)
-    type: str = ""
+    type: Type = Type()
 
     def __bool__(self):
         return len(self.sections) > 0
 
     def __iter__(self) -> Iterator[Base]:
+        yield from self.type
         for section in self.sections:
             yield from section
 
