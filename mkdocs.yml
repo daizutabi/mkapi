@@ -26,11 +26,10 @@ nav:
     - examples/google_style.md
     - examples/numpy_style.md
   - Advanced Usage:
-    - usage/library.py
-    - usage/page.md
+    # - usage/library.py
+    - usage/page.md 
     - usage/type.py
-    - usage/depth.md
-  - API: mkapi/api/mkapi
+  # - API: mkapi/api/mkapi
 
 markdown_extensions:
   - admonition

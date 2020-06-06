@@ -2,7 +2,8 @@ import os
 import re
 from typing import List
 
-from mkapi.core.base import Base, Node
+from mkapi.core.base import Base
+from mkapi.core.node import Node
 
 LINK_PATTERN = re.compile(r"\[(.+?)\]\((.+?)\)")
 

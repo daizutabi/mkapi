@@ -1,7 +1,6 @@
 from markdown import Markdown
 
-from mkapi.core.base import Node
-from mkapi.core.node import get_node
+from mkapi.core.node import Node, get_node
 
 converter = Markdown()
 

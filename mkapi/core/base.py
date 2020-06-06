@@ -1,10 +1,6 @@
 """This module provides entity classes to represent docstring structure."""
 from dataclasses import dataclass, field
-from typing import Any, Iterator, List, Optional
-
-import mkapi.core.preprocess
-from mkapi.core.signature import Signature
-from mkapi.core.renderer import renderer
+from typing import Iterator, List, Optional
 
 
 @dataclass
@@ -24,7 +20,7 @@ class Base:
         html: HTML after conversion.
     """
 
-    name: str
+    name: str = ""
     type: str = ""
     markdown: str = ""
     html: str = field(default="", init=False)
@@ -157,75 +153,3 @@ class Docstring:
                 self.sections.insert(k, section)
                 return
         self.sections.append(section)
-
-
-@dataclass
-class Node(Base):
-    """Node class represents an object.
-
-    Attributes:
-        obj: Object.
-        depth: Current depth of object searching.
-        prefix: Prefix.
-        kind: Kind such as `function`, `class`, `module`, etc.
-        sourcefile: Souce filename thats defines this object.
-        lineno: Line number.
-        signature: Signature instance.
-        docstring: Docstring instance.
-        members: Member objects. For example, methods of class.
-        headless: Used in page mode.
-        html: HTML after rendering.
-    """
-
-    obj: Any = field(default=None, repr=False)
-    depth: int = 0
-    prefix: str = ""
-    kind: str = ""
-    sourcefile: str = ""
-    lineno: int = 0
-    signature: Signature = field(default_factory=lambda: Signature())
-    docstring: Docstring = field(default_factory=lambda: Docstring())
-    members: List["Node"] = field(default_factory=list)
-    headless: bool = False
-    prefix_url: str = ""
-    name_url: str = ""
-
-    def __post_init__(self):
-        if self.prefix:
-            self.id = ".".join([self.prefix, self.name])
-        else:
-            self.id = self.name
-
-    def __getitem__(self, index):
-        return self.members[index]
-
-    def __len__(self):
-        return len(self.members)
-
-    def __getattr__(self, name):
-        for member in self.members:
-            if member.name == name:
-                return member
-
-    def __iter__(self) -> Iterator[Base]:
-        if self.docstring:
-            yield from self.docstring
-        for member in self.members:
-            yield from member
-
-    def get_markdown(self) -> str:
-        """Returns a Markdown source for docstring of this object."""
-        markdowns = []
-        for base in self:
-            markdown = mkapi.core.preprocess.convert(base.markdown)
-            markdowns.append(markdown)
-        return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
-
-    def set_html(self, html: str):
-        """Sets HTML to `Base` instances recursively."""
-        for base, html in zip(self, html.split("<!-- mkapi:sep -->")):
-            base.set_html(html.strip())
-
-    def render(self) -> str:
-        self.html = renderer.render(self)
-        return self.html
