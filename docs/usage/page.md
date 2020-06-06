@@ -94,7 +94,7 @@ from mkapi.core.base import Section
 @dataclass
 class Docstring:
     """Docstring ...."""
-    sections: List[Section]
+    sections: List[Section] = field(default_factory=list)
     type: str = ""
 ~~~
 
