@@ -41,7 +41,7 @@
   margin-bottom: 20px;
 }
 
-.mkapi-node-header {
+div.mkapi-object {
   background: #F0F0F0;
   border-left: solid 4px #7777FF;
   display: flex;
@@ -50,50 +50,57 @@
   font-size: 0.7rem;
 }
 
-.mkapi-node-header-package, .mkapi-node-header-module {
+h1.mkapi-object-package, h1.mkapi-object-module,
+h2.mkapi-object-package, h2.mkapi-object-module,
+h3.mkapi-object-package, h3.mkapi-object-module {
   background: none;
   border-left: none;
-
-  font-size: 1.2rem;
+  font-weight: normal;
+  margin-bottom: 0px;
 }
 
-.mkapi-node-kind {
+.mkapi-object-kind {
   margin-right: 0.3rem;
   font-weight: bold;
   color: #888888;
+  font-size: 90%;
 }
 
-.mkapi-node-kind-package, .mkapi-node-kind-module {
-  font-size: 1.1rem;
+h1 .mkapi-object-kind-package, h1 .mkapi-object-kind-module,
+h2 .mkapi-object-kind-package, h2 .mkapi-object-kind-module,
+h3 .mkapi-object-kind-package, h3 .mkapi-object-kind-module {
+  font-size: 60%;
 }
 
-code.mkapi-node-prefix {
+code.mkapi-object-prefix {
   font-weight: bold;
   color: #333333;
 }
 
-code.mkapi-node-prefix a {
+code.mkapi-object-prefix a,
+span.mkapi-object-prefix a {
   color: inherit;
 }
 
-code.mkapi-node-prefix a:hover {
+code.mkapi-object-prefix a:hover {
   background: #FFDDCC;
 }
 
-code.mkapi-node-name {
+code.mkapi-object-name {
   font-weight: bold;
   color: #333333;
 }
 
-code.mkapi-node-name a {
+code.mkapi-object-name a,
+span.mkapi-object-name a {
   color: inherit;
 }
 
-code.mkapi-node-name a:hover {
+code.mkapi-object-name a:hover {
   background: #FFDDCC;
 }
 
-code.mkapi-node-signature {
+code.mkapi-object-signature {
   font-weight: bold;
   color: #5577AA;
 }
@@ -179,7 +186,7 @@ code.mkapi-node-signature {
 }
 
 
-.mkapi-node-header pre,
+.mkapi-object pre,
 .mkapi-section-body-example pre,
 .mkapi-section-body-examples pre {
   background: none;
@@ -188,7 +195,7 @@ code.mkapi-node-signature {
   margin: 5px;
 }
 
-.mkapi-node-header code {
+.mkapi-object code {
   background: none;
   border: none;
   padding: 0px 0px;
@@ -254,46 +261,8 @@ code.mkapi-args-name {
  Members
 **************************************************/
 .mkapi-members {
+  margin-left: 40px;
 }
 
 .mkapi-member {
 }
-
-
-/****************************************************
- Header
-****************************************************/
-
-.mkapi-headless {
-  margin-bottom: 5px;
-}
-
-.mkapi-header {
-  font-weight: normal;
-}
-
-.mkapi-header::before {
-  font-weight: bold;
-  font-size: 60%;
-  color: #888888;
-  padding-right: 0.4em;
-}
-
-.mkapi-header-package::before {
-  content: "PACKAGE";
-}
-
-.mkapi-header-module::before {
-  content: "MODULE";
-}
-
-.mkapi-headless .mkapi-section {
-  margin-left: 0px;
-  margin-top: 0px;
-  margin-bottom: 0px;
-}
-
-/* .mkapi-headless .mkapi-section-body {
-  padding-left: 0px;
-  padding-top: 0px;
-} */

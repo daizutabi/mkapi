@@ -1,1 +1,1 @@
-"""mkapi.core package provices core features of MkApi."""
+"""Package level documentation is written in `__init__.py`."""

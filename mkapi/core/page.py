@@ -7,6 +7,7 @@ from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
 from mkapi.core.renderer import renderer
+from mkapi import utils
 
 
 @dataclass
@@ -29,13 +30,17 @@ class Page:
                 markdown = source[cursor:start].strip()
                 if markdown:
                     yield markdown
-            name = match.group(1)
-            node = get_node(name)
-            # if node.kind in ["class", "dataclass"]:
-            #     inherit(node)
+            heading, name = match.groups()
+            name, filters = utils.filter(name)
+            node = get_node(name, cache='nocache' not in filters)
+            if node.object.kind in ["class", "dataclass"]:
+                if "inherit" in filters:
+                    inherit(node)
+                elif "strict" in filters:
+                    inherit(node, strict=True)
             self.nodes.append(node)
-            markdown = node.get_markdown()
-            yield node_markdown(index, markdown)
+            markdown = node.get_markdown(level=len(heading))
+            yield node_markdown(index, markdown, 'upper' in filters)
             cursor = end
         if cursor < len(source):
             markdown = source[cursor:].strip()
@@ -45,7 +50,8 @@ class Page:
     def content(self, html):
         def replace(match):
             node = self.nodes[int(match.group(1))]
-            node.set_html(match.group(2))
+            node.set_html(match.group(3))
+            renderer.upper = match.group(2) == "True"
             return renderer.render(node)
 
         return re.sub(NODE_PATTERN, replace, html)

@@ -51,18 +51,18 @@ def rename_section(name: str) -> str:
     return name
 
 
-def section_header(line: str) -> Tuple[str, str]:
+def section_heading(line: str) -> Tuple[str, str]:
     """Returns a tuple of (section name, style name).
 
     Args:
         line: Docstring line.
 
     Examples:
-        >>> section_header("Args:")
+        >>> section_heading("Args:")
         ('Args', 'google')
-        >>> section_header("Raises")
+        >>> section_heading("Raises")
         ('Raises', 'numpy')
-        >>> section_header("other")
+        >>> section_heading("other")
         ('', '')
     """
     if line in SECTIONS:
@@ -102,7 +102,7 @@ def split_section(doc: str) -> Iterator[Tuple[str, str, str]]:
             start = stop
             name = ""
         else:
-            section, style_ = section_header(line)
+            section, style_ = section_heading(line)
             if section:
                 if start < stop - 1:
                     yield name, join(lines[start : stop - 1]), style

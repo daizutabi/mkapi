@@ -1,0 +1,6 @@
+{% from 'macros.jinja2' import object_body %}
+
+<div class="mkapi-object mkapi-object-{{ object.kind }}">
+<div class="mkapi-object-kind mkapi-object-kind-{{ object.kind }}">{{ object.kind|upper }}</div>
+{{ object_body(object, prefix_url, name_url, 'code', upper) }}
+</div>

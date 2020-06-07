@@ -27,8 +27,7 @@ DEF
 7
 ~~~
 
-GHI
-"""
+GHI"""
 
 
 def test_convert():

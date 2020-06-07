@@ -1,0 +1,6 @@
+{% from 'macros.jinja2' import object_body %}
+
+<h{{ level }}{% if heading_id %} id="{{ heading_id }}"{% endif %} class="mkapi-object mkapi-object-{{ object.kind }}">
+<span class="mkapi-object-kind mkapi-object-kind-{{ object.kind }}">{{ object.kind|upper }}</span>
+{{ object_body(object, prefix_url, name_url, 'span', upper) }}
+</h{{ level }}>

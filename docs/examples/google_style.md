@@ -43,7 +43,7 @@ import google_style
 Then, you can write an entry to generate API for the function anywhere in your Markdown source:
 
 ~~~markdown
-![mkapi][google_style.add]
+![mkapi](google_style.add)
 ~~~
 
 MkApi generates the API documentation for the `add()` function.
@@ -58,7 +58,7 @@ In this simple example, you can see some features of MkApi.
 * Type inspection of `add` (FUNCTION prefix is added before `google_style.add`).
 * Use of type annotation for both Parameters and Returns sections.
 * Add *optional* if parameters have default values.
-* Default value replacement by the `{default}` keyword in the `Args` section.
+* Default value replacement by the `{default}` keyword in the Parameters section.
 * External hyperlink.
 * Use of MkDocs extensions: MathJax rendering and admonition.
 
@@ -71,7 +71,7 @@ The `google_style` module also defines a simple generator `gen()`.
 Then,
 
 ~~~markdown
-![mkapi][google_style.gen]
+![mkapi](google_style.gen)
 ~~~
 
 creates the API documentation for the `gen()` generator.
@@ -81,7 +81,7 @@ creates the API documentation for the `gen()` generator.
 In this simple example, note that:
 
 * A GENERATOR prefix instead of a FUNCTION prefix.
-* The parameter `n` has no type annotation but you can specify it in the `Args` section directly.
+* The parameter `n` has no type annotation but you can specify it in the Parameters section directly.
 * Yields type is not *iterator of str* but *str*, because `gen()` is a generator.
 
 ## Class
@@ -93,7 +93,7 @@ The `google_style` module also defines a simple class `ExampleClass`.
 As usual,
 
 ~~~markdown
-![mkapi][google_style.ExampleClass]
+![mkapi](google_style.ExampleClass)
 ~~~
 
 creates the API documentation for the `ExampleClass` class.
@@ -104,8 +104,8 @@ In this example, note that:
 
 * Docstring of `__init__` function is treated as a class-level docstring.
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style.
-* Bound methods (`message` in this case) have a `METHOD` prefix instead of a `FUNCTION` prefix.
-* If callable objects have neither `Returns` nor `Yields`, the type appears on the object definition line like type annotation.
+* Bound methods (`message` in this case) have a METHOD prefix instead of a FUNCTION prefix.
+* If callable objects have neither Returns nor Yields, the type appears on the object definition line like type annotation.
 * For properties, the type can be written at the beginning of the docstring or as type annotation.
 * Whether a property is read-only or read-write is inspected.
 
@@ -114,7 +114,7 @@ In this example, note that:
 You can select a method of class (or any other attribute that can have docstring) to generate API.
 
 ~~~markdown
-![mkapi][google_style.ExampleClass.message]
+![mkapi](google_style.ExampleClass.message)
 ~~~
 
 creates the API documentation for the `message()` of `ExampleClass` class.
@@ -131,7 +131,7 @@ The `google_style` module also defines a simple [data class](https://docs.python
 Then,
 
 ~~~markdown
-![mkapi][google_style.ExampleDataClass]
+![mkapi](google_style.ExampleDataClass)
 ~~~
 
 creates the API documentation for the `ExampleDataClass` class.

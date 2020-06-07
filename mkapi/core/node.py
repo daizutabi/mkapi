@@ -3,8 +3,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any, Iterator, List
 
-import mkapi.core.preprocess
-from mkapi.core.base import Base
+from mkapi.core.base import Base, Object
 from mkapi.core.object import get_object
 from mkapi.core.renderer import renderer
 from mkapi.core.tree import Tree
@@ -46,6 +45,11 @@ class Node(Tree):
             yield from member
 
     def get_kind(self) -> str:
+        if inspect.ismodule(self.obj):
+            if self.sourcefile.endswith("__init__.py"):
+                return "package"
+            else:
+                return "module"
         return get_kind(self.obj)
 
     def get_members(self) -> List["Node"]:  # type:ignore
@@ -55,26 +59,21 @@ class Node(Tree):
         """Returns a Markdown source for docstring of this object."""
         markdowns = []
         for base in self:
-            if isinstance(base, Node):
-                markdown = base.markdown
-                if level:
+            markdown = base.markdown
+            if isinstance(base, Object):
+                if level and self.parent is None:
                     markdown = "#" * level + " " + markdown
-            else:
-                markdown = mkapi.core.preprocess.convert(base.markdown)
             markdowns.append(markdown)
         return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
     def set_html(self, html: str):
         """Sets HTML to `Base` instances recursively."""
         for base, html in zip(self, html.split("<!-- mkapi:sep -->")):
-            if isinstance(base, Node):
-                print(html.strip())
-                self.html = html  # FIXME
-            else:
-                base.set_html(html.strip())
+            base.set_html(html.strip())
 
     def render(self) -> str:
-        return renderer.render(self)
+        self.html = renderer.render(self)
+        return self.html
 
 
 def get_kind(obj) -> str:
@@ -136,10 +135,17 @@ def get_members(obj) -> List[Node]:
 
 
 @lru_cache(maxsize=1000)
-def get_node(name) -> Node:
+def _get_node(obj) -> Node:
+    return Node(obj)
+
+
+def get_node(name, cache=True) -> Node:
     if isinstance(name, str):
         obj = get_object(name)
     else:
         obj = name
 
-    return Node(obj)
+    if cache:
+        return _get_node(obj)
+    else:
+        return Node(obj)

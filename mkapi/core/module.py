@@ -46,9 +46,9 @@ class Module(Tree):
         else:
             return get_members(self.obj)
 
-    def get_markdown(self) -> str:
+    def get_markdown(self, filters: List[str]) -> str:  # type:ignore
         """Returns a Markdown source for docstring of this object."""
-        return renderer.render_module(self)
+        return renderer.render_module(self, filters)
 
 
 def get_objects(obj) -> List[str]:

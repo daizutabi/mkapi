@@ -2,30 +2,9 @@
 # Type Annotation Examples
 
 {{ # cache:clear }}
-
-Import libraries and create a Markdown conveter.
 """
 
-from IPython.display import HTML
-from markdown import Markdown
-
 import mkapi
-
-converter = Markdown()
-
-# ## Helper Function
-
-# Define a helper function that performs everything at one step.
-
-
-def render(obj):
-    node = mkapi.get_node(obj)
-    markdown = node.get_markdown()
-    html = converter.convert(markdown)
-    node.set_html(html)
-    html = node.render()
-    return HTML(html)
-
 
 # ## Builtin Types
 
@@ -45,7 +24,7 @@ def builtin(i: int, f: float, s: str, l: list, d: dict, t: tuple, e: set) -> boo
     return True
 
 
-render(builtin)
+mkapi.display(builtin)
 
 # ## Builtin Types with Default
 
@@ -54,14 +33,14 @@ def builtin_default(i: int = 1, f: float = 1.0, s: str = "abc", t: tuple = (1, 2
     """Function with buitin type annotation and default.
 
     Args:
-        i: Integer.
-        f: Float.
-        s: String.
-        t: Tuple.
+        i: Integer. Default={default}.
+        f: Float. Default={default}.
+        s: String. Default={default}.
+        t: Tuple. Default={default}.
     """
 
 
-render(builtin_default)
+mkapi.display(builtin_default)
 
 # ## Basic Collection Types
 
@@ -79,9 +58,9 @@ def basic(l: List[int], t: Tuple[str, int, float], d: Dict[str, int], s: Set[int
     """
 
 
-render(basic)
+mkapi.display(basic)
 
-# ## Iterator, Iterable
+# ## Iterator and Iterable
 
 from typing import Iterator, Iterable  # isort:skip
 
@@ -95,7 +74,7 @@ def function(x: Iterable[str]) -> Iterator[str]:
     return iter(x)
 
 
-render(function)
+mkapi.display(function)
 
 
 # -
@@ -104,10 +83,10 @@ def generator(x: Iterable[str]) -> Iterator[str]:
     yield from x
 
 
-render(generator)
+mkapi.display(generator)
 
 
-# ## Union, Optional
+# ## Union and Optional
 
 from typing import Optional, Union  # isort:skip
 
@@ -116,11 +95,11 @@ def optional(x: Optional[List[int]]):
     """Function with optional list.
 
     Args:
-        x: List of integer.
+        x: List of integer or None.
     """
 
 
-render(optional)
+mkapi.display(optional)
 
 # -
 
@@ -129,11 +108,11 @@ def optional_default(x: Optional[List[int]] = None):
     """Function with optional list and default.
 
     Args:
-        x: List of integer.
+        x: List of integer or None
     """
 
 
-render(optional_default)
+mkapi.display(optional_default)
 
 # -
 
@@ -147,7 +126,7 @@ def union(x: Union[int, float], y: Union[int, str, dict]):
     """
 
 
-render(union)
+mkapi.display(union)
 # -
 
 
@@ -159,4 +138,4 @@ def union_collection(x: Union[List[int], Tuple[str, str]]):
     """
 
 
-render(union_collection)
+mkapi.display(union_collection)

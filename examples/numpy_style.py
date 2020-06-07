@@ -31,7 +31,7 @@ def add(x: int, y: int = 1) -> int:
 
     Note
     ----
-        MkApi doesn't check an underline that follows a section header.
+        MkApi doesn't check an underline that follows a section heading.
         Just skip one line.
     """
     return x + y

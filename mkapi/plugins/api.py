@@ -3,8 +3,9 @@ import logging
 import os
 import shutil
 import sys
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
+from mkapi import utils
 from mkapi.core.module import Module, get_module
 
 logger = logging.getLogger("mkdocs")
@@ -37,6 +38,8 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
     if root not in sys.path:
         sys.path.insert(0, root)
 
+    package_path, filters = utils.filter(package_path)
+
     module = get_module(package_path)
     nav = []
     abs_api_paths = []
@@ -47,7 +50,7 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
         page_file = module.object.id + ".md"
         abs_path = os.path.join(abs_api_path, page_file)
         abs_api_paths.append(abs_path)
-        create_page(abs_path, module)
+        create_page(abs_path, module, filters)
         return os.path.join(api_path, page_file)
 
     for m in module:
@@ -59,16 +62,16 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
             if m.docstring:
                 modules[m.object.id] = add_page(m)
         else:
-            modules[m.object.id] = add_page(m)
+            modules[m.object.name] = add_page(m)
     if package and modules:
         nav.append({package: modules})
 
     return nav, abs_api_paths
 
 
-def create_page(path: str, module: Module):
+def create_page(path: str, module: Module, filters: List[str]):
     with open(path, "w") as f:
-        f.write(module.get_markdown())
+        f.write(module.get_markdown(filters))
 
 
 def rmtree(path: str):

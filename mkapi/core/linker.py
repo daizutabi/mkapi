@@ -1,6 +1,7 @@
 import os
 import re
-from typing import List
+from html.parser import HTMLParser
+from typing import Any, Dict, List
 
 from mkapi.core.regex import LINK_PATTERN
 
@@ -50,3 +51,45 @@ def match_last(name: str, abs_api_paths: List[str]) -> str:
         if name.startswith(path[:-3]):
             match = abs_api_path
     return match
+
+
+class ObjectParser(HTMLParser):
+    def feed(self, html):
+        self.context = {"href": [], "heading_id": ""}
+        super().feed(html)
+        href = self.context["href"]
+        if len(href) == 2:
+            prefix_url, name_url = href
+        elif len(href) == 1:
+            prefix_url, name_url = "", href[0]
+        else:
+            prefix_url, name_url = "", ""
+        self.context["prefix_url"] = prefix_url
+        self.context["name_url"] = name_url
+        del self.context["href"]
+        return self.context
+
+    def handle_starttag(self, tag, attrs):
+        context = self.context
+        if tag == "p":
+            context["level"] = 0
+        elif re.match(r"h[1-6]", tag):
+            context["level"] = int(tag[1:])
+            for attr in attrs:
+                if attr[0] == "id":
+                    self.context["heading_id"] = attr[1]
+        elif tag == "a":
+            for attr in attrs:
+                if attr[0] == "href":
+                    href = attr[1]
+                    if href.startswith("./"):
+                        href = href[2:]
+                    self.context["href"].append(href)
+
+
+parser = ObjectParser()
+
+
+def resolve_object(html: str) -> Dict[str, Any]:
+    parser.reset()
+    return parser.feed(html)

@@ -1,0 +1,13 @@
+<div class="mkapi-node" id="{{ node.object.id }}">
+{{ object|safe }}
+{{ docstring|safe }}
+{% if members %}
+  <div class="mkapi-members">
+  {% for member in members %}
+    <div class="mkapi-member">
+      {{ member|safe }}
+    </div>
+  {% endfor %}
+  </div>
+{% endif %}
+</div>

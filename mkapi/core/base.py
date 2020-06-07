@@ -2,6 +2,7 @@
 from dataclasses import dataclass, field
 from typing import Iterator, List, Optional
 
+import mkapi.core.preprocess
 from mkapi.core import linker
 from mkapi.core.preprocess import strip_ptags
 from mkapi.core.regex import LINK_PATTERN
@@ -27,7 +28,11 @@ class Base:
     html: str = field(default="", init=False)
 
     def set_html(self, html: str):
-        """Sets `html` attribute."""
+        """Sets `html` attribute.
+
+        Args:
+            html: HTML string.
+        """
         self.html = html
 
 
@@ -101,6 +106,10 @@ class Section(Base):
     items: List[Item] = field(default_factory=list)
     type: Type = field(default_factory=Type)
 
+    def __post_init__(self):
+        if self.markdown:
+            self.markdown = mkapi.core.preprocess.convert(self.markdown)
+
     def __iter__(self) -> Iterator[Base]:
         yield from self.type
         if self.markdown:
@@ -116,33 +125,6 @@ class Section(Base):
 
     def __contains__(self, name) -> bool:
         return self[name] is not None
-
-
-@dataclass
-class Object(Base):
-    """Object class represents an object."""
-
-    prefix: str = ""
-    id: str = field(init=False)
-    kind: str = ""
-    type: Type = field(default_factory=Type)
-    signature: Signature = field(default_factory=Signature)
-
-    def __post_init__(self):
-        self.id = self.name
-        if self.prefix:
-            self.id = ".".join([self.prefix, self.name])
-        if not self.markdown:
-            name = linker.link(self.name, self.id)
-            if self.prefix:
-                prefix = linker.link(self.prefix, self.prefix)
-                self.markdown = ".".join([prefix, name])
-            else:
-                self.markdown = name
-
-    def __iter__(self) -> Iterator[Base]:
-        yield from self.type
-        yield self
 
 
 @dataclass
@@ -206,3 +188,30 @@ class Docstring:
                 self.sections.insert(k, section)
                 return
         self.sections.append(section)
+
+
+@dataclass
+class Object(Base):
+    """Object class represents an object."""
+
+    prefix: str = ""
+    id: str = field(init=False)
+    kind: str = ""
+    type: Type = field(default_factory=Type)
+    signature: Signature = field(default_factory=Signature)
+
+    def __post_init__(self):
+        self.id = self.name
+        if self.prefix:
+            self.id = ".".join([self.prefix, self.name])
+        if not self.markdown:
+            name = linker.link(self.name, self.id)
+            if self.prefix:
+                prefix = linker.link(self.prefix, self.prefix)
+                self.markdown = ".".join([prefix, name])
+            else:
+                self.markdown = name
+
+    def __iter__(self) -> Iterator[Base]:
+        yield from self.type
+        yield self

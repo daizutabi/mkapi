@@ -7,8 +7,12 @@ within Python.
 First, import MkApi:
 
 {{ # cache:clear }}
-"""
 
+
+<style type="text/css"> <!-- .mkapi-node {   border: 2px dashed #88AA88; } -->
+</style>
+
+"""
 
 import mkapi
 
@@ -45,7 +49,7 @@ type(node)
 
 # Some attributes:
 
-node.kind, node.name
+node.object.kind, node.object.name
 # -
 docstring = node.docstring
 len(docstring.sections)  # type:ignore
@@ -65,7 +69,7 @@ type(child)
 
 # Elements of `Node.members` are also `Node` objects, so this is a tree structure.
 
-child.kind, child.name
+child.object.kind, child.object.name
 # -
 docstring = child.docstring
 len(docstring.sections)  # type:ignore
@@ -76,29 +80,33 @@ section.name, section.markdown
 section = docstring.sections[1]  # type:ignore
 section.name, section.markdown
 
-# The above Parameters section has an empty `markdown`, while its `items` represent
+# The above Parameters section has an empty `markdown`, while its `items` represents an
 # argument list:
 
-section.items
+item = section.items[0]
+print(f"name={item.name!r}")
+print(f"markdown={item.markdown!r}, html={item.html!r}")
+print(item.type)
 
-# You can see that the type of argument `x` is inspected. Note that the `markdown`
-# attribute is set from docstring, while the `html` attribute is empty.
+# You can see that the type of the argument `x` is inspected. Note that the `markdown`
+# attribute has been set from the docstring, while the `html` attribute hasn't had any
+# value yet.
 
 # `Node.get_markdown()` creates a *joint* Markdown of this node.
 
 markdown = node.get_markdown()
 print(markdown)
 
-# Where is Note or Parameters section header, *etc.*? No problem. The
-# `Node.get_markdown()` divides docstring into two parts. One is a plain Markdown that
+# Where is Note or Parameters section heading, *etc.*? No problem. The
+# `Node.get_markdown()` divides docstrings into two parts. One is a plain Markdown that
 # will be converted into HTML by any Markdown converter, for example, MkDocs. The other
-# is the outline structure of a docstring such as sections or arguments that will be
+# is the outline structure of docstrings such as sections or arguments that will be
 # processed by MkApi itself.
 
 # ## Converting Markdown
 
 # For simplicity, we use [Python-Markdown](https://python-markdown.github.io/) library
-# instead of `MkDocs`.
+# instead of MkDocs.
 
 from markdown import Markdown  # isort:skip
 
@@ -131,7 +139,7 @@ item.markdown, item.html  # A <p> tag is deleted.
 
 # ## Constructing HTML
 
-# Finally, construct one HTML calling `Node.render()` that internally uses
+# Finally, construct HTML calling `Node.render()` that internally uses
 # [Jinja](https://jinja.palletsprojects.com/en/2.11.x/) library.
 
 html = node.render()
@@ -146,7 +154,7 @@ HTML(html)
 
 # ## Summary
 
-# In summary, all you need to get API documentation of an object is described by the
+# All you need to get API documentation of an object is described by the
 # following function.
 
 
@@ -157,11 +165,11 @@ def get_html(obj) -> str:
     # Create a joint Markdown from components of the node.
     markdown = node.get_markdown()
 
-    # Convert into HTML by any external converter.
+    # Convert it into HTML by any external converter.
     html = converter.convert(markdown)
 
     # Split and distribute the HTML into original components.
     node.set_html(html)
 
-    # Render node to create final HTML.
-    node.render()
+    # Render the node to create final HTML.
+    return node.render()

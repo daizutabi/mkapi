@@ -1,6 +1,8 @@
+# This module implements the functionality of docstring inheritance.
+# Todo: Inheritance from method.
 from typing import Dict, Tuple
 
-from mkapi.core.base import Item, Section
+from mkapi.core.base import Item, Section, Type
 from mkapi.core.node import Node, get_node
 
 
@@ -46,7 +48,7 @@ def inherit_base(node: Node, base: Node, name: str = ""):
             ):
                 items.append(item)
     if node_section is not None:
-        for item in node_section:
+        for item in node_section.items:
             if item not in items:
                 items.append(item)
     node.docstring[name] = Section(name, items=items)  # type:ignore
@@ -63,18 +65,17 @@ def inherit_signature(node: Node, name: str = ""):
         return
 
     node_section = node.docstring[name]
-    if node_section is None:
-        items = []
-    else:
-        items = node_section.items
+    items = []
     for item_name, type in params.items():
         if node_section is None or item_name not in node_section:
-            item = Item(item_name, type, markdown="MISSING")
-            items.append(item)
-    node.docstring[name] = Section(name, items=items)  # type:ignore
+            item = Item(item_name, markdown="", type=Type(type))
+        else:
+            item = node_section[item_name]  # type:ignore
+        items.append(item)
+    node.docstring[name] = Section(name, items=items)
 
 
-def inherit(node: Node):
+def inherit(node: Node, strict: bool = False):
     if is_complete(node):
         return
     for cls in node.obj.mro()[:-1]:
@@ -82,4 +83,5 @@ def inherit(node: Node):
         inherit_base(node, base)
         if is_complete(node):
             return
-    inherit_signature(node)
+    if strict:
+        inherit_signature(node)

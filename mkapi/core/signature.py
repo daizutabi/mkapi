@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any, Dict, Mapping, Optional, Union
 
+from mkapi.core import linker
+
 
 @dataclass
 class Signature:
@@ -50,6 +52,9 @@ class Signature:
         return getattr(self, name.lower())
 
     def __str__(self):
+        if self.obj is None or not callable(self.obj):
+            return ""
+
         args = []
         for arg in self.parameters:
             if self.defaults[arg] != inspect.Parameter.empty:
@@ -76,7 +81,7 @@ def to_string(annotation, kind: str = "") -> str:
         module = annotation.__module__
         if module == "builtins":
             return name
-        return f"[{name}]({module}.{name})"
+        return linker.link(name, ".".join([module, name]))
     if not hasattr(annotation, "__origin__"):
         return str(annotation).replace("typing.", "")
     origin = annotation.__origin__
