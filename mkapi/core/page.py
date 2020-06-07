@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Iterator, List
 
 from mkapi.core.inherit import inherit
-from mkapi.core.linker import resolve_link, resolve_markdown_link
+from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
 from mkapi.core.renderer import renderer
@@ -13,14 +13,13 @@ from mkapi.core.renderer import renderer
 class Page:
     source: str
     abs_src_path: str
-    api_roots: List[str] = field(default_factory=list)
+    abs_api_paths: List[str] = field(default_factory=list)
+    markdown: str = field(init=False)
     nodes: List[Node] = field(default_factory=list, init=False)
 
     def __post_init__(self):
         markdown = "\n\n".join(self.split(self.source))
-        self.markdown = resolve_markdown_link(
-            markdown, self.abs_src_path, self.api_roots
-        )
+        self.markdown = resolve_link(markdown, self.abs_src_path, self.abs_api_paths)
 
     def split(self, source) -> Iterator[str]:
         cursor = 0
@@ -32,9 +31,8 @@ class Page:
                     yield markdown
             name = match.group(1)
             node = get_node(name)
-            if node.kind in ["class", "dataclass"]:
-                inherit(node)
-            resolve_link(node, self.abs_src_path, self.api_roots)
+            # if node.kind in ["class", "dataclass"]:
+            #     inherit(node)
             self.nodes.append(node)
             markdown = node.get_markdown()
             yield node_markdown(index, markdown)

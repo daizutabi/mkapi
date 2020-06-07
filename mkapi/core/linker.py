@@ -1,71 +1,52 @@
 import os
 import re
-from typing import List, Union
+from typing import List
 
-from mkapi.core.base import Base
-from mkapi.core.node import Node
 from mkapi.core.regex import LINK_PATTERN
 
 
-def resolve_link(node: Node, abs_src_path: str, api_roots: List[str]):
-    resolve_node_link(node, abs_src_path, api_roots)
-    for base in node:
-        resolve_type_link(base, abs_src_path, api_roots)
+def link(name: str, href: str) -> str:
+    return f"[{name}](!{href})"
 
 
-def resolve_node_link(node: Node, abs_src_path: str, api_roots: List[str]):
-    node.prefix_url = resolve_href(node.prefix, abs_src_path, api_roots, is_html=True)
-    if node.prefix_url:
-        node.name_url = ".".join([node.prefix_url, node.name])
-    resolve_type_link(node, abs_src_path, api_roots)
-    for member in node.members:
-        resolve_node_link(member, abs_src_path, api_roots)
-
-
-def resolve_type_link(base: Union[Base, Node], abs_src_path: str, api_roots: List[str]):
+def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: List[str]) -> str:
     def replace(match):
-        name = match.group(1)
-        href = resolve_href(match.group(2), abs_src_path, api_roots, is_html=True)
-        if href:
-            title = href.split("#")[1]
-            return f'<a href="{href}" title="{title}">{match.group(1)}</a>'
+        name, href = match.groups()
+        if href.startswith("!!"):  # Just for MkApi documentation.
+            href = href[2:]
+            return f"[{name}]({href})"
+        if href.startswith("!"):
+            href = href[1:]
+            from_mkapi = True
         else:
-            return name
+            from_mkapi = False
 
-    base.type_html = re.sub(LINK_PATTERN, replace, base.type)
-
-
-def resolve_markdown_link(
-    markdown: str, abs_src_path: str, api_roots: List[str]
-) -> str:
-    def replace(match):
-        name = match.group(1)
-        if match.group(2).startswith("!"):  # Just for MkApi documentation.
-            href = match.group(2)[1:]
-            return f"[{name}]({href})"
-        href = resolve_href(match.group(2), abs_src_path, api_roots, is_html=False)
+        href = resolve_href(href, abs_src_path, abs_api_paths)
         if href:
             return f"[{name}]({href})"
+        elif from_mkapi:
+            return name
         else:
             return match.group()
 
     return re.sub(LINK_PATTERN, replace, markdown)
 
 
-def resolve_href(
-    name: str, abs_src_path: str, api_roots: List[str], is_html: bool
-) -> str:
+def resolve_href(name: str, abs_src_path: str, abs_api_paths: List[str]) -> str:
     if not name:
         return ""
-    for root in api_roots:
-        dirname, path = os.path.split(root)
+    abs_api_path = match_last(name, abs_api_paths)
+    if not abs_api_path:
+        return ""
+    relpath = os.path.relpath(abs_api_path, os.path.dirname(abs_src_path))
+    relpath = relpath.replace("\\", "/")
+    return "#".join([relpath, name])
+
+
+def match_last(name: str, abs_api_paths: List[str]) -> str:
+    match = ""
+    for abs_api_path in abs_api_paths:
+        dirname, path = os.path.split(abs_api_path)
         if name.startswith(path[:-3]):
-            if is_html:
-                relpath = os.path.relpath(root, abs_src_path)
-            else:
-                relpath = os.path.relpath(root, os.path.dirname(abs_src_path))
-            if is_html:
-                relpath = relpath[:-3]
-            relpath = relpath.replace("\\", "/")
-            return "#".join([relpath, name])
-    return ""
+            match = abs_api_path
+    return match

@@ -35,14 +35,14 @@ class MkapiPlugin(BasePlugin):
                 sys.path.insert(0, path)
 
         self.pages = {}
-        self.api_roots = []
+        self.abs_api_paths = []
         if not self.server:
-            config, self.api_roots = mkapi.plugins.api.create_nav(config)
+            config, self.abs_api_paths = mkapi.plugins.api.create_nav(config)
             global_config["config"] = config
-            global_config["api_roots"] = self.api_roots
+            global_config["abs_api_paths"] = self.abs_api_paths
         else:
             config = global_config["config"]
-            self.api_roots = global_config["api_roots"]
+            self.abs_api_paths = global_config["abs_api_paths"]
         return config
 
     def on_files(self, files, config):
@@ -82,7 +82,7 @@ class MkapiPlugin(BasePlugin):
     def on_page_markdown(self, markdown, page, config, files):
         """Converts Markdown source to intermidiate version."""
         abs_src_path = page.file.abs_src_path
-        page = Page(markdown, abs_src_path, self.api_roots)
+        page = Page(markdown, abs_src_path, self.abs_api_paths)
         self.pages[abs_src_path] = page
         return page.markdown
 

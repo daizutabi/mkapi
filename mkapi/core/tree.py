@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, List
 
+from mkapi.core import linker
 from mkapi.core.docstring import Docstring, get_docstring
 from mkapi.core.object import get_sourcefile_and_lineno, split_prefix_and_name
 
@@ -83,7 +84,9 @@ class Tree:
 
     @property
     def markdown(self):
+        name = linker.link(self.name, self.id)
         if self.prefix:
-            return f"[{self.prefix}]({self.prefix}).[{self.name}]({self.id})"
+            prefix = linker.link(self.prefix, self.prefix)
+            return ".".join([prefix, name])
         else:
-            return f"[{self.name}]({self.id})"
+            return name

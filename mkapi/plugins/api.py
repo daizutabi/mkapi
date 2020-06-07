@@ -1,15 +1,11 @@
 import atexit
-import importlib
-import inspect
 import logging
 import os
 import shutil
 import sys
-from typing import Iterator, List, Tuple
+from typing import Dict, Tuple
 
-from mkapi.core.module import get_module
-from mkapi.core.node import get_node
-from mkapi.core.renderer import renderer
+from mkapi.core.module import Module, get_module
 
 logger = logging.getLogger("mkdocs")
 
@@ -18,18 +14,18 @@ def create_nav(config):
     nav = config["nav"]
     docs_dir = config["docs_dir"]
     config_dir = os.path.dirname(config["config_file_path"])
-    api_roots = []
+    abs_api_paths = []
     for page in nav:
         if isinstance(page, dict):
             for key, value in page.items():
                 if isinstance(value, str) and value.startswith("mkapi/"):
-                    page[key], pages = collect(value, docs_dir, config_dir)
-                    api_roots.extend(pages)
-    return config, api_roots
+                    page[key], abs_api_paths_ = collect(value, docs_dir, config_dir)
+                    abs_api_paths.extend(abs_api_paths_)
+    return config, abs_api_paths
 
 
 def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
-    _, api_path, *paths, package = path.split("/")
+    _, api_path, *paths, package_path = path.split("/")
     abs_api_path = os.path.join(docs_dir, api_path)
     if os.path.exists(abs_api_path):
         logger.error(f"[MkApi] {abs_api_path} exists: Delete manually for safety.")
@@ -41,57 +37,44 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
     if root not in sys.path:
         sys.path.insert(0, root)
 
+    module = get_module(package_path)
     nav = []
-    pages_all = []
-    for paths in walk(top):
-        package = os.path.relpath(paths[0], root)
-        package = package.replace("/", ".").replace("\\", ".")
-        package_obj = importlib.import_module(package)
-        if inspect.getdoc(package_obj):
-            paths[0] = ""
+    abs_api_paths = []
+    modules: Dict[str, str] = {}
+    package = None
+
+    def add_page(module: Module) -> str:
+        page_file = module.id + ".md"
+        abs_path = os.path.join(abs_api_path, page_file)
+        abs_api_paths.append(abs_path)
+        create_page(abs_path, module)
+        return os.path.join(api_path, page_file)
+
+    for m in module:
+        if m.kind == "package":
+            if package and modules:
+                nav.append({package: modules})
+            package = m.id
+            modules = {}
+            if m.docstring:
+                modules[m.id] = add_page(m)
         else:
-            paths = paths[1:]
+            modules[m.id] = add_page(m)
+    if package and modules:
+        nav.append({package: modules})
 
-        pages = []
-        for path in paths:
-            if path:
-                module = ".".join([package, path])
-                module_obj = importlib.import_module(module)
-                if not inspect.getdoc(module_obj):
-                    continue
-            else:
-                module = package
-            abs_path = os.path.normpath("/".join([abs_api_path, module]) + ".md")
-            if path == "":
-                children = paths[1:]
-            else:
-                children = []
-            create_page(abs_path, module, children)
-            page = os.path.relpath(abs_path, docs_dir).replace("\\", "/")
-            pages_all.append(abs_path)
-            pages.append({page[:-3].split(".")[-1]: page})
-        if pages:
-            nav.append({package: pages})
-
-    return nav, pages_all
+    return nav, abs_api_paths
 
 
-def rmtree(path):
+def create_page(path: str, module: Module):
+    with open(path, "w") as f:
+        f.write(module.get_markdown())
+
+
+def rmtree(path: str):
     if not os.path.exists(path):
         return
     try:
         shutil.rmtree(path)
     except PermissionError:
         logger.warning(f"[MkApi] Couldn't delete directory: {path}")
-
-
-def create_page(abs_path, module: str, children: List[str]):
-    with open(abs_path, "w") as f:
-        f.write(create_markdown(module, children))
-
-
-def create_markdown(module: str, children: List[str]) -> str:
-    node = get_node(module, max_depth=1)
-    members = [member.id for member in node.members]
-    markdown = renderer.render_page(node, module, members, children)
-    return markdown

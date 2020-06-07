@@ -1,6 +1,3 @@
-
-
-
 {% macro node_prefix(node) -%}
   {% if node.prefix_url %}<a href="{{ node.prefix_url }}">{% endif -%}
     {{ node.prefix }}
@@ -27,7 +24,7 @@
 {%- endmacro %}
 
 {% macro select_type(base) -%}
-  {% if base.type_html %}{{ base.type_html|safe }}{% else %}{{ base.type }}{% endif %}
+  {% if base.type.html %}{{ base.type.html|safe }}{% else %}{{ base.type.markdown }}{% endif %}
 {%- endmacro %}
 
 {% macro node_type(node) -%}

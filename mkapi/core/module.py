@@ -29,7 +29,7 @@ class Module(Tree):
     def __iter__(self) -> Iterator["Module"]:
         if self.docstring:
             yield self
-        elif self.kind == 'package' and any(m.docstring for m in self.members):
+        elif self.kind == "package" and any(m.docstring for m in self.members):
             yield self
         for member in self.members:
             yield from member

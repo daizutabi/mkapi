@@ -53,7 +53,7 @@ class Type(Base):
 class Item(Base):
     """Item class represents an item in Parameters, Attributes, and Raises sections."""
 
-    type: Type = Type()
+    type: Type = field(default_factory=Type)
 
     def __iter__(self) -> Iterator[Base]:
         yield from self.type
@@ -97,7 +97,7 @@ class Section(Base):
     """
 
     items: List[Item] = field(default_factory=list)
-    type: Type = Type()
+    type: Type = field(default_factory=Type)
 
     def __iter__(self) -> Iterator[Base]:
         yield from self.type
@@ -149,7 +149,7 @@ class Docstring:
     """
 
     sections: List[Section] = field(default_factory=list)
-    type: Type = Type()
+    type: Type = field(default_factory=Type)
 
     def __bool__(self):
         return len(self.sections) > 0

@@ -28,7 +28,7 @@ class Node(Tree):
 
     members: List["Node"] = field(init=False)
     signature: Signature = field(init=False)
-    type: Type = Type()
+    type: Type = field(default_factory=Type)
 
     def __post_init__(self):
         super().__post_init__()
@@ -57,7 +57,7 @@ class Node(Tree):
     def get_members(self) -> List["Node"]:  # type:ignore
         return get_members(self.obj)
 
-    def get_markdown(self, level: int = 0) -> str:
+    def get_markdown(self, level: int = 1) -> str:
         """Returns a Markdown source for docstring of this object."""
         markdowns = []
         for base in self:
@@ -74,6 +74,7 @@ class Node(Tree):
         """Sets HTML to `Base` instances recursively."""
         for base, html in zip(self, html.split("<!-- mkapi:sep -->")):
             if isinstance(base, Node):
+                print(html.strip())
                 self.html = html  # FIXME
             else:
                 base.set_html(html.strip())
@@ -89,7 +90,7 @@ def get_kind(obj) -> str:
             return "readwrite_property"
         else:
             return "readonly_property"
-    if hasattr(obj, "__dataclass_fields__"):
+    if hasattr(obj, "__dataclass_fields__") and hasattr(obj, "__qualname__"):
         return "dataclass"
     if inspect.isclass(obj):
         return "class"
@@ -109,14 +110,24 @@ def get_kind(obj) -> str:
 
 
 def get_members(obj) -> List[Node]:
-    if isinstance(obj, property):
+    if inspect.ismodule(obj) or isinstance(obj, property):
         return []
 
+    try:
+        obj_sourcefile = inspect.getsourcefile(obj)
+    except TypeError:
+        obj_sourcefile = ""
     members = []
     for name, obj in inspect.getmembers(obj):
         if name.startswith("_") and name != "__init__":
             continue
         if not get_kind(obj):
+            continue
+        try:
+            source = inspect.getsourcefile(obj)
+        except TypeError:
+            continue
+        if obj_sourcefile and source != obj_sourcefile:
             continue
         member = Node(obj)
         if member.docstring:
