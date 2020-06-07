@@ -64,8 +64,8 @@ Here, `pathX`s are inserted to `sys.path`. These `pathX`s must be relative to th
 
 The embedding mode is useful to embed an object interface in an arbitrary position of a Markdown source. For more details, see:
 
-* [Google style examples](examples/google_style.md)
-* [NumPy style examples](examples/numpy_style.md)
+* [Google style examples](https://mkapi.daizutabi.net/examples/google_style)
+* [NumPy style examples](https://mkapi.daizutabi.net/examples/numpy_style)
 
 ### Page Mode
 
@@ -77,7 +77,7 @@ nav:
   - API: mkapi/api/mkapi
 ~~~
 
-For more details, see [Page Mode and Internal Links](usage/page.md)
+For more details, see [Page Mode and Internal Links](https://mkapi.daizutabi.net/usage/page)
 
 [pypi-image]: https://badge.fury.io/py/mkapi.svg
 [pypi-link]: https://pypi.org/project/mkapi
