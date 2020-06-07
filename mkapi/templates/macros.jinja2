@@ -25,7 +25,7 @@
 {% macro object_body(object, prefix_url, name_url, tag, upper) -%}
   {% if object.prefix and object.kind not in ['method', 'readonly_property', 'readwrite_property'] -%}
     <{{ tag }} class="mkapi-object-prefix">{{ object_prefix(object, prefix_url, upper) }}</{{ tag }}>
-  {% endif -%}
+  {%- endif -%}
     <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>
   {% if object.signature %}<{{ tag }} class="mkapi-object-signature">{{ object.signature }}</{{ tag }}>{% endif %}
     {{ object_type(object) }}
