@@ -44,22 +44,22 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
     package = None
 
     def add_page(module: Module) -> str:
-        page_file = module.id + ".md"
+        page_file = module.object.id + ".md"
         abs_path = os.path.join(abs_api_path, page_file)
         abs_api_paths.append(abs_path)
         create_page(abs_path, module)
         return os.path.join(api_path, page_file)
 
     for m in module:
-        if m.kind == "package":
+        if m.object.kind == "package":
             if package and modules:
                 nav.append({package: modules})
-            package = m.id
+            package = m.object.id
             modules = {}
             if m.docstring:
-                modules[m.id] = add_page(m)
+                modules[m.object.id] = add_page(m)
         else:
-            modules[m.id] = add_page(m)
+            modules[m.object.id] = add_page(m)
     if package and modules:
         nav.append({package: modules})
 

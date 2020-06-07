@@ -9,8 +9,8 @@ def get_params(node: Node, name: str) -> Tuple[Dict[str, str], Dict[str, str]]:
     if section is None:
         docstring_params = {}
     else:
-        docstring_params = {item.name: item.type for item in section}
-    signature_params = node.signature[name]
+        docstring_params = {item.name: item.type.name for item in section.items}
+    signature_params = node.object.signature[name]
     return docstring_params, signature_params
 
 

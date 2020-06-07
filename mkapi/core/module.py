@@ -22,14 +22,14 @@ class Module(Tree):
 
     def __post_init__(self):
         super().__post_init__()
-        if self.kind == "module":
+        if self.object.kind == "module":
             objects = get_objects(self.obj)
-            self.objects = [".".join([self.id, obj]) for obj in objects]
+            self.objects = [".".join([self.object.id, obj]) for obj in objects]
 
     def __iter__(self) -> Iterator["Module"]:
         if self.docstring:
             yield self
-        elif self.kind == "package" and any(m.docstring for m in self.members):
+        elif self.object.kind == "package" and any(m.docstring for m in self.members):
             yield self
         for member in self.members:
             yield from member
@@ -41,7 +41,7 @@ class Module(Tree):
             return "module"
 
     def get_members(self) -> List["Module"]:  # type:ignore
-        if self.kind == "module":
+        if self.object.kind == "module":
             return []
         else:
             return get_members(self.obj)
@@ -85,7 +85,7 @@ def get_members(obj) -> List[Module]:
             name = path[:-3]
         if name:
             name = ".".join([obj.__name__, name])
-            module = Module(get_object(name))
+            module = get_module(name)
             members.append(module)
     return members
 

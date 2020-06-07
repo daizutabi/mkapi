@@ -55,7 +55,6 @@ class Renderer:
 
     def render_module(self, module) -> str:
         template = self.templates["module"]
-        docstring = self.render_docstring(module.docstring)
         return template.render(module=module)
 
 
