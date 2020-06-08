@@ -115,8 +115,9 @@ def get_kind(obj) -> str:
 def is_member(name: str, obj: Any, sourcefile: str) -> bool:
     if isinstance(obj, property):
         return True
-    if name.startswith("_") and name != "__init__":
-        return False
+    if name.startswith("_"):
+        if not name.startswith("__") or not name.endswith("__"):
+            return False
     if not get_kind(obj):
         return False
     try:

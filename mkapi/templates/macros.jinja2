@@ -23,7 +23,7 @@
 {%- endmacro %}
 
 {% macro object_body(object, prefix_url, name_url, tag, upper) -%}
-  {% if object.prefix and object.kind not in ['method', 'readonly_property', 'readwrite_property'] -%}
+  {% if object.prefix and object.kind not in ['method', 'readonly_property', 'readwrite_property', 'generator'] -%}
     <{{ tag }} class="mkapi-object-prefix">{{ object_prefix(object, prefix_url, upper) }}</{{ tag }}>
   {%- endif -%}
     <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>

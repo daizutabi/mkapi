@@ -169,6 +169,8 @@ def a_of_b(annotation) -> str:
     if not hasattr(origin, "__name__"):
         return ""
     name = origin.__name__.lower()
+    if len(annotation.__args__) == 0:
+        return name
     if type(annotation.__args__[0]) == TypeVar:
         return name
     type_ = f"{name} of " + to_string(annotation.__args__[0])

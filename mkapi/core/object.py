@@ -1,7 +1,8 @@
 """This module provides utility functions that relates to object."""
 import importlib
 import inspect
-from typing import Any, Tuple
+from functools import partial
+from typing import Any, Callable, List, Tuple
 
 
 def get_object(name: str) -> Any:
@@ -65,10 +66,10 @@ def get_fullname(obj: Any, name: str) -> str:
             return ""
         obj = getattr(obj, name)
 
-    return '.'.join(split_prefix_and_name(obj))
+    return ".".join(split_prefix_and_name(obj))
 
 
-def split_prefix_and_name(obj) -> Tuple[str, str]:
+def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
     """Split an object full name into prefix and name.
 
     Args:
@@ -106,7 +107,7 @@ def split_prefix_and_name(obj) -> Tuple[str, str]:
     return prefix, name
 
 
-def get_sourcefile_and_lineno(obj) -> Tuple[str, int]:
+def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
     if isinstance(obj, property):
         obj = obj.fget
     try:
@@ -118,3 +119,33 @@ def get_sourcefile_and_lineno(obj) -> Tuple[str, int]:
     except (TypeError, OSError):
         lineno = -1
     return sourcefile, lineno
+
+
+def is_dunder(obj: Any, only_documented: bool = True) -> bool:
+    """Returns dunder methods if they have a sourcefile.
+
+    Args:
+        obj: Object
+    """
+    if not hasattr(obj, "__name__"):
+        return False
+    name = obj.__name__
+    if name == "__init__":
+        return False
+    elif name.startswith("__") and name.endswith("__"):
+        try:
+            inspect.getsource(obj)
+        except TypeError:
+            return False
+        else:
+            if not only_documented:
+                return True
+            else:
+                return bool(inspect.getdoc(obj))
+    return False
+
+
+def get_dunders(obj: Any, only_documented: bool = True) -> List[Callable]:
+    filter = partial(is_dunder, only_documented=only_documented)
+    members = inspect.getmembers(obj, filter)
+    return [obj for _, obj in members]

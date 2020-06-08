@@ -45,10 +45,12 @@ class Type(Base):
         if not self.markdown:
             self.markdown = self.name
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
+        """Returns True if name is not empty."""
         return self.name != ""
 
     def __iter__(self) -> Iterator[Base]:
+        """Yields self if the markdown attribute has link form."""
         if LINK_PATTERN.search(self.markdown):
             yield self
 
@@ -121,6 +123,11 @@ class Section(Base):
             self.markdown = mkapi.core.preprocess.convert(self.markdown)
 
     def __iter__(self) -> Iterator[Base]:
+        """Yields [Base]() instance that has non empty Markdown.
+
+        Args:
+            name: Item name.
+        """
         yield from self.type
         if self.markdown:
             yield self
@@ -128,12 +135,22 @@ class Section(Base):
             yield from item
 
     def __getitem__(self, name) -> Optional[Item]:
+        """Returns [Item]() instance by `name`. If not found, returns None.
+
+        Args:
+            name: Item name.
+        """
         for item in self.items:
             if item.name == name:
                 return item
         return None
 
     def __contains__(self, name) -> bool:
+        """Returns True if [Item]() with `name` exists.
+
+        Args:
+            name: Item name.
+        """
         return self[name] is not None
 
 
