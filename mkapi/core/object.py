@@ -107,6 +107,14 @@ def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
     return prefix, name
 
 
+def get_qualname(obj: Any):
+    if isinstance(obj, property):
+        obj = obj.fget
+    if hasattr(obj, "__qualname__"):
+        return obj.__qualname__
+    return ""
+
+
 def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
     if isinstance(obj, property):
         obj = obj.fget

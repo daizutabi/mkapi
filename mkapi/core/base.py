@@ -64,10 +64,10 @@ class Item(Base):
     """Item class represents an item in Parameters, Attributes, and Raises sections.
 
     Args:
-        type: Type of item.
+        type: Type of self.
 
     Attributes:
-        type: Type of item.
+        type: Type of self.
     """
 
     type: Type = field(default_factory=Type)
@@ -87,11 +87,11 @@ class Section(Base):
 
     Args:
         items: List for Arguments, Attributes, or Raises sections.
-        type: Type of item.
+        type: Type of self.
 
     Attributes:
         items: List for Arguments, Attributes, or Raises sections.
-        type: Type of item.
+        type: Type of self.
 
     Examples:
         `Section` is iterable:
@@ -234,6 +234,7 @@ class Object(Base):
     """
 
     prefix: str = ""
+    qualname: str = ""
     id: str = field(init=False)
     kind: str = ""
     type: Type = field(default_factory=Type)

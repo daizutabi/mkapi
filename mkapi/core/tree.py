@@ -3,7 +3,8 @@ from typing import Any, List
 
 from mkapi.core.base import Object
 from mkapi.core.docstring import Docstring, get_docstring
-from mkapi.core.object import get_sourcefile_and_lineno, split_prefix_and_name
+from mkapi.core.object import (get_qualname, get_sourcefile_and_lineno,
+                               split_prefix_and_name)
 from mkapi.core.signature import get_signature
 
 
@@ -35,9 +36,12 @@ class Tree:
         obj = self.obj
         self.sourcefile, self.lineno = get_sourcefile_and_lineno(obj)
         prefix, name = split_prefix_and_name(obj)
+        qualname = get_qualname(obj)
         kind = self.get_kind()
         signature = get_signature(obj)
-        self.object = Object(prefix=prefix, name=name, kind=kind, signature=signature)
+        self.object = Object(
+            prefix=prefix, name=name, qualname=qualname, kind=kind, signature=signature,
+        )
         self.docstring = get_docstring(obj)
         self.members = self.get_members()
         for member in self.members:

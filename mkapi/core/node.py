@@ -95,6 +95,8 @@ def get_kind(obj) -> str:
             return "readonly_property"
     if hasattr(obj, "__dataclass_fields__") and hasattr(obj, "__qualname__"):
         return "dataclass"
+    if hasattr(obj, "__self__") and type(obj.__self__) is type:
+        return "classmethod"
     if inspect.isclass(obj):
         return "class"
     if inspect.isgeneratorfunction(obj):
@@ -108,6 +110,8 @@ def get_kind(obj) -> str:
             arg = list(parameters)[0]
             if arg == "self":
                 return "method"
+        if hasattr(obj, "__qualname__") and "." in obj.__qualname__:
+            return "staticmethod"
         return "function"
     return ""
 
@@ -115,6 +119,8 @@ def get_kind(obj) -> str:
 def is_member(name: str, obj: Any, sourcefile: str) -> bool:
     if isinstance(obj, property):
         return True
+    if name == '__func__':
+        return False
     if name.startswith("_"):
         if not name.startswith("__") or not name.endswith("__"):
             return False
