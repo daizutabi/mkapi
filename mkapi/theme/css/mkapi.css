@@ -109,10 +109,16 @@ code.mkapi-object-signature {
  Docstring
 **************************************************/
 .mkapi-docstring {
+  margin-left: 20px;
+}
+
+h1 ~ .mkapi-docstring,
+h2 ~ .mkapi-docstring,
+h3 ~ .mkapi-docstring {
+  margin-left: 0px;
 }
 
 .mkapi-section {
-  margin-left: 10px;
   margin-top: 2px;
   margin-bottom: 15px;
   padding: 0px;

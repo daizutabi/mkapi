@@ -1,16 +1,42 @@
+"""This module provides functions that relate to link."""
 import os
 import re
 from html.parser import HTMLParser
 from typing import Any, Dict, List
 
+from mkapi.core.object import get_fullname
 from mkapi.core.regex import LINK_PATTERN
 
 
 def link(name: str, href: str) -> str:
+    """Reutrns Markdown link with a mark that indicates this link was created by MkApi.
+
+    Args:
+        name: Link name.
+        href: Reference.
+
+    Examples:
+        >>> link('abc', 'xyz')
+        '[abc](!xyz)'
+    """
     return f"[{name}](!{href})"
 
 
 def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: List[str]) -> str:
+    """Reutrns resolved link.
+
+    Args:
+        markdown: Markdown source.
+        abs_src_path: Absolute source path of Markdown.
+        abs_api_paths: A list of API paths.
+
+    Examples:
+        >>> abs_src_path = '/src/examples/example.md'
+        >>> abs_api_paths = ['/api/a','/api/b', '/api/b.c']
+        >>> resolve_link('[abc](!b.c.d)', abs_src_path, abs_api_paths)
+        '[abc](../../api/b.c#b.c.d)'
+    """
+
     def replace(match):
         name, href = match.groups()
         if href.startswith("!!"):  # Just for MkApi documentation.
@@ -53,7 +79,7 @@ def match_last(name: str, abs_api_paths: List[str]) -> str:
     return match
 
 
-class ObjectParser(HTMLParser):
+class _ObjectParser(HTMLParser):
     def feed(self, html):
         self.context = {"href": [], "heading_id": ""}
         super().feed(html)
@@ -87,9 +113,53 @@ class ObjectParser(HTMLParser):
                     self.context["href"].append(href)
 
 
-parser = ObjectParser()
+parser = _ObjectParser()
 
 
 def resolve_object(html: str) -> Dict[str, Any]:
+    """Reutrns an object context dictionary.
+
+    Args:
+        html: HTML source.
+
+    Examples:
+        >>> resolve_object("<p><a href='a'>p</a><a href='b'>n</a></p>")
+        {'heading_id': '', 'level': 0, 'prefix_url': 'a', 'name_url': 'b'}
+        >>> resolve_object("<h2 id='i'><a href='a'>p</a><a href='b'>n</a></h2>")
+        {'heading_id': 'i', 'level': 2, 'prefix_url': 'a', 'name_url': 'b'}
+    """
     parser.reset()
     return parser.feed(html)
+
+
+REPLACE_LINK_PATTERN = re.compile(r"\[(.*?)\]\((.*?)\)")
+
+
+def replace_link(obj: Any, markdown: str) -> str:
+    """Returns a replaced link with object full name.
+
+    Args:
+        obj: Object that has a module.
+        markdown: Markdown
+
+    Examples:
+        >>> from mkapi.core.object import get_object
+        >>> obj = get_object('mkapi.core.base.Object')
+        >>> replace_link(obj, '[Signature]()')
+        '[Signature](!mkapi.core.signature.Signature)'
+        >>> replace_link(obj, '[dummy.Dummy]()')
+        '[dummy.Dummy]()'
+    """
+    def replace(match):
+        text, name = match.groups()
+        if not name:
+            name, text = text, ""
+        fullname = get_fullname(obj, name)
+        if fullname == "":
+            return match.group()
+        else:
+            if text:
+                name = text
+            return link(name, fullname)
+
+    return re.sub(REPLACE_LINK_PATTERN, replace, markdown)

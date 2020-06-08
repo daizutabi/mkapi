@@ -82,17 +82,18 @@ Furthermore, if your module imports an object, you can refer it by its name only
 #File link2.py
 ~~~python
 from mkapi.core.base import Section
+from mkapi.core.docstring import get_docstring
 
 
 def func():
     """Internal link example.
 
     * [Section]() --- Imported object.
-    * [](Section) --- Imported object.
+    * [](get_docstring) --- Imported object.
     * [Section.set_html]() --- Member of imported object.
     * [Section definition](Section) --- Alternative text.
     """
-    return Section()
+    return Section(), get_docstring(None)
 ~~~
 
 The `link2.func()` is rendered as:

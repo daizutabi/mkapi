@@ -5,7 +5,7 @@ import re
 from typing import Any, Iterator, List, Tuple
 
 from mkapi.core.base import Docstring, Item, Section, Type
-from mkapi.core.preprocess import replace_link
+from mkapi.core.linker import replace_link
 from mkapi.core.signature import Signature
 
 SECTIONS = [
@@ -118,7 +118,7 @@ def split_section(doc: str) -> Iterator[Tuple[str, str, str]]:
 
 
 def split_parameter(doc: str) -> Iterator[List[str]]:
-    """Yields list of parameter string.
+    """Yields a list of parameter string.
 
     Args:
         doc: Docstring
@@ -136,7 +136,7 @@ def split_parameter(doc: str) -> Iterator[List[str]]:
 
 
 def parse_parameter(lines: List[str], style: str) -> Tuple[str, str, str]:
-    """Yields (name, markdown, type).
+    """Yields a tuple of (name, markdown, type).
 
     Args:
         lines: Splitted parameter docstring lines.
@@ -164,12 +164,12 @@ def parse_parameter(lines: List[str], style: str) -> Tuple[str, str, str]:
 
 
 def parse_parameters(doc: str, style: str) -> List[Tuple[str, str, str]]:
-    """Returns list of (name, markdown, type)."""
+    """Returns a list of (name, markdown, type)."""
     return [parse_parameter(lines, style) for lines in split_parameter(doc)]
 
 
 def parse_returns(doc: str, style: str) -> Tuple[str, str]:
-    """Returns (markdown, type)."""
+    """Returns a tuple of (markdown, type)."""
     lines = doc.split("\n")
     if style == "google":
         if ":" in lines[0]:
@@ -185,7 +185,7 @@ def parse_returns(doc: str, style: str) -> Tuple[str, str]:
 
 
 def create_section(name: str, doc: str, style: str) -> Section:
-    """Returns a `Section` instance."""
+    """Returns a [Section]() instance."""
     type = ""
     markdown = ""
     items = []
@@ -264,7 +264,7 @@ def postprocess(doc: Docstring, obj: Any):
 
 
 def get_docstring(obj: Any) -> Docstring:
-    """Returns a `Docstring` instance."""
+    """Returns a [Docstring]() instance."""
     doc = inspect.getdoc(obj)
     if not doc:
         return Docstring()

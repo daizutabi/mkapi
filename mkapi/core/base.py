@@ -38,7 +38,8 @@ class Base:
 
 @dataclass
 class Type(Base):
-    """Type class represents type for other classes."""
+    """Type class represents type for [Item](), [Section](), [Docstring](),
+    and [Object]()."""
 
     def __post_init__(self):
         if not self.markdown:
@@ -58,7 +59,14 @@ class Type(Base):
 
 @dataclass
 class Item(Base):
-    """Item class represents an item in Parameters, Attributes, and Raises sections."""
+    """Item class represents an item in Parameters, Attributes, and Raises sections.
+
+    Args:
+        type: Type of item.
+
+    Attributes:
+        type: Type of item.
+    """
 
     type: Type = field(default_factory=Type)
 
@@ -77,9 +85,11 @@ class Section(Base):
 
     Args:
         items: List for Arguments, Attributes, or Raises sections.
+        type: Type of item.
 
     Attributes:
         items: List for Arguments, Attributes, or Raises sections.
+        type: Type of item.
 
     Examples:
         `Section` is iterable:
@@ -137,7 +147,7 @@ class Docstring:
 
     Attributes:
         sections: List of Section instance.
-        type: Type for Returns and Yields sections.
+        type: Type for missing Returns and Yields sections.
 
     Examples:
         Empty docstring:
@@ -192,7 +202,18 @@ class Docstring:
 
 @dataclass
 class Object(Base):
-    """Object class represents an object."""
+    """Object class represents an object.
+
+    Args:
+        name: Object name. `Item` for `Item` class.
+        prefix: Object prefix. `mkapi.core.base` for `Item` class.
+        kind: Object kind such as 'class', 'function'. etc.
+        type: Type for missing Returns and Yields sections.
+        signature: Signature if object is callable.
+
+    Attributes:
+        id: CSS ID.
+    """
 
     prefix: str = ""
     id: str = field(init=False)

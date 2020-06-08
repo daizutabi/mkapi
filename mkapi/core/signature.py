@@ -1,20 +1,39 @@
+"""This module provides Signature class that inspects object and creates
+signature and types."""
 import inspect
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from functools import lru_cache
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, Optional, TypeVar, Union
 
 from mkapi.core import linker
 
 
 @dataclass
 class Signature:
+    """Signature class.
+
+    Args:
+        obj: Object
+
+    Attributes:
+        signature: `inspect.Signature` instance.
+        parameters: Parameter dictionary. Key is parameter name
+            and value is type string.
+        defaults: Default value dictionary. Key is parameter name
+            and value is default value.
+        attributes: Attribute dictionary for dataclass. Key is attribute name
+            and value is type string.
+        returns: Returned type string. Used in Returns section.
+        yields: Yielded type string. Used in Yields section.
+    """
+
     obj: Any = field(default=None, repr=False)
-    signature: Optional[inspect.Signature] = None
-    parameters: Mapping[str, str] = field(default_factory=dict, init=False)
+    signature: Optional[inspect.Signature] = field(default=None, init=False)
+    parameters: Dict[str, str] = field(default_factory=dict, init=False)
     defaults: Dict[str, Any] = field(default_factory=dict, init=False)
     attributes: Dict[str, str] = field(default_factory=dict, init=False)
-    returns: str = ""
-    yields: str = ""
+    returns: str = field(default="", init=False)
+    yields: str = field(default="", init=False)
 
     def __post_init__(self):
         if self.obj is None or not callable(self.obj):
@@ -43,7 +62,11 @@ class Signature:
 
         if hasattr(self.obj, "__dataclass_fields__"):
             values = self.obj.__dataclass_fields__.values()
-            self.attributes = {f.name: to_string(f.type) for f in values}
+            attributes = {}
+            for field_ in values:
+                if field_.type != InitVar:
+                    attributes[field_.name] = to_string(field_.type)
+            self.attributes = attributes
 
     def __contains__(self, name):
         return name in self.parameters
@@ -63,7 +86,25 @@ class Signature:
         return "(" + ", ".join(args) + ")"
 
 
-def to_string(annotation, kind: str = "") -> str:
+def to_string(annotation, kind: str = "returns") -> str:
+    """Returns string expression of annotation.
+
+    If possible, type string includes link.
+
+    Args:
+        annotation: Annotation
+        kind: 'returns' or 'yields'
+
+    Examples:
+        >>> from typing import Iterator, List
+        >>> to_string(Iterator[str])
+        'iterator of str'
+        >>> to_string(Iterator[str], 'yields')
+        'str'
+        >>> from mkapi.core.node import Node
+        >>> to_string(List[Node])
+        'list of [Node](!mkapi.core.node.Node)'
+    """
     if kind == "yields":
         if hasattr(annotation, "__args__") and annotation.__args__:
             return to_string(annotation.__args__[0])
@@ -83,7 +124,7 @@ def to_string(annotation, kind: str = "") -> str:
             return name
         return linker.link(name, ".".join([module, name]))
     if not hasattr(annotation, "__origin__"):
-        return str(annotation).replace("typing.", "")
+        return str(annotation).replace("typing.", "").lower()
     origin = annotation.__origin__
     if origin is Union:
         return union(annotation)
@@ -94,6 +135,8 @@ def to_string(annotation, kind: str = "") -> str:
         else:
             return "tuple"
     if origin is dict:
+        if type(annotation.__args__[0]) == TypeVar:
+            return "dict"
         args = [to_string(x) for x in annotation.__args__]
         if args:
             return "dict(" + ": ".join(args) + ")"
@@ -106,6 +149,9 @@ def to_string(annotation, kind: str = "") -> str:
 
 def a_of_b(annotation) -> str:
     """Returns A of B style string.
+
+    Args:
+        annotation: Annotation
 
     Examples:
         >>> from typing import List, Iterable, Iterator
@@ -123,14 +169,19 @@ def a_of_b(annotation) -> str:
     if not hasattr(origin, "__name__"):
         return ""
     name = origin.__name__.lower()
-    type = f"{name} of " + to_string(annotation.__args__[0])
-    if type.endswith(" of T"):
+    if type(annotation.__args__[0]) == TypeVar:
         return name
-    return type
+    type_ = f"{name} of " + to_string(annotation.__args__[0])
+    if type_.endswith(" of T"):
+        return name
+    return type_
 
 
 def union(annotation) -> str:
     """Returns a string for union annotation.
+
+    Args:
+        annotation: Annotation
 
     Examples:
         >>> from typing import List, Optional, Tuple, Union

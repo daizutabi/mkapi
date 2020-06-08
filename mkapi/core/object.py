@@ -1,3 +1,4 @@
+"""This module provides utility functions that relates to object."""
 import importlib
 import inspect
 from typing import Any, Tuple
@@ -41,7 +42,8 @@ def get_fullname(obj: Any, name: str) -> str:
     """Reutrns an object full name specified by `name`.
 
     Args:
-        obj: Object name.
+        obj: Object that has a module.
+        name: Object name in the module.
 
     Examples:
         >>> import inspect
@@ -68,6 +70,9 @@ def get_fullname(obj: Any, name: str) -> str:
 
 def split_prefix_and_name(obj) -> Tuple[str, str]:
     """Split an object full name into prefix and name.
+
+    Args:
+        obj: Object that has a module.
 
     Examples:
         >>> import inspect

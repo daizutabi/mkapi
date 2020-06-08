@@ -1,11 +1,11 @@
+"""This modules provides Node class that has tree structure."""
 import inspect
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Iterator, List
+from typing import Any, Iterator, List, Optional
 
 from mkapi.core.base import Base, Object
 from mkapi.core.object import get_object
-from mkapi.core.renderer import renderer
 from mkapi.core.tree import Tree
 
 
@@ -14,14 +14,11 @@ class Node(Tree):
     """Node class represents an object.
 
     Attributes:
-        obj: Object.
-        signature: Signature instance.
-        object: Object instance.
-        docstring: Docstring instance.
-        members: Member objects. For example, methods of class.
-        html: HTML after rendering.
+        parent: Parent Node instance.
+        members: Member Node instances.
     """
 
+    parent: Optional["Node"] = field(default=None, init=False)
     members: List["Node"] = field(init=False)
 
     def __post_init__(self):
@@ -55,11 +52,19 @@ class Node(Tree):
     def get_members(self) -> List["Node"]:  # type:ignore
         return get_members(self.obj)
 
-    def get_markdown(self, level: int = 0) -> str:
-        """Returns a Markdown source for docstring of this object."""
+    def get_markdown(self, level: int = 0, callback=None) -> str:
+        """Returns a Markdown source for docstring of this object.
+
+        Args:
+            level: Heading level. If 0, `<div>` tags are used.
+            callback (callable, optional): To modify Markdown source.
+        """
         markdowns = []
         for base in self:
-            markdown = base.markdown
+            if callback:
+                markdown = callback(base)
+            else:
+                markdown = base.markdown
             if isinstance(base, Object):
                 if level and self.parent is None:
                     markdown = "#" * level + " " + markdown
@@ -67,13 +72,19 @@ class Node(Tree):
         return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
     def set_html(self, html: str):
-        """Sets HTML to `Base` instances recursively."""
+        """Sets HTML to [Base]() instances recursively.
+
+        Args:
+            html: HTML that is provided by a Markdown converter.
+        """
         for base, html in zip(self, html.split("<!-- mkapi:sep -->")):
             base.set_html(html.strip())
 
     def render(self) -> str:
-        self.html = renderer.render(self)
-        return self.html
+        """Renders and returns HTML."""
+        from mkapi.core.renderer import renderer
+
+        return renderer.render(self)  # type:ignore
 
 
 def get_kind(obj) -> str:
@@ -143,6 +154,11 @@ def _get_node(obj) -> Node:
 
 
 def get_node(name) -> Node:
+    """Returns a Node instace by name or object.
+
+    Args:
+        name: Object name or object itself.
+    """
     if isinstance(name, str):
         obj = get_object(name)
     else:

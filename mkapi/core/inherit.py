@@ -40,7 +40,7 @@ def inherit_base(node: Node, base: Node, name: str = ""):
     _, base_params = get_params(base, name)
     node_section = node.docstring[name]
     items = []
-    for item in base_section:
+    for item in base_section.items:
         if node_section is None or item.name not in node_section:
             if (
                 item.name in node_params
@@ -52,6 +52,16 @@ def inherit_base(node: Node, base: Node, name: str = ""):
             if item not in items:
                 items.append(item)
     node.docstring[name] = Section(name, items=items)  # type:ignore
+
+
+def inherit_parameters(node: Node):
+    param_section = node.docstring["Parameters"]
+    attr_section = node.docstring["Attributes"]
+    if param_section is None or attr_section is None:
+        return
+    for item in attr_section.items:
+        if not item.markdown and item.name in param_section:
+            item.markdown = param_section[item.name].markdown  # type:ignore
 
 
 def inherit_signature(node: Node, name: str = ""):
@@ -85,6 +95,8 @@ def inherit(node: Node, strict: bool = False):
                 break
         if strict:
             inherit_signature(node)
+            if node.object.kind == 'dataclass':
+                inherit_parameters(node)
 
 
 def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
@@ -107,3 +119,5 @@ def inherit_by_filters(node: Node, filters: List[str]):
             inherit(node)
         elif "strict" in filters:
             inherit(node, strict=True)
+    elif 'strict' in filters and node.object.signature.signature:
+        inherit_signature(node, 'Parameters')

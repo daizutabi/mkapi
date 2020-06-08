@@ -11,18 +11,16 @@ from mkapi.core.signature import get_signature
 class Tree:
     """Tree class. This class is the base of Node and Module.
 
-    Attributes:
+    Args:
         obj: Object.
-        prefix: Prefix.
-        name: Name.
-        id: ID for CSS.
-        kind: Kind such as `function`, `class`, `module`, etc.
-        docstring: Docstring instance.
+
+    Attributes:
         sourcefile: Source file path.
-        lineno: int: Line number.
-        members: Member objects. For example, methods of class.
-        prefix_url: URL for prefix link.
-        name_url: URL for name link.
+        lineno: Line number.
+        object: Object instance.
+        docstring: Docstring instance.
+        parent: Parent instance.
+        members: Member instances.
     """
 
     obj: Any = field(repr=False)

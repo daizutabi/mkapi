@@ -1,3 +1,4 @@
+"""This modules provides Module class that has tree structure."""
 import inspect
 import os
 from dataclasses import dataclass, field
@@ -5,7 +6,6 @@ from typing import Iterator, List
 
 from mkapi.core.node import get_kind
 from mkapi.core.object import get_object, get_sourcefile_and_lineno
-from mkapi.core.renderer import renderer
 from mkapi.core.tree import Tree
 
 
@@ -14,7 +14,8 @@ class Module(Tree):
     """Module class represents an module.
 
     Attributes:
-        kind: Kind. `package` or `module`.
+        parent: Parent Module instance.
+        members: Member Module instances.
     """
 
     members: List["Module"] = field(init=False)
@@ -47,8 +48,15 @@ class Module(Tree):
             return get_members(self.obj)
 
     def get_markdown(self, filters: List[str]) -> str:  # type:ignore
-        """Returns a Markdown source for docstring of this object."""
-        return renderer.render_module(self, filters)
+        """Returns a Markdown source for docstring of this object.
+
+        Args:
+            filters: A list of filters. Avaiable filters: `upper`, `inherit`,
+                `strict`.
+        """
+        from mkapi.core.renderer import renderer
+
+        return renderer.render_module(self, filters)  # type:ignore
 
 
 def get_objects(obj) -> List[str]:
@@ -91,6 +99,11 @@ def get_members(obj) -> List[Module]:
 
 
 def get_module(name) -> Module:
+    """Returns a Module instace by name or object.
+
+    Args:
+        name: Object name or object itself.
+    """
     if isinstance(name, str):
         obj = get_object(name)
     else:
