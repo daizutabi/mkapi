@@ -33,7 +33,8 @@ class MkapiPlugin(BasePlugin):
             path = os.path.join(config_dir, src_dir)
             if path not in sys.path:
                 sys.path.insert(0, path)
-
+        if not self.config['src_dirs']:
+            sys.path.insert(0, os.getcwd())
         self.pages = {}
         self.abs_api_paths = []
         if not self.server:
