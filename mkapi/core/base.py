@@ -135,7 +135,8 @@ class Section(Base):
             yield from item
 
     def __getitem__(self, name) -> Optional[Item]:
-        """Returns [Item]() instance by `name`. If not found, returns None.
+        """Returns [Item]() instance whose name is equal to `name`. If not found,
+        returns None.
 
         Args:
             name: Item name.
@@ -146,7 +147,7 @@ class Section(Base):
         return None
 
     def __contains__(self, name) -> bool:
-        """Returns True if [Item]() with `name` exists.
+        """Returns True if there is [Item]() instance whose name is `name`.
 
         Args:
             name: Item name.
