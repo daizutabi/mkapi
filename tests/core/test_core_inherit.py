@@ -3,7 +3,8 @@ from dataclasses import dataclass
 import pytest
 
 import mkapi
-from mkapi.core.inherit import get_params, inherit, is_complete
+from mkapi.core.inherit import (get_params, inherit, inherit_by_filters,
+                                is_complete)
 
 
 @dataclass
@@ -49,6 +50,36 @@ class B(A):
         self.name = name.upper()
 
 
+@dataclass
+class C(A):
+    """Item class.
+
+    Parameters:
+        markdown: Object markdown
+    """
+
+    markdown: str = ""
+
+    def set_name(self, name: str):
+        """Sets name in upper case."""
+        self.name = name.upper()
+
+
+@dataclass
+class D(A):
+    """Item class.
+
+    Parameters:
+        markdown: Object markdown
+    """
+
+    markdown: str = ""
+
+    def set_name(self, name: str):
+        """Sets name in upper case."""
+        self.name = name.upper()
+
+
 @pytest.fixture()
 def a():
     return mkapi.get_node(A)
@@ -57,6 +88,16 @@ def a():
 @pytest.fixture()
 def b():
     return mkapi.get_node(B)
+
+
+@pytest.fixture()
+def c():
+    return mkapi.get_node(C)
+
+
+@pytest.fixture()
+def d():
+    return mkapi.get_node(D)
 
 
 def test_is_complete(a, b):
@@ -91,3 +132,28 @@ def test_inheritance_members(b):
     item = b.members[0].docstring["Parameters"].items[0]
     assert item.name == "name"
     assert item.type.name == "str"
+
+
+def test_inheritance_parameters(c):
+    doc_params, sig_params = get_params(c, "Attributes")
+    assert len(doc_params) == 0
+    assert len(sig_params) == 3
+    inherit(c, strict=True)
+    doc_params, sig_params = get_params(c, "Attributes")
+    assert len(doc_params) == 3
+
+
+def test_inheritance_by_filters(d):
+    doc_params, sig_params = get_params(d, "Attributes")
+    assert len(doc_params) == 0
+    assert len(sig_params) == 3
+    inherit_by_filters(d, ['inherit'])
+    doc_params, sig_params = get_params(d, "Parameters")
+    assert len(doc_params) == 3
+    doc_params, sig_params = get_params(d, "Attributes")
+    assert len(doc_params) == 2
+    inherit_by_filters(d, ['strict'])
+    doc_params, sig_params = get_params(d, "Parameters")
+    assert len(doc_params) == 3
+    doc_params, sig_params = get_params(d, "Attributes")
+    assert len(doc_params) == 3
