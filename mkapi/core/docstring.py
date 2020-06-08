@@ -5,6 +5,7 @@ import re
 from typing import Any, Iterator, List, Tuple
 
 from mkapi.core.base import Docstring, Item, Section, Type
+from mkapi.core.preprocess import replace_link
 from mkapi.core.signature import Signature
 
 SECTIONS = [
@@ -250,6 +251,16 @@ def postprocess(doc: Docstring, obj: Any):
             doc.type = Type(signature.yields)
         else:
             doc.type = Type(signature.returns)
+
+    for section in doc.sections:
+        if section.name in ["Example", "Examples"]:
+            break
+        if section.markdown:
+            section.markdown = replace_link(obj, section.markdown)
+        else:
+            for item in section.items:
+                if item.markdown:
+                    item.markdown = replace_link(obj, item.markdown)
 
 
 def get_docstring(obj: Any) -> Docstring:

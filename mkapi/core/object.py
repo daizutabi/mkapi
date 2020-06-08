@@ -37,6 +37,35 @@ def get_object(name: str) -> Any:
     raise ValueError(f"Could not find object: {name}")
 
 
+def get_fullname(obj: Any, name: str) -> str:
+    """Reutrns an object full name specified by `name`.
+
+    Args:
+        obj: Object name.
+
+    Examples:
+        >>> import inspect
+        >>> obj = get_object('mkapi.core.base.Item')
+        >>> get_fullname(obj, 'Section')
+        'mkapi.core.base.Section'
+        >>> get_fullname(obj, 'linker.link')
+        'mkapi.core.linker.link'
+        >>> get_fullname(obj, 'abc')
+        ''
+    """
+    if not hasattr(obj, "__module__"):
+        return ""
+    obj = importlib.import_module(obj.__module__)
+    names = name.split(".")
+
+    for name in names:
+        if not hasattr(obj, name):
+            return ""
+        obj = getattr(obj, name)
+
+    return '.'.join(split_prefix_and_name(obj))
+
+
 def split_prefix_and_name(obj) -> Tuple[str, str]:
     """Split an object full name into prefix and name.
 

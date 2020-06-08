@@ -53,7 +53,7 @@ Go to [Section](mkapi.core.base.Section).
 
 You can use this feature even in your docstring. For example, assume that `func()` is defined in a `link` module:
 
-#Code link.func()
+#File link.py
 ~~~python
 def func():
     """Internal link example.
@@ -63,7 +63,7 @@ def func():
     """
 ~~~
 
-The `func()` is rendered as:
+The `link.func()` is rendered as:
 
 ```python hide
 import sys
@@ -76,6 +76,28 @@ import link
 ![mkapi](link.func)
 
 You can click the above "a method" to visit its API.
+
+Furthermore, if your module imports an object, you can refer it by its name only.
+
+#File link2.py
+~~~python
+from mkapi.core.base import Section
+
+
+def func():
+    """Internal link example.
+
+    * [Section]() --- Imported object.
+    * [](Section) --- Imported object.
+    * [Section.set_html]() --- Member of imported object.
+    * [Section definition](Section) --- Alternative text.
+    """
+    return Section()
+~~~
+
+The `link2.func()` is rendered as:
+
+![mkapi](link2.func)
 
 ### Link from Embedding Mode
 
