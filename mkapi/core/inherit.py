@@ -1,6 +1,6 @@
 # This module implements the functionality of docstring inheritance.
 # Todo: Inheritance from method.
-from typing import Dict, Tuple
+from typing import Dict, Iterator, List, Tuple
 
 from mkapi.core.base import Item, Section, Type
 from mkapi.core.node import Node, get_node
@@ -76,12 +76,34 @@ def inherit_signature(node: Node, name: str = ""):
 
 
 def inherit(node: Node, strict: bool = False):
-    if is_complete(node):
-        return
-    for cls in node.obj.mro()[:-1]:
-        base = get_node(cls)
-        inherit_base(node, base)
+    for node, bases in get_bases(node):
         if is_complete(node):
-            return
-    if strict:
-        inherit_signature(node)
+            continue
+        for base in bases:
+            inherit_base(node, base)
+            if is_complete(node):
+                break
+        if strict:
+            inherit_signature(node)
+
+
+def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
+    bases = node.obj.mro()[:-1]
+    yield node, (get_node(base) for base in bases)
+    for member in node.members:
+        name = member.object.name
+
+        def gen(name=name):
+            for base in bases:
+                if hasattr(base, name):
+                    yield get_node(getattr(base, name))
+
+        yield member, gen()
+
+
+def inherit_by_filters(node: Node, filters: List[str]):
+    if node.object.kind in ["class", "dataclass"]:
+        if "inherit" in filters:
+            inherit(node)
+        elif "strict" in filters:
+            inherit(node, strict=True)

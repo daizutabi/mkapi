@@ -20,31 +20,19 @@ Define two classes to explain **Docstring inheritance**.
 
 #File inherit.py {%=/examples/inherit.py%}
 
-Docstring for `Base` class. Here, description for `type` is omitted on purpose.
+Taking a look at this example, you may notice that:
 
-~~~markdown
-![mkapi](inherit.Base)
-~~~
-
-![mkapi](inherit.Base)
-
-Next, `Item` subclass.
-
-~~~markdown
-![mkapi](inherit.Item)
-~~~
-
-![mkapi](inherit.Item|nocache)
+* In the `Base`, description for `type` is omitted.
+* In the `Item`, parameters inherited by superclass are not written.
+* In the `Item.set_name()`, Parameters section doesn't exit.
 
 ## Inheritance from Superclasses
 
-Since the docstring of superclass `Base` describes the `type`, the `Item` class can inherit its description with `inherit` filter.
+Since the docstring of superclass `Base` describes the `name`, the `Item` class can inherit its description with `inherit` filter.
 
 ~~~markdown
 ![mkapi](inherit.Item|inherit)
 ~~~
-
-![mkapi](inherit.Item|inherit|nocache)
 
 By inheritance from superclasses, you don't need to write duplicated description.
 
@@ -56,12 +44,19 @@ Using `strict` filter, MkApi adds missing parameters and attributes from the sig
 ![mkapi](inherit.Item|strict)
 ~~~
 
-![mkapi](inherit.Item|strict|nocache)
-
 Inheritance from signature has two benefits:
 
 * You can find parameters and attributes that wait for description.
 * Users can know their types at least if you use type annotation.
+
+## Example of Strict Mode
+
+~~~markdown
+![mkapi](inherit.Item|strict)
+~~~
+
+
+![mkapi](inherit.Item|strict)
 
 ## Inheritance in Page Mode
 

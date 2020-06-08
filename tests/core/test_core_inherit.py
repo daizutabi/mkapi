@@ -22,6 +22,14 @@ class A:
     name: str
     type: str = ""
 
+    def set_name(self, name: str):
+        """Sets name.
+
+        Args:
+            name: A New name
+        """
+        self.name = name
+
 
 @dataclass
 class B(A):
@@ -35,6 +43,10 @@ class B(A):
     """
 
     markdown: str = ""
+
+    def set_name(self, name: str):
+        """Sets name in upper case."""
+        self.name = name.upper()
 
 
 @pytest.fixture()
@@ -73,3 +85,9 @@ def test_get_params_after(b, name):
     b_doc_params, b_sig_params = get_params(b, name)
     assert len(b_doc_params) == 3
     assert len(b_sig_params) == 3
+
+
+def test_inheritance_members(b):
+    item = b.members[0].docstring["Parameters"].items[0]
+    assert item.name == "name"
+    assert item.type.name == "str"

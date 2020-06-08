@@ -134,18 +134,21 @@ def get_members(obj) -> List[Node]:
     return sorted(members, key=lambda x: x.lineno)
 
 
+USE_CACHE = True
+
+
 @lru_cache(maxsize=1000)
 def _get_node(obj) -> Node:
     return Node(obj)
 
 
-def get_node(name, cache=True) -> Node:
+def get_node(name) -> Node:
     if isinstance(name, str):
         obj = get_object(name)
     else:
         obj = name
 
-    if cache:
+    if USE_CACHE:
         return _get_node(obj)
     else:
         return Node(obj)

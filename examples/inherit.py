@@ -17,16 +17,28 @@ class Base:
     name: str
     type: Type
 
+    def set_name(self, name: str):
+        """Sets name.
+
+        Args:
+            name: A New name.
+        """
+        self.name = name
+
 
 @dataclass
 class Item(Base):
     """Item class.
 
     Parameters:
-        markdown: Object markdown
+        markdown: Object markdown.
 
     Attributes:
-        markdown: Object markdown
+        markdown: Object markdown.
     """
 
     markdown: str
+
+    def set_name(self, name: str):
+        """Sets name in upper case."""
+        self.name = name.upper()

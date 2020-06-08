@@ -2,12 +2,12 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterator, List
 
-from mkapi.core.inherit import inherit
+from mkapi import utils
+from mkapi.core.inherit import inherit_by_filters
 from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
 from mkapi.core.renderer import renderer
-from mkapi import utils
 
 
 @dataclass
@@ -32,15 +32,11 @@ class Page:
                     yield markdown
             heading, name = match.groups()
             name, filters = utils.filter(name)
-            node = get_node(name, cache='nocache' not in filters)
-            if node.object.kind in ["class", "dataclass"]:
-                if "inherit" in filters:
-                    inherit(node)
-                elif "strict" in filters:
-                    inherit(node, strict=True)
+            node = get_node(name)
+            inherit_by_filters(node, filters)
             self.nodes.append(node)
             markdown = node.get_markdown(level=len(heading))
-            yield node_markdown(index, markdown, 'upper' in filters)
+            yield node_markdown(index, markdown, "upper" in filters)
             cursor = end
         if cursor < len(source):
             markdown = source[cursor:].strip()
