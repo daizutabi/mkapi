@@ -9,12 +9,7 @@ First, import MkApi:
 {{ # cache:clear }}
 
 
-<style type="text/css">
- <!--
-.mkapi-node {
-  border: 2px dashed #88AA88;
-}
--->
+<style type="text/css">  <!-- .mkapi-node {   border: 2px dashed #88AA88; } -->
 </style>
 
 """
@@ -159,8 +154,8 @@ HTML(html)
 
 # ## Summary
 
-# All you need to get API documentation of an object is described by the
-# following function.
+# All you need to get API documentation of an object is described by the following
+# function.
 
 
 def get_html(obj) -> str:

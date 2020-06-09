@@ -129,12 +129,12 @@ def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
 
 
 def get_sourcefiles(obj: Any) -> List[str]:
-    """Returns a list of sourcefile.
+    """Returns a list of source file.
 
-    If obj is a class, sourcefiles of its superclasses also are included.
+    If `obj` is a class, source files of its superclasses are also included.
 
     Args:
-        name: Object name.
+        obj: Object name.
     """
     if inspect.isclass(obj) and hasattr(obj, "mro"):
         objs = obj.mro()[:-1]
@@ -152,7 +152,7 @@ def get_sourcefiles(obj: Any) -> List[str]:
     return sourfiles
 
 
-def from_object(obj: Any):
+def from_object(obj: Any) -> bool:
     """Returns True, if the docstring of `obj` is the same as that of `object`.
 
     Args:

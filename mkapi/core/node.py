@@ -2,7 +2,7 @@
 import inspect
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Iterator, List, Optional
+from typing import Any, Iterator, List, Optional, Tuple
 
 from mkapi.core.base import Base, Object
 from mkapi.core.object import from_object, get_object, get_sourcefiles
@@ -14,10 +14,13 @@ class Node(Tree):
     """Node class represents an object.
 
     Attributes:
+        mro_index: If `obj` is a member of class, this value is the index of
+            `mro()` of the class. Otherwise, 0.
         parent: Parent Node instance.
         members: Member Node instances.
     """
 
+    mro_index: int = 0
     parent: Optional["Node"] = field(default=None, init=False)
     members: List["Node"] = field(init=False)
 
@@ -116,23 +119,32 @@ def get_kind(obj) -> str:
     return ""
 
 
-def is_member(name: str, obj: Any, sourcefiles: List[str]) -> bool:
+def is_member(name: str, obj: Any, sourcefiles: List[str]) -> int:
+    """Returns an integer thats indicates if `obj` is a member or not.
+
+    * $-1$: Not member.
+    * $>0$: Member. If the value is larger than 0, `obj` is defined in different file
+        and the value is corresponding to the index of `mro()`.
+    """
     if isinstance(obj, property):
-        return True
+        obj = obj.fget
     if name in ["__func__", "__self__"]:
-        return False
+        return -1
     if name.startswith("_"):
         if not name.startswith("__") or not name.endswith("__"):
-            return False
+            return -1
     if not get_kind(obj):
-        return False
+        return -1
     try:
         sourcefile = inspect.getsourcefile(obj)
     except TypeError:
-        return False
-    if sourcefiles and sourcefile not in sourcefiles:
-        return False
-    return True
+        return -1
+    if not sourcefiles:
+        return 0
+    for mro_index, parent_sourcefile in enumerate(sourcefiles):
+        if sourcefile == parent_sourcefile:
+            return mro_index
+    return -1
 
 
 def get_members(obj: Any) -> List[Node]:
@@ -142,26 +154,29 @@ def get_members(obj: Any) -> List[Node]:
     sourcefiles = get_sourcefiles(obj)
     members = []
     for name, obj in inspect.getmembers(obj):
-        if is_member(name, obj, sourcefiles) and not from_object(obj):
-            member = get_node(obj)
+        mro_index = is_member(name, obj, sourcefiles)
+        if mro_index != -1 and not from_object(obj):
+            member = get_node(obj, mro_index)
             if member.docstring:
                 members.append(member)
-    return sorted(members, key=lambda x: x.lineno)
+    return sorted(members, key=lambda x: (-x.mro_index, x.lineno))
 
 
 USE_CACHE = True
 
 
 @lru_cache(maxsize=1000)
-def _get_node(obj) -> Node:
-    return Node(obj)
+def _get_node(obj, mro_index) -> Node:
+    return Node(obj, mro_index)
 
 
-def get_node(name) -> Node:
+def get_node(name, mro_index: int = 0) -> Node:
     """Returns a Node instace by name or object.
 
     Args:
         name: Object name or object itself.
+        mro_index: If `obj` is a member of class, this value is the index of
+            `mro()` of the class. Otherwise, 0.
     """
     if isinstance(name, str):
         obj = get_object(name)
@@ -169,6 +184,6 @@ def get_node(name) -> Node:
         obj = name
 
     if USE_CACHE:
-        return _get_node(obj)
+        return _get_node(obj, mro_index)
     else:
-        return Node(obj)
+        return Node(obj, mro_index)
