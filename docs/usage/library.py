@@ -9,7 +9,12 @@ First, import MkApi:
 {{ # cache:clear }}
 
 
-<style type="text/css"> <!-- .mkapi-node {   border: 2px dashed #88AA88; } -->
+<style type="text/css">
+ <!--
+.mkapi-node {
+  border: 2px dashed #88AA88;
+}
+-->
 </style>
 
 """

@@ -2,7 +2,11 @@
 
 <style type="text/css">
 <!--
-.mkapi-node {   border: 2px dashed #88AA88; }
+.mkapi-node {
+  border: 2px dashed #88AA88;
+  margin-left: 0px;
+  margin-bottom: 20px;
+}
 -->
 </style>
 

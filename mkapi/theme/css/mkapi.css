@@ -38,7 +38,7 @@
 **************************************************/
 .mkapi-node {
   margin-left: 0px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
 
 div.mkapi-object {
@@ -248,6 +248,7 @@ code.mkapi-args-name {
   color: #8888EE;
   font-weight: normal;
   font-size: 0.9rem;
+  line-height: 1rem;
 }
 
 .mkapi-args-type a {
@@ -271,4 +272,8 @@ code.mkapi-args-name {
 }
 
 .mkapi-member {
+}
+
+.mkapi-members .mkapi-node {
+  margin-bottom: 0px;
 }

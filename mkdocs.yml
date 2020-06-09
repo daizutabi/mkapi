@@ -22,7 +22,6 @@ plugins:
 
 nav:
   - index.md
-  - test.md
   - Examples:
     - examples/google_style.md
     - examples/numpy_style.md
@@ -32,7 +31,9 @@ nav:
     - usage/page.md
     - usage/library.py
     - usage/type.py
-    - usage/decorator.py
+  - Appendix:
+    - appendix/method.md
+    - appendix/inherit.md
   - API: mkapi/api/mkapi|upper|strict
 
 markdown_extensions:

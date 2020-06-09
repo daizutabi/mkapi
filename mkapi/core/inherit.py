@@ -95,12 +95,12 @@ def inherit(node: Node, strict: bool = False):
                 break
         if strict:
             inherit_signature(node)
-            if node.object.kind == 'dataclass':
+            if node.object.kind == "dataclass":
                 inherit_parameters(node)
 
 
 def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
-    bases = node.obj.mro()[:-1]
+    bases = node.obj.mro()[1:-1]
     yield node, (get_node(base) for base in bases)
     for member in node.members:
         name = member.object.name
@@ -108,7 +108,9 @@ def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
         def gen(name=name):
             for base in bases:
                 if hasattr(base, name):
-                    yield get_node(getattr(base, name))
+                    obj = getattr(base, name)
+                    if hasattr(obj, "__module__"):
+                        yield get_node(getattr(base, name))
 
         yield member, gen()
 
@@ -119,5 +121,5 @@ def inherit_by_filters(node: Node, filters: List[str]):
             inherit(node)
         elif "strict" in filters:
             inherit(node, strict=True)
-    elif 'strict' in filters and node.object.signature.signature:
-        inherit_signature(node, 'Parameters')
+    elif "strict" in filters and node.object.signature.signature:
+        inherit_signature(node, "Parameters")

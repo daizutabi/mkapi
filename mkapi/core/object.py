@@ -1,8 +1,7 @@
 """This module provides utility functions that relates to object."""
 import importlib
 import inspect
-from functools import partial
-from typing import Any, Callable, List, Tuple
+from typing import Any, Tuple
 
 
 def get_object(name: str) -> Any:
@@ -70,7 +69,7 @@ def get_fullname(obj: Any, name: str) -> str:
 
 
 def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
-    """Split an object full name into prefix and name.
+    """Splits an object full name into prefix and name.
 
     Args:
         obj: Object that has a module.
@@ -129,31 +128,25 @@ def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
     return sourcefile, lineno
 
 
-def is_dunder(obj: Any, only_documented: bool = True) -> bool:
-    """Returns dunder methods if they have a sourcefile.
+def from_object(obj: Any):
+    """Returns True, if the docstring of `obj` is the same as that of `object`.
 
     Args:
-        obj: Object
+        name: Object name.
+        obj: Object.
+
+    Examples:
+        >>> class A: pass
+        >>> from_object(A.__call__)
+        True
+        >>> from_object(A.__eq__)
+        True
+        >>> from_object(A.__getattribute__)
+        True
     """
     if not hasattr(obj, "__name__"):
         return False
     name = obj.__name__
-    if name == "__init__":
+    if not hasattr(object, name):
         return False
-    elif name.startswith("__") and name.endswith("__"):
-        try:
-            inspect.getsource(obj)
-        except TypeError:
-            return False
-        else:
-            if not only_documented:
-                return True
-            else:
-                return bool(inspect.getdoc(obj))
-    return False
-
-
-def get_dunders(obj: Any, only_documented: bool = True) -> List[Callable]:
-    filter = partial(is_dunder, only_documented=only_documented)
-    members = inspect.getmembers(obj, filter)
-    return [obj for _, obj in members]
+    return inspect.getdoc(obj) == getattr(object, name).__doc__

@@ -2,6 +2,16 @@
 # Type Annotation Examples
 
 {{ # cache:clear }}
+
+
+<style type="text/css">
+ <!--
+.mkapi-node {
+  border: 2px dashed #88AA88;
+}
+-->
+</style>
+
 """
 
 import mkapi

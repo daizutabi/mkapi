@@ -51,9 +51,9 @@ Go to [Section](mkapi.core.base.Section).
 
 ### Link from Docstring
 
-You can use this feature even in your docstring. For example, assume that `func()` is defined in a `link` module:
+You can use this feature even in your docstring. For example, assume that `func()` is defined in a `link.fullname` module:
 
-#File link.py
+#File link/fullname.py
 ~~~python
 def func():
     """Internal link example.
@@ -63,23 +63,15 @@ def func():
     """
 ~~~
 
-The `link.func()` is rendered as:
+The `link.fullname.func()` is rendered as:
 
-```python hide
-import sys
-
-if '../../examples' not in sys.path:
-  sys.path.insert(0, '../../examples')
-import link
-```
-
-![mkapi](link.func)
+![mkapi](link.fullname.func)
 
 You can click the above "a method" to visit its API.
 
-Furthermore, if your module imports an object, you can refer it by its name only.
+Furthermore, if your module imports an object, you can refer it by its qualified name only.
 
-#File link2.py
+#File link/qualname.py
 ~~~python
 from mkapi.core.base import Section
 from mkapi.core.docstring import get_docstring
@@ -96,9 +88,9 @@ def func():
     return Section(), get_docstring(None)
 ~~~
 
-The `link2.func()` is rendered as:
+The `link.qualname.func()` is rendered as:
 
-![mkapi](link2.func)
+![mkapi](link.qualname.func)
 
 ### Link from Embedding Mode
 
