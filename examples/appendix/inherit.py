@@ -1,19 +1,12 @@
-class Abstract:
-    """Abstract class."""
-
-    def call(self):
-        """Abstract method."""
-        raise NotImplementedError
+class Base:
+    """Base class."""
 
     def func(self):
         """Function."""
 
 
-class Concrete(Abstract):
-    """Concrete class."""
-
-    def call(self):
-        """Concrete method."""
+class Sub(Base):
+    """Subclass."""
 
     # Should be added.
     def func(self):
@@ -21,14 +14,14 @@ class Concrete(Abstract):
 
     # Should not be added.
     def __call__(self):
-        return self.call()
+        pass
 
     # Should not be added.
     def __repr__(self):
-        return self.call()
+        pass
 
     # Should not be added.
     def __str__(self):
-        return self.call()
+        pass
 
     # and so on.

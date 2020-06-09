@@ -15,18 +15,18 @@
 ### Superclass
 
 ~~~markdown
-![mkapi](appendix.inherit.Abstract)
+![mkapi](appendix.inherit.Base)
 ~~~
 
-![mkapi](appendix.inherit.Abstract)
+![mkapi](appendix.inherit.Base)
 
 ### Subclass
 
 ~~~markdown
-![mkapi](appendix.inherit.Concrete)
+![mkapi](appendix.inherit.Sub)
 ~~~
 
-![mkapi](appendix.inherit.Concrete)
+![mkapi](appendix.inherit.Sub)
 
 ## Implementation
 
@@ -39,29 +39,29 @@ sys.path.insert(0, 'examples')
 
 ```python
 import inspect
-from appendix.inherit import Abstract, Concrete
+from appendix.inherit import Base, Sub
 
-Abstract.func.__doc__, inspect.getdoc(Abstract.func)
+Base.func.__doc__, inspect.getdoc(Base.func)
 ```
 
 ```python
-Concrete.func.__doc__, inspect.getdoc(Concrete.func)
+Sub.func.__doc__, inspect.getdoc(Sub.func)
 ```
 
-Because `Concrete.func()` has no docstring, its `__doc__` attribute is `None`. On the other hand, the super class `Abstract.func()` has docstring, so that you can get the *inherited* docstring using `inspect.getdoc()`. Therefore, MkApi uses `inspect.getdoc()`.
+Because `Sub.func()` has no docstring, its `__doc__` attribute is `None`. On the other hand, the super class `Base.func()` has docstring, so that you can get the *inherited* docstring using `inspect.getdoc()`. Therefore, MkApi uses `inspect.getdoc()`.
 
 Now, let's see some special methods:
 
 ```python
-Concrete.__call__.__doc__, inspect.getdoc(Concrete.__call__)
+Sub.__call__.__doc__, inspect.getdoc(Sub.__call__)
 ```
 
 ```python
-Concrete.__repr__.__doc__, inspect.getdoc(Concrete.__repr__)
+Sub.__repr__.__doc__, inspect.getdoc(Sub.__repr__)
 ```
 
 ```python
-Concrete.__repr__.__doc__, inspect.getdoc(Concrete.__repr__)
+Sub.__repr__.__doc__, inspect.getdoc(Sub.__repr__)
 ```
 
 These docstrings come from `object`.

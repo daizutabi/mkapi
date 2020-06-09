@@ -5,7 +5,7 @@ from functools import lru_cache
 from typing import Any, Iterator, List, Optional
 
 from mkapi.core.base import Base, Object
-from mkapi.core.object import from_object, get_object
+from mkapi.core.object import from_object, get_object, get_sourcefiles
 from mkapi.core.tree import Tree
 
 
@@ -116,7 +116,7 @@ def get_kind(obj) -> str:
     return ""
 
 
-def is_member(name: str, obj: Any, sourcefile: str) -> bool:
+def is_member(name: str, obj: Any, sourcefiles: List[str]) -> bool:
     if isinstance(obj, property):
         return True
     if name in ["__func__", "__self__"]:
@@ -127,25 +127,22 @@ def is_member(name: str, obj: Any, sourcefile: str) -> bool:
     if not get_kind(obj):
         return False
     try:
-        source = inspect.getsourcefile(obj)
+        sourcefile = inspect.getsourcefile(obj)
     except TypeError:
         return False
-    if sourcefile and source != sourcefile:
+    if sourcefiles and sourcefile not in sourcefiles:
         return False
     return True
 
 
-def get_members(obj) -> List[Node]:
+def get_members(obj: Any) -> List[Node]:
     if inspect.ismodule(obj) or isinstance(obj, property):
         return []
 
-    try:
-        sourcefile = inspect.getsourcefile(obj) or ""
-    except TypeError:
-        sourcefile = ""
+    sourcefiles = get_sourcefiles(obj)
     members = []
     for name, obj in inspect.getmembers(obj):
-        if is_member(name, obj, sourcefile) and not from_object(obj):
+        if is_member(name, obj, sourcefiles) and not from_object(obj):
             member = get_node(obj)
             if member.docstring:
                 members.append(member)

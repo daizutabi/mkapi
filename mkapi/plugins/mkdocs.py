@@ -47,7 +47,7 @@ class MkapiPlugin(BasePlugin):
         return config
 
     def on_files(self, files, config):
-        """Collects plugin css ans js and appends them to `files`."""
+        """Collects plugin CSS ans JavaScript and appends them to `files`."""
         root = os.path.join(os.path.dirname(mkapi.__file__), "theme")
         docs_dir = config["docs_dir"]
         config["docs_dir"] = root

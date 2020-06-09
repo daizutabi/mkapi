@@ -1,7 +1,7 @@
 """This module provides utility functions that relates to object."""
 import importlib
 import inspect
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 
 
 def get_object(name: str) -> Any:
@@ -126,6 +126,30 @@ def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
     except (TypeError, OSError):
         lineno = -1
     return sourcefile, lineno
+
+
+def get_sourcefiles(obj: Any) -> List[str]:
+    """Returns a list of sourcefile.
+
+    If obj is a class, sourcefiles of its superclasses also are included.
+
+    Args:
+        name: Object name.
+    """
+    if inspect.isclass(obj) and hasattr(obj, "mro"):
+        objs = obj.mro()[:-1]
+    else:
+        objs = [obj]
+    sourfiles = []
+    for obj in objs:
+        try:
+            sourcefile = inspect.getsourcefile(obj) or ""
+        except TypeError:
+            pass
+        else:
+            if sourcefile:
+                sourfiles.append(sourcefile)
+    return sourfiles
 
 
 def from_object(obj: Any):

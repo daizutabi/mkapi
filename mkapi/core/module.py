@@ -2,7 +2,7 @@
 import inspect
 import os
 from dataclasses import dataclass, field
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 
 from mkapi.core.node import get_kind
 from mkapi.core.object import get_object, get_sourcefile_and_lineno
@@ -16,8 +16,11 @@ class Module(Tree):
     Attributes:
         parent: Parent Module instance.
         members: Member Module instances.
+        objects: If self is module, object member names are
+            collected in this list.
     """
 
+    parent: Optional["Module"] = field(default=None, init=False)
     members: List["Module"] = field(init=False)
     objects: List[str] = field(default_factory=list, init=False)
 

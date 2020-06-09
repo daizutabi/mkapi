@@ -18,8 +18,6 @@ class Base:
         markdown: Markdown source.
 
     Attributes:
-        name: Object name.
-        markdown: Markdown source.
         html: HTML after conversion.
     """
 
@@ -161,11 +159,11 @@ class Docstring:
 
     Args:
         sections: List of Section instance.
-        type: Type for Returns and Yields sections.
+        type: Type for Returns or Yields sections.
 
     Attributes:
         sections: List of Section instance.
-        type: Type for missing Returns and Yields sections.
+        type: Type for missing Returns or Yields sections.
 
     Examples:
         Empty docstring:

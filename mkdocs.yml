@@ -34,6 +34,7 @@ nav:
   - Appendix:
     - appendix/method.md
     - appendix/inherit.md
+    - appendix/test.md
   - API: mkapi/api/mkapi|upper|strict
 
 markdown_extensions:

@@ -27,8 +27,8 @@ Define two classes to explain **Docstring inheritance**.
 Taking a look at this example, you may notice that:
 
 * In the `Base`, description for `type` is omitted.
-* In the `Item`, parameters inherited by superclass are not written.
-* In the `Item.set_name()`, Parameters section doesn't exit.
+* In the `Item`, parameters inherited from superclass are not written.
+* In the `Item.set_name()`, Parameters section itself doesn't exist.
 
 ## Inheritance from Superclasses
 

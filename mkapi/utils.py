@@ -1,11 +1,25 @@
 from markdown import Markdown
 
-from mkapi.core.node import Node, get_node
-
 converter = Markdown()
 
 
+def get_indent(line: str) -> int:
+    indent = 0
+    for x in line:
+        if x != " ":
+            return indent
+        indent += 1
+    return -1
+
+
+def join(lines):
+    indent = get_indent(lines[0])
+    return "\n".join(line[indent:] for line in lines).strip()
+
+
 def get_html(node):
+    from mkapi.core.node import Node, get_node
+
     if not isinstance(node, Node):
         node = get_node(node)
     markdown = node.get_markdown()

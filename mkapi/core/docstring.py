@@ -4,9 +4,11 @@ import inspect
 import re
 from typing import Any, Iterator, List, Tuple
 
+# from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Docstring, Item, Section, Type
 from mkapi.core.linker import replace_link
-from mkapi.core.signature import Signature
+from mkapi.core.signature import get_signature
+from mkapi.utils import get_indent, join
 
 SECTIONS = [
     "Args",
@@ -28,20 +30,6 @@ SECTIONS = [
     "Yield",
     "Yields",
 ]
-
-
-def get_indent(line: str) -> int:
-    indent = 0
-    for x in line:
-        if x != " ":
-            return indent
-        indent += 1
-    return -1
-
-
-def join(lines):
-    indent = get_indent(lines[0])
-    return "\n".join(line[indent:] for line in lines).strip()
 
 
 def rename_section(name: str) -> str:
@@ -208,15 +196,23 @@ def parse_property(doc: Docstring, obj: Any):
         doc.type = Type(line[:index].strip())
         section.markdown = markdown[index + 1 :].strip()
     if not doc.type and hasattr(obj, "fget"):
-        doc.type = Type(Signature(obj.fget).returns)
+        doc.type = Type(get_signature(obj.fget).returns)
 
+
+# def parse_attribute(doc: Docstring, obj: Any):
+#     """Parses attributes' docstring to inspect type and description from source."""
+#     attrs = get_attributes(obj)
+#     if not attrs:
+#         return
+#     if doc["Attributes"] is None:
+#         pass
 
 def postprocess(doc: Docstring, obj: Any):
     if isinstance(obj, property):
         parse_property(doc, obj)
     if not callable(obj):
         return
-    signature = Signature(obj)
+    signature = get_signature(obj)
     if signature.signature is None:
         return
 
