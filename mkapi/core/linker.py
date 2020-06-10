@@ -45,8 +45,13 @@ def get_link(obj: Any, include_module: bool = False) -> str:
         return name
     fullname = ".".join([module, name])
     if include_module:
-        name = fullname
-    return link(name, fullname)
+        text = fullname
+    else:
+        text = name
+    if name.startswith("_"):
+        return text
+    else:
+        return link(text, fullname)
 
 
 def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: List[str]) -> str:

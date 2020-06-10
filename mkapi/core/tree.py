@@ -1,5 +1,5 @@
 """This module provides base class of [Node](mkapi.core.node.Node) and
-[Module](mkapi.core.node.Module)."""
+[Module](mkapi.core.module.Module)."""
 from dataclasses import dataclass, field
 from typing import Any, List
 
@@ -13,7 +13,7 @@ from mkapi.core.signature import get_signature
 @dataclass
 class Tree:
     """Tree class. This class is the base class of [Node](mkapi.core.node.Node)
-    and [Module](mkapi.core.node.Module).
+    and [Module](mkapi.core.module.Module).
 
     Args:
         obj: Object.
