@@ -22,6 +22,33 @@ def link(name: str, href: str) -> str:
     return f"[{name}](!{href})"
 
 
+def get_link(obj: Any, include_module: bool = False) -> str:
+    """Returns Markdown link for object, if possible.
+
+    Args:
+        obj: Object
+        include_module: If True, link text includes module path.
+
+    Examples:
+        >>> get_link(get_fullname)
+        '[get_fullname](!mkapi.core.object.get_fullname)'
+        >>> get_link(get_fullname, include_module=True)
+        '[mkapi.core.object.get_fullname](!mkapi.core.object.get_fullname)'
+    """
+    if not hasattr(obj, "__name__"):
+        return ""
+    name = obj.__name__
+    if not hasattr(obj, "__module__"):
+        return name
+    module = obj.__module__
+    if module == "builtins":
+        return name
+    fullname = ".".join([module, name])
+    if include_module:
+        name = fullname
+    return link(name, fullname)
+
+
 def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: List[str]) -> str:
     """Reutrns resolved link.
 
@@ -150,6 +177,7 @@ def replace_link(obj: Any, markdown: str) -> str:
         >>> replace_link(obj, '[dummy.Dummy]()')
         '[dummy.Dummy]()'
     """
+
     def replace(match):
         text, name = match.groups()
         if not name:

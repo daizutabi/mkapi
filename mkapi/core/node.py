@@ -13,16 +13,18 @@ from mkapi.core.tree import Tree
 class Node(Tree):
     """Node class represents an object.
 
-    Attributes:
+    Args:
         sourcefile_index: If `obj` is a member of class, this value is the index of
             unique source files given by `mro()` of the class. Otherwise, 0.
+
+    Attributes:
         parent: Parent Node instance.
         members: Member Node instances.
     """
 
-    sourcefile_index: int = 0
     parent: Optional["Node"] = field(default=None, init=False)
     members: List["Node"] = field(init=False)
+    sourcefile_index: int = 0
 
     def __post_init__(self):
         super().__post_init__()
@@ -121,6 +123,7 @@ def get_kind(obj) -> str:
 
 def is_member(name: str, obj: Any, sourcefiles: List[str]) -> int:
     """Returns an integer thats indicates if `obj` is a member or not.
+
     * $-1$ : Is not a member.
     * $>0$ : Is a member. If the value is larger than 0, `obj` is defined
         in different file and the value is corresponding to the index of unique

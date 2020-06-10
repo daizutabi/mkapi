@@ -6,7 +6,7 @@ from typing import Any, Iterator, List, Tuple
 
 # from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Docstring, Item, Section, Type
-from mkapi.core.linker import replace_link
+from mkapi.core.linker import get_link, replace_link
 from mkapi.core.signature import get_signature
 from mkapi.utils import get_indent, join
 
@@ -207,7 +207,27 @@ def parse_property(doc: Docstring, obj: Any):
 #     if doc["Attributes"] is None:
 #         pass
 
+
+def add_bases(doc: Docstring, obj: Any):
+    if not inspect.isclass(obj) or not hasattr(obj, "mro"):
+        return
+    bases = obj.mro()[1:-1]
+    if not bases:
+        return
+    if doc.sections[0].name:
+        doc.sections.insert(0, Section())
+    section = doc.sections[0]
+    links = [get_link(base, include_module=True) for base in bases]
+    link = ", ".join(link for link in links if link)
+    if "," in link:
+        markdown = f"Bases: {link}\n\n"
+    else:
+        markdown = f"Base: {link}\n\n"
+    section.markdown = markdown + section.markdown
+
+
 def postprocess(doc: Docstring, obj: Any):
+    add_bases(doc, obj)
     if isinstance(obj, property):
         parse_property(doc, obj)
     if not callable(obj):
@@ -262,11 +282,17 @@ def postprocess(doc: Docstring, obj: Any):
 def get_docstring(obj: Any) -> Docstring:
     """Returns a [Docstring]() instance."""
     doc = inspect.getdoc(obj)
-    if not doc:
+    if doc:
+        sections = []
+        for section in split_section(doc):
+            sections.append(create_section(*section))
+        docstring = Docstring(sections)
+    elif inspect.isclass(obj) or hasattr(obj, "mro"):
+        bases = obj.mro()[1:-1]
+        if not bases:
+            return Docstring()
+        docstring = Docstring([Section()])
+    else:
         return Docstring()
-    sections = []
-    for section in split_section(doc):
-        sections.append(create_section(*section))
-    docstring = Docstring(sections)
     postprocess(docstring, obj)
     return docstring

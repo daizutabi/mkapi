@@ -1,3 +1,5 @@
+"""This module provides base class of [Node](mkapi.core.node.Node) and
+[Module](mkapi.core.node.Module)."""
 from dataclasses import dataclass, field
 from typing import Any, List
 
@@ -10,7 +12,8 @@ from mkapi.core.signature import get_signature
 
 @dataclass
 class Tree:
-    """Tree class. This class is the base of Node and Module.
+    """Tree class. This class is the base class of [Node](mkapi.core.node.Node)
+    and [Module](mkapi.core.node.Module).
 
     Args:
         obj: Object.
@@ -68,7 +71,7 @@ class Tree:
         return False
 
     def get_kind(self) -> str:
-        """Returns kind of this object."""
+        """Returns kind of self."""
         raise NotImplementedError
 
     def get_members(self) -> List["Tree"]:
@@ -76,5 +79,5 @@ class Tree:
         raise NotImplementedError
 
     def get_markdown(self) -> str:
-        """Returns a Markdown source for docstring of this object."""
+        """Returns a Markdown source for docstring of self."""
         raise NotImplementedError

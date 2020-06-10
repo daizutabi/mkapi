@@ -115,14 +115,9 @@ def to_string(annotation, kind: str = "returns") -> str:
         return annotation.__forward_arg__
     if annotation == inspect.Parameter.empty or annotation is None:
         return ""
-    if hasattr(annotation, "__name__"):
-        name = annotation.__name__
-        if not hasattr(annotation, "__module__"):
-            return name
-        module = annotation.__module__
-        if module == "builtins":
-            return name
-        return linker.link(name, ".".join([module, name]))
+    name = linker.get_link(annotation)
+    if name:
+        return name
     if not hasattr(annotation, "__origin__"):
         return str(annotation).replace("typing.", "").lower()
     origin = annotation.__origin__
