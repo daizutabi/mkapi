@@ -37,8 +37,8 @@ class Node(Tree):
                     if not markdown.startswith("Initialize self"):
                         self.docstring = member.docstring
         self.members = [m for m in members if m.object.name != "__init__"]
-        if inspect.isclass(self.obj):
-            ms = [m.object for m in self.members if m.object.kind == "method"]
+        # if inspect.isclass(self.obj):
+        #     ms = [m.object for m in self.members if m.object.kind == "method"]
         if self.docstring and self.docstring.type:
             self.object.type = self.docstring.type
 
