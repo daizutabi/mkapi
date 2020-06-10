@@ -6,7 +6,6 @@ from functools import lru_cache
 from typing import Any, Dict, List, Tuple
 
 import _ast
-from examples import google_style
 from mkapi import utils
 
 

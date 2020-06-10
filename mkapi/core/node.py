@@ -153,6 +153,11 @@ def is_member(name: str, obj: Any, sourcefiles: List[str]) -> int:
         return 0
     for sourcefile_index, parent_sourcefile in enumerate(sourcefiles):
         if sourcefile == parent_sourcefile:
+            if inspect.isclass(obj):
+                try:
+                    obj.mro()
+                except (TypeError, AttributeError):
+                    return -1
             return sourcefile_index
     return -1
 

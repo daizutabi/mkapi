@@ -238,7 +238,7 @@ class Object(Base):
         prefix: Object prefix. `mkapi.core.base` for `Item` class.
         kind: Object kind such as 'class', 'function'. etc.
         type: Type for missing Returns and Yields sections.
-        signature: Signature if object is callable.
+        signature: Signature if object is module or callable.
 
     Attributes:
         id: CSS ID.
