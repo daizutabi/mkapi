@@ -225,7 +225,7 @@ def parse_attribute(doc: Docstring, obj: Any):
     if section is None:
         if any(x for x in attrs_desc.values()):
             section = Section("Attributes")
-            doc['Attributes'] = section
+            doc["Attributes"] = section
         else:
             return
     items = []
