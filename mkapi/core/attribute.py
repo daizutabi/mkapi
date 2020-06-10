@@ -1,10 +1,12 @@
 import ast
 import importlib
 import inspect
+from dataclasses import InitVar, is_dataclass
 from functools import lru_cache
 from typing import Any, Dict, List, Tuple
 
 import _ast
+from examples import google_style
 from mkapi import utils
 
 
@@ -13,7 +15,7 @@ def parse_attribute(x) -> str:
 
 
 def parse_attribute_with_lineno(x) -> Tuple[str, int]:
-    return parse_attribute(x), x.lineno
+    return parse_node(x), x.lineno
 
 
 def parse_subscript(x) -> str:
@@ -33,6 +35,8 @@ def parse_tuple(x):
 def parse_node(x):
     if isinstance(x, _ast.Name):
         return x.id
+    elif isinstance(x, _ast.Assign):
+        return parse_node(x.targets[0])
     elif isinstance(x, _ast.Attribute):
         return parse_attribute(x)
     elif isinstance(x, _ast.Subscript):
@@ -53,11 +57,11 @@ def get_description(lines: List[str], lineno: int) -> str:
     index = lineno - 1
     line = lines[index]
     if "  #: " in line:
-        return line.split("  #: ")[1]
+        return line.split("  #: ")[1].strip()
     if index != 0:
         line = lines[index - 1].strip()
         if line.startswith("#: "):
-            return line[3:]
+            return line[3:].strip()
     if index + 1 < len(lines):
         docs = []
         in_doc = False
@@ -72,16 +76,21 @@ def get_description(lines: List[str], lineno: int) -> str:
                 docs.append(line[3:])
             elif in_doc and line.endswith("'''") or line.endswith('"""'):
                 docs.append(line[:-3])
-                return "\n".join(docs)
+                return "\n".join(docs).strip()
             elif in_doc:
                 docs.append(line)
     return ""
 
 
 def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
-    """Returns a dictionary that maps attribute name to a tuple of (type, description).
-    """
-    source = inspect.getsource(cls.__init__)
+    """Returns a dictionary that maps attribute name to a tuple of
+    (type, description)."""
+    try:
+        source = inspect.getsource(cls.__init__) or ""
+        if not source:
+            return {}
+    except TypeError:
+        return {}
     source = utils.join(source.split("\n"))
     node = ast.parse(source)
 
@@ -110,10 +119,58 @@ def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     return attrs
 
 
+def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
+    """Returns a dictionary that maps attribute name to a tuple of
+    (type, description)."""
+    try:
+        source = inspect.getsource(module) or ""
+        if not source:
+            return {}
+    except (OSError, TypeError):
+        return {}
+    node = ast.parse(source)
+
+    attr_list: List[Tuple] = []
+    globals = dict(inspect.getmembers(module))
+    for x in ast.iter_child_nodes(node):
+        if isinstance(x, _ast.AnnAssign):
+            attr, lineno, type_str = parse_annotation_assign(x)
+            type = eval(type_str, globals)
+            attr_list.append((attr, lineno, type))
+        if isinstance(x, _ast.Assign):
+            attr_list.append(parse_attribute_with_lineno(x))
+    attr_list = sorted(attr_list, key=lambda x: x[1])
+
+    attrs: Dict[str, Tuple[Any, str]] = {}
+    lines = source.split("\n")
+    for name, lineno, *type in attr_list:
+        desc = get_description(lines, lineno)
+        if type:
+            attrs[name] = type[0], desc  # Assignment with type annotation wins.
+        elif name not in attrs:
+            attrs[name] = None, desc
+    return attrs
+
+
+def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
+    """Returns a dictionary that maps attribute name to a tuple of
+    (type, description)."""
+    fields = cls.__dataclass_fields__.values()
+    attrs = {}
+    for field in fields:
+        if field.type != InitVar:
+            attrs[field.name] = field.type, ""
+    return attrs
+
+
 @lru_cache(maxsize=1000)
 def get_attributes(obj) -> Dict[str, Tuple[Any, str]]:
-    """Returns a dictionary that maps attribute name to a tuple of (type, description).
-    """
-    if inspect.isclass(obj):
+    """Returns a dictionary that maps attribute name to
+    a tuple of (type, description)."""
+    if is_dataclass(obj):
+        return get_dataclass_attributes(obj)
+    elif inspect.isclass(obj):
         return get_class_attributes(obj)
+    elif inspect.ismodule(obj):
+        return get_module_attributes(obj)
     return {}

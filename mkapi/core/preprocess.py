@@ -1,4 +1,15 @@
-from typing import Iterator
+from typing import Iterator, Tuple
+
+
+def split_type(markdown: str) -> Tuple[str, str]:
+    line = markdown.split("\n")[0]
+    if ":" in line:
+        index = line.index(":")
+        type = line[:index].strip()
+        markdown = markdown[index + 1 :].strip()
+        return type, markdown
+    else:
+        return "", markdown
 
 
 def strip_ptags(html: str) -> str:

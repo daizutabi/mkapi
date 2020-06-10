@@ -112,7 +112,7 @@ def test_get_params(a, b, name):
     assert len(a_sig_params) == 2
 
     b_doc_params, b_sig_params = get_params(b, name)
-    assert len(b_doc_params) == 1
+    assert len(b_doc_params) == 1 if name == 'Parameters' else 3
     assert len(b_sig_params) == 3
 
 

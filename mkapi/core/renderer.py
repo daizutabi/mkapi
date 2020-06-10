@@ -106,6 +106,8 @@ class Renderer:
         """
         if section.name in ["Parameters", "Attributes", "Raises"]:
             return self.templates["args"].render(section=section)
+        elif section.name == "Bases":
+            return self.templates["bases"].render(section=section)
         else:
             raise ValueError(f"Invalid section name: {section.name}")
 
@@ -134,4 +136,5 @@ class Renderer:
         )
 
 
-renderer = Renderer()
+#: Renderer instance that can be used globally.
+renderer: Renderer = Renderer()

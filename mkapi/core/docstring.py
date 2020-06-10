@@ -4,9 +4,9 @@ import inspect
 import re
 from typing import Any, Iterator, List, Tuple
 
-# from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Docstring, Item, Section, Type
 from mkapi.core.linker import get_link, replace_link
+from mkapi.core.preprocess import split_type
 from mkapi.core.signature import get_signature
 from mkapi.utils import get_indent, join
 
@@ -186,48 +186,70 @@ def create_section(name: str, doc: str, style: str) -> Section:
     return Section(name, markdown, items, Type(type))
 
 
-def parse_property(doc: Docstring, obj: Any):
-    """Parses property's docstring to inspect type."""
-    section = doc.sections[0]
-    markdown = section.markdown
-    line = markdown.split("\n")[0]
-    if ":" in line:
-        index = line.index(":")
-        doc.type = Type(line[:index].strip())
-        section.markdown = markdown[index + 1 :].strip()
-    if not doc.type and hasattr(obj, "fget"):
-        doc.type = Type(get_signature(obj.fget).returns)
-
-
-# def parse_attribute(doc: Docstring, obj: Any):
-#     """Parses attributes' docstring to inspect type and description from source."""
-#     attrs = get_attributes(obj)
-#     if not attrs:
-#         return
-#     if doc["Attributes"] is None:
-#         pass
-
-
-def add_bases(doc: Docstring, obj: Any):
+def parse_bases(doc: Docstring, obj: Any):
+    """Parses base classes to create a Base(s) line."""
     if not inspect.isclass(obj) or not hasattr(obj, "mro"):
         return
-    bases = obj.mro()[1:-1]
-    if not bases:
+    objs = obj.mro()[1:-1]
+    if not objs:
         return
-    if doc.sections[0].name:
-        doc.sections.insert(0, Section())
-    section = doc.sections[0]
-    links = [get_link(base, include_module=True) for base in bases]
-    link = ", ".join(link for link in links if link)
-    if "," in link:
-        markdown = f"Bases: {link}\n\n"
-    else:
-        markdown = f"Base: {link}\n\n"
-    section.markdown = markdown + section.markdown
+    types = [get_link(obj, include_module=True) for obj in objs]
+    items = [Item(type=Type(type)) for type in types if type]
+    doc["Bases"] = Section("Bases", items=items)
+
+
+def parse_property(doc: Docstring, obj: Any):
+    """Parses property's docstring to inspect type."""
+    doc.type = Type(get_signature(obj.fget).returns)
+    if not doc.type:
+        section = doc.sections[0]
+        markdown = section.markdown
+        type, markdown = split_type(markdown)
+        if type:
+            doc.type = Type(type)
+            section.markdown = markdown
+
+
+def parse_attribute(doc: Docstring, obj: Any):
+    """Parses attributes' docstring to inspect type and description from source."""
+    signature = get_signature(obj)
+    attrs = signature.attributes
+    attrs_desc = signature.attributes_desc
+    if inspect.ismethod(obj):
+        print(obj)
+        print(attrs)
+
+    if not attrs:
+        return
+    section = doc["Attributes"]
+    if section is None:
+        if any(x for x in attrs_desc.values()):
+            section = Section("Attributes")
+            doc['Attributes'] = section
+        else:
+            return
+    items = []
+    for name in attrs:
+        item = section[name]
+        if item:
+            if not item.type.markdown:
+                item.type = Type(attrs[name])
+            if not item.markdown:
+                item.markdown = attrs_desc[name]
+            del section[name]
+        elif attrs_desc[name]:
+            item = Item(name, attrs_desc[name], type=Type(attrs[name]))
+        else:
+            continue
+        items.append(item)
+    items.extend(section.items)
+    section.items = items
 
 
 def postprocess(doc: Docstring, obj: Any):
-    add_bases(doc, obj)
+    parse_bases(doc, obj)
+    if inspect.ismodule(obj) or inspect.isclass(obj):
+        parse_attribute(doc, obj)
     if isinstance(obj, property):
         parse_property(doc, obj)
     if not callable(obj):
@@ -287,7 +309,7 @@ def get_docstring(obj: Any) -> Docstring:
         for section in split_section(doc):
             sections.append(create_section(*section))
         docstring = Docstring(sections)
-    elif inspect.isclass(obj) or hasattr(obj, "mro"):
+    elif inspect.isclass(obj) and hasattr(obj, "mro"):
         bases = obj.mro()[1:-1]
         if not bases:
             return Docstring()

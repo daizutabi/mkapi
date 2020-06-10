@@ -144,6 +144,16 @@ class Section(Base):
                 return item
         return None
 
+    def __delitem__(self, name):
+        """Delete [Item]() instance whose name is equal to `name`.
+
+        Args:
+            name: Item name.
+        """
+        for k, item in enumerate(self.items):
+            if item.name == name:
+                del self.items[k]
+
     def __contains__(self, name) -> bool:
         """Returns True if there is [Item]() instance whose name is `name`.
 
@@ -207,7 +217,10 @@ class Docstring:
             if section_.name == name:
                 self.sections[k] = section
                 return
-            if name == "Parameters" and section_.name != "":
+            if name == "Bases":
+                self.sections.insert(k, section)
+                return
+            if name == "Parameters" and section_.name not in ["", "Bases"]:
                 self.sections.insert(k, section)
                 return
             if section_.name in ["Raises", "Yields", "Returns"]:

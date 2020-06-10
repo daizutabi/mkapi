@@ -1,6 +1,6 @@
 """Module level docstring."""
 from dataclasses import dataclass, field
-from typing import Iterator, List, Tuple
+from typing import Dict, Iterator, List, Tuple
 
 
 def add(x: int, y: int = 1) -> int:
@@ -55,29 +55,32 @@ def gen(n) -> Iterator[str]:
 
 
 class ExampleClass:
+    """A normal class.
+
+    Parameters
+    ----------
+    x
+        The first parameter.
+    y
+        The second parameter.
+
+    Raises
+    ------
+    ValueError
+        If the length of `x` is equal to 0.
+    """
+
     def __init__(self, x: List[int], y: Tuple[str, int]):
-        """A normal class.
-
-        Parameters
-        ----------
-        x
-            The first parameter.
-        y
-            The second parameter.
-
-        Attributes
-        ----------
-        z : str
-            The first attribute.
-
-        Raises
-        ------
-        ValueError
-            If the length of `x` is equal to 0.
-        """
         if len(x) == 0:
             raise ValueError()
-        self.z = "abc"
+        self.a: str = "abc"  #: The first attribute. Comment *inline* with attribute.
+        #: The second attribute. Comment *before* attribute.
+        self.b: Dict[str, int] = {"a": 1}
+        self.c = None
+        """int, optional: The third attribute. Docstring *after* attribute.
+
+        Multiple paragraphs are supported."""
+        self.d = 100  # Not attribute description because ':' is missing.
 
     def message(self, n: int) -> List[str]:
         """Returns a message list.
@@ -87,7 +90,7 @@ class ExampleClass:
         n
             Repeatation.
         """
-        return [self.z] * n
+        return [self.a] * n
 
     @property
     def readonly_property(self):

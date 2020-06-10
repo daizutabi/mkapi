@@ -155,8 +155,8 @@ def inherit_parameters(node: Node):
         >>> from mkapi.core.object import get_object
         >>> base = Node(get_object('mkapi.core.base.Base'))
         >>> node = Node(get_object('mkapi.core.base.Type'))
-        >>> [item.name for item in base.docstring['Attributes'].items]
-        ['html']
+        >>> [item.name for item in base.docstring['Parameters'].items]
+        ['name', 'markdown']
         >>> inherit_signature(base)
         >>> section = base.docstring['Attributes']
         >>> [item.name for item in section.items]

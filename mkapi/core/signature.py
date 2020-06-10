@@ -1,11 +1,13 @@
 """This module provides Signature class that inspects object and creates
 signature and types."""
 import inspect
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any, Dict, Optional, TypeVar, Union
 
 from mkapi.core import linker
+from mkapi.core.attribute import get_attributes
+from mkapi.core.preprocess import split_type
 
 
 @dataclass
@@ -32,11 +34,15 @@ class Signature:
     parameters: Dict[str, str] = field(default_factory=dict, init=False)
     defaults: Dict[str, Any] = field(default_factory=dict, init=False)
     attributes: Dict[str, str] = field(default_factory=dict, init=False)
+    attributes_desc: Dict[str, str] = field(default_factory=dict, init=False)
     returns: str = field(default="", init=False)
     yields: str = field(default="", init=False)
 
     def __post_init__(self):
-        if self.obj is None or not callable(self.obj):
+        if self.obj is None:
+            return
+        self.get_attributes()
+        if not callable(self.obj):
             return
         try:
             self.signature = inspect.signature(self.obj)
@@ -60,14 +66,6 @@ class Signature:
         self.returns = to_string(return_annotation, "returns")
         self.yields = to_string(return_annotation, "yields")
 
-        if hasattr(self.obj, "__dataclass_fields__"):
-            values = self.obj.__dataclass_fields__.values()
-            attributes = {}
-            for field_ in values:
-                if field_.type != InitVar:
-                    attributes[field_.name] = to_string(field_.type)
-            self.attributes = attributes
-
     def __contains__(self, name):
         return name in self.parameters
 
@@ -84,6 +82,14 @@ class Signature:
                 arg += "=" + self.defaults[arg]
             args.append(arg)
         return "(" + ", ".join(args) + ")"
+
+    def get_attributes(self):
+        for name, (type, desc) in get_attributes(self.obj).items():
+            type = to_string(type) if type else ""
+            if not type:
+                type, desc = split_type(desc)
+            self.attributes[name] = type
+            self.attributes_desc[name] = desc
 
 
 def to_string(annotation, kind: str = "returns") -> str:

@@ -11,8 +11,3 @@ def test_function(add):
     assert doc.sections[1].items[0].type.name == "int"
     assert doc.sections[1].items[1].name == "y"
     assert doc.sections[1].items[1].type.name == "int, optional"
-
-
-def test_class(ExampleClass):
-    doc = get_docstring(ExampleClass)
-    assert not doc

@@ -102,12 +102,16 @@ creates the API documentation for the `ExampleClass` class.
 
 In this example, note that:
 
-* Docstring of `__init__` function is treated as a class-level docstring.
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style.
+* Attributes section is inserted with type and description. These information is collected from inspection of `__init__` function.
 * Bound methods (`message` in this case) have a METHOD prefix instead of a FUNCTION prefix.
 * If callable objects have neither Returns nor Yields, the type appears on the object definition line like type annotation.
 * For properties, the type can be written at the beginning of the docstring or as type annotation.
 * Whether a property is read-only or read-write is inspected.
+
+!!! note
+    Although you can write the docstring for class in the `__init__()` function, the attribute inspection only works when you write it as a class level docstring.
+
 
 ## Method
 

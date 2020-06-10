@@ -216,6 +216,56 @@ h3 ~ .mkapi-docstring {
   font-size: 0.83rem;
 }
 
+/**************************************************
+ Bases
+**************************************************/
+.mkapi-section-bases {
+  margin-top: 0px;
+  margin-left: 8px;
+  margin-bottom: 0px;
+  padding: 0px;
+  display: flex;
+}
+
+.mkapi-section-name-bases {
+  margin: 0px;
+  padding: 0px;
+  border-bottom: 1px solid #DDDDDD;
+}
+
+.mkapi-section-name-bases .mkapi-section-name-body {
+  margin: 0px 3px 0px 0px;
+  padding: 0px;
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: gray;
+  letter-spacing: normal;
+}
+
+.mkapi-section-name-bases .mkapi-section-name-body::after {
+  content: ":"
+}
+
+.mkapi-section-body-bases {
+  margin: 0px;
+  padding: 0px;
+  border-bottom: 1px solid #DDDDDD;
+}
+
+.mkapi-base {
+  margin: 0px 3px 0px 0px;
+  font-size: 0.85rem;
+  padding: 0px;
+}
+
+.mkapi-base::after {
+  content: ", ";
+  color: gray;
+}
+
+.mkapi-base:last-child::after {
+  content: "";
+}
 
 /**************************************************
  Args
