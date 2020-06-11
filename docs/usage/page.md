@@ -12,7 +12,7 @@
 
 ## Page Mode
 
-Page mode is a powerful feature that constructs a comprehensive API documentation for your project. To use the page mode, just write one line in `mkdocs.yml`:
+Page mode is a powerful feature that constructs a comprehensive API documentation for your project. To use the page mode, just add one line to `mkdocs.yml`:
 
 ~~~yaml
 nav:
@@ -29,7 +29,7 @@ The rest (`'mkapi'`) is a root package name, which is assumed to exist in the `m
 ~~~
 
 
-MkApi searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the API documentation of MkApi in the navigation menu.
+MkApi searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the API documentation of MkApi in the left navigation menu.
 
 !!! note
     * If a package or module has no package- or module-level docstring, MkApi doesn't process it.

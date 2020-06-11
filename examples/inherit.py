@@ -1,11 +1,10 @@
-import abc
 from dataclasses import dataclass
 
 from mkapi.core.base import Type
 
 
 @dataclass
-class Base(abc.ABC):
+class Base:
     """Base class.
 
     Parameters:

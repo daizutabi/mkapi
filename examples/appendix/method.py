@@ -1,25 +1,25 @@
-class A:
-    """Class"""
+class MethodTypeExample:
+    """Example class."""
 
-    def m(self, x):
-        "Method"
+    def method(self, x):
+        "Method."
 
     @classmethod
-    def c(cls, x):
-        "Class method"
+    def class_method(cls, x):
+        "Class method."
 
     @staticmethod
-    def s(x):
-        "Static method"
+    def static_method(x):
+        "Static method."
 
     @property
-    def r(x):
-        "Read only property"
+    def read_only_property(x):
+        "Read only property."
 
     @property
-    def w(x):
-        "Read write property"
+    def read_write_property(x):
+        "Read write property."
 
-    @w.setter
-    def w(x):
+    @read_write_property.setter
+    def read_write_property(x):
         pass

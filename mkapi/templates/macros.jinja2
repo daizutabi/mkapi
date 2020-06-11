@@ -27,6 +27,12 @@
     <{{ tag }} class="mkapi-object-prefix">{{ object_prefix(object, prefix_url, upper) }}</{{ tag }}>
   {%- endif -%}
     <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>
-  {% if object.signature %}<{{ tag }} class="mkapi-object-signature">{{ object.signature }}</{{ tag }}>{% endif %}
+  {%- if object.signature %}<{{ tag }} class="mkapi-object-signature">{{ object.signature }}</{{ tag }}>{% endif %}
     {{ object_type(object) }}
+{%- endmacro %}
+
+{% macro object_member(name, url, signature) -%}
+<span class="mkapi-object-name">{% if url %}<a href="{{ url }}">{% endif -%}
+{{ name }}{% if url %}</a>{% endif %}</span>
+{%- if signature %}<span class="mkapi-object-signature">{{ signature }}</span>{% endif %}
 {%- endmacro %}

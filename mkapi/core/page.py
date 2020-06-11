@@ -57,7 +57,7 @@ class Page:
             name, filters = utils.filter(name)
             node = get_node(name)
             inherit_by_filters(node, filters)
-            postprocess.transform(node)
+            postprocess.transform(node, filters)
             self.nodes.append(node)
             markdown = node.get_markdown(level=len(heading), callback=callback)
             yield node_markdown(index, markdown, "upper" in filters)

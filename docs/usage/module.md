@@ -10,11 +10,7 @@
 
 {{ # cache:clear }}
 
-MkApi can create module and package documentation as well as function and class.
-
-## Embeding Documentation
-
-Specify a package or module by its full path name.
+MkApi can create module and package documentation as well as function and class. Specify a package or module by its full path name.
 
 ~~~
 ![mkapi](!!mkapi.core)
@@ -22,16 +18,8 @@ Specify a package or module by its full path name.
 
 ![mkapi](mkapi.core)
 
-~~~
-![mkapi](!!mkapi.core.base)
-~~~
 
-![mkapi](mkapi.core.base)
-
-Unlike function or class, API for its members is not created, so that
-you can select members to show. Or you can use [Page mode](page.md) that allows us to get entire project API.
-
-## Module Level Attribute
+## Module Level Components
 
 As class level attributes, module level attributes can be inspected. Here is the beginning part of `google_style.py`.
 
@@ -45,6 +33,7 @@ Although there is no Attributes section in docstring, MkApi automatically create
 
 ![mkapi](google_style)
 
+Furthermore, Classes and Functions sections are also created that display a list of members defined in the module.
 
 ## Heading Documentation
 

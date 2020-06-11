@@ -14,6 +14,7 @@ First, import MkApi:
 
 """
 
+
 import mkapi
 
 # ## Node object
@@ -31,12 +32,13 @@ class A:
 
     def __init__(self):
         """Init docstring."""
+        self.a: int = 1  #: Integer **attribute**.
 
     def to_str(self, x: int) -> str:
         """Converts `int` to `str`.
 
         Args:
-            x: Input value.
+            x: Input **value**.
         """
         return str(x)
 
@@ -87,10 +89,7 @@ item = section.items[0]
 print(f"name={item.name!r}")
 print(f"markdown={item.markdown!r}, html={item.html!r}")
 print(item.type)
-
-# You can see that the type of the argument `x` is inspected. Note that the `markdown`
-# attribute has been set from the docstring, while the `html` attribute hasn't had any
-# value yet.
+print(item.desc)
 
 # `Node.get_markdown()` creates a *joint* Markdown of this node.
 
@@ -126,16 +125,13 @@ node.set_html(html)
 section = node.docstring.sections[0]  # type:ignore
 section.markdown, section.html
 # -
-section = node.docstring.sections[1]  # type:ignore
-section.markdown, section.html
-# -
 child = node.members[0]
 section = child.docstring.sections[0]  # type:ignore
 section.markdown, section.html
 # -
 section = child.docstring.sections[1]  # type:ignore
 item = section.items[0]
-item.markdown, item.html  # A <p> tag is deleted.
+item.desc.markdown, item.desc.html  # A <p> tag is deleted.
 
 # ## Constructing HTML
 

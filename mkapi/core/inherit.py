@@ -164,7 +164,7 @@ def inherit_parameters(node: Node):
         >>> section['name'].desc.html
         ''
         >>> inherit_parameters(base)
-        >>> section['name'].desc.html != ''
+        >>> section['name'].desc.markdown != ''
         True
     """
     param_section = node.docstring["Parameters"]

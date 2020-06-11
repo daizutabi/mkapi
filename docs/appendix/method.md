@@ -11,7 +11,7 @@
 #File appendix/method.py {%=/examples/appendix/method.py%}
 
 ~~~markdown
-![mkapi](appendix.method.A)
+![mkapi](appendix.method.MethodTypeExample)
 ~~~
 
-![mkapi](appendix.method.A)
+![mkapi](appendix.method.MethodTypeExample)

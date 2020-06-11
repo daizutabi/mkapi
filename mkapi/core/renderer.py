@@ -45,17 +45,11 @@ class Renderer:
         heading = node.parent is None
         object = self.render_object(node.object, heading=heading, upper=upper)
         docstring = self.render_docstring(node.docstring)
-        # if node.parent is None:
-        #     objects = [member.object for member in node.members]
-        #     objects = self.render_objects(objects)
-        # else:
-        #     objects = ""
-        objects = ""
         members = [self.render(member) for member in node.members]
-        return self.render_node(node, object, docstring, objects, members)
+        return self.render_node(node, object, docstring, members)
 
     def render_node(
-        self, node: Node, object: str, docstring: str, objects: str, members: List[str]
+        self, node: Node, object: str, docstring: str, members: List[str]
     ) -> str:
         """Returns a rendered HTML for Node using prerendered components.
 
@@ -71,11 +65,7 @@ class Renderer:
         )
 
     def render_object(
-        self,
-        object: Object,
-        heading: bool = False,
-        upper: bool = False,
-        internal_link: bool = False,
+        self, object: Object, heading: bool = False, upper: bool = False,
     ) -> str:
         """Returns a rendered HTML for Object.
 
@@ -85,18 +75,22 @@ class Renderer:
             upper: If True, object is written in upper case letters.
         """
         context = linker.resolve_object(object.html)
-        if internal_link:
-            context["prefix_url"] = "#" + object.prefix
-            context["name_url"] = "#" + object.id
-            if context["level"]:
-                context["level"] += 1
-
         if context["level"] and heading:
             template = self.templates["object_heading"]
         else:
             template = self.templates["object_div"]
-        html = template.render(context, object=object, upper=upper)
-        return html
+        return template.render(context, object=object, upper=upper)
+
+    def render_object_member(self, name: str, url: str, signature: str) -> str:
+        """Returns a rendered HTML for Object in toc.
+
+        Args:
+            name: Object name.
+            url: Link to definition.
+            signature: Signature.
+        """
+        template = self.templates["object_member"]
+        return template.render(name=name, url=url, signature=signature)
 
     def render_docstring(self, docstring: Docstring) -> str:
         """Returns a rendered HTML for Docstring.
@@ -118,12 +112,10 @@ class Renderer:
         Args:
             section: Section instance.
         """
-        if section.name in ["Parameters", "Attributes", "Raises"]:
-            return self.templates["args"].render(section=section)
-        elif section.name == "Bases":
+        if section.name == "Bases":
             return self.templates["bases"].render(section=section)
         else:
-            raise ValueError(f"Invalid section name: {section.name}")
+            return self.templates["args"].render(section=section)
 
     def render_module(self, module: Module, filters: List[str]) -> str:
         """Returns a rendered Markdown for Module.

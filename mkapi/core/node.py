@@ -37,8 +37,6 @@ class Node(Tree):
                     if not markdown.startswith("Initialize self"):
                         self.docstring = member.docstring
         self.members = [m for m in members if m.object.name != "__init__"]
-        # if inspect.isclass(self.obj):
-        #     ms = [m.object for m in self.members if m.object.kind == "method"]
         if self.docstring and self.docstring.type:
             self.object.type = self.docstring.type
 
@@ -73,7 +71,7 @@ class Node(Tree):
             else:
                 markdown = base.markdown
             if isinstance(base, Object):
-                if level and self.parent is None:
+                if level and self.object == base:
                     markdown = "#" * level + " " + markdown
             markdowns.append(markdown)
         return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
@@ -165,26 +163,27 @@ def is_member(name: str, obj: Any, sourcefiles: List[str]) -> int:
 
 
 def get_members(obj: Any) -> List[Node]:
-    if inspect.ismodule(obj) or isinstance(obj, property):
+    if isinstance(obj, property):
         return []
 
+    recursive = not inspect.ismodule(obj)
     sourcefiles = get_sourcefiles(obj)
     members = []
     for name, obj in inspect.getmembers(obj):
         sourcefile_index = is_member(name, obj, sourcefiles)
         if sourcefile_index != -1 and not from_object(obj):
-            member = get_node(obj, sourcefile_index)
+            member = get_node(obj, recursive, sourcefile_index)
             if member.docstring:
                 members.append(member)
     return sorted(members, key=lambda x: (-x.sourcefile_index, x.lineno))
 
 
 @lru_cache(maxsize=1000)
-def _get_node(obj, sourcefile_index) -> Node:
-    return Node(obj, sourcefile_index)
+def _get_node(obj, recursive, sourcefile_index) -> Node:
+    return Node(obj, recursive, sourcefile_index)
 
 
-def get_node(name, sourcefile_index: int = 0) -> Node:
+def get_node(name, recursive: bool = True, sourcefile_index: int = 0) -> Node:
     """Returns a Node instace by name or object.
 
     Args:
@@ -197,4 +196,4 @@ def get_node(name, sourcefile_index: int = 0) -> Node:
     else:
         obj = name
 
-    return _get_node(obj, sourcefile_index)
+    return _get_node(obj, recursive, sourcefile_index)

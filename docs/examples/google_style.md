@@ -106,14 +106,11 @@ In this example, note that:
 * Attributes section is inserted with type and description. These information is collected from inspection of `__init__()` function.
 * Bound methods (`message` in this case) have a METHOD prefix instead of a FUNCTION prefix.
 * If callable objects have neither Returns nor Yields, the type appears on the object definition line like type annotation.
-* For properties, the type can be written at the beginning of the docstring or as type annotation.
-* Whether a property is read-only or read-write is inspected.
+* Propertes are moved to the Attributes section with [RO] or [RW] that indicates whether the property is read-only or read-write.
+* Methods section is newly created that displays a list of methods defined in this class. Note that it has a hyperlink to the definition.
 
 !!! note
     Although you can write the docstring for class in the `__init__()` function, the attribute inspection only works when you write it as a class level docstring.
-
-!!! warning
-    In a future version, properties are moved to the Attribute section.
 
 ## Method
 

@@ -34,6 +34,7 @@ class Tree:
     docstring: Docstring = field(init=False)
     parent: Any = field(default=None, init=False)
     members: List[Any] = field(init=False)
+    recursive: bool = True
 
     def __post_init__(self):
         obj = self.obj
@@ -46,7 +47,10 @@ class Tree:
             prefix=prefix, name=name, qualname=qualname, kind=kind, signature=signature,
         )
         self.docstring = get_docstring(obj)
-        self.members = self.get_members()
+        if self.recursive:
+            self.members = self.get_members()
+        else:
+            self.members = []
         for member in self.members:
             member.parent = self
 

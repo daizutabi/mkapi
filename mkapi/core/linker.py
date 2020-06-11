@@ -161,7 +161,10 @@ def resolve_object(html: str) -> Dict[str, Any]:
         {'heading_id': 'i', 'level': 2, 'prefix_url': 'a', 'name_url': 'b'}
     """
     parser.reset()
-    return parser.feed(html)
+    context = parser.feed(html)
+    if 'level' not in context:
+        print(html)
+    return context
 
 
 REPLACE_LINK_PATTERN = re.compile(r"\[(.*?)\]\((.*?)\)")

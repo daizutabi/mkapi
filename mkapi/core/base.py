@@ -34,6 +34,8 @@ class Base:
 
 @dataclass
 class Inline(Base):
+    """Inline class."""
+
     def __post_init__(self):
         self.markdown = self.name
 
@@ -104,6 +106,10 @@ class Item(Type):
             yield self
         yield from self.type
         yield from self.desc
+
+    def set_html(self, html: str):
+        html = html.replace("<strong>", "__").replace("</strong>", "__")
+        super().set_html(html)
 
 
 @dataclass
@@ -190,6 +196,9 @@ class Section(Base):
         return self[name] is not None
 
 
+SECTION_ORDER = ["Bases", "", "Parameters", "Attributes", "Returns", "Yields", "Raises"]
+
+
 @dataclass
 class Docstring:
     """Docstring class represents a docstring of an object.
@@ -240,20 +249,20 @@ class Docstring:
         return None
 
     def __setitem__(self, name: str, section: Section):
-        if name == "Methods":
-            self.sections.append(section)
-            return
         for k, section_ in enumerate(self.sections):
             if section_.name == name:
                 self.sections[k] = section
                 return
-            if name == "Bases":
+        if name not in SECTION_ORDER:
+            self.sections.append(section)
+            return
+        order = SECTION_ORDER.index(name)
+        for k, section_ in enumerate(self.sections):
+            if section_.name not in SECTION_ORDER:
                 self.sections.insert(k, section)
                 return
-            if name == "Parameters" and section_.name not in ["", "Bases"]:
-                self.sections.insert(k, section)
-                return
-            if section_.name in ["Raises", "Yields", "Returns"]:
+            order_ = SECTION_ORDER.index(section_.name)
+            if order < order_:
                 self.sections.insert(k, section)
                 return
         self.sections.append(section)
