@@ -269,9 +269,9 @@ def postprocess(doc: Docstring, obj: Any):
         for item in doc["Parameters"].items:
             if not item.type and item.name in signature.parameters:
                 item.type = get_type(signature.parameters[item.name])
-            if "{default}" in item.markdown and item.name in signature:
+            if "{default}" in item.desc.markdown and item.name in signature:
                 default = signature.defaults[item.name]
-                item.markdown = item.markdown.replace("{default}", default)
+                item.desc.markdown = item.desc.markdown.replace("{default}", default)
 
     if doc["Attributes"] is not None and signature.attributes:
         for item in doc["Attributes"].items:

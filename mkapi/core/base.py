@@ -2,8 +2,7 @@
 from dataclasses import dataclass, field
 from typing import Iterator, List, Optional
 
-from mkapi.core import preprocess
-from mkapi.core import linker
+from mkapi.core import linker, preprocess
 from mkapi.core.regex import LINK_PATTERN
 from mkapi.core.signature import Signature
 
@@ -34,13 +33,9 @@ class Base:
 
 
 @dataclass
-class Type(Base):
-    """Type class represents type for [Item](), [Section](), [Docstring](),
-    and [Object]()."""
-
+class Inline(Base):
     def __post_init__(self):
-        if not self.markdown:
-            self.markdown = self.name
+        self.markdown = self.name
 
     def __bool__(self) -> bool:
         """Returns True if name is not empty."""
@@ -48,7 +43,7 @@ class Type(Base):
 
     def __iter__(self) -> Iterator[Base]:
         """Yields self if the markdown attribute has link form."""
-        if LINK_PATTERN.search(self.markdown):
+        if self.markdown:
             yield self
 
     def set_html(self, html: str):
@@ -57,7 +52,26 @@ class Type(Base):
 
 
 @dataclass
-class Item(Base):
+class Type(Inline):
+    """Type class represents type for [Item](), [Section](), [Docstring](),
+    and [Object]().
+
+    Examples:
+        >>> Type('a')
+        Type(name='a', markdown='', html='a')
+        >>> Type('[a](b)')
+        Type(name='[a](b)', markdown='[a](b)', html='')
+    """
+
+    def __post_init__(self):
+        if LINK_PATTERN.search(self.name):
+            self.markdown = self.name
+        else:
+            self.html = self.name
+
+
+@dataclass
+class Item(Type):
     """Item class represents an item in Parameters, Attributes, and Raises sections.
 
     Args:
@@ -69,18 +83,27 @@ class Item(Base):
         type: Type of self.
         kind: Kind of item, for example `readonly_property`. This value is rendered
             to CSS class attribute.
+
+    Examples:
+        >>> item = Item('a', 'abc')
+        >>> item.name, item.markdown, item.html
+        ('a', '', 'a')
     """
 
     type: Type = field(default_factory=Type)
+    desc: Inline = field(init=False)
     kind: str = ""
 
-    def __iter__(self) -> Iterator[Base]:
-        yield from self.type
-        yield self
+    def __post_init__(self):
+        self.desc = Inline(self.markdown)
+        self.markdown = ""
+        super().__post_init__()
 
-    def set_html(self, html: str):
-        """Sets `html` attribute cleaning `p` tags."""
-        self.html = preprocess.strip_ptags(html)
+    def __iter__(self) -> Iterator[Base]:
+        if self.markdown:
+            yield self
+        yield from self.type
+        yield from self.desc
 
 
 @dataclass
@@ -101,13 +124,13 @@ class Section(Base):
         >>> for x in section:
         ...     assert x is section
 
-        >>> items = [Item('x'), Item('y'), Item('z')]
+        >>> items = [Item('x'), Item('[y](a)'), Item('z')]
         >>> section = Section('Parameters', items=items)
         >>> [item.name for item in section]
-        ['x', 'y', 'z']
+        ['[y](a)']
 
         Indexing:
-        >>> isinstance(section['y'], Item)
+        >>> isinstance(section['x'], Item)
         True
         >>> section['z'].name
         'z'
@@ -186,13 +209,13 @@ class Docstring:
 
         Docstring with 3 sections:
         >>> default = Section("", markdown="Default")
-        >>> parameters = Section("Parameters", items=[Item("a"), Item("b")])
+        >>> parameters = Section("Parameters", items=[Item("a"), Item("[b](!a)")])
         >>> returns = Section("Returns", markdown="Results")
         >>> docstring = Docstring([default, parameters, returns])
 
         `Docstring` is iterable:
         >>> [base.name for base in docstring]
-        ['', 'a', 'b', 'Returns']
+        ['', '[b](!a)', 'Returns']
 
         Indexing:
         >>> docstring["Parameters"].items[0].name
@@ -217,7 +240,7 @@ class Docstring:
         return None
 
     def __setitem__(self, name: str, section: Section):
-        if name == 'Methods':
+        if name == "Methods":
             self.sections.append(section)
             return
         for k, section_ in enumerate(self.sections):

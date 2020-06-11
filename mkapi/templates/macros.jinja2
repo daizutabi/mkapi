@@ -3,7 +3,7 @@
 {%- endmacro %}
 
 {% macro base_type(base) -%}
-  {% if base.type %}<span class="mkapi-args-type">({{ select_type(base) }})</span>{% endif %}
+  {% if base.type %}<span class="mkapi-args-type">({{ base.type.html|safe }})</span>{% endif %}
 {%- endmacro %}
 
 {% macro object_type(object) -%}

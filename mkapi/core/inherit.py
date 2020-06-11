@@ -1,7 +1,7 @@
 """This module implements the functionality of docstring inheritance."""
 from typing import Dict, Iterator, List, Tuple
 
-from mkapi.core.base import Item, Section, Type
+from mkapi.core.base import Inline, Item, Section, Type
 from mkapi.core.node import Node, get_node
 
 
@@ -161,10 +161,10 @@ def inherit_parameters(node: Node):
         >>> section = base.docstring['Attributes']
         >>> [item.name for item in section.items]
         ['name', 'markdown', 'html']
-        >>> section['name'].markdown
+        >>> section['name'].desc.html
         ''
         >>> inherit_parameters(base)
-        >>> section['name'].markdown != ''
+        >>> section['name'].desc.html != ''
         True
     """
     param_section = node.docstring["Parameters"]
@@ -172,8 +172,9 @@ def inherit_parameters(node: Node):
     if param_section is None or attr_section is None:
         return
     for item in attr_section.items:
-        if not item.markdown and item.name in param_section:
-            item.markdown = param_section[item.name].markdown  # type:ignore
+        if not item.desc.markdown and item.name in param_section:
+            desc = param_section[item.name].desc  # type:ignore
+            item.desc = Inline(desc.name)
 
 
 def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
@@ -190,12 +191,12 @@ def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
         >>> n is node
         True
         >>> [x.object.name for x in gen]
-        ['Base']
+        ['Inline', 'Base']
         >>> for n, gen in it:
         ...     if n.object.name == 'set_html':
         ...         break
         >>> [x.object.name for x in gen]
-        ['set_html']
+        ['set_html', 'set_html']
     """
     bases = node.obj.mro()[1:-1]
     yield node, (get_node(base) for base in bases)

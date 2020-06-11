@@ -15,4 +15,4 @@ def test_get_module():
     assert base.parent is core
     assert base.object.markdown == "[mkapi.core](!mkapi.core).[base](!mkapi.core.base)"
     assert base.object.kind == "module"
-    assert len(base.objects) == 6
+    assert len(base.objects) == 7
