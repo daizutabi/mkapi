@@ -113,6 +113,9 @@ In this example, note that:
 !!! note
     Although you can write the docstring for class in the `__init__()` function, the attribute inspection only works when you write it as a class level docstring.
 
+!!! warning
+    In a future version, properties are moved to the Attribute section.
+
 ## Method
 
 You can select a method of class (or any other attribute that can have docstring) to generate API.

@@ -139,7 +139,8 @@ h3 ~ .mkapi-docstring {
 .mkapi-section-name-attributes,
 .mkapi-section-name-returns,
 .mkapi-section-name-yields,
-.mkapi-section-name-raises {
+.mkapi-section-name-raises,
+.mkapi-section-name-methods {
   background: #F0F0F0;
   border-bottom: solid 2px #7777FF;
 }
@@ -312,6 +313,25 @@ code.mkapi-args-name {
 
 .mkapi-args-dash {
   color: #AABBAA;
+}
+
+code.mkapi-args-name.readonly_property,
+code.mkapi-args-name.readwrite_property {
+  color: #003366;
+}
+
+code.mkapi-args-name.readwrite_property::after {
+  font-family: sans-serif;
+  font-size: 0.7rem;
+  color: gray;
+  content: " [RW]";
+}
+
+code.mkapi-args-name.readonly_property::after {
+  font-family: sans-serif;
+  font-size: 0.7rem;
+  color: gray;
+  content: " [RO]";
 }
 
 /**************************************************

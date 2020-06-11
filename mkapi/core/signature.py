@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, TypeVar, Union
 
 from mkapi.core import linker
 from mkapi.core.attribute import get_attributes
-from mkapi.core.preprocess import split_type
+from mkapi.core import preprocess
 
 
 @dataclass
@@ -87,7 +87,7 @@ class Signature:
         for name, (type, desc) in get_attributes(self.obj).items():
             type = to_string(type) if type else ""
             if not type:
-                type, desc = split_type(desc)
+                type, desc = preprocess.split_type(desc)
             self.attributes[name] = type
             self.attributes_desc[name] = desc
 

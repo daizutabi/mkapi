@@ -179,9 +179,6 @@ def get_members(obj: Any) -> List[Node]:
     return sorted(members, key=lambda x: (-x.sourcefile_index, x.lineno))
 
 
-USE_CACHE = True
-
-
 @lru_cache(maxsize=1000)
 def _get_node(obj, sourcefile_index) -> Node:
     return Node(obj, sourcefile_index)
@@ -200,7 +197,4 @@ def get_node(name, sourcefile_index: int = 0) -> Node:
     else:
         obj = name
 
-    if USE_CACHE:
-        return _get_node(obj, sourcefile_index)
-    else:
-        return Node(obj, sourcefile_index)
+    return _get_node(obj, sourcefile_index)

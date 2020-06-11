@@ -10,6 +10,7 @@ from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
 from mkapi.core.renderer import renderer
+from mkapi.core import postprocess
 
 
 @dataclass
@@ -56,6 +57,7 @@ class Page:
             name, filters = utils.filter(name)
             node = get_node(name)
             inherit_by_filters(node, filters)
+            postprocess.transform(node)
             self.nodes.append(node)
             markdown = node.get_markdown(level=len(heading), callback=callback)
             yield node_markdown(index, markdown, "upper" in filters)

@@ -2,9 +2,8 @@
 from dataclasses import dataclass, field
 from typing import Iterator, List, Optional
 
-import mkapi.core.preprocess
+from mkapi.core import preprocess
 from mkapi.core import linker
-from mkapi.core.preprocess import strip_ptags
 from mkapi.core.regex import LINK_PATTERN
 from mkapi.core.signature import Signature
 
@@ -54,7 +53,7 @@ class Type(Base):
 
     def set_html(self, html: str):
         """Sets `html` attribute cleaning `p` tags."""
-        self.html = strip_ptags(html)
+        self.html = preprocess.strip_ptags(html)
 
 
 @dataclass
@@ -63,12 +62,17 @@ class Item(Base):
 
     Args:
         type: Type of self.
+        kind: Kind of item, for example `readonly_property`. This value is rendered
+            to CSS class attribute.
 
     Attributes:
         type: Type of self.
+        kind: Kind of item, for example `readonly_property`. This value is rendered
+            to CSS class attribute.
     """
 
     type: Type = field(default_factory=Type)
+    kind: str = ""
 
     def __iter__(self) -> Iterator[Base]:
         yield from self.type
@@ -76,7 +80,7 @@ class Item(Base):
 
     def set_html(self, html: str):
         """Sets `html` attribute cleaning `p` tags."""
-        self.html = strip_ptags(html)
+        self.html = preprocess.strip_ptags(html)
 
 
 @dataclass
@@ -118,7 +122,7 @@ class Section(Base):
 
     def __post_init__(self):
         if self.markdown:
-            self.markdown = mkapi.core.preprocess.convert(self.markdown)
+            self.markdown = preprocess.convert(self.markdown)
 
     def __iter__(self) -> Iterator[Base]:
         """Yields [Base]() instance that has non empty Markdown.
@@ -213,6 +217,9 @@ class Docstring:
         return None
 
     def __setitem__(self, name: str, section: Section):
+        if name == 'Methods':
+            self.sections.append(section)
+            return
         for k, section_ in enumerate(self.sections):
             if section_.name == name:
                 self.sections[k] = section

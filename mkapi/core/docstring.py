@@ -6,7 +6,7 @@ from typing import Any, Iterator, List, Tuple
 
 from mkapi.core.base import Docstring, Item, Section, Type
 from mkapi.core.linker import get_link, replace_link
-from mkapi.core.preprocess import split_type
+from mkapi.core import preprocess
 from mkapi.core.signature import get_signature
 from mkapi.utils import get_indent, join
 
@@ -204,7 +204,7 @@ def parse_property(doc: Docstring, obj: Any):
     if not doc.type:
         section = doc.sections[0]
         markdown = section.markdown
-        type, markdown = split_type(markdown)
+        type, markdown = preprocess.split_type(markdown)
         if type:
             doc.type = Type(type)
             section.markdown = markdown
@@ -252,8 +252,10 @@ def postprocess(doc: Docstring, obj: Any):
         parse_attribute(doc, obj)
     if isinstance(obj, property):
         parse_property(doc, obj)
+
     if not callable(obj):
         return
+
     signature = get_signature(obj)
     if signature.signature is None:
         return

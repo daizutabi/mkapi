@@ -45,13 +45,17 @@ class Renderer:
         heading = node.parent is None
         object = self.render_object(node.object, heading=heading, upper=upper)
         docstring = self.render_docstring(node.docstring)
-        members = []
-        if node.members:
-            members = [self.render(member) for member in node.members]
-        return self.render_node(node, object, docstring, members)
+        # if node.parent is None:
+        #     objects = [member.object for member in node.members]
+        #     objects = self.render_objects(objects)
+        # else:
+        #     objects = ""
+        objects = ""
+        members = [self.render(member) for member in node.members]
+        return self.render_node(node, object, docstring, objects, members)
 
     def render_node(
-        self, node: Node, object: str, docstring: str, members: List[str]
+        self, node: Node, object: str, docstring: str, objects: str, members: List[str]
     ) -> str:
         """Returns a rendered HTML for Node using prerendered components.
 
@@ -67,7 +71,11 @@ class Renderer:
         )
 
     def render_object(
-        self, object: Object, heading: bool = False, upper: bool = False
+        self,
+        object: Object,
+        heading: bool = False,
+        upper: bool = False,
+        internal_link: bool = False,
     ) -> str:
         """Returns a rendered HTML for Object.
 
@@ -77,6 +85,12 @@ class Renderer:
             upper: If True, object is written in upper case letters.
         """
         context = linker.resolve_object(object.html)
+        if internal_link:
+            context["prefix_url"] = "#" + object.prefix
+            context["name_url"] = "#" + object.id
+            if context["level"]:
+                context["level"] += 1
+
         if context["level"] and heading:
             template = self.templates["object_heading"]
         else:
