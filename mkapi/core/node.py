@@ -102,7 +102,7 @@ def get_kind(obj) -> str:
             return "readwrite_property"
         else:
             return "readonly_property"
-    try:
+    try:  # KeyError on __dataclass_field__ (Issue#13).
         if hasattr(obj, "__dataclass_fields__") and hasattr(obj, "__qualname__"):
             return "dataclass"
         if hasattr(obj, "__self__") and type(obj.__self__) is type:

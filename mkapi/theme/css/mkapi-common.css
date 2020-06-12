@@ -111,11 +111,11 @@ span.mkapi-object-signature {
   margin-left: 20px;
 }
 
-/* h1 ~ .mkapi-docstring,
-h2 ~ .mkapi-docstring,
-h3 ~ .mkapi-docstring {
+h1.mkapi-object.plain ~ .mkapi-docstring,
+h2.mkapi-object.plain ~ .mkapi-docstring,
+h3.mkapi-object.plain ~ .mkapi-docstring {
   margin-left: 0px;
-} */
+}
 
 .mkapi-section {
   margin-top: 2px;
@@ -284,6 +284,7 @@ h3 ~ .mkapi-docstring {
   margin-bottom: 0px;
   margin-left: 30px;
   text-indent: -20px;
+  list-style: none;
   padding-top: 1px;
   padding-bottom: 1px;
   line-height: 1.25em;

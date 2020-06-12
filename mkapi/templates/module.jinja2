@@ -1,5 +1,9 @@
 # ![mkapi]({{ module.object.id }}{{ module_filter }}|link|plain)
 
 {% for object in module.objects %}
+{% if 'heading' in object_filter %}
 ## ![mkapi]({{ object }}{{ object_filter }})
+{% else %}
+![mkapi]({{ object }}{{ object_filter }})
+{% endif %}
 {% endfor %}

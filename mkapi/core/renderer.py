@@ -121,7 +121,7 @@ class Renderer:
         Args:
             module: Module instance.
             filters: A list of filters. Avaiable filters: `upper`, `inherit`,
-                `strict`.
+                `strict`, `heading`.
 
         Note:
             This function returns Markdown instead of HTML. The returned Markdown

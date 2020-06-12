@@ -36,7 +36,7 @@ nav:
     - appendix/method.md
     - appendix/inherit.md
     - appendix/order.md
-  - API: mkapi/api/mkapi|upper|strict
+  - API: mkapi/api/mkapi|upper|strict|heading
 
 markdown_extensions:
   - admonition
