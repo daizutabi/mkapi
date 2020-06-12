@@ -8,7 +8,7 @@ repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 
 theme:
-  name: ivory
+  name: readthedocs
   highlightjs: true
   hljs_languages:
     - yaml

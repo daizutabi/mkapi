@@ -73,14 +73,16 @@ class MkapiPlugin(BasePlugin):
         config["docs_dir"] = root
         files_ = get_files(config)
         config["docs_dir"] = docs_dir
+        theme_name = config['theme'].name
 
         css = []
         js = []
         for file in files_:
             path = file.src_path.replace("\\", "/")
             if path.endswith(".css"):
-                files.append(file)
-                css.append(path)
+                if 'common' in path or theme_name in path:
+                    files.append(file)
+                    css.append(path)
             elif path.endswith(".js"):
                 files.append(file)
                 js.append(path)
@@ -94,9 +96,6 @@ class MkapiPlugin(BasePlugin):
         js = [x for x in js if x not in config["extra_javascript"]]
         config["extra_css"] = css + config["extra_css"]
         config["extra_javascript"] = js + config["extra_javascript"]
-
-        for file in files:
-            normalize_file(file, config)
 
         return files
 
@@ -121,17 +120,3 @@ class MkapiPlugin(BasePlugin):
             server.watch(root, builder)
         self.__class__.server = server
         return server
-
-
-NORMALIZE_PATTERN = re.compile(r"(^|[\\/])\w*[0-9]+[._ ](.*?)")
-
-
-def normalize_file(file, config):
-    if file.dest_path.endswith(".html"):
-        file.dest_path = NORMALIZE_PATTERN.sub(r"\1\2", file.dest_path)
-        file.dest_path = file.dest_path.replace(" ", "_")
-        file.abs_dest_path = os.path.normpath(
-            os.path.join(config["site_dir"], file.dest_path)
-        )
-        file.url = NORMALIZE_PATTERN.sub(r"\1\2", file.url)
-        file.url = file.url.replace(" ", "_")

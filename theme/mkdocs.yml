@@ -1,0 +1,12 @@
+site_name: Example
+
+theme: ivory
+
+plugins:
+  - search
+  - mkapi:
+      src_dirs: [docs]
+
+nav:
+  - index.md
+  - API: mkapi/api/mkapi|upper

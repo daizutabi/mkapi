@@ -35,15 +35,13 @@ class Renderer:
             name = os.path.splitext(name)[0]
             self.templates[name] = template
 
-    def render(self, node: Node, upper: bool = False) -> str:
+    def render(self, node: Node, filters: List[str] = None) -> str:
         """Returns a rendered HTML for Node.
 
         Args:
             node: Node instance.
-            upper: If True, object is written in upper case letters.
         """
-        heading = node.parent is None
-        object = self.render_object(node.object, heading=heading, upper=upper)
+        object = self.render_object(node.object, filters=filters)
         docstring = self.render_docstring(node.docstring)
         members = [self.render(member) for member in node.members]
         return self.render_node(node, object, docstring, members)
@@ -64,9 +62,7 @@ class Renderer:
             node=node, object=object, docstring=docstring, members=members
         )
 
-    def render_object(
-        self, object: Object, heading: bool = False, upper: bool = False,
-    ) -> str:
+    def render_object(self, object: Object, filters: List[str] = None) -> str:
         """Returns a rendered HTML for Object.
 
         Args:
@@ -75,11 +71,13 @@ class Renderer:
             upper: If True, object is written in upper case letters.
         """
         context = linker.resolve_object(object.html)
-        if context["level"] and heading:
+        if context["level"]:
             template = self.templates["object_heading"]
         else:
             template = self.templates["object_div"]
-        return template.render(context, object=object, upper=upper)
+        if filters is None:
+            filters = []
+        return template.render(context, object=object, filters=filters)
 
     def render_object_member(self, name: str, url: str, signature: str) -> str:
         """Returns a rendered HTML for Object in toc.

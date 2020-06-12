@@ -60,7 +60,7 @@ class Page:
             postprocess.transform(node, filters)
             self.nodes.append(node)
             markdown = node.get_markdown(level=len(heading), callback=callback)
-            yield node_markdown(index, markdown, "upper" in filters)
+            yield node_markdown(index, markdown, filters)
             cursor = end
         if cursor < len(source):
             markdown = source[cursor:].strip()
@@ -76,8 +76,8 @@ class Page:
 
         def replace(match):
             node = self.nodes[int(match.group(1))]
+            filters = match.group(2).strip("|")
             node.set_html(match.group(3))
-            upper = match.group(2) == "True"
-            return renderer.render(node, upper=upper)
+            return renderer.render(node, filters=filters)
 
         return re.sub(NODE_PATTERN, replace, html)

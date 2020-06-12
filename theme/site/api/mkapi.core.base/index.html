@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>mkapi.core.base - Example</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../../css/theme.css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" />
+  <link href="//use.fontawesome.com/releases/v5.8.1/css/all.css" rel="stylesheet" />
+  <link href="//use.fontawesome.com/releases/v5.8.1/css/v4-shims.css" rel="stylesheet" />
+  <link href="../../css/mkapi-common.css" rel="stylesheet" />
+  <link href="../../css/mkapi-readthedocs.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "mkapi.core.base";
+    var mkdocs_page_input_path = "api\\mkapi.core.base.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Example</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">API</span></p>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="#">mkapi.core</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core/">mkapi.core</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="./">mkapi.core.base</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicorebasebase">mkapi.core.base.Base</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebasebaseset_html">mkapi.core.base.Base.set_html</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicorebaseinline">mkapi.core.base.Inline</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseinlinebool">mkapi.core.base.Inline.bool</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseinlineiter">mkapi.core.base.Inline.iter</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseinlineset_html">mkapi.core.base.Inline.set_html</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicorebasetype">mkapi.core.base.Type</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseinlinebool_1">mkapi.core.base.Inline.bool</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseinlineiter_1">mkapi.core.base.Inline.iter</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseinlineset_html_1">mkapi.core.base.Inline.set_html</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicorebaseitem">mkapi.core.base.Item</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseinlinebool_2">mkapi.core.base.Inline.bool</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseitemiter">mkapi.core.base.Item.iter</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebaseitemset_html">mkapi.core.base.Item.set_html</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicorebasesection">mkapi.core.base.Section</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebasebaseset_html_1">mkapi.core.base.Base.set_html</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebasesectioniter">mkapi.core.base.Section.iter</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebasesectiongetitem">mkapi.core.base.Section.getitem</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebasesectiondelitem">mkapi.core.base.Section.delitem</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebasesectioncontains">mkapi.core.base.Section.contains</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicorebasedocstring">mkapi.core.base.Docstring</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicorebaseobject">mkapi.core.base.Object</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#mkapicorebasebaseset_html_2">mkapi.core.base.Base.set_html</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.docstring/">mkapi.core.docstring</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.inherit/">mkapi.core.inherit</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.linker/">mkapi.core.linker</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.module/">mkapi.core.module</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.node/">mkapi.core.node</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.object/">mkapi.core.object</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.page/">mkapi.core.page</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.renderer/">mkapi.core.renderer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.signature/">mkapi.core.signature</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.tree/">mkapi.core.tree</a>
+                </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="#">mkapi.plugins</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.plugins.mkdocs/">mkapi.plugins.mkdocs</a>
+                </li>
+    </ul>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Example</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>mkapi.core &raquo;</li>
+        
+      
+        
+          <li>API &raquo;</li>
+        
+      
+    
+    <li>mkapi.core.base</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <div class="mkapi-node" id="mkapi.core.base">
+<h1 id="mkapicorebase" class="mkapi-object mkapi-object-module plain">
+<span class="mkapi-object-kind mkapi-object-kind-module">MODULE</span>
+<span class="mkapi-object-prefix"><a href="../mkapi.core/#mkapi.core">MKAPI.CORE</a>.</span><span class="mkapi-object-name">BASE</span><span class="mkapi-object-signature"></span>
+    
+</h1>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>This module provides entity classes to represent docstring structure.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-classes">
+
+<div class="mkapi-section-name mkapi-section-name-classes">
+<span class="mkapi-section-name-body">Classes</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-classes"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name dataclass" title="dataclass">Base</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Base class.</span></li>
+
+<li><code class="mkapi-args-name dataclass" title="dataclass">Inline</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Inline class.</span></li>
+
+<li><code class="mkapi-args-name dataclass" title="dataclass">Type</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Type class represents type of <a href="./#mkapi.core.base.Item">Item</a>, <a href="./#mkapi.core.base.Section">Section</a>, <a href="./#mkapi.core.base.Docstring">Docstring</a>,
+or <a href="./#mkapi.core.base.Object">Object</a>.</span></li>
+
+<li><code class="mkapi-args-name dataclass" title="dataclass">Item</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Item class represents an item in Parameters, Attributes, and Raises sections,
+<em>etc.</em></span></li>
+
+<li><code class="mkapi-args-name dataclass" title="dataclass">Section</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Section class represents a section in docstring.</span></li>
+
+<li><code class="mkapi-args-name dataclass" title="dataclass">Docstring</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Docstring class represents a docstring of an object.</span></li>
+
+<li><code class="mkapi-args-name dataclass" title="dataclass">Object</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Object class represents an object.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.base.Base">
+<h2 id="mkapicorebasebase" class="mkapi-object mkapi-object-dataclass code">
+<span class="mkapi-object-kind mkapi-object-kind-dataclass">DATACLASS</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.base">mkapi.core.base</a>.</code><code class="mkapi-object-name">Base</code><code class="mkapi-object-signature">(name=&#39;&#39;, markdown=&#39;&#39;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Base class.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">name</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Name of self.</span></li>
+
+<li><code class="mkapi-args-name">markdown</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Markdown source.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-attributes">
+
+<div class="mkapi-section-name mkapi-section-name-attributes">
+<span class="mkapi-section-name-body">Attributes</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-attributes"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">html</code>
+<span class="mkapi-args-type">(str)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">HTML string after conversion.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-methods">
+
+<div class="mkapi-section-name mkapi-section-name-methods">
+<span class="mkapi-section-name-body">Methods</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-methods"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Base.set_html">set_html</a><span class="mkapi-object-signature">(html)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Sets <code>html</code> attribute.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+  <div class="mkapi-members">
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Base.set_html">
+<h3 id="mkapicorebasebaseset_html" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">set_html</code><code class="mkapi-object-signature">(html)</code>
+    
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Sets <code>html</code> attribute.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">html</code>
+<span class="mkapi-args-type">(str)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">HTML string.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+  </div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.base.Inline">
+<h2 id="mkapicorebaseinline" class="mkapi-object mkapi-object-dataclass code">
+<span class="mkapi-object-kind mkapi-object-kind-dataclass">DATACLASS</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.base">mkapi.core.base</a>.</code><code class="mkapi-object-name">Inline</code><code class="mkapi-object-signature">(name=&#39;&#39;, markdown=&#39;&#39;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section mkapi-section-bases">
+
+<div class="mkapi-section-name mkapi-section-name-bases">
+<span class="mkapi-section-name-body">Bases</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-bases">
+<span class="mkapi-base"><a href="./#mkapi.core.base.Base">mkapi.core.base.Base</a></span>
+</div>
+</div>
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Inline class.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; inline = Inline()
+&gt;&gt;&gt; bool(inline)
+False
+&gt;&gt;&gt; inline = Inline('markdown')
+&gt;&gt;&gt; inline.name == inline.markdown
+True
+&gt;&gt;&gt; bool(inline)
+True
+&gt;&gt;&gt; next(iter(inline)) is inline
+True
+&gt;&gt;&gt; inline.set_html(&quot;&lt;p&gt;p1&lt;/p&gt;&lt;p&gt;p2&lt;/p&gt;&quot;)
+&gt;&gt;&gt; inline.html
+'p1&lt;br&gt;p2'
+</code></pre></div>
+</div>
+
+<div class="mkapi-section mkapi-section-methods">
+
+<div class="mkapi-section-name mkapi-section-name-methods">
+<span class="mkapi-section-name-body">Methods</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-methods"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Inline.__bool__">__bool__</a><span class="mkapi-object-signature">()</span></code>
+<span class="mkapi-args-type">(bool)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Returns True if name is not empty.</span></li>
+
+<li><code class="mkapi-args-name generator" title="generator"><a href="#mkapi.core.base.Inline.__iter__">__iter__</a><span class="mkapi-object-signature">()</span></code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Base">Base</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Yields self if the markdown attribute has link form.</span></li>
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Inline.set_html">set_html</a><span class="mkapi-object-signature">(html)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Sets <code>html</code> attribute cleaning <code>p</code> tags.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+  <div class="mkapi-members">
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Inline.__bool__">
+<h3 id="mkapicorebaseinlinebool" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">__bool__</code><code class="mkapi-object-signature">()</code>
+    <span class="mkapi-args-type"> &#x2192; bool</span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Returns True if name is not empty.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Inline.__iter__">
+<h3 id="mkapicorebaseinlineiter" class="mkapi-object mkapi-object-generator code">
+<span class="mkapi-object-kind mkapi-object-kind-generator">GENERATOR</span>
+<code class="mkapi-object-name">__iter__</code><code class="mkapi-object-signature">()</code>
+    <span class="mkapi-args-type"> &#x2192; <a href="./#mkapi.core.base.Base">Base</a></span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Yields self if the markdown attribute has link form.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Inline.set_html">
+<h3 id="mkapicorebaseinlineset_html" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">set_html</code><code class="mkapi-object-signature">(html)</code>
+    
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Sets <code>html</code> attribute cleaning <code>p</code> tags.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+  </div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.base.Type">
+<h2 id="mkapicorebasetype" class="mkapi-object mkapi-object-dataclass code">
+<span class="mkapi-object-kind mkapi-object-kind-dataclass">DATACLASS</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.base">mkapi.core.base</a>.</code><code class="mkapi-object-name">Type</code><code class="mkapi-object-signature">(name=&#39;&#39;, markdown=&#39;&#39;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section mkapi-section-bases">
+
+<div class="mkapi-section-name mkapi-section-name-bases">
+<span class="mkapi-section-name-body">Bases</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-bases">
+<span class="mkapi-base"><a href="./#mkapi.core.base.Inline">mkapi.core.base.Inline</a></span>
+
+<span class="mkapi-base"><a href="./#mkapi.core.base.Base">mkapi.core.base.Base</a></span>
+</div>
+</div>
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Type class represents type of <a href="./#mkapi.core.base.Item">Item</a>, <a href="./#mkapi.core.base.Section">Section</a>, <a href="./#mkapi.core.base.Docstring">Docstring</a>,
+or <a href="./#mkapi.core.base.Object">Object</a>.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; a = Type('str')
+&gt;&gt;&gt; a
+Type(name='str', markdown='', html='str')
+&gt;&gt;&gt; list(a)
+[]
+&gt;&gt;&gt; b = Type('[Object](base.Object)')
+&gt;&gt;&gt; b
+Type(name='[Object](base.Object)', markdown='[Object](base.Object)', html='')
+&gt;&gt;&gt; list(b) == [b]
+True
+</code></pre></div>
+</div>
+
+<div class="mkapi-section mkapi-section-methods">
+
+<div class="mkapi-section-name mkapi-section-name-methods">
+<span class="mkapi-section-name-body">Methods</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-methods"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Inline.__bool__">__bool__</a><span class="mkapi-object-signature">()</span></code>
+<span class="mkapi-args-type">(bool)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Returns True if name is not empty.</span></li>
+
+<li><code class="mkapi-args-name generator" title="generator"><a href="#mkapi.core.base.Inline.__iter__">__iter__</a><span class="mkapi-object-signature">()</span></code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Base">Base</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Yields self if the markdown attribute has link form.</span></li>
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Inline.set_html">set_html</a><span class="mkapi-object-signature">(html)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Sets <code>html</code> attribute cleaning <code>p</code> tags.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+  <div class="mkapi-members">
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Inline.__bool__">
+<h3 id="mkapicorebaseinlinebool_1" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">__bool__</code><code class="mkapi-object-signature">()</code>
+    <span class="mkapi-args-type"> &#x2192; bool</span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Returns True if name is not empty.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Inline.__iter__">
+<h3 id="mkapicorebaseinlineiter_1" class="mkapi-object mkapi-object-generator code">
+<span class="mkapi-object-kind mkapi-object-kind-generator">GENERATOR</span>
+<code class="mkapi-object-name">__iter__</code><code class="mkapi-object-signature">()</code>
+    <span class="mkapi-args-type"> &#x2192; <a href="./#mkapi.core.base.Base">Base</a></span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Yields self if the markdown attribute has link form.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Inline.set_html">
+<h3 id="mkapicorebaseinlineset_html_1" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">set_html</code><code class="mkapi-object-signature">(html)</code>
+    
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Sets <code>html</code> attribute cleaning <code>p</code> tags.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+  </div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.base.Item">
+<h2 id="mkapicorebaseitem" class="mkapi-object mkapi-object-dataclass code">
+<span class="mkapi-object-kind mkapi-object-kind-dataclass">DATACLASS</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.base">mkapi.core.base</a>.</code><code class="mkapi-object-name">Item</code><code class="mkapi-object-signature">(name=&#39;&#39;, markdown=&#39;&#39;, type=&lt;factory&gt;, kind=&#39;&#39;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section mkapi-section-bases">
+
+<div class="mkapi-section-name mkapi-section-name-bases">
+<span class="mkapi-section-name-body">Bases</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-bases">
+<span class="mkapi-base"><a href="./#mkapi.core.base.Type">mkapi.core.base.Type</a></span>
+
+<span class="mkapi-base"><a href="./#mkapi.core.base.Inline">mkapi.core.base.Inline</a></span>
+
+<span class="mkapi-base"><a href="./#mkapi.core.base.Base">mkapi.core.base.Base</a></span>
+</div>
+</div>
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Item class represents an item in Parameters, Attributes, and Raises sections,
+<em>etc.</em></p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">type</code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Type">Type</a>, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Type of self.</span></li>
+
+<li><code class="mkapi-args-name">kind</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Kind of self, for example <code>readonly_property</code>. This value is rendered
+as a class attribute in HTML.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-attributes">
+
+<div class="mkapi-section-name mkapi-section-name-attributes">
+<span class="mkapi-section-name-body">Attributes</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-attributes"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">desc</code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Inline">Inline</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Description of self.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; item = Item('[x](x)', 'A parameter.', Type('int'))
+&gt;&gt;&gt; item.name, item.markdown, item.html
+('[x](x)', '[x](x)', '')
+&gt;&gt;&gt; item.type
+Type(name='int', markdown='', html='int')
+&gt;&gt;&gt; item.desc
+Inline(name='A parameter.', markdown='A parameter.', html='')
+&gt;&gt;&gt; it = iter(item)
+&gt;&gt;&gt; next(it) is item
+True
+&gt;&gt;&gt; next(it) is item.desc
+True
+&gt;&gt;&gt; item.set_html('&lt;p&gt;&lt;strong&gt;init&lt;/strong&gt;&lt;/p&gt;')
+&gt;&gt;&gt; item.html
+'__init__'
+</code></pre></div>
+</div>
+
+<div class="mkapi-section mkapi-section-methods">
+
+<div class="mkapi-section-name mkapi-section-name-methods">
+<span class="mkapi-section-name-body">Methods</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-methods"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Inline.__bool__">__bool__</a><span class="mkapi-object-signature">()</span></code>
+<span class="mkapi-args-type">(bool)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Returns True if name is not empty.</span></li>
+
+<li><code class="mkapi-args-name generator" title="generator"><a href="#mkapi.core.base.Item.__iter__">__iter__</a><span class="mkapi-object-signature">()</span></code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Base">Base</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Yields self if the markdown attribute has link form.</span></li>
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Item.set_html">set_html</a><span class="mkapi-object-signature">(html)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Sets <code>html</code> attribute cleaning <code>p</code> tags.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+  <div class="mkapi-members">
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Inline.__bool__">
+<h3 id="mkapicorebaseinlinebool_2" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">__bool__</code><code class="mkapi-object-signature">()</code>
+    <span class="mkapi-args-type"> &#x2192; bool</span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Returns True if name is not empty.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Item.__iter__">
+<h3 id="mkapicorebaseitemiter" class="mkapi-object mkapi-object-generator code">
+<span class="mkapi-object-kind mkapi-object-kind-generator">GENERATOR</span>
+<code class="mkapi-object-name">__iter__</code><code class="mkapi-object-signature">()</code>
+    <span class="mkapi-args-type"> &#x2192; <a href="./#mkapi.core.base.Base">Base</a></span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Yields self if the markdown attribute has link form.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Item.set_html">
+<h3 id="mkapicorebaseitemset_html" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">set_html</code><code class="mkapi-object-signature">(html)</code>
+    
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Sets <code>html</code> attribute cleaning <code>p</code> tags.</p></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+  </div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.base.Section">
+<h2 id="mkapicorebasesection" class="mkapi-object mkapi-object-dataclass code">
+<span class="mkapi-object-kind mkapi-object-kind-dataclass">DATACLASS</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.base">mkapi.core.base</a>.</code><code class="mkapi-object-name">Section</code><code class="mkapi-object-signature">(name=&#39;&#39;, markdown=&#39;&#39;, items=&lt;factory&gt;, type=&lt;factory&gt;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section mkapi-section-bases">
+
+<div class="mkapi-section-name mkapi-section-name-bases">
+<span class="mkapi-section-name-body">Bases</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-bases">
+<span class="mkapi-base"><a href="./#mkapi.core.base.Base">mkapi.core.base.Base</a></span>
+</div>
+</div>
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Section class represents a section in docstring.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">items</code>
+<span class="mkapi-args-type">(list of <a href="./#mkapi.core.base.Item">Item</a>, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">List for Arguments, Attributes, or Raises sections, <em>etc.</em></span></li>
+
+<li><code class="mkapi-args-name">type</code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Type">Type</a>, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Type of self.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><p><code>Section</code> is iterable:</p>
+<pre><code class="python">&gt;&gt;&gt; section = Section('Returns', markdown='An integer.')
+&gt;&gt;&gt; for x in section:
+...     assert x is section
+</code></pre>
+
+<pre><code class="python">&gt;&gt;&gt; items = [Item('x'), Item('[y](a)'), Item('z')]
+&gt;&gt;&gt; section = Section('Parameters', items=items)
+&gt;&gt;&gt; [item.name for item in section]
+['[y](a)']
+</code></pre>
+
+<p>Indexing:</p>
+<pre><code class="python">&gt;&gt;&gt; isinstance(section['x'], Item)
+True
+&gt;&gt;&gt; section['z'].name
+'z'
+</code></pre>
+
+<p>Contains:</p>
+<pre><code class="python">&gt;&gt;&gt; 'x' in section
+True
+</code></pre></div>
+</div>
+
+<div class="mkapi-section mkapi-section-methods">
+
+<div class="mkapi-section-name mkapi-section-name-methods">
+<span class="mkapi-section-name-body">Methods</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-methods"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Base.set_html">set_html</a><span class="mkapi-object-signature">(html)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Sets <code>html</code> attribute.</span></li>
+
+<li><code class="mkapi-args-name generator" title="generator"><a href="#mkapi.core.base.Section.__iter__">__iter__</a><span class="mkapi-object-signature">()</span></code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Base">Base</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Yields a <a href="./#mkapi.core.base.Base">Base</a> instance that has non empty Markdown.</span></li>
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Section.__getitem__">__getitem__</a><span class="mkapi-object-signature">(name)</span></code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Item">Item</a>, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Returns an <a href="./#mkapi.core.base.Item">Item</a> instance whose name is equal to <code>name</code>. If not found,
+returns None.</span></li>
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Section.__delitem__">__delitem__</a><span class="mkapi-object-signature">(name)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Delete an <a href="./#mkapi.core.base.Item">Item</a> instance whose name is equal to <code>name</code>.</span></li>
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Section.__contains__">__contains__</a><span class="mkapi-object-signature">(name)</span></code>
+<span class="mkapi-args-type">(bool)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Returns True if there is an <a href="./#mkapi.core.base.Item">Item</a> instance whose name is <code>name</code>.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+  <div class="mkapi-members">
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Base.set_html">
+<h3 id="mkapicorebasebaseset_html_1" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">set_html</code><code class="mkapi-object-signature">(html)</code>
+    
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Sets <code>html</code> attribute.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">html</code>
+<span class="mkapi-args-type">(str)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">HTML string.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Section.__iter__">
+<h3 id="mkapicorebasesectioniter" class="mkapi-object mkapi-object-generator code">
+<span class="mkapi-object-kind mkapi-object-kind-generator">GENERATOR</span>
+<code class="mkapi-object-name">__iter__</code><code class="mkapi-object-signature">()</code>
+    <span class="mkapi-args-type"> &#x2192; <a href="./#mkapi.core.base.Base">Base</a></span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Yields a <a href="./#mkapi.core.base.Base">Base</a> instance that has non empty Markdown.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">name</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Item name.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Section.__getitem__">
+<h3 id="mkapicorebasesectiongetitem" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">__getitem__</code><code class="mkapi-object-signature">(name)</code>
+    <span class="mkapi-args-type"> &#x2192; <a href="./#mkapi.core.base.Item">Item</a>, optional</span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Returns an <a href="./#mkapi.core.base.Item">Item</a> instance whose name is equal to <code>name</code>. If not found,
+returns None.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">name</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Item name.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Section.__delitem__">
+<h3 id="mkapicorebasesectiondelitem" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">__delitem__</code><code class="mkapi-object-signature">(name)</code>
+    
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Delete an <a href="./#mkapi.core.base.Item">Item</a> instance whose name is equal to <code>name</code>.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">name</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Item name.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Section.__contains__">
+<h3 id="mkapicorebasesectioncontains" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">__contains__</code><code class="mkapi-object-signature">(name)</code>
+    <span class="mkapi-args-type"> &#x2192; bool</span>
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Returns True if there is an <a href="./#mkapi.core.base.Item">Item</a> instance whose name is <code>name</code>.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">name</code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Item name.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+  </div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.base.Docstring">
+<h2 id="mkapicorebasedocstring" class="mkapi-object mkapi-object-dataclass code">
+<span class="mkapi-object-kind mkapi-object-kind-dataclass">DATACLASS</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.base">mkapi.core.base</a>.</code><code class="mkapi-object-name">Docstring</code><code class="mkapi-object-signature">(sections=&lt;factory&gt;, type=&lt;factory&gt;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Docstring class represents a docstring of an object.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">sections</code>
+<span class="mkapi-args-type">(list of <a href="./#mkapi.core.base.Section">Section</a>, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">List of Section instance.</span></li>
+
+<li><code class="mkapi-args-name">type</code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Type">Type</a>, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Type for Returns or Yields sections.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><p>Empty docstring:</p>
+<pre><code class="python">&gt;&gt;&gt; docstring = Docstring()
+&gt;&gt;&gt; assert not docstring
+</code></pre>
+
+<p>Docstring with 3 sections:</p>
+<pre><code class="python">&gt;&gt;&gt; default = Section(&quot;&quot;, markdown=&quot;Default&quot;)
+&gt;&gt;&gt; parameters = Section(&quot;Parameters&quot;, items=[Item(&quot;a&quot;), Item(&quot;[b](!a)&quot;)])
+&gt;&gt;&gt; returns = Section(&quot;Returns&quot;, markdown=&quot;Results&quot;)
+&gt;&gt;&gt; docstring = Docstring([default, parameters, returns])
+</code></pre>
+
+<p><code>Docstring</code> is iterable:</p>
+<pre><code class="python">&gt;&gt;&gt; [base.name for base in docstring]
+['', '[b](!a)', 'Returns']
+</code></pre>
+
+<p>Indexing:</p>
+<pre><code class="python">&gt;&gt;&gt; docstring[&quot;Parameters&quot;].items[0].name
+'a'
+</code></pre></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.base.Object">
+<h2 id="mkapicorebaseobject" class="mkapi-object mkapi-object-dataclass code">
+<span class="mkapi-object-kind mkapi-object-kind-dataclass">DATACLASS</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.base">mkapi.core.base</a>.</code><code class="mkapi-object-name">Object</code><code class="mkapi-object-signature">(name=&#39;&#39;, prefix=&#39;&#39;, qualname=&#39;&#39;, kind=&#39;&#39;, signature=&lt;factory&gt;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section mkapi-section-bases">
+
+<div class="mkapi-section-name mkapi-section-name-bases">
+<span class="mkapi-section-name-body">Bases</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-bases">
+<span class="mkapi-base"><a href="./#mkapi.core.base.Base">mkapi.core.base.Base</a></span>
+</div>
+</div>
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Object class represents an object.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">name</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Object name.</span></li>
+
+<li><code class="mkapi-args-name">prefix</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Object prefix.</span></li>
+
+<li><code class="mkapi-args-name">qualname</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Qualified name.</span></li>
+
+<li><code class="mkapi-args-name">kind</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Object kind such as 'class', 'function', <em>etc.</em></span></li>
+
+<li><code class="mkapi-args-name">signature</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.signature/#mkapi.core.signature.Signature">Signature</a>, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Signature if object is module or callable.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-attributes">
+
+<div class="mkapi-section-name mkapi-section-name-attributes">
+<span class="mkapi-section-name-body">Attributes</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-attributes"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">id</code>
+<span class="mkapi-args-type">(str)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">ID attribute of HTML.</span></li>
+
+<li><code class="mkapi-args-name">type</code>
+<span class="mkapi-args-type">(<a href="./#mkapi.core.base.Type">Type</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Type for missing Returns and Yields sections.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-methods">
+
+<div class="mkapi-section-name mkapi-section-name-methods">
+<span class="mkapi-section-name-body">Methods</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-methods"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name method" title="method"><a href="#mkapi.core.base.Base.set_html">set_html</a><span class="mkapi-object-signature">(html)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Sets <code>html</code> attribute.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+  <div class="mkapi-members">
+  
+    <div class="mkapi-member">
+      <div class="mkapi-node" id="mkapi.core.base.Base.set_html">
+<h3 id="mkapicorebasebaseset_html_2" class="mkapi-object mkapi-object-method code">
+<span class="mkapi-object-kind mkapi-object-kind-method">METHOD</span>
+<code class="mkapi-object-name">set_html</code><code class="mkapi-object-signature">(html)</code>
+    
+</h3>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Sets <code>html</code> attribute.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">html</code>
+<span class="mkapi-args-type">(str)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">HTML string.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+    </div>
+  
+  </div>
+
+</div>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../mkapi.core.docstring/" class="btn btn-neutral float-right" title="mkapi.core.docstring">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../mkapi.core/" class="btn btn-neutral" title="mkapi.core"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href="../mkapi.core/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../mkapi.core.docstring/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../js/mkapi.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

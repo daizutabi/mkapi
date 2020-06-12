@@ -65,14 +65,18 @@ class Node(Tree):
             callback (callable, optional): To modify Markdown source.
         """
         markdowns = []
+        member_objects = [member.object for member in self.members]
         for base in self:
             if callback:
                 markdown = callback(base)
             else:
                 markdown = base.markdown
             if isinstance(base, Object):
-                if level and self.object == base:
-                    markdown = "#" * level + " " + markdown
+                if level:
+                    if base == self.object:
+                        markdown = "#" * level + " " + markdown
+                    elif base in member_objects:
+                        markdown = "#" * (level + 1) + " " + markdown
             markdowns.append(markdown)
         return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
@@ -98,10 +102,13 @@ def get_kind(obj) -> str:
             return "readwrite_property"
         else:
             return "readonly_property"
-    if hasattr(obj, "__dataclass_fields__") and hasattr(obj, "__qualname__"):
-        return "dataclass"
-    if hasattr(obj, "__self__") and type(obj.__self__) is type:
-        return "classmethod"
+    try:
+        if hasattr(obj, "__dataclass_fields__") and hasattr(obj, "__qualname__"):
+            return "dataclass"
+        if hasattr(obj, "__self__") and type(obj.__self__) is type:
+            return "classmethod"
+    except Exception:
+        pass
     if inspect.isclass(obj):
         return "class"
     if inspect.isgeneratorfunction(obj):

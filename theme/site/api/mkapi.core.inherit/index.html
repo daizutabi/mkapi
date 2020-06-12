@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>mkapi.core.inherit - Example</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../../css/theme.css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" />
+  <link href="//use.fontawesome.com/releases/v5.8.1/css/all.css" rel="stylesheet" />
+  <link href="//use.fontawesome.com/releases/v5.8.1/css/v4-shims.css" rel="stylesheet" />
+  <link href="../../css/mkapi-common.css" rel="stylesheet" />
+  <link href="../../css/mkapi-readthedocs.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "mkapi.core.inherit";
+    var mkdocs_page_input_path = "api\\mkapi.core.inherit.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Example</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">API</span></p>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="#">mkapi.core</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core/">mkapi.core</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.base/">mkapi.core.base</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.docstring/">mkapi.core.docstring</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="./">mkapi.core.inherit</a>
+    <ul class="current">
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicoreinheritget_params">mkapi.core.inherit.get_params</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicoreinheritis_complete">mkapi.core.inherit.is_complete</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicoreinheritinherit_base">mkapi.core.inherit.inherit_base</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicoreinheritinherit_signature">mkapi.core.inherit.inherit_signature</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicoreinheritinherit_parameters">mkapi.core.inherit.inherit_parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicoreinheritget_bases">mkapi.core.inherit.get_bases</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicoreinheritinherit">mkapi.core.inherit.inherit</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#mkapicoreinheritinherit_by_filters">mkapi.core.inherit.inherit_by_filters</a>
+    </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.linker/">mkapi.core.linker</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.module/">mkapi.core.module</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.node/">mkapi.core.node</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.object/">mkapi.core.object</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.page/">mkapi.core.page</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.renderer/">mkapi.core.renderer</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.signature/">mkapi.core.signature</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.core.tree/">mkapi.core.tree</a>
+                </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="#">mkapi.plugins</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../mkapi.plugins.mkdocs/">mkapi.plugins.mkdocs</a>
+                </li>
+    </ul>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Example</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>mkapi.core &raquo;</li>
+        
+      
+        
+          <li>API &raquo;</li>
+        
+      
+    
+    <li>mkapi.core.inherit</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <div class="mkapi-node" id="mkapi.core.inherit">
+<h1 id="mkapicoreinherit" class="mkapi-object mkapi-object-module plain">
+<span class="mkapi-object-kind mkapi-object-kind-module">MODULE</span>
+<span class="mkapi-object-prefix"><a href="../mkapi.core/#mkapi.core">MKAPI.CORE</a>.</span><span class="mkapi-object-name">INHERIT</span><span class="mkapi-object-signature"></span>
+    
+</h1>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>This module implements the functionality of docstring inheritance.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-functions">
+
+<div class="mkapi-section-name mkapi-section-name-functions">
+<span class="mkapi-section-name-body">Functions</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-functions"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name function" title="function"><a href="#mkapi.core.inherit.get_params">get_params</a><span class="mkapi-object-signature">(node,name)</span></code>
+<span class="mkapi-args-type">(dict(str: str), dict(str: str))</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Returns a tuple of (docstring params, signature params).</span></li>
+
+<li><code class="mkapi-args-name function" title="function"><a href="#mkapi.core.inherit.is_complete">is_complete</a><span class="mkapi-object-signature">(node,name)</span></code>
+<span class="mkapi-args-type">(bool)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Returns True if docstring is complete.</span></li>
+
+<li><code class="mkapi-args-name function" title="function"><a href="#mkapi.core.inherit.inherit_base">inherit_base</a><span class="mkapi-object-signature">(node,base,name)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Inherits Parameters or Attributes section from base class.</span></li>
+
+<li><code class="mkapi-args-name function" title="function"><a href="#mkapi.core.inherit.inherit_signature">inherit_signature</a><span class="mkapi-object-signature">(node,name)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Inherits Parameters or Attributes section from signature.</span></li>
+
+<li><code class="mkapi-args-name function" title="function"><a href="#mkapi.core.inherit.inherit_parameters">inherit_parameters</a><span class="mkapi-object-signature">(node)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Attributes section inherits items' markdown from Parameters section.</span></li>
+
+<li><code class="mkapi-args-name generator" title="generator"><a href="#mkapi.core.inherit.get_bases">get_bases</a><span class="mkapi-object-signature">(node)</span></code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>, iterator of <a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Yields a tuple of (Node instance, iterator of Node).</span></li>
+
+<li><code class="mkapi-args-name function" title="function"><a href="#mkapi.core.inherit.inherit">inherit</a><span class="mkapi-object-signature">(node,strict)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Inherits Parameters and Attributes from superclasses.</span></li>
+
+<li><code class="mkapi-args-name function" title="function"><a href="#mkapi.core.inherit.inherit_by_filters">inherit_by_filters</a><span class="mkapi-object-signature">(node,filters)</span></code>
+
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Inherits Parameters and Attributes from superclasses.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.inherit.get_params">
+<h2 id="mkapicoreinheritget_params" class="mkapi-object mkapi-object-function code">
+<span class="mkapi-object-kind mkapi-object-kind-function">FUNCTION</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.inherit">mkapi.core.inherit</a>.</code><code class="mkapi-object-name">get_params</code><code class="mkapi-object-signature">(node, name)</code>
+    <span class="mkapi-args-type"> &#x2192; (dict(str: str), dict(str: str))</span>
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Returns a tuple of (docstring params, signature params).</p>
+<p>Each params is a dictionary of name-type mapping.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">node</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance.</span></li>
+
+<li><code class="mkapi-args-name">name</code>
+<span class="mkapi-args-type">(str)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Section name: <code>Parameters</code> or  <code>Attributes</code>.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; node = get_node('mkapi.core.base.Type')
+&gt;&gt;&gt; doc_params, sig_params = get_params(node, 'Parameters')
+&gt;&gt;&gt; doc_params
+{}
+&gt;&gt;&gt; sig_params
+{'name': 'str, optional', 'markdown': 'str, optional'}
+</code></pre></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.inherit.is_complete">
+<h2 id="mkapicoreinheritis_complete" class="mkapi-object mkapi-object-function code">
+<span class="mkapi-object-kind mkapi-object-kind-function">FUNCTION</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.inherit">mkapi.core.inherit</a>.</code><code class="mkapi-object-name">is_complete</code><code class="mkapi-object-signature">(node, name=&#39;&#39;)</code>
+    <span class="mkapi-args-type"> &#x2192; bool</span>
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Returns True if docstring is complete.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">node</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance.</span></li>
+
+<li><code class="mkapi-args-name">name</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Section name: 'Parameters' or  'Attributes', or ''.
+If name is '', both sections are checked.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; from mkapi.core.object import get_object
+&gt;&gt;&gt; node = Node(get_object('mkapi.core.base.Base'))
+&gt;&gt;&gt; is_complete(node, 'Parameters')
+True
+&gt;&gt;&gt; node = Node(get_object('mkapi.core.base.Type'))
+&gt;&gt;&gt; is_complete(node)
+False
+</code></pre></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.inherit.inherit_base">
+<h2 id="mkapicoreinheritinherit_base" class="mkapi-object mkapi-object-function code">
+<span class="mkapi-object-kind mkapi-object-kind-function">FUNCTION</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.inherit">mkapi.core.inherit</a>.</code><code class="mkapi-object-name">inherit_base</code><code class="mkapi-object-signature">(node, base, name=&#39;&#39;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Inherits Parameters or Attributes section from base class.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">node</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance.</span></li>
+
+<li><code class="mkapi-args-name">base</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance of a super class.</span></li>
+
+<li><code class="mkapi-args-name">name</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Section name: 'Parameters' or  'Attributes', or ''.
+If name is '', both sections are inherited.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; from mkapi.core.object import get_object
+&gt;&gt;&gt; base = Node(get_object('mkapi.core.base.Base'))
+&gt;&gt;&gt; node = Node(get_object('mkapi.core.base.Type'))
+&gt;&gt;&gt; [item.name for item in base.docstring['Parameters'].items]
+['name', 'markdown']
+&gt;&gt;&gt; node.docstring['Parameters'] is None
+True
+&gt;&gt;&gt; inherit_base(node, base)
+&gt;&gt;&gt; [item.name for item in node.docstring['Parameters'].items]
+['name', 'markdown']
+</code></pre></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.inherit.inherit_signature">
+<h2 id="mkapicoreinheritinherit_signature" class="mkapi-object mkapi-object-function code">
+<span class="mkapi-object-kind mkapi-object-kind-function">FUNCTION</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.inherit">mkapi.core.inherit</a>.</code><code class="mkapi-object-name">inherit_signature</code><code class="mkapi-object-signature">(node, name=&#39;&#39;)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Inherits Parameters or Attributes section from signature.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">node</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance.</span></li>
+
+<li><code class="mkapi-args-name">name</code>
+<span class="mkapi-args-type">(str, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Section name: 'Parameters' or  'Attributes', or ''.
+If name is '', both sections are inherited.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; from mkapi.core.object import get_object
+&gt;&gt;&gt; base = Node(get_object('mkapi.core.base.Base'))
+&gt;&gt;&gt; [item.name for item in base.docstring['Attributes'].items]
+['html']
+&gt;&gt;&gt; inherit_signature(base)
+&gt;&gt;&gt; [item.name for item in base.docstring['Attributes'].items]
+['name', 'markdown', 'html']
+</code></pre></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.inherit.inherit_parameters">
+<h2 id="mkapicoreinheritinherit_parameters" class="mkapi-object mkapi-object-function code">
+<span class="mkapi-object-kind mkapi-object-kind-function">FUNCTION</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.inherit">mkapi.core.inherit</a>.</code><code class="mkapi-object-name">inherit_parameters</code><code class="mkapi-object-signature">(node)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Attributes section inherits items' markdown from Parameters section.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">node</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-note">
+
+<div class="mkapi-section-name mkapi-section-name-note">
+<span class="mkapi-section-name-body">Note</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-note"><p>This function does not create any items. Call <a href="./#mkapi.core.inherit.inherit_signature">inherit_signature</a>() first.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; from mkapi.core.object import get_object
+&gt;&gt;&gt; base = Node(get_object('mkapi.core.base.Base'))
+&gt;&gt;&gt; node = Node(get_object('mkapi.core.base.Type'))
+&gt;&gt;&gt; [item.name for item in base.docstring['Parameters'].items]
+['name', 'markdown']
+&gt;&gt;&gt; inherit_signature(base)
+&gt;&gt;&gt; section = base.docstring['Attributes']
+&gt;&gt;&gt; [item.name for item in section.items]
+['name', 'markdown', 'html']
+&gt;&gt;&gt; section['name'].desc.html
+''
+&gt;&gt;&gt; inherit_parameters(base)
+&gt;&gt;&gt; section['name'].desc.markdown != ''
+True
+</code></pre></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.inherit.get_bases">
+<h2 id="mkapicoreinheritget_bases" class="mkapi-object mkapi-object-generator code">
+<span class="mkapi-object-kind mkapi-object-kind-generator">GENERATOR</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.inherit">mkapi.core.inherit</a>.</code><code class="mkapi-object-name">get_bases</code><code class="mkapi-object-signature">(node)</code>
+    <span class="mkapi-args-type"> &#x2192; (<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>, iterator of <a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Yields a tuple of (Node instance, iterator of Node).</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">node</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance.</span></li>
+
+</ul></div>
+</div>
+
+<div class="mkapi-section mkapi-section-examples">
+
+<div class="mkapi-section-name mkapi-section-name-examples">
+<span class="mkapi-section-name-body">Examples</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-examples"><pre><code class="python">&gt;&gt;&gt; from mkapi.core.object import get_object
+&gt;&gt;&gt; node = Node(get_object('mkapi.core.base.Type'))
+&gt;&gt;&gt; it = get_bases(node)
+&gt;&gt;&gt; n, gen = next(it)
+&gt;&gt;&gt; n is node
+True
+&gt;&gt;&gt; [x.object.name for x in gen]
+['Inline', 'Base']
+&gt;&gt;&gt; for n, gen in it:
+...     if n.object.name == 'set_html':
+...         break
+&gt;&gt;&gt; [x.object.name for x in gen]
+['set_html', 'set_html']
+</code></pre></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.inherit.inherit">
+<h2 id="mkapicoreinheritinherit" class="mkapi-object mkapi-object-function code">
+<span class="mkapi-object-kind mkapi-object-kind-function">FUNCTION</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.inherit">mkapi.core.inherit</a>.</code><code class="mkapi-object-name">inherit</code><code class="mkapi-object-signature">(node, strict=False)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Inherits Parameters and Attributes from superclasses.</p>
+<p>This function calls <a href="./#mkapi.core.inherit.inherit_base">inherit_base</a>(), <a href="./#mkapi.core.inherit.inherit_signature">inherit_signature</a>(),
+<a href="./#mkapi.core.inherit.inherit_parameters">inherit_parameters</a>().</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">node</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance.</span></li>
+
+<li><code class="mkapi-args-name">strict</code>
+<span class="mkapi-args-type">(bool, optional)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">If True, inherits from signature, too.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="mkapi-node" id="mkapi.core.inherit.inherit_by_filters">
+<h2 id="mkapicoreinheritinherit_by_filters" class="mkapi-object mkapi-object-function code">
+<span class="mkapi-object-kind mkapi-object-kind-function">FUNCTION</span>
+<code class="mkapi-object-prefix"><a href="#mkapi.core.inherit">mkapi.core.inherit</a>.</code><code class="mkapi-object-name">inherit_by_filters</code><code class="mkapi-object-signature">(node, filters)</code>
+    
+</h2>
+<div class="mkapi-docstring">
+
+<div class="mkapi-section">
+
+<div class="mkapi-section-body"><p>Inherits Parameters and Attributes from superclasses.</p></div>
+</div>
+
+<div class="mkapi-section mkapi-section-parameters">
+
+<div class="mkapi-section-name mkapi-section-name-parameters">
+<span class="mkapi-section-name-body">Parameters</span>
+
+</div>
+
+<div class="mkapi-section-body mkapi-section-body-parameters"><ul class="mkapi-args-list">
+
+<li><code class="mkapi-args-name">node</code>
+<span class="mkapi-args-type">(<a href="../mkapi.core.node/#mkapi.core.node.Node">Node</a>)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Node instance.</span></li>
+
+<li><code class="mkapi-args-name">filters</code>
+<span class="mkapi-args-type">(list of str)</span>
+<span class="mkapi-args-dash">&mdash;</span> <span class="mkapi-args-desc">Chose fileters. 'inherit' for superclass inheritance or 'strict'
+for signature inheritance.</span></li>
+
+</ul></div>
+</div>
+
+</div>
+
+</div>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../mkapi.core.linker/" class="btn btn-neutral float-right" title="mkapi.core.linker">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../mkapi.core.docstring/" class="btn btn-neutral" title="mkapi.core.docstring"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href="../mkapi.core.docstring/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../mkapi.core.linker/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../js/mkapi.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

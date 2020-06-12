@@ -62,7 +62,7 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
             if m.docstring:
                 modules[m.object.id] = add_page(m)
         else:
-            modules[m.object.name] = add_page(m)
+            modules[m.object.id] = add_page(m)
     if package and modules:
         nav.append({package: modules})
 

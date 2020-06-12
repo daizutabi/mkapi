@@ -32,7 +32,6 @@
 {%- endmacro %}
 
 {% macro object_member(name, url, signature) -%}
-<span class="mkapi-object-name">{% if url %}<a href="{{ url }}">{% endif -%}
-{{ name }}{% if url %}</a>{% endif %}</span>
+{% if url %}<a href="{{ url }}">{% endif -%}{{ name }}{% if url %}</a>{% endif %}
 {%- if signature %}<span class="mkapi-object-signature">{{ signature }}</span>{% endif %}
 {%- endmacro %}
