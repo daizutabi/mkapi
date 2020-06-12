@@ -55,6 +55,12 @@ def is_complete(node: Node, name: str = "") -> bool:
     for param in signature_params:
         if param not in docstring_params:
             return False
+    section = node.docstring[name]
+    if section is None:
+        return True
+    for item in section.items:
+        if not item.desc.markdown:
+            return False
     return True
 
 

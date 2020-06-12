@@ -2,6 +2,7 @@
 
 MkapiPlugin is a MkDocs plugin that creates Python API documentation from Docstring.
 """
+import inspect
 import logging
 import os
 import re
@@ -14,6 +15,7 @@ from mkdocs.structure.files import get_files
 
 import mkapi
 import mkapi.plugins.api
+from mkapi.core.object import get_object
 from mkapi.core.page import Page
 
 logger = logging.getLogger("mkdocs")
@@ -23,7 +25,11 @@ global_config = {}
 class MkapiPlugin(BasePlugin):
     """MkapiPlugin class for API generation."""
 
-    config_scheme = (("src_dirs", config_options.Type(list, default=[])),)
+    config_scheme = (
+        ("src_dirs", config_options.Type(list, default=[])),
+        ("on_config", config_options.Type(str, default="")),
+        ("callback", config_options.Type(str, default="")),
+    )
     server = None
 
     def on_config(self, config):
@@ -33,7 +39,7 @@ class MkapiPlugin(BasePlugin):
             path = os.path.join(config_dir, src_dir)
             if path not in sys.path:
                 sys.path.insert(0, path)
-        if not self.config['src_dirs']:
+        if not self.config["src_dirs"]:
             sys.path.insert(0, os.getcwd())
         self.pages = {}
         self.abs_api_paths = []
@@ -44,6 +50,20 @@ class MkapiPlugin(BasePlugin):
         else:
             config = global_config["config"]
             self.abs_api_paths = global_config["abs_api_paths"]
+
+        if self.config["on_config"]:
+            on_config = get_object(self.config["on_config"])
+            kwargs = {}
+            params = inspect.signature(on_config).parameters
+            if "config" in params:
+                kwargs["config"] = config
+            if "mkapi" in params:
+                kwargs["mkapi"] = self
+            logger.info(f"[MkApi] Calling user 'on_config' with {list(kwargs)}")
+            config_ = on_config(**kwargs)
+            if config_ is not None:
+                config = config
+
         return config
 
     def on_files(self, files, config):

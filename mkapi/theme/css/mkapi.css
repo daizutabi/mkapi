@@ -354,6 +354,10 @@ code.mkapi-args-name.generator::after {
   content: " [G]";
 }
 
+code.mkapi-args-name.dataclass::after {
+  content: " [D]";
+}
+
 /**************************************************
  Members
 **************************************************/

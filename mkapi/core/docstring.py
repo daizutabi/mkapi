@@ -124,7 +124,7 @@ def split_parameter(doc: str) -> Iterator[List[str]]:
 
 
 def parse_parameter(lines: List[str], style: str) -> Tuple[str, str, str]:
-    """Yields a tuple of (name, markdown, type).
+    """Returns a tuple of (name, markdown, type).
 
     Args:
         lines: Splitted parameter docstring lines.
@@ -172,7 +172,7 @@ def parse_returns(doc: str, style: str) -> Tuple[str, str]:
     return join(lines), type
 
 
-def create_section(name: str, doc: str, style: str) -> Section:
+def get_section(name: str, doc: str, style: str) -> Section:
     """Returns a [Section]() instance."""
     type = ""
     markdown = ""
@@ -309,7 +309,7 @@ def get_docstring(obj: Any) -> Docstring:
     if doc:
         sections = []
         for section in split_section(doc):
-            sections.append(create_section(*section))
+            sections.append(get_section(*section))
         docstring = Docstring(sections)
     elif inspect.isclass(obj) and hasattr(obj, "mro"):
         bases = obj.mro()[1:-1]

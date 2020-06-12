@@ -30,6 +30,7 @@ nav:
     - usage/inherit.md
     - usage/page.md
     - usage/library.py
+    - usage/custom.md
   - Appendix:
     - appendix/type.py
     - appendix/method.md

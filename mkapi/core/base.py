@@ -12,11 +12,11 @@ class Base:
     """Base class.
 
     Args:
-        name: Object name.
+        name: Name of self.
         markdown: Markdown source.
 
     Attributes:
-        html: HTML after conversion.
+        html: HTML string after conversion.
     """
 
     name: str = ""
@@ -34,7 +34,23 @@ class Base:
 
 @dataclass
 class Inline(Base):
-    """Inline class."""
+    """Inline class.
+
+    Examples:
+        >>> inline = Inline()
+        >>> bool(inline)
+        False
+        >>> inline = Inline('markdown')
+        >>> inline.name == inline.markdown
+        True
+        >>> bool(inline)
+        True
+        >>> next(iter(inline)) is inline
+        True
+        >>> inline.set_html("<p>p1</p><p>p2</p>")
+        >>> inline.html
+        'p1<br>p2'
+    """
 
     def __post_init__(self):
         self.markdown = self.name
@@ -55,14 +71,20 @@ class Inline(Base):
 
 @dataclass
 class Type(Inline):
-    """Type class represents type for [Item](), [Section](), [Docstring](),
-    and [Object]().
+    """Type class represents type of [Item](), [Section](), [Docstring](),
+    or [Object]().
 
     Examples:
-        >>> Type('a')
-        Type(name='a', markdown='', html='a')
-        >>> Type('[a](b)')
-        Type(name='[a](b)', markdown='[a](b)', html='')
+        >>> a = Type('str')
+        >>> a
+        Type(name='str', markdown='', html='str')
+        >>> list(a)
+        []
+        >>> b = Type('[Object](base.Object)')
+        >>> b
+        Type(name='[Object](base.Object)', markdown='[Object](base.Object)', html='')
+        >>> list(b) == [b]
+        True
     """
 
     def __post_init__(self):
@@ -74,22 +96,33 @@ class Type(Inline):
 
 @dataclass
 class Item(Type):
-    """Item class represents an item in Parameters, Attributes, and Raises sections.
+    """Item class represents an item in Parameters, Attributes, and Raises sections,
+    *etc.*
 
     Args:
         type: Type of self.
-        kind: Kind of item, for example `readonly_property`. This value is rendered
-            to CSS class attribute.
+        kind: Kind of self, for example `readonly_property`. This value is rendered
+            as a class attribute in HTML.
 
     Attributes:
-        type: Type of self.
-        kind: Kind of item, for example `readonly_property`. This value is rendered
-            to CSS class attribute.
+        desc: Description of self.
 
     Examples:
-        >>> item = Item('a', 'abc')
+        >>> item = Item('[x](x)', 'A parameter.', Type('int'))
         >>> item.name, item.markdown, item.html
-        ('a', '', 'a')
+        ('[x](x)', '[x](x)', '')
+        >>> item.type
+        Type(name='int', markdown='', html='int')
+        >>> item.desc
+        Inline(name='A parameter.', markdown='A parameter.', html='')
+        >>> it = iter(item)
+        >>> next(it) is item
+        True
+        >>> next(it) is item.desc
+        True
+        >>> item.set_html('<p><strong>init</strong></p>')
+        >>> item.html
+        '__init__'
     """
 
     type: Type = field(default_factory=Type)
@@ -117,11 +150,7 @@ class Section(Base):
     """Section class represents a section in docstring.
 
     Args:
-        items: List for Arguments, Attributes, or Raises sections.
-        type: Type of self.
-
-    Attributes:
-        items: List for Arguments, Attributes, or Raises sections.
+        items: List for Arguments, Attributes, or Raises sections, *etc.*
         type: Type of self.
 
     Examples:
@@ -154,7 +183,7 @@ class Section(Base):
             self.markdown = preprocess.convert(self.markdown)
 
     def __iter__(self) -> Iterator[Base]:
-        """Yields [Base]() instance that has non empty Markdown.
+        """Yields a [Base]() instance that has non empty Markdown.
 
         Args:
             name: Item name.
@@ -166,7 +195,7 @@ class Section(Base):
             yield from item
 
     def __getitem__(self, name) -> Optional[Item]:
-        """Returns [Item]() instance whose name is equal to `name`. If not found,
+        """Returns an [Item]() instance whose name is equal to `name`. If not found,
         returns None.
 
         Args:
@@ -178,7 +207,7 @@ class Section(Base):
         return None
 
     def __delitem__(self, name):
-        """Delete [Item]() instance whose name is equal to `name`.
+        """Delete an [Item]() instance whose name is equal to `name`.
 
         Args:
             name: Item name.
@@ -188,7 +217,7 @@ class Section(Base):
                 del self.items[k]
 
     def __contains__(self, name) -> bool:
-        """Returns True if there is [Item]() instance whose name is `name`.
+        """Returns True if there is an [Item]() instance whose name is `name`.
 
         Args:
             name: Item name.
@@ -206,10 +235,6 @@ class Docstring:
     Args:
         sections: List of Section instance.
         type: Type for Returns or Yields sections.
-
-    Attributes:
-        sections: List of Section instance.
-        type: Type for missing Returns or Yields sections.
 
     Examples:
         Empty docstring:
@@ -273,21 +298,23 @@ class Object(Base):
     """Object class represents an object.
 
     Args:
-        name: Object name. `Item` for `Item` class.
-        prefix: Object prefix. `mkapi.core.base` for `Item` class.
-        kind: Object kind such as 'class', 'function'. etc.
-        type: Type for missing Returns and Yields sections.
+        name: Object name.
+        prefix: Object prefix.
+        qualname: Qualified name.
+        kind: Object kind such as 'class', 'function', *etc.*
         signature: Signature if object is module or callable.
 
     Attributes:
-        id: CSS ID.
+        id: ID attribute of HTML.
+        type: Type for missing Returns and Yields sections.
     """
 
     prefix: str = ""
     qualname: str = ""
+    markdown: str = field(init=False)
     id: str = field(init=False)
     kind: str = ""
-    type: Type = field(default_factory=Type)
+    type: Type = field(default_factory=Type, init=False)
     signature: Signature = field(default_factory=Signature)
 
     def __post_init__(self):
