@@ -11,7 +11,7 @@ matrix:
 install:
   - pip install pycodestyle pyflakes mypy
   - pip install pytest==5.4.2 pytest-cov coveralls mkdocs
-  - pip install jupyter
+  - pip install jupyter pheasant mkdocs-ivory pymdown-extensions
   - pip install -e .
 
 before_script:
