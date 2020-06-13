@@ -19,6 +19,7 @@ install:
   - activate test-environment
   - pip install pytest pytest-cov mkdocs
   - pip install jupyter pheasant mkdocs-ivory pymdown-extensions
+  - pip install pywin32
   - pip install -e .
 
 test_script:
