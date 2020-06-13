@@ -10,7 +10,7 @@ matrix:
 
 install:
   - pip install pycodestyle pyflakes mypy
-  - pip install pytest pytest-cov coveralls mkdocs
+  - pip install pytest==5.4.2 pytest-cov coveralls mkdocs
   - pip install jupyter
   - pip install -e .
 
