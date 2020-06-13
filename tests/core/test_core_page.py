@@ -1,5 +1,6 @@
-from mkapi.core.page import Page
 from markdown import Markdown
+
+from mkapi.core.page import Page
 
 source = """
 # Title
@@ -22,19 +23,19 @@ def test_page():
     ]
     page = Page(source, abs_src_path, abs_api_paths)
     m = page.markdown
-    assert m.startswith('# Title\n')
-    assert '<!-- mkapi:begin:0:[upper|link] -->' in m
-    assert '## [mkapi.core](../api/mkapi.core.md#mkapi.core).[base]' in m
-    assert '<!-- mkapi:begin:1:[strict] -->' in m
-    assert '[mkapi.core.base](../api/mkapi.core.base.md#mkapi.core.base).' in m
-    assert '[Base](../api/mkapi.core.base.md#mkapi.core.base.Base)'in m
-    assert '\n###' in m
-    assert '\n####' in m
-    assert m.endswith('end')
+    assert m.startswith("# Title\n")
+    assert "<!-- mkapi:begin:0:[upper|link] -->" in m
+    assert "## [mkapi.core](../api/mkapi.core.md#mkapi.core).[base]" in m
+    assert "<!-- mkapi:begin:1:[strict] -->" in m
+    assert "[mkapi.core.base](../api/mkapi.core.base.md#mkapi.core.base)." in m
+    assert "[Base](../api/mkapi.core.base.md#mkapi.core.base.Base)" in m
+    assert "\n###" in m
+    assert "\n####" in m
+    assert m.endswith("end")
 
     converter = Markdown()
     h = page.content(converter.convert(m))
-    assert '<h1>Title</h1>' in h
+    assert "<h1>Title</h1>" in h
     assert '<div class="mkapi-node" id="mkapi.core.base">' in h
     assert '<a href="../api/mkapi.core.md#mkapi.core">MKAPI.CORE</a>' in h
     assert '<a href="../api/mkapi.core.base.md#mkapi.core.base">BASE</a>' in h
@@ -46,4 +47,4 @@ def test_page():
     assert '<span class="mkapi-section-name-body">Attributes</span>' in h
     assert '<span class="mkapi-section-name-body">Methods</span>' in h
     assert '<span class="mkapi-section-name-body">Classes</span>' in h
-    assert '<p>end</p>' in h
+    assert "<p>end</p>" in h
