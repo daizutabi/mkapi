@@ -9,7 +9,7 @@ Features of MkApi are:
 
 * **Section syntax**: Supported section identifiers are `Args`, `Arguments`, `Attributes`, `Example[s]`, `Note[s]`, `Parameters`, `Raises`, `Returns`, `References`, `Todo`, `Warning[s]`, `Warns`, and `Yields`.
 * **Type annotation**: If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in Parameters, Returns, or Yields section again. You can overwrite the type annotation in the corresponding docstring.
-* **Object type inspection**: MkApi plugin creates CLASS, DATACLASS, FUNCTION, GENERATOR, METHOD, or PROPERTY prefix for each object.
+* **Object type inspection**: MkApi plugin creates CLASS, DATACLASS, FUNCTION, GENERATOR, or METHOD prefix for each object.
 * **Attribute inspection**: If you write attributes with description as comment at module level or in `__init__()` of class, Attributes section is automatically created.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters and attributes description from its superclasses.
 * **Page mode**: Comprehensive API documentation for your project, in which objects are linked to each other by type annotation.
