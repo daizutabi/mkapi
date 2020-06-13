@@ -1,0 +1,3 @@
+.mkapi-node ul.mkapi-args-list li::before {
+  vertical-align: middle;
+}

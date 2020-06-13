@@ -1,0 +1,11 @@
+.mkapi-node ul.mkapi-args-list li::before {
+  font-size: 80%;
+}
+
+.mkapi-section-name {
+  padding: 0px 8px 2px 8px;
+}
+
+.mkapi-object.plain .mkapi-object-kind {
+  font-weight: normal;
+}

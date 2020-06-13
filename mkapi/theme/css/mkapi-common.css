@@ -29,7 +29,7 @@ h3.mkapi-object.code,
 h4.mkapi-object.code {
   background: #F0F0F0;
   border-left: solid 4px #7777FF;
-  margin-bottom: 0px;
+  margin: 0px;
   padding-top: 3px;
   padding-bottom: 5px;
   font-size: 0.9rem;
@@ -119,7 +119,7 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
 
 .mkapi-section {
   margin-top: 2px;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
   padding: 0px;
 }
 
@@ -178,6 +178,11 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
   padding: 4px 8px;
 }
 
+.mkapi-section-note, .mkapi-section-notes,
+.mkapi-section-warning, .mkapi-section-warnings {
+  margin: 0px 10px 25px 10px;
+}
+
 .mkapi-section-body-note, .mkapi-section-body-notes {
   background: #EEFFEE;
   padding: 8px 12px;
@@ -191,6 +196,7 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
 .mkapi-section-body-example, .mkapi-section-body-examples {
   background: #EEEEEE;
   padding: 8px 12px;
+  margin: 0px 10px 25px 10px;
 }
 
 
@@ -275,19 +281,24 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
  Args
 **************************************************/
 .mkapi-node ul.mkapi-args-list {
-  margin: 0px;
-  padding-left: 0px;
+  margin: 0px 0px 5px 8px;
+  padding: 0px;
 }
 
 .mkapi-node ul.mkapi-args-list li {
-  margin-top: 0px;
-  margin-bottom: 0px;
-  margin-left: 30px;
+  margin: 0px 0px 2px 0px;
+  padding-left: 20px;
   text-indent: -20px;
   list-style: none;
-  padding-top: 1px;
-  padding-bottom: 1px;
   line-height: 1.25em;
+}
+
+.mkapi-node ul.mkapi-args-list li::before {
+  content: "•";
+  font-size: 60%;
+  font-weight: 900;
+  padding-right: 5px;
+  color: #9999BB;
 }
 
 .mkapi-node code.mkapi-args-name {
