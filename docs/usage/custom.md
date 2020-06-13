@@ -21,10 +21,10 @@ plugins:
   - search
   - mkapi:
       src_dirs: [examples]
-      on_config: custom.on_config_without_args
+      on_config: custom.on_config
 ~~~
 
-Customization script is saved in `examples/custom.py`:
+Customization script is defined in `examples/custom.py`:
 
 #File examples/custom.py {%=/examples/custom.py%}
 
@@ -57,8 +57,6 @@ C:\Users\daizu\Documents\github\mkapi\docs
 INFO    -  Cleaning site directory
 ...
 ~~~
-
-And,
 
 ~~~yml
 # mkdocs.yml

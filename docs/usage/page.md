@@ -29,17 +29,17 @@ The rest (`'mkapi'`) is a root package name, which is assumed to exist in the `m
 ~~~
 
 
-MkApi searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the API documentation of MkApi in the left navigation menu.
+MkApi searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the documentation of MkApi in the left navigation menu.
 
 !!! note
     * If a package or module has no package- or module-level docstring, MkApi doesn't process it.
-    * For upper case heading, use the `upper` filter like this: `- API: mkapi/api/mkapi|upper`. See [Heading Documentation](../module/#heading-documentation).
+    * For upper case heading, use the `upper` filter. See [Documentation with Heading](../module/#documentation-with-heading).
 
 ## Internal Links
 
 ### Link from Markdown
 
-Once a project API documentation is generated, you can use hyperlink to it using normal Markdown syntax.
+Once a project documentation is generated, you can use hyperlink to it using normal Markdown syntax.
 
 ~~~markdown
 Go to [Section](!!mkapi.core.base.Section).
@@ -67,7 +67,7 @@ The `link.fullname.func()` is rendered as:
 
 ![mkapi](link.fullname.func)
 
-You can click the above "a method" to visit its API.
+You can click the above "a method" to visit its documentation.
 
 Furthermore, if your module imports an object, you can refer it by its qualified name only.
 
@@ -94,22 +94,22 @@ The `link.qualname.func()` is rendered as:
 
 ### Link from Embedding Mode
 
-API documentation created by the embedding mode has link to its project documentation.
+Documentation created by the embedding mode has link to its project documentation.
 
 ~~~markdown
 ![mkapi](!!mkapi.core.docstring.section_heading)
 ~~~
 
-creates API of the `section_heading()`:
+creates the documentation of the `section_heading()`:
 
 ![mkapi](mkapi.core.docstring.section_heading)
 
-Then, you can click the prefix (`mkapi.core.docstring`) or the function name (`section_heading`) to go to the project documentation.
+You can click the prefix (`mkapi.core.docstring`) or the function name (`section_heading`) to go to the project documentation.
 
 
 ### Link from Type
 
-The `Docstring` class of MkApi has an attribute `sections` that is a list of `Section` class instance like below:
+[Docstring](mkapi.core.base.Docstring) class of MkApi has an attribute `sections` that is a list of `Section` class instance like below:
 
 ~~~python
 # Mimic code of Docstring class.
@@ -125,7 +125,7 @@ class Docstring:
     type: str = ""
 ~~~
 
-Corresponding *real* API documentation is like below:
+Corresponding *real* documentation is like below:
 
 ![mkapi](mkapi.core.base.Docstring)
 

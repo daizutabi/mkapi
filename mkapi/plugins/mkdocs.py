@@ -36,11 +36,13 @@ class MkapiPlugin(BasePlugin):
         """Inserts `src_dirs` to `sys.path`."""
         config_dir = os.path.dirname(config["config_file_path"])
         for src_dir in self.config["src_dirs"]:
-            path = os.path.join(config_dir, src_dir)
+            path = os.path.normpath(os.path.join(config_dir, src_dir))
             if path not in sys.path:
                 sys.path.insert(0, path)
         if not self.config["src_dirs"]:
-            sys.path.insert(0, os.getcwd())
+            path = os.getcwd()
+            if path not in sys.path:
+                sys.path.insert(0, path)
         self.pages = {}
         self.abs_api_paths = []
         if not self.server:
@@ -62,7 +64,7 @@ class MkapiPlugin(BasePlugin):
             logger.info(f"[MkApi] Calling user 'on_config' with {list(kwargs)}")
             config_ = on_config(**kwargs)
             if config_ is not None:
-                config = config
+                config = config_
 
         return config
 

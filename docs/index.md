@@ -39,7 +39,7 @@ MkApi provides two modes to generate API documentation: Embedding mode and Page 
 
 ### Embedding Mode
 
-To generate the API documentation in a Markdown source, add an exclamation mark (!), followed by `mkapi` in brackets, and the object full name in parentheses. Yes, this is like adding an image. The object can be a function, class, or module.
+To generate the API documentation in a Markdown source, add an exclamation mark (!), followed by `mkapi` in brackets, and the object full name in parentheses. Yes, this is like adding an image. The object can be a function, class, or module, *etc*.
 
 ~~~markdown
 ![mkapi](<object.full.name>)
@@ -54,7 +54,7 @@ plugins:
       src_dirs: [<path1>, <path2>, ...]
 ~~~
 
-Here, `pathX`s are inserted to `sys.path`. These `pathX`s must be relative to the `mkdocs.yml` directory.
+Here, `pathX`s are inserted to `sys.path`. These `pathX`s are relative to the `mkdocs.yml` directory.
 
 The embedding mode is useful to embed an object interface in an arbitrary position of a Markdown source. For more details, see:
 

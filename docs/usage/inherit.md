@@ -18,8 +18,6 @@ if '../../examples' not in sys.path:
 import inherit
 ```
 
-## Example classes
-
 Define two classes to explain **Docstring inheritance**.
 
 #File inherit.py {%=/examples/inherit.py%}
@@ -27,12 +25,12 @@ Define two classes to explain **Docstring inheritance**.
 Taking a look at this example, you may notice that:
 
 * In the `Base`, description for `type` is omitted.
-* In the `Item`, parameters inherited from superclass are not written.
+* In the `Item`, parameters inherited from the superclass are not written.
 * In the `Item.set_name()`, Parameters section itself doesn't exist.
 
 ## Inheritance from Superclasses
 
-Since the docstring of superclass `Base` describes the `name`, the `Item` class can inherit its description with `inherit` filter.
+Since the docstring of the superclass `Base` describes the `name`, the `Item` class can inherit its description with `inherit` filter.
 
 ~~~markdown
 ![mkapi](inherit.Item|inherit)

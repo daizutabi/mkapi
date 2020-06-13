@@ -67,11 +67,14 @@ class Renderer:
 
         Args:
             object: Object instance.
-            heading: If True, object is written in a heading tag.
-            upper: If True, object is written in upper case letters.
+            filters: Filters.
         """
         context = linker.resolve_object(object.html)
         if context.get("level"):
+            if object.kind in ["module", "package"]:
+                if filters is None:
+                    filters = []
+                filters.append("plain")
             template = self.templates["object_heading"]
         else:
             template = self.templates["object_div"]

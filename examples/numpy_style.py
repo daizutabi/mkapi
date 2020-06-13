@@ -24,7 +24,7 @@ def add(x: int, y: int = 1) -> int:
 
     Examples
     --------
-    Examples should be written in doctest format
+    Examples should be written in doctest format.
 
     >>> add(1, 2)
     3

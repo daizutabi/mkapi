@@ -4,12 +4,7 @@
 {{ # cache:clear }}
 
 
-<style type="text/css">
- <!--
-.mkapi-node {
-  border: 2px dashed #88AA88;
-}
--->
+<style type="text/css">  <!-- .mkapi-node {   border: 2px dashed #88AA88; } -->
 </style>
 
 """
@@ -88,12 +83,12 @@ mkapi.display(function)
 
 
 # -
-def generator(x: Iterable[str]) -> Iterator[str]:
-    """Generator that yields string."""
+def iterator(x: Iterable[str]) -> Iterator[str]:
+    """Iterator that yields string."""
     yield from x
 
 
-mkapi.display(generator)
+mkapi.display(iterator)
 
 
 # ## Union and Optional
@@ -149,3 +144,62 @@ def union_collection(x: Union[List[int], Tuple[str, str]]):
 
 
 mkapi.display(union_collection)
+
+# ## Callable
+
+from typing import Callable  # isort:skip
+
+
+def callable(
+    x: Callable,
+    y: Callable[[int], str],
+    z: Callable[[List[str], Tuple[float]], Dict[str, str]],
+) -> Callable[..., int]:
+    """Callable.
+
+    Args:
+        x: Without arguments.
+        y: Builtins.
+        z: Using `typing` module.
+
+
+
+    """
+
+
+mkapi.display(callable)
+
+
+# ## Generator
+
+from typing import Generator, AsyncGenerator  # isort:skip
+
+
+def generator(
+    x: Generator[int, float, str],
+    y: Generator[int, float, None],
+    z: Generator[int, None, List[str]],
+) -> Generator[int, None, None]:
+    """Generator.
+
+    Args:
+        x: Yield type, send type, and return type.
+        y: Yield type and send type.
+        z: Yield type and return type.
+    """
+
+
+mkapi.display(generator)
+# -
+
+
+def async_generator(x: AsyncGenerator[int, float], y: AsyncGenerator[int, None]):
+    """AsyncGenerator.
+
+    Args:
+        x: Yield type and send type.
+        y: Yield type.
+    """
+
+
+mkapi.display(async_generator)

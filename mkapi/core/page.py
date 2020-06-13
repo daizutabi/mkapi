@@ -76,7 +76,7 @@ class Page:
 
         def replace(match):
             node = self.nodes[int(match.group(1))]
-            filters = match.group(2).strip("|")
+            filters = match.group(2).split("|")
             node.set_html(match.group(3))
             return renderer.render(node, filters=filters)
 

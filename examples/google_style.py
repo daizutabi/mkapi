@@ -24,7 +24,7 @@ def add(x: int, y: int = 1) -> int:
         Added value.
 
     Examples:
-        Examples should be written in doctest format
+        Examples should be written in doctest format.
 
         >>> add(1, 2)
         3
@@ -34,7 +34,7 @@ def add(x: int, y: int = 1) -> int:
         MkDocs](https://squidfunk.github.io/mkdocs-material/extensions/admonition/).
 
     Note:
-        But you should use `Note` section instead for consistency.
+        But use `Note` section instead for consistency.
     """
     return x + y
 

@@ -9,7 +9,7 @@
 </style>
 
 
-Let's start realistic examples. Here, a sample Python file `numpy_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so you should configure `mkdocs.yml` like below. In addition, we add two extensions and an extra javascript for demonstration.
+Let's start realistic examples. Here, a sample Python file `numpy_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so we would configure `mkdocs.yml` like below. In addition, we add two extensions and an extra javascript for demonstration.
 
 {{ # cache:clear }}
 
@@ -41,7 +41,7 @@ import numpy_style
 
 #Code numpy_style.add() {{ numpy_style.add # inspect }}
 
-Then, you can write an entry to generate API for the function anywhere in your Markdown source:
+Then, write a *tag* anywhere in your Markdown source:
 
 ~~~markdown
 ![mkapi](numpy_style.add)
@@ -56,7 +56,7 @@ MkApi generates the API documentation for the `add()` function.
 
 In this simple example, you can see some features of MkApi.
 
-* Type inspection of `add` (FUNCTION prefix is added before `numpy_style.add`).
+* Type inspection of `add()` (FUNCTION prefix is added before `numpy_style.add`).
 * Use of type annotation for both Parameters and Returns sections.
 * Add *optional* if parameters have default values.
 * Default value replacement by the `{default}` keyword in the Parameters section.
@@ -75,7 +75,7 @@ Then,
 ![mkapi](numpy_style.gen)
 ~~~
 
-creates the API documentation for the `gen()` generator.
+creates the documentation for the `gen()` generator.
 
 ![mkapi](numpy_style.gen)
 
@@ -83,7 +83,7 @@ In this simple example, note that:
 
 * A GENERATOR prefix instead of a FUNCTION prefix.
 * The parameter `n` has no type annotation but you can specify it in the Parameters section directly.
-* Yields type is not *iterator of str* but *str*, because `gen()` is a generator.
+* Yields type is not *iterator of str* but *str*, because the `gen()` is a generator.
 
 ## Class
 
@@ -97,31 +97,31 @@ As usual,
 ![mkapi](numpy_style.ExampleClass)
 ~~~
 
-creates the API documentation for the `ExampleClass` class.
+creates the documentation for the `ExampleClass` class.
 
 ![mkapi](numpy_style.ExampleClass)
 
 In this example, note that:
 
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style.
-* Attributes section is inserted with type and description. These information is collected from inspection of `__init__()` function.
+* Attributes section is inserted with type and description. These information is collected from `__init__()` function.
 * Bound methods (`message` in this case) have a METHOD prefix instead of a FUNCTION prefix.
 * If callable objects have neither Returns nor Yields, the type appears on the object definition line like type annotation.
-* Propertes are moved to the Attributes section with [RO] or [RW] that indicates whether the property is read-only or read-write.
+* Propertes are moved to the Attributes section with [RO] or [RW] suffix that indicates whether the property is read-only or read-write.
 * Methods section is newly created that displays a list of methods defined in this class. Note that it has a hyperlink to the definition.
 
 !!! note
-    Although you can write the docstring for class in the `__init__()` function, the attribute inspection only works when you write it as a class level docstring.
+    Although you can write the docstring for a class in the `__init__()` function, the attribute inspection only works when you write it as a class level docstring.
 
 ## Method
 
-You can select a method of class (or any other attribute that can have docstring) to generate API.
+You can select a method of class (or any other attribute that can have docstring) to generate the documentation.
 
 ~~~markdown
 ![mkapi](numpy_style.ExampleClass.message)
 ~~~
 
-creates the API documentation for the `message()` of `ExampleClass` class.
+creates the documentation for the `message()` of `ExampleClass` class.
 
 ![mkapi](numpy_style.ExampleClass.message)
 
@@ -138,7 +138,7 @@ Then,
 ![mkapi](numpy_style.ExampleDataClass)
 ~~~
 
-creates the API documentation for the `ExampleDataClass` class.
+creates the documentation for the `ExampleDataClass` class.
 
 ![mkapi](numpy_style.ExampleDataClass)
 

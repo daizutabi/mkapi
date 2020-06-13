@@ -35,13 +35,15 @@ Although there is no Attributes section in docstring, MkApi automatically create
 
 Furthermore, Classes and Functions sections are also created that display a list of members defined in the module.
 
-## Heading Documentation
+## Documentation with Heading
 
-The other method to create module API is heading. For example
+The other method to create module documentation is heading. For example,
 
 ~~~
 ### ![mkapi](google_style)
 ~~~
+
+create a `<h3>` tag for the `google_style` module.
 
 ### ![mkapi](google_style)
 

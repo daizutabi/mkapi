@@ -29,6 +29,7 @@ h3.mkapi-object.code,
 h4.mkapi-object.code {
   background: #F0F0F0;
   border-left: solid 4px #7777FF;
+  border-radius: 0px;
   margin: 0px;
   padding-top: 3px;
   padding-bottom: 5px;

@@ -268,7 +268,7 @@ def to_string_args(annotation) -> str:
         sends = to_string_with_prefix(sends)
         returns = to_string_with_prefix(returns)
         if not sends and returns:
-            sends = ":"
+            sends = ","
         return f"{name}({arg}{sends}{returns})"
     elif name == "asyncgenerator":
         arg, sends = args

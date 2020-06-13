@@ -150,8 +150,12 @@ HTML(html)
 
 # ## Summary
 
-# All you need to get API documentation of an object is described by the following
+# All you need to get the documentation of an object is described by the following
 # function.
+
+from markdown import Markdown  # isort:skip
+
+import mkapi  # isort:skip
 
 
 def get_html(obj) -> str:
@@ -162,6 +166,7 @@ def get_html(obj) -> str:
     markdown = node.get_markdown()
 
     # Convert it into HTML by any external converter.
+    converter = Markdown()
     html = converter.convert(markdown)
 
     # Split and distribute the HTML into original components.
