@@ -128,7 +128,7 @@ def get_kind(obj) -> str:
     return ""
 
 
-def is_member(name: str, obj: Any, sourcefiles: List[str]) -> int:
+def is_member(obj: Any, name: str = "", sourcefiles: List[str] = None) -> int:
     """Returns an integer thats indicates if `obj` is a member or not.
 
     * $-1$ : Is not a member.
@@ -143,6 +143,8 @@ def is_member(name: str, obj: Any, sourcefiles: List[str]) -> int:
             those of the superclasses should be included in the order
             of `mro()`.
     """
+    if name == "":
+        name = obj.__name__
     if isinstance(obj, property):
         obj = obj.fget
     if name in ["__func__", "__self__"]:
@@ -177,7 +179,7 @@ def get_members(obj: Any) -> List[Node]:
     sourcefiles = get_sourcefiles(obj)
     members = []
     for name, obj in inspect.getmembers(obj):
-        sourcefile_index = is_member(name, obj, sourcefiles)
+        sourcefile_index = is_member(obj, name, sourcefiles)
         if sourcefile_index != -1 and not from_object(obj):
             member = get_node(obj, recursive, sourcefile_index)
             if member.docstring:

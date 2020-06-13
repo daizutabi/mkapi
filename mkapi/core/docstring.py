@@ -215,9 +215,6 @@ def parse_attribute(doc: Docstring, obj: Any):
     signature = get_signature(obj)
     attrs = signature.attributes
     attrs_desc = signature.attributes_desc
-    if inspect.ismethod(obj):
-        print(obj)
-        print(attrs)
 
     if not attrs:
         return

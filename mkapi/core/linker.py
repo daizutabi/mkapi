@@ -35,9 +35,12 @@ def get_link(obj: Any, include_module: bool = False) -> str:
         >>> get_link(get_fullname, include_module=True)
         '[mkapi.core.object.get_fullname](!mkapi.core.object.get_fullname)'
     """
-    if not hasattr(obj, "__name__"):
+    if hasattr(obj, "__qualname__"):
+        name = obj.__qualname__
+    elif hasattr(obj, "__name__"):
+        name = obj.__name__
+    else:
         return ""
-    name = obj.__name__
     if not hasattr(obj, "__module__"):
         return name
     module = obj.__module__
@@ -48,7 +51,7 @@ def get_link(obj: Any, include_module: bool = False) -> str:
         text = fullname
     else:
         text = name
-    if name.startswith("_"):
+    if obj.__name__.startswith("_"):
         return text
     else:
         return link(text, fullname)
@@ -161,10 +164,7 @@ def resolve_object(html: str) -> Dict[str, Any]:
         {'heading_id': 'i', 'level': 2, 'prefix_url': 'a', 'name_url': 'b'}
     """
     parser.reset()
-    context = parser.feed(html)
-    if 'level' not in context:
-        print(html)
-    return context
+    return parser.feed(html)
 
 
 REPLACE_LINK_PATTERN = re.compile(r"\[(.*?)\]\((.*?)\)")
@@ -182,6 +182,10 @@ def replace_link(obj: Any, markdown: str) -> str:
         >>> obj = get_object('mkapi.core.base.Object')
         >>> replace_link(obj, '[Signature]()')
         '[Signature](!mkapi.core.signature.Signature)'
+        >>> replace_link(obj, '[](Signature)')
+        '[Signature](!mkapi.core.signature.Signature)'
+        >>> replace_link(obj, '[text](Signature)')
+        '[text](!mkapi.core.signature.Signature)'
         >>> replace_link(obj, '[dummy.Dummy]()')
         '[dummy.Dummy]()'
     """

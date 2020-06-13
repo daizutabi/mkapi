@@ -1,7 +1,7 @@
 """This module provides base class of [Node](mkapi.core.node.Node) and
 [Module](mkapi.core.module.Module)."""
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Union
 
 from mkapi.core.base import Object
 from mkapi.core.docstring import Docstring, get_docstring
@@ -54,7 +54,12 @@ class Tree:
         for member in self.members:
             member.parent = self
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: Union[int, str]):
+        """Returns a member Tree instance.
+
+        If `index` is str, a member Tree instance whose name is equal to `index`
+        is returned.
+        """
         if isinstance(index, int):
             return self.members[index]
         else:
@@ -62,7 +67,9 @@ class Tree:
                 if member.object.name == index:
                     return member
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
+        """Returns a member Tree instance whose name is equal to `name`.
+        """
         return self[name]
 
     def __len__(self):

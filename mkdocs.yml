@@ -19,6 +19,7 @@ plugins:
       version: mkapi
   - mkapi:
       src_dirs: [examples]
+      on_config: custom.on_config
 
 nav:
   - index.md

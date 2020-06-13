@@ -69,11 +69,12 @@ def get_description(lines: List[str], lineno: int) -> str:
             if not in_doc and not line:
                 break
             elif not in_doc and (line.startswith("'''") or line.startswith('"""')):
-                if line.endswith("'''") or line.endswith('"""'):
+                mark = line[:3]
+                if line.endswith(mark):
                     return line[3:-3]
                 in_doc = True
                 docs.append(line[3:])
-            elif in_doc and line.endswith("'''") or line.endswith('"""'):
+            elif in_doc and line.endswith(mark):
                 docs.append(line[:-3])
                 return "\n".join(docs).strip()
             elif in_doc:

@@ -71,7 +71,7 @@ class Renderer:
             upper: If True, object is written in upper case letters.
         """
         context = linker.resolve_object(object.html)
-        if context["level"]:
+        if context.get("level"):
             template = self.templates["object_heading"]
         else:
             template = self.templates["object_div"]

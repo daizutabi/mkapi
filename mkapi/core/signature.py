@@ -3,11 +3,11 @@ signature and types."""
 import inspect
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import (Any, AsyncGenerator, Dict, Generator, Optional, TypeVar,
+                    Union)
 
-from mkapi.core import linker
+from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
-from mkapi.core import preprocess
 
 
 @dataclass
@@ -102,21 +102,30 @@ def to_string(annotation, kind: str = "returns") -> str:
         kind: 'returns' or 'yields'
 
     Examples:
-        >>> from typing import Iterator, List
+        >>> from typing import Callable, Iterator, List
         >>> to_string(Iterator[str])
         'iterator of str'
         >>> to_string(Iterator[str], 'yields')
         'str'
+        >>> to_string(Callable)
+        'callable'
+        >>> to_string(Callable[[int, float], str])
+        'callable(int, float: str)'
         >>> from mkapi.core.node import Node
         >>> to_string(List[Node])
         'list of [Node](!mkapi.core.node.Node)'
     """
     if kind == "yields":
         if hasattr(annotation, "__args__") and annotation.__args__:
-            return to_string(annotation.__args__[0])
+            if len(annotation.__args__) == 1:
+                return to_string(annotation.__args__[0])
+            else:
+                return to_string(annotation)
         else:
             return ""
 
+    if annotation == ...:
+        return "..."
     if hasattr(annotation, "__forward_arg__"):
         return annotation.__forward_arg__
     if annotation == inspect.Parameter.empty or annotation is None:
@@ -143,9 +152,14 @@ def to_string(annotation, kind: str = "returns") -> str:
             return "dict(" + ": ".join(args) + ")"
         else:
             return "dict"
-    if hasattr(annotation, "__args__") and len(annotation.__args__) <= 1:
+    if not hasattr(annotation, "__args__"):
+        return ""
+    if len(annotation.__args__) == 0:
+        return annotation.__origin__.__name__.lower()
+    if len(annotation.__args__) == 1:
         return a_of_b(annotation)
-    return ""
+    else:
+        return to_string_args(annotation)
 
 
 def a_of_b(annotation) -> str:
@@ -156,22 +170,19 @@ def a_of_b(annotation) -> str:
 
     Examples:
         >>> from typing import List, Iterable, Iterator
-        >>> a = List[str]
-        >>> a_of_b(a)
+        >>> a_of_b(List[str])
         'list of str'
-        >>> a = Iterable[int]
-        >>> a_of_b(a)
+        >>> a_of_b(List[List[str]])
+        'list of list of str'
+        >>> a_of_b(Iterable[int])
         'iterable of int'
-        >>> a = Iterator[float]
-        >>> a_of_b(a)
+        >>> a_of_b(Iterator[float])
         'iterator of float'
     """
     origin = annotation.__origin__
     if not hasattr(origin, "__name__"):
         return ""
     name = origin.__name__.lower()
-    if len(annotation.__args__) == 0:
-        return name
     if type(annotation.__args__[0]) == TypeVar:
         return name
     type_ = f"{name} of " + to_string(annotation.__args__[0])
@@ -188,17 +199,13 @@ def union(annotation) -> str:
 
     Examples:
         >>> from typing import List, Optional, Tuple, Union
-        >>> a = Optional[List[str]]
-        >>> union(a)
+        >>> union(Optional[List[str]])
         'list of str, optional'
-        >>> a = Union[str, int]
-        >>> union(a)
+        >>> union(Union[str, int])
         'str or int'
-        >>> a = Union[str, int, float]
-        >>> union(a)
+        >>> union(Union[str, int, float])
         'str, int, or float'
-        >>> a = Union[List[str], Tuple[int, int]]
-        >>> union(a)
+        >>> union(Union[List[str], Tuple[int, int]])
         'Union(list of str, (int, int))'
     """
     args = annotation.__args__
@@ -217,6 +224,60 @@ def union(annotation) -> str:
                 return ", ".join(args[:-1]) + ", or " + args[-1]
         else:
             return "Union(" + ", ".join(to_string(x) for x in args) + ")"
+
+
+def to_string_args(annotation) -> str:
+    """Returns a string for callable and generator annotation.
+
+    Args:
+        annotation: Annotation
+
+    Examples:
+        >>> from typing import Callable, List, Tuple, Any
+        >>> from typing import Generator, AsyncGenerator
+        >>> to_string_args(Callable[[int, List[str]], Tuple[int, int]])
+        'callable(int, list of str: (int, int))'
+        >>> to_string_args(Callable[[int], Any])
+        'callable(int)'
+        >>> to_string_args(Callable[[str], None])
+        'callable(str)'
+        >>> to_string_args(Callable[..., int])
+        'callable(...: int)'
+        >>> to_string_args(Generator[int, float, str])
+        'generator(int, float, str)'
+        >>> to_string_args(AsyncGenerator[int, float])
+        'asyncgenerator(int, float)'
+    """
+
+    def to_string_with_prefix(annotation, prefix=","):
+        s = to_string(annotation)
+        if s in ["NoneType", "any"]:
+            return ""
+        else:
+            return " ".join([prefix, s])
+
+    args = annotation.__args__
+    name = annotation.__origin__.__name__.lower()
+    if name == "callable":
+        *args, returns = args
+        args = ", ".join(to_string(x) for x in args)
+        returns = to_string_with_prefix(returns, ":")
+        return f"{name}({args}{returns})"
+    elif name == "generator":
+        arg, sends, returns = args
+        arg = to_string(arg)
+        sends = to_string_with_prefix(sends)
+        returns = to_string_with_prefix(returns)
+        if not sends and returns:
+            sends = ":"
+        return f"{name}({arg}{sends}{returns})"
+    elif name == "asyncgenerator":
+        arg, sends = args
+        arg = to_string(arg)
+        sends = to_string_with_prefix(sends)
+        return f"{name}({arg}{sends})"
+    else:
+        return ""
 
 
 @lru_cache(maxsize=1000)

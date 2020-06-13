@@ -29,9 +29,9 @@ class Page:
 
     source: InitVar[str]
     abs_src_path: str
-    abs_api_paths: List[str] = field(default_factory=list)
-    markdown: str = field(init=False)
-    nodes: List[Node] = field(default_factory=list, init=False)
+    abs_api_paths: List[str] = field(default_factory=list, repr=False)
+    markdown: str = field(init=False, repr=False)
+    nodes: List[Node] = field(default_factory=list, init=False, repr=False)
 
     def __post_init__(self, source):
         self.markdown = "\n\n".join(self.split(source))

@@ -1,4 +1,4 @@
-def on_config_without_args():
+def on_config():
     # Here you can do all you want.
     print("Called.")
 

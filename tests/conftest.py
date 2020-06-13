@@ -8,6 +8,11 @@ import google_style as example  # isort:skip
 
 
 @pytest.fixture(scope="session")
+def module():
+    return example
+
+
+@pytest.fixture(scope="session")
 def add():
     return example.add
 

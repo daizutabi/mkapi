@@ -12,7 +12,7 @@ def transform_property(node: Node):
         if "property" in member.object.kind:
             if section is None:
                 section = Section("Attributes")
-                node.docstring['Attributes'] = section
+                node.docstring["Attributes"] = section
             name = member.object.name
             kind = member.object.kind
             type = member.object.type
@@ -46,7 +46,7 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
         if mode in ["method", "function"]:
             return mode in kind or kind == "generator"
         else:
-            return mode in kind and 'method' not in kind
+            return mode in kind and "method" not in kind
 
     members = [member for member in node.members if is_member(member.object.kind)]
     if not members:
@@ -63,7 +63,7 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
             markdown = section_.markdown
             if "\n\n" in markdown:
                 markdown = markdown.split("\n\n")[0]
-        item = Item(name, markdown, type=type, kind=kind)
+        item = Item(object.name, markdown, type=type, kind=kind)
         item.markdown, url, signature = "", "", ""
         if filters and "link" in filters:
             url = "#" + object.id
@@ -80,13 +80,13 @@ def transform_class(node: Node):
     transform_members(node, "method", ["link"])
 
 
-def transform_module(node: Node, filters: List[str]):
+def transform_module(node: Node, filters: Optional[List[str]] = None):
     transform_members(node, "class", filters)
     transform_members(node, "function", filters)
     node.members = []
 
 
-def transform(node: Node, filters: List[str]):
+def transform(node: Node, filters: Optional[List[str]] = None):
     if node.docstring is None:
         return
     if node.object.kind in ["class", "dataclass"]:
