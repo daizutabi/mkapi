@@ -4,8 +4,8 @@ environment:
   matrix:
     - PYTHON_VERSION: 3.7
       MINICONDA: C:\Miniconda37-x64
-    - PYTHON_VERSION: 3.8
-      MINICONDA: C:\Miniconda37-x64
+    # - PYTHON_VERSION: 3.8
+    #   MINICONDA: C:\Miniconda37-x64
 
 init:
   - "ECHO %PYTHON_VERSION% %MINICONDA%"
@@ -19,7 +19,6 @@ install:
   - activate test-environment
   - pip install pytest pytest-cov mkdocs
   - pip install jupyter pheasant mkdocs-ivory pymdown-extensions
-  - pip install pywin32
   - pip install -e .
 
 test_script:
