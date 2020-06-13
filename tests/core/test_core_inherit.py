@@ -80,22 +80,22 @@ class D(A):
         self.name = name.upper()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def a():
     return mkapi.get_node(A)
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def b():
     return mkapi.get_node(B)
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def c():
     return mkapi.get_node(C)
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def d():
     return mkapi.get_node(D)
 

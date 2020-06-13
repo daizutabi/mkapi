@@ -67,6 +67,8 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
         item.markdown, url, signature = "", "", ""
         if filters and "link" in filters:
             url = "#" + object.id
+        elif filters and "apilink" in filters:
+            url = "../" + node.object.id + "#" + object.id
         if object.kind not in ["class", "dataclass"]:
             signature = "(" + ",".join(object.signature.parameters.keys()) + ")"
         item.html = renderer.render_object_member(object.name, url, signature)

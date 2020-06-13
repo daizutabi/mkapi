@@ -20,8 +20,8 @@ class Module(Tree):
             collected in this list.
     """
 
-    parent: Optional["Module"] = field(default=None, init=False)
-    members: List["Module"] = field(init=False)
+    parent: Optional["Module"] = field(default=None, init=False, repr=False)
+    members: List["Module"] = field(init=False, repr=False)
     objects: List[str] = field(default_factory=list, init=False)
 
     def __post_init__(self):

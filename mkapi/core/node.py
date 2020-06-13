@@ -1,7 +1,6 @@
 """This modules provides Node class that has tree structure."""
 import inspect
 from dataclasses import dataclass, field
-from functools import lru_cache
 from typing import Any, Iterator, List, Optional
 
 from mkapi.core.base import Base, Object
@@ -22,8 +21,8 @@ class Node(Tree):
         members: Member Node instances.
     """
 
-    parent: Optional["Node"] = field(default=None, init=False)
-    members: List["Node"] = field(init=False)
+    parent: Optional["Node"] = field(default=None, init=False, repr=False)
+    members: List["Node"] = field(init=False, repr=False)
     sourcefile_index: int = 0
 
     def __post_init__(self):
@@ -187,11 +186,6 @@ def get_members(obj: Any) -> List[Node]:
     return sorted(members, key=lambda x: (-x.sourcefile_index, x.lineno))
 
 
-@lru_cache(maxsize=1000)
-def _get_node(obj, recursive, sourcefile_index) -> Node:
-    return Node(obj, recursive, sourcefile_index)
-
-
 def get_node(name, recursive: bool = True, sourcefile_index: int = 0) -> Node:
     """Returns a Node instace by name or object.
 
@@ -205,4 +199,4 @@ def get_node(name, recursive: bool = True, sourcefile_index: int = 0) -> Node:
     else:
         obj = name
 
-    return _get_node(obj, recursive, sourcefile_index)
+    return Node(obj, recursive, sourcefile_index)

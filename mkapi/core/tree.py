@@ -31,10 +31,10 @@ class Tree:
     sourcefile: str = field(init=False)
     lineno: int = field(init=False)
     object: Object = field(init=False)
-    docstring: Docstring = field(init=False)
-    parent: Any = field(default=None, init=False)
-    members: List[Any] = field(init=False)
-    recursive: bool = True
+    docstring: Docstring = field(init=False, repr=False)
+    parent: Any = field(default=None, init=False, repr=False)
+    members: List[Any] = field(init=False, repr=False)
+    recursive: bool = field(default=True, repr=False)
 
     def __post_init__(self):
         obj = self.obj

@@ -81,7 +81,8 @@ span.mkapi-object-prefix a {
   color: inherit;
 }
 
-code.mkapi-object-prefix a:hover {
+code.mkapi-object-prefix a:hover,
+span.mkapi-object-prefix a:hover {
   background: #FFDDCC;
 }
 
@@ -95,7 +96,8 @@ span.mkapi-object-name a {
   color: inherit;
 }
 
-code.mkapi-object-name a:hover {
+code.mkapi-object-name a:hover,
+span.mkapi-object-name a:hover {
   background: #FFDDCC;
 }
 

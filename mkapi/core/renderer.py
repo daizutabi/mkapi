@@ -69,17 +69,15 @@ class Renderer:
             object: Object instance.
             filters: Filters.
         """
+        if filters is None:
+            filters = []
         context = linker.resolve_object(object.html)
         if context.get("level"):
             if object.kind in ["module", "package"]:
-                if filters is None:
-                    filters = []
                 filters.append("plain")
             template = self.templates["object_heading"]
         else:
             template = self.templates["object_div"]
-        if filters is None:
-            filters = []
         return template.render(context, object=object, filters=filters)
 
     def render_object_member(self, name: str, url: str, signature: str) -> str:

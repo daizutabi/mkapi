@@ -4,13 +4,13 @@ from dataclasses import InitVar, dataclass, field
 from typing import Iterator, List
 
 from mkapi import utils
+from mkapi.core import postprocess
 from mkapi.core.base import Base, Section
 from mkapi.core.inherit import inherit_by_filters
 from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
 from mkapi.core.renderer import renderer
-from mkapi.core import postprocess
 
 
 @dataclass
