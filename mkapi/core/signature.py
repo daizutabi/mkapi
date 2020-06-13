@@ -3,8 +3,7 @@ signature and types."""
 import inspect
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import (Any, AsyncGenerator, Dict, Generator, Optional, TypeVar,
-                    Union)
+from typing import Any, Dict, Optional, TypeVar, Union
 
 from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
