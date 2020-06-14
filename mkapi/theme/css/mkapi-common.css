@@ -105,6 +105,9 @@ code.mkapi-object-signature,
 span.mkapi-object-signature {
   font-weight: bold;
   color: #5577AA;
+  border: none;
+  padding: 0px;
+  margin: 0px;
 }
 
 /**************************************************
@@ -215,7 +218,8 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
 .mkapi-object code {
   background: none;
   border: none;
-  padding: 0px 0px;
+  margin: 0px;
+  padding: 0px;
   font-size: 0.9rem;
 }
 
@@ -284,7 +288,7 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
  Args
 **************************************************/
 .mkapi-node ul.mkapi-args-list {
-  margin: 0px 0px 5px 8px;
+  margin: 0px 0px 5px 0px;
   padding: 0px;
 }
 
@@ -298,10 +302,43 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
 
 .mkapi-node ul.mkapi-args-list li::before {
   content: "•";
+  text-align: right;
+  display: inline-block;
   font-size: 60%;
-  font-weight: 900;
+  font-weight: normal;
   padding-right: 5px;
   color: #9999BB;
+  width: 20px;
+}
+
+.mkapi-node ul.mkapi-args-list li.readwrite_property::before {
+  font-size: 80%;
+  content: " [RW]";
+}
+
+.mkapi-node ul.mkapi-args-list li.readonly_property::before {
+  font-size: 80%;
+  content: " [RO]";
+}
+
+.mkapi-node ul.mkapi-args-list li.classmethod::before {
+  font-size: 80%;
+  content: " [C]";
+}
+
+.mkapi-node ul.mkapi-args-list li.staticmethod::before {
+  font-size: 80%;
+  content: " [S]";
+}
+
+.mkapi-node ul.mkapi-args-list li.generator::before {
+  font-size: 80%;
+  content: " [G]";
+}
+
+.mkapi-node ul.mkapi-args-list li.dataclass::before {
+  font-size: 80%;
+  content: " [D]";
 }
 
 .mkapi-node code.mkapi-args-name {
@@ -310,6 +347,7 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
   border: none;
   font-size: 0.9rem;
   padding: 0px;
+  margin: 0px;
 }
 
 
@@ -348,30 +386,6 @@ code.mkapi-args-name::after {
   font-family: sans-serif;
   font-size: 0.7rem;
   color: gray;
-}
-
-code.mkapi-args-name.readwrite_property::after {
-  content: " [RW]";
-}
-
-code.mkapi-args-name.readonly_property::after {
-  content: " [RO]";
-}
-
-code.mkapi-args-name.classmethod::after {
-  content: " [C]";
-}
-
-code.mkapi-args-name.staticmethod::after {
-  content: " [S]";
-}
-
-code.mkapi-args-name.generator::after {
-  content: " [G]";
-}
-
-code.mkapi-args-name.dataclass::after {
-  content: " [D]";
 }
 
 /**************************************************

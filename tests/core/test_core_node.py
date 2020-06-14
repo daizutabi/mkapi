@@ -82,7 +82,7 @@ def test_set_html_and_render():
     for k, x in enumerate(node):
         assert x.html == str(k)
 
-    html = node.render()
+    html = node.get_html()
 
     assert html.startswith('<div class="mkapi-node" id="mkapi.core.base.Base">')
     assert 'mkapi-object-kind-dataclass">DATACLASS</div>' in html
@@ -95,3 +95,8 @@ def test_set_html_and_render():
 def test_package():
     node = get_node("mkapi.core")
     assert node.object.kind == 'package'
+
+
+def test_repr():
+    node = get_node("mkapi.core.base")
+    assert repr(node) == "Node('mkapi.core.base', num_sections=1, num_numbers=7)"

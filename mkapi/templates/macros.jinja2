@@ -22,16 +22,24 @@
   {%- if url and object.id != url[1:] %}</a>{% endif %}
 {%- endmacro %}
 
+{% macro object_signature(signature, tag='span', in_code=False) -%}
+{% if signature -%}
+{% if in_code %}</code>{% endif -%}
+{% set args = signature.split(',') -%}
+{% for arg in args -%}
+<{{ tag }} class="mkapi-object-signature">{{ arg|trim }}{% if not loop.last %},{% endif %}{% if not (in_code and loop.last) %}</{{ tag }}>{% endif %}{% if not loop.last %} {% endif %}
+{%- endfor -%}
+{%- endif %}
+{%- endmacro %}
+
 {% macro object_body(object, prefix_url, name_url, tag, upper) -%}
   {% if object.prefix and '.' not in object.qualname -%}
     <{{ tag }} class="mkapi-object-prefix">{{ object_prefix(object, prefix_url, upper) }}</{{ tag }}>
   {%- endif -%}
-    <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>
-  {%- if object.signature %}<{{ tag }} class="mkapi-object-signature">{{ object.signature }}</{{ tag }}>{% endif %}
+    <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>{{ object_signature(object.signature, tag) }}
     {{ object_type(object) }}
 {%- endmacro %}
 
 {% macro object_member(name, url, signature) -%}
-{% if url %}<a href="{{ url }}">{% endif -%}{{ name }}{% if url %}</a>{% endif %}
-{%- if signature %}<span class="mkapi-object-signature">{{ signature }}</span>{% endif %}
+{% if url %}<a href="{{ url }}">{% endif -%}{{ name }}{% if url %}</a>{% endif %}{{ object_signature(signature, tag='code', in_code=True) }}
 {%- endmacro %}

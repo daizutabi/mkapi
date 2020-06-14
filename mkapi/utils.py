@@ -25,7 +25,7 @@ def get_html(node):
     markdown = node.get_markdown()
     html = converter.convert(markdown)
     node.set_html(html)
-    return node.render()
+    return node.get_html()
 
 
 def display(name):

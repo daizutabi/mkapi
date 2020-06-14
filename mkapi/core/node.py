@@ -8,7 +8,7 @@ from mkapi.core.object import from_object, get_object, get_sourcefiles
 from mkapi.core.tree import Tree
 
 
-@dataclass
+@dataclass(repr=False)
 class Node(Tree):
     """Node class represents an object.
 
@@ -21,8 +21,8 @@ class Node(Tree):
         members: Member Node instances.
     """
 
-    parent: Optional["Node"] = field(default=None, init=False, repr=False)
-    members: List["Node"] = field(init=False, repr=False)
+    parent: Optional["Node"] = field(default=None, init=False)
+    members: List["Node"] = field(init=False)
     sourcefile_index: int = 0
 
     def __post_init__(self):
@@ -88,11 +88,11 @@ class Node(Tree):
         for base, html in zip(self, html.split("<!-- mkapi:sep -->")):
             base.set_html(html.strip())
 
-    def render(self) -> str:
+    def get_html(self, filters: List[str] = None) -> str:
         """Renders and returns HTML."""
         from mkapi.core.renderer import renderer
 
-        return renderer.render(self)  # type:ignore
+        return renderer.render(self, filters)  # type:ignore
 
 
 def get_kind(obj) -> str:
@@ -191,6 +191,7 @@ def get_node(name, recursive: bool = True, sourcefile_index: int = 0) -> Node:
 
     Args:
         name: Object name or object itself.
+        recursive: If True, member objects are collected recursively.
         sourcefile_index: If `obj` is a member of class, this value is the index of
             unique source files given by `mro()` of the class. Otherwise, 0.
     """

@@ -1,17 +1,17 @@
 # ![mkapi]({{ module.object.id }}{{ module_filter }}|link|plain)
 
-{% if module.object.kind == 'module' %}
-{% for object in module.objects %}
-{% if 'noheading' in object_filter %}
+{% if module.object.kind == 'module' -%}
+{% for object in module.objects -%}
+{% if 'noheading' in object_filter -%}
 ![mkapi]({{ object }}{{ object_filter }})
-{% else %}
+{% else -%}
 ## ![mkapi]({{ object }}{{ object_filter }})
-{% endif %}
-{% endfor %}
-{% else %}
-{% for member in module.members %}
-{% if member.docstring %}
+{% endif -%}
+{% endfor -%}
+{% else -%}
+{% for member in module.members -%}
+{% if member.docstring -%}
 ## ![mkapi]({{ member.object.id }}{{ module_filter }}|apilink|plain)
-{% endif %}
-{% endfor %}
-{% endif %}
+{% endif -%}
+{% endfor -%}
+{% endif -%}

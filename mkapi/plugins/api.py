@@ -32,6 +32,7 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
         logger.error(f"[MkApi] {abs_api_path} exists: Delete manually for safety.")
         sys.exit(1)
     os.mkdir(abs_api_path)
+    os.mkdir(os.path.join(abs_api_path, "source"))
     atexit.register(lambda path=abs_api_path: rmtree(path))
 
     root = os.path.join(config_dir, *paths)
@@ -46,12 +47,15 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
     modules: Dict[str, str] = {}
     package = None
 
-    def add_page(module: Module) -> str:
+    def add_page(module: Module):
         page_file = module.object.id + ".md"
         abs_path = os.path.join(abs_api_path, page_file)
         abs_api_paths.append(abs_path)
         create_page(abs_path, module, filters)
-        return os.path.join(api_path, page_file)
+        modules[module.object.id] = os.path.join(api_path, page_file)
+
+        abs_path = os.path.join(abs_api_path, "source", page_file)
+        create_source_page(abs_path, module, filters)
 
     for m in module:
         if m.object.kind == "package":
@@ -60,9 +64,9 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
             package = m.object.id
             modules = {}
             if m.docstring or any(s.docstring for s in m.members):
-                modules[m.object.id] = add_page(m)
+                add_page(m)
         else:
-            modules[m.object.id] = add_page(m)
+            add_page(m)
     if package and modules:
         nav.append({package: modules})
 
@@ -72,6 +76,11 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
 def create_page(path: str, module: Module, filters: List[str]):
     with open(path, "w") as f:
         f.write(module.get_markdown(filters))
+
+
+def create_source_page(path: str, module: Module, filters: List[str]):
+    with open(path, "w") as f:
+        f.write(module.get_source(filters))
 
 
 def rmtree(path: str):

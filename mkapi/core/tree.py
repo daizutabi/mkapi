@@ -25,16 +25,17 @@ class Tree:
         docstring: Docstring instance.
         parent: Parent instance.
         members: Member instances.
+        recursive: If True, member objects are collected recursively.
     """
 
-    obj: Any = field(repr=False)
+    obj: Any = field()
     sourcefile: str = field(init=False)
     lineno: int = field(init=False)
     object: Object = field(init=False)
-    docstring: Docstring = field(init=False, repr=False)
-    parent: Any = field(default=None, init=False, repr=False)
-    members: List[Any] = field(init=False, repr=False)
-    recursive: bool = field(default=True, repr=False)
+    docstring: Docstring = field(init=False)
+    parent: Any = field(default=None, init=False)
+    members: List[Any] = field(init=False)
+    recursive: bool = field(default=True)
 
     def __post_init__(self):
         obj = self.obj
@@ -53,6 +54,13 @@ class Tree:
             self.members = []
         for member in self.members:
             member.parent = self
+
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        id = self.object.id
+        sections = len(self.docstring.sections)
+        numbers = len(self.members)
+        return f"{class_name}({id!r}, num_sections={sections}, num_numbers={numbers})"
 
     def __getitem__(self, index: Union[int, str]):
         """Returns a member Tree instance.

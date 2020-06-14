@@ -9,7 +9,7 @@ from mkapi.core.object import get_object, get_sourcefile_and_lineno
 from mkapi.core.tree import Tree
 
 
-@dataclass
+@dataclass(repr=False)
 class Module(Tree):
     """Module class represents an module.
 
@@ -20,8 +20,8 @@ class Module(Tree):
             collected in this list.
     """
 
-    parent: Optional["Module"] = field(default=None, init=False, repr=False)
-    members: List["Module"] = field(init=False, repr=False)
+    parent: Optional["Module"] = field(default=None, init=False)
+    members: List["Module"] = field(init=False)
     objects: List[str] = field(default_factory=list, init=False)
 
     def __post_init__(self):
@@ -29,6 +29,11 @@ class Module(Tree):
         if self.object.kind == "module":
             objects = get_objects(self.obj)
             self.objects = [".".join([self.object.id, obj]) for obj in objects]
+
+    def __repr__(self):
+        s = super().__repr__()[:-1]
+        objects = len(self.objects)
+        return f"{s}, num_objects={objects})"
 
     def __iter__(self) -> Iterator["Module"]:
         if self.docstring:
@@ -60,6 +65,12 @@ class Module(Tree):
         from mkapi.core.renderer import renderer
 
         return renderer.render_module(self, filters)  # type:ignore
+
+    def get_source(self, filters: List[str]) -> str:
+        """Returns a source for module."""
+        from mkapi.core.source import get_source
+
+        return get_source(self, filters)
 
 
 def get_objects(obj) -> List[str]:

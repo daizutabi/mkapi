@@ -135,10 +135,10 @@ item.desc.markdown, item.desc.html  # A <p> tag is deleted.
 
 # ## Constructing HTML
 
-# Finally, construct HTML calling `Node.render()` that internally uses
+# Finally, construct HTML calling `Node.get_html()` that internally uses
 # [Jinja](https://jinja.palletsprojects.com/en/2.11.x/) library.
 
-html = node.render()
+html = node.get_html()
 print(html[:300].strip())
 
 # [Jupyter](https://jupyter.org/) allows us to see the rendered HTML.
@@ -173,4 +173,4 @@ def get_html(obj) -> str:
     node.set_html(html)
 
     # Render the node to create final HTML.
-    return node.render()
+    return node.get_html()

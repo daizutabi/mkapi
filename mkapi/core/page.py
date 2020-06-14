@@ -10,7 +10,6 @@ from mkapi.core.inherit import inherit_by_filters
 from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
-from mkapi.core.renderer import renderer
 
 
 @dataclass
@@ -78,6 +77,6 @@ class Page:
             node = self.nodes[int(match.group(1))]
             filters = match.group(2).split("|")
             node.set_html(match.group(3))
-            return renderer.render(node, filters=filters)
+            return node.get_html(filters)
 
         return re.sub(NODE_PATTERN, replace, html)

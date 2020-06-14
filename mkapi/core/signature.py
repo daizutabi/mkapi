@@ -90,6 +90,9 @@ class Signature:
             self.attributes[name] = type
             self.attributes_desc[name] = desc
 
+    def split(self, sep=','):
+        return str(self).split(sep)
+
 
 def to_string(annotation, kind: str = "returns") -> str:
     """Returns string expression of annotation.
