@@ -30,35 +30,30 @@ Taking a look at this example, you may notice that:
 
 ## Inheritance from Superclasses
 
-Since the docstring of the superclass `Base` describes the `name`, the `Item` class can inherit its description with `inherit` filter.
+Since the docstring of the superclass `Base` describes the `name`, the `Item` class can inherit its description.
 
 ~~~markdown
-![mkapi](inherit.Item|inherit)
+![mkapi](inherit.Item)
 ~~~
+
+![mkapi](inherit.Item)
 
 By inheritance from superclasses, you don't need to write duplicated description.
 
 ## Inheritance from Signature
 
-Using `strict` filter, MkApi adds missing parameters and attributes from the signature. Description is still empty but type is inspected. Note that `strict` filter invokes `inherit` filter at the same time.
+Using `strict` filter, MkApi also adds parameters and attributes without description using its signature. Description is still empty but type is inspected.
 
 ~~~markdown
 ![mkapi](inherit.Item|strict)
 ~~~
+
+![mkapi](inherit.Item|strict)
 
 Inheritance from signature has two benefits:
 
 * You can find parameters and attributes that wait for description.
 * Users can know their types at least if you use type annotation.
-
-## Example of Strict Mode
-
-~~~markdown
-![mkapi](inherit.Item|strict)
-~~~
-
-
-![mkapi](inherit.Item|strict)
 
 ## Inheritance in Page Mode
 
@@ -69,3 +64,14 @@ nav:
   - index.md
   - API: mkapi/api/mkapi|upper|strict
 ~~~
+
+## Inheritance in Dataclass
+
+
+#File inherit_comment.py {%=/examples/inherit_comment.py%}
+
+~~~
+![mkapi](inherit_comment.Item)
+~~~
+
+![mkapi](inherit_comment.Item)

@@ -20,7 +20,7 @@ Features of MkApi are:
 * **Attribute inspection**: If you write attributes with description as comment in `__init__()`, Attributes section is automatically created.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters and attributes description from its superclasses.
 * **Page mode**: Comprehensive API documentation for your project, in which objects are linked to each other by type annotation.
-
+* **Bidirectional Link**: Using the Page mode, bidirectional links are created between documentation and source code.
 
 ## Installation
 

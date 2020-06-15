@@ -418,8 +418,6 @@ class Section(Base):
             >>> s1.items
             [Item('a', 'i'), Item('b', 'f'), Item('x', 'd')]
         """
-        if section.name != self.name:
-            raise ValueError(f"Different name: {self.name} != {section.name}.")
         for item in section.items:
             self.set_item(item, force)
 

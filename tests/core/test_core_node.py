@@ -97,4 +97,4 @@ def test_package():
 
 def test_repr():
     node = get_node("mkapi.core.base")
-    assert repr(node) == "Node('mkapi.core.base', num_sections=1, num_members=6)"
+    assert repr(node) == "Node('mkapi.core.base', num_sections=2, num_members=6)"

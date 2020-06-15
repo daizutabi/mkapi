@@ -11,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 import mkapi
 from mkapi.core import linker
 from mkapi.core.base import Docstring, Section
+from mkapi.core.code import Code
 from mkapi.core.module import Module
 from mkapi.core.node import Node
 from mkapi.core.structure import Object
@@ -104,7 +105,7 @@ class Renderer:
         for section in docstring.sections:
             if section.items:
                 valid = any(item.description for item in section.items)
-                if filters and 'strict' in filters or valid:
+                if filters and "strict" in filters or valid:
                     section.html = self.render_section(section, filters)
         return template.render(docstring=docstring)
 
@@ -121,7 +122,7 @@ class Renderer:
         else:
             return self.templates["args"].render(section=section, filters=filters)
 
-    def render_module(self, module: Module, filters: List[str]) -> str:
+    def render_module(self, module: Module, filters: List[str] = None) -> str:
         """Returns a rendered Markdown for Module.
 
         Args:
@@ -134,6 +135,8 @@ class Renderer:
             will be converted into HTML by MkDocs. Then the HTML is rendered into HTML
             again by other functions in this module.
         """
+        if filters is None:
+            filters = []
         module_filter = ""
         if "upper" in filters:
             module_filter = "|upper"
@@ -144,6 +147,12 @@ class Renderer:
         return template.render(
             module=module, module_filter=module_filter, object_filter=object_filter
         )
+
+    def render_code(self, code: Code, filters: List[str] = None) -> str:
+        if filters is None:
+            filters = []
+        template = self.templates["code"]
+        return template.render(code=code, module=code.module, filters=filters)
 
 
 #: Renderer instance that can be used globally.

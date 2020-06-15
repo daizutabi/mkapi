@@ -13,6 +13,9 @@ theme:
   hljs_languages:
     - yaml
 
+extra_css:
+  - custom.css
+
 plugins:
   - search
   - pheasant:
@@ -23,6 +26,7 @@ plugins:
 
 nav:
   - index.md
+  - release.md
   - Examples:
     - examples/google_style.md
     - examples/numpy_style.md

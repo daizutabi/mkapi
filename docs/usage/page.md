@@ -109,7 +109,7 @@ You can click the prefix (`mkapi.core.docstring`) or the function name (`section
 
 ### Link from Type
 
-[Docstring](mkapi.core.base.Docstring) class of MkApi has an attribute `sections` that is a list of `Section` class instance like below:
+[Docstring](mkapi.core.base.Docstring) class of MkApi has an attribute `sections` that is a list of `Section` class instance:
 
 ~~~python
 # Mimic code of Docstring class.
@@ -125,8 +125,6 @@ class Docstring:
     type: str = ""
 ~~~
 
-Corresponding *real* documentation is like below:
+Corresponding *real* documentation is displayed as below. Note that **Section** and **Type** are bold, which indicates that it is a link. Let's click. This link system using type annotation is useful to navigate users throughout the project documentation.
 
 ![mkapi](mkapi.core.base.Docstring)
-
-Note that **Section** and **Type** are bold, which indicates that it is a link. Let's click. This link system using type annotation is useful to navigate users throughout the project documentation.

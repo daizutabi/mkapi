@@ -79,8 +79,9 @@ def create_page(path: str, module: Module, filters: List[str]):
 
 
 def create_source_page(path: str, module: Module, filters: List[str]):
+    filters_str = "|".join(filters)
     with open(path, "w") as f:
-        f.write(module.get_source(filters))
+        f.write(f"# ![mkapi]({module.object.id}|code|{filters_str})")
 
 
 def rmtree(path: str):

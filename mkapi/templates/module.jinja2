@@ -3,9 +3,9 @@
 {% if module.object.kind == 'module' -%}
 {% for node in module.node.members -%}
 {% if 'noheading' in object_filter -%}
-![mkapi]({{ node.object.id }}{{ object_filter }})
+![mkapi]({{ node.object.id }}{{ object_filter }}|sourcelink)
 {% else -%}
-## ![mkapi]({{ node.object.id }}{{ object_filter }})
+## ![mkapi]({{ node.object.id }}{{ object_filter }}|sourcelink)
 {% endif -%}
 {% endfor -%}
 {% else -%}

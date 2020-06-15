@@ -104,6 +104,7 @@ class MkapiPlugin(BasePlugin):
     def on_page_markdown(self, markdown, page, config, files):
         """Converts Markdown source to intermidiate version."""
         abs_src_path = page.file.abs_src_path
+        clean_page_title(page)
         page = Page(markdown, abs_src_path, self.abs_api_paths)
         self.pages[abs_src_path] = page
         return page.markdown
@@ -136,3 +137,9 @@ def clear_prefix(toc):
             toc_item.title = toc_item.title.split(".")[-1]
         clear_prefix(toc_item.children)
     return
+
+
+def clean_page_title(page):
+    title = page.title
+    if title.startswith("![mkapi]("):
+        page.title = title[9:-1].split("|")[0]

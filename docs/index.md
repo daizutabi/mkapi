@@ -1,6 +1,6 @@
 # MkApi Documentation
 
-MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard). The [Napoleon package](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html#) provides complete examples:
+MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard). The [Napoleon project](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html#) provides complete examples:
 
 * [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google)
 * [Example NumPy Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html#example-numpy)
@@ -13,6 +13,8 @@ Features of MkApi are:
 * **Attribute inspection**: If you write attributes with description as comment at module level or in `__init__()` of class, Attributes section is automatically created.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters and attributes description from its superclasses.
 * **Page mode**: Comprehensive API documentation for your project, in which objects are linked to each other by type annotation.
+* **Bidirectional Link**: Using the Page mode, bidirectional links are created between documentation and source code.
+
 
 
 ## Installation

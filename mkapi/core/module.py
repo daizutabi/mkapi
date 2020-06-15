@@ -58,12 +58,6 @@ class Module(Tree):
 
         return renderer.render_module(self, filters)  # type:ignore
 
-    def get_source(self, filters: List[str]) -> str:
-        """Returns a source for module."""
-        from mkapi.core.source import get_source
-
-        return get_source(self, filters)  # type:ignore
-
 
 def get_objects(obj) -> List[str]:
     obj_source_file = inspect.getsourcefile(obj)

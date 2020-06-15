@@ -2,6 +2,7 @@
 
 import inspect
 import re
+from dataclasses import is_dataclass
 from typing import Any, Iterator, List, Tuple
 
 from mkapi.core import preprocess
@@ -228,8 +229,6 @@ def parse_source(doc: Docstring, obj: Any):
         s['Parameters']
     """
     signature = get_signature(obj)
-    if not hasattr(signature, "parameters"):
-        return
     name = "Parameters"
     section = signature[name]
     if name in doc:
@@ -241,6 +240,10 @@ def parse_source(doc: Docstring, obj: Any):
     section = signature[name]
     if name not in doc and not section:
         return
+    if is_dataclass(obj) and 'Parameters' in doc:
+        for item in doc["Parameters"].items:
+            if item.name in section:
+                doc[name].set_item(item)
     doc[name].update(section)
 
 

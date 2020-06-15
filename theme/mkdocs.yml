@@ -1,6 +1,6 @@
 site_name: Example
 
-theme: ivory
+theme: mkdocs
 
 plugins:
   - search

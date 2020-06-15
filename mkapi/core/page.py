@@ -1,11 +1,12 @@
 """This module provides a Page class that works with other converter."""
 import re
 from dataclasses import InitVar, dataclass, field
-from typing import Iterator, List
+from typing import Iterator, List, Union
 
 from mkapi import utils
 from mkapi.core import postprocess
 from mkapi.core.base import Base, Section
+from mkapi.core.code import Code, get_code
 from mkapi.core.inherit import inherit
 from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
@@ -30,7 +31,7 @@ class Page:
     abs_src_path: str
     abs_api_paths: List[str] = field(default_factory=list, repr=False)
     markdown: str = field(init=False, repr=False)
-    nodes: List[Node] = field(default_factory=list, init=False, repr=False)
+    nodes: List[Union[Node, Code]] = field(default_factory=list, init=False, repr=False)
 
     def __post_init__(self, source):
         self.markdown = "\n\n".join(self.split(source))
@@ -53,12 +54,18 @@ class Page:
                 if markdown:
                     yield self.resolve_link(markdown)
             heading, name = match.groups()
+            level = len(heading)
             name, filters = utils.split_filters(name)
-            node = get_node(name)
-            inherit(node)
-            postprocess.transform(node, filters)
-            self.nodes.append(node)
-            markdown = node.get_markdown(level=len(heading), callback=callback)
+            if "code" in filters:
+                code = get_code(name)
+                self.nodes.append(code)
+                markdown = code.get_markdown(level)
+            else:
+                node = get_node(name)
+                inherit(node)
+                postprocess.transform(node, filters)
+                self.nodes.append(node)
+                markdown = node.get_markdown(level, callback=callback)
             yield node_markdown(index, markdown, filters)
             cursor = end
         if cursor < len(source):

@@ -30,14 +30,17 @@ class Signature:
 
     obj: Any = field(default=None, repr=False)
     signature: Optional[inspect.Signature] = field(default=None, init=False)
-    parameters: Section = field(init=False)
+    parameters: Section = field(default_factory=Section, init=False)
     defaults: Dict[str, Any] = field(default_factory=dict, init=False)
-    attributes: Section = field(init=False)
+    attributes: Section = field(default_factory=Section, init=False)
     returns: str = field(default="", init=False)
     yields: str = field(default="", init=False)
 
     def __post_init__(self):
         if self.obj is None:
+            return
+        if inspect.ismodule(self.obj):
+            self.set_attributes()
             return
         if not callable(self.obj):
             return
@@ -56,7 +59,9 @@ class Signature:
                 self.defaults[name] = default
             else:
                 self.defaults[name] = f"{default!r}"
-                if not type.endswith(", optional"):
+                if not type:
+                    type = 'optional'
+                elif not type.endswith(", optional"):
                     type += ", optional"
             items.append(Item(name, Type(type)))
         self.parameters = Section("Parameters", items=items)
@@ -158,7 +163,7 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
         return str(annotation).replace("typing.", "").lower()
     origin = annotation.__origin__
     if origin is Union:
-        return union(annotation)
+        return union(annotation, obj=obj)
     if origin is tuple:
         args = [to_string(x, obj=obj) for x in annotation.__args__]
         if args:
@@ -178,12 +183,12 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
     if len(annotation.__args__) == 0:
         return annotation.__origin__.__name__.lower()
     if len(annotation.__args__) == 1:
-        return a_of_b(annotation)
+        return a_of_b(annotation, obj=obj)
     else:
-        return to_string_args(annotation)
+        return to_string_args(annotation, obj=obj)
 
 
-def a_of_b(annotation) -> str:
+def a_of_b(annotation, obj=None) -> str:
     """Returns A of B style string.
 
     Args:
@@ -206,13 +211,13 @@ def a_of_b(annotation) -> str:
     name = origin.__name__.lower()
     if type(annotation.__args__[0]) == TypeVar:
         return name
-    type_ = f"{name} of " + to_string(annotation.__args__[0])
+    type_ = f"{name} of " + to_string(annotation.__args__[0], obj=obj)
     if type_.endswith(" of T"):
         return name
     return type_
 
 
-def union(annotation) -> str:
+def union(annotation, obj=None) -> str:
     """Returns a string for union annotation.
 
     Args:
@@ -235,19 +240,19 @@ def union(annotation) -> str:
         and hasattr(args[1], "__name__")
         and args[1].__name__ == "NoneType"
     ):
-        return to_string(args[0]) + ", optional"
+        return to_string(args[0], obj=obj) + ", optional"
     else:
-        args = [to_string(x) for x in args]
+        args = [to_string(x, obj=obj) for x in args]
         if all(" " not in arg for arg in args):
             if len(args) == 2:
                 return " or ".join(args)
             else:
                 return ", ".join(args[:-1]) + ", or " + args[-1]
         else:
-            return "Union(" + ", ".join(to_string(x) for x in args) + ")"
+            return "Union(" + ", ".join(to_string(x, obj=obj) for x in args) + ")"
 
 
-def to_string_args(annotation) -> str:
+def to_string_args(annotation, obj=None) -> str:
     """Returns a string for callable and generator annotation.
 
     Args:
@@ -271,7 +276,7 @@ def to_string_args(annotation) -> str:
     """
 
     def to_string_with_prefix(annotation, prefix=","):
-        s = to_string(annotation)
+        s = to_string(annotation, obj=obj)
         if s in ["NoneType", "any"]:
             return ""
         else:
@@ -281,12 +286,12 @@ def to_string_args(annotation) -> str:
     name = annotation.__origin__.__name__.lower()
     if name == "callable":
         *args, returns = args
-        args = ", ".join(to_string(x) for x in args)
+        args = ", ".join(to_string(x, obj=obj) for x in args)
         returns = to_string_with_prefix(returns, ":")
         return f"{name}({args}{returns})"
     elif name == "generator":
         arg, sends, returns = args
-        arg = to_string(arg)
+        arg = to_string(arg, obj=obj)
         sends = to_string_with_prefix(sends)
         returns = to_string_with_prefix(returns)
         if not sends and returns:
@@ -294,7 +299,7 @@ def to_string_args(annotation) -> str:
         return f"{name}({arg}{sends}{returns})"
     elif name == "asyncgenerator":
         arg, sends = args
-        arg = to_string(arg)
+        arg = to_string(arg, obj)
         sends = to_string_with_prefix(sends)
         return f"{name}({arg}{sends})"
     else:

@@ -1,0 +1,12 @@
+# Release Notes
+
+## Version 1.0.0 (2020-06-16)
+
+### Additions to Version 1.0.0
+
+* Add support for NumPy docstring style ([#1](https://github.com/daizutabi/mkapi/issues/1)).
+* Document only a specifc method from a class ([#5](https://github.com/daizutabi/mkapi/issues/5)).
+* Add support for magic/dunder methods ([#7](https://github.com/daizutabi/mkapi/issues/7)).
+* Include methods defined in different file ([#9](https://github.com/daizutabi/mkapi/issues/9)).
+* Display inheritance of class ([#10](https://github.com/daizutabi/mkapi/issues/10)).
+* Add `on_config` option to allow users to run custom script ([#11](https://github.com/daizutabi/mkapi/issues/11)).

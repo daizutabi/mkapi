@@ -9,6 +9,8 @@ from mkapi.core.object import (get_qualname, get_sourcefile_and_lineno,
                                split_prefix_and_name)
 from mkapi.core.signature import Signature, get_signature
 
+"a.b.c".rpartition(".")
+
 
 @dataclass
 class Object(Base):
@@ -28,11 +30,12 @@ class Object(Base):
 
     prefix: str = ""
     qualname: str = ""
+    kind: str = ""
+    signature: Signature = field(default_factory=Signature)
+    module: str = field(init=False)
     markdown: str = field(init=False)
     id: str = field(init=False)
-    kind: str = ""
     type: Type = field(default_factory=Type, init=False)
-    signature: Signature = field(default_factory=Signature)
 
     def __post_init__(self):
         from mkapi.core import linker
@@ -40,6 +43,10 @@ class Object(Base):
         self.id = self.name
         if self.prefix:
             self.id = ".".join([self.prefix, self.name])
+        if not self.qualname:
+            self.module = self.id
+        else:
+            self.module = self.id[: -len(self.qualname) - 1]
         if not self.markdown:
             name = linker.link(self.name, self.id)
             if self.prefix:
@@ -121,14 +128,6 @@ class Tree:
                 return member
         raise IndexError
 
-    def __getattr__(self, name: str):
-        """Returns a member Tree instance whose name is equal to `name`.
-        """
-        try:
-            return self[name]
-        except IndexError:
-            raise AttributeError
-
     def __len__(self):
         return len(self.members)
 
@@ -149,3 +148,9 @@ class Tree:
     def get_markdown(self) -> str:
         """Returns a Markdown source for docstring of self."""
         raise NotImplementedError
+
+    def walk(self):
+        """Yields all members."""
+        yield self
+        for member in self.members:
+            yield from member.walk()

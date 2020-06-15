@@ -108,6 +108,7 @@ span.mkapi-object-signature {
   border: none;
   padding: 0px;
   margin: 0px;
+  font-size: 0.9rem;
 }
 
 /**************************************************
@@ -120,7 +121,7 @@ span.mkapi-object-signature {
 h1.mkapi-object.plain ~ .mkapi-docstring,
 h2.mkapi-object.plain ~ .mkapi-docstring,
 h3.mkapi-object.plain ~ .mkapi-docstring {
-  margin-left: 0px;
+  margin-left: 10px;
 }
 
 .mkapi-section {
@@ -398,4 +399,25 @@ code.mkapi-args-name::after {
 
 .mkapi-members .mkapi-node {
   margin-bottom: 0px;
+}
+
+
+/*****************************************************
+ Source Code
+*****************************************************/
+a.mkapi-src-link, a.mkapi-docs-link {
+  font-size: 0.7rem;
+  font-weight: normal;
+  margin-left: 10px;
+  padding: 1px 3px;
+  border: 1px solid #BEBEBE;
+  background: #F0F0F0;
+  border-radius: 5px;
+  color: #BEBEBE;
+}
+
+a.mkapi-src-link:hover, a.mkapi-docs-link:hover {
+  border: 1px solid #FF9999;
+  background: #FFF0F0;
+  color: red;
 }

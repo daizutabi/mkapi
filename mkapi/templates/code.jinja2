@@ -1,0 +1,16 @@
+{% from 'macros.jinja2' import object_body -%}
+
+{% set upper = 'upper' in filters -%}
+{% set prefix_url = '../../' + module.object.prefix + '#' + module.object.prefix -%}
+{% set name_url = '../../' + module.object.id + '#' + module.object.id -%}
+<div class="mkapi-node">
+<h{{ code.level }} id="{{ module.id }}" class="mkapi-object mkapi-object-code plain">
+<span class="mkapi-object-kind mkapi-object-kind-code">SOURCE CODE</span>
+{{ object_body(module.object, '', '', 'span', upper) }}
+<span id="{{ module.object.id }}"></span><a class="mkapi-docs-link" href="../../{{ module.object.id }}">DOCS</a>
+</h{{ code.level }}>
+
+<div class="mkapi-code">
+{{ code.html|safe }}
+</div>
+</div>

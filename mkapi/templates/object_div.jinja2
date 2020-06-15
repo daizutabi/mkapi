@@ -4,5 +4,5 @@
 {% set tag = 'span' if 'plain' in filters else 'code' -%}
 <div class="mkapi-object mkapi-object-{{ object.kind }} {% if tag == 'span' %}plain{% else %}code{% endif %}">
 <div class="mkapi-object-kind mkapi-object-kind-{{ object.kind }}">{{ object.kind|upper }}</div>
-<div class="mkapi-object-body">{{ object_body(object, prefix_url, name_url, tag, upper) }}</div>
+<div class="mkapi-object-body">{{ object_body(object, prefix_url, name_url, tag, upper, filters) }}</div>
 </div>

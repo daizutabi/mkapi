@@ -51,11 +51,11 @@ def test_transform_property(node):
 
 def test_get_type(node):
     assert P.get_type(node).name == ""
-    assert P.get_type(node.f).name == "str"
-    assert P.get_type(node.g).name == "int"
-    assert P.get_type(node.a).name == "(int, str)"
-    assert P.get_type(node.b).name == "str"
-    node.g.docstring.sections[1]
+    assert P.get_type(node['f']).name == "str"
+    assert P.get_type(node['g']).name == "int"
+    assert P.get_type(node['a']).name == "(int, str)"
+    assert P.get_type(node['b']).name == "str"
+    node['g'].docstring.sections[1]
 
 
 def test_transform_class(node):

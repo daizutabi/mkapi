@@ -89,6 +89,19 @@ def transform_module(node: Node, filters: Optional[List[str]] = None):
     node.members = []
 
 
+def sort(node: Node):
+    def clean(name: str) -> str:
+        if name.startswith("["):
+            name = name[1:]
+        return name
+
+    doc = node.docstring
+    for section in doc.sections:
+        if section.name in ["Classes", "Parameters"]:
+            continue
+        section.items = sorted(section.items, key=lambda x: clean(x.name))
+
+
 def transform(node: Node, filters: Optional[List[str]] = None):
     if node.docstring is None:
         return
@@ -96,3 +109,5 @@ def transform(node: Node, filters: Optional[List[str]] = None):
         transform_class(node)
     elif node.object.kind in ["module", "package"]:
         transform_module(node, filters)
+    for x in node.walk():
+        sort(x)

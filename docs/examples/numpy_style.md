@@ -104,7 +104,7 @@ creates the documentation for the `ExampleClass` class.
 In this example, note that:
 
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style.
-* Attributes section is inserted with type and description. These information is collected from `__init__()` function.
+* Attributes section is inserted with type and description. These information is collected from the source code.
 * Bound methods (`message` in this case) have a METHOD prefix instead of a FUNCTION prefix.
 * If callable objects have neither Returns nor Yields, the type appears on the object definition line like type annotation.
 * Propertes are moved to the Attributes section with [RO] or [RW] suffix that indicates whether the property is read-only or read-write.
