@@ -8,28 +8,28 @@ def test_function(add):
     assert str(s) == "(x, y=1)"
 
     assert "x" in s
-    assert s.parameters["x"] == "int"
-    assert s.parameters["y"] == "int, optional"
+    assert s.parameters["x"].to_tuple()[1] == "int"
+    assert s.parameters["y"].to_tuple()[1] == "int, optional"
     assert s.returns == "int"
 
 
 def test_generator(gen):
     s = Signature(gen)
     assert "n" in s
-    assert s.parameters["n"] == ""
+    assert s.parameters["n"].to_tuple()[1] == ""
     assert s.yields == "str"
 
 
 def test_class(ExampleClass):
     s = Signature(ExampleClass)
-    assert s.parameters["x"] == "list of int"
-    assert s.parameters["y"] == "(str, int)"
+    assert s.parameters["x"].to_tuple()[1] == "list of int"
+    assert s.parameters["y"].to_tuple()[1] == "(str, int)"
 
 
 def test_dataclass(ExampleDataClass):
     s = Signature(ExampleDataClass)
-    assert s.attributes["x"] == "int"
-    assert s.attributes["y"] == "int"
+    assert s.attributes["x"].to_tuple()[1] == "int"
+    assert s.attributes["y"].to_tuple()[1] == "int"
 
 
 def test_to_string():

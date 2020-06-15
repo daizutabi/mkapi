@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from mkapi.core.base import Item, Section, Type
+from mkapi.core.base import Inline, Item, Section, Type
 from mkapi.core.node import Node
 from mkapi.core.renderer import renderer
 
@@ -16,8 +16,8 @@ def transform_property(node: Node):
             name = member.object.name
             kind = member.object.kind
             type = member.object.type
-            markdown = member.docstring.sections[0].markdown
-            item = Item(name, markdown, type=type, kind=kind)
+            description = member.docstring.sections[0].markdown
+            item = Item(name, type, Inline(description), kind=kind)
             section.items.append(item)
         else:
             members.append(member)
@@ -30,14 +30,13 @@ def get_type(node: Node) -> Type:
         name = type.name
     else:
         for name in ["Returns", "Yields"]:
-            section = node.docstring[name]
-            if section and section.type:
-                name = section.type.name
-                break
+            if name in node.docstring:
+                section = node.docstring[name]
+                if section.type:
+                    name = section.type.name
+                    break
         else:
             name = ""
-    if name.startswith("("):
-        name = name[1:-1]
     return Type(name)
 
 
@@ -58,22 +57,24 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
         object = member.object
         kind = object.kind
         type = get_type(member)
-        section_ = member.docstring[""]
-        if section_:
-            markdown = section_.markdown
-            if "\n\n" in markdown:
-                markdown = markdown.split("\n\n")[0]
-        item = Item(object.name, markdown, type=type, kind=kind)
+        if member.docstring and "" in member.docstring:
+            description = member.docstring[""].markdown
+            if "\n\n" in description:
+                description = description.split("\n\n")[0]
+        else:
+            description = ""
+        item = Item(object.name, type, Inline(description), kind)
         item.markdown, url, signature = "", "", ""
         if filters and "link" in filters:
             url = "#" + object.id
         elif filters and "apilink" in filters:
             url = "../" + node.object.id + "#" + object.id
         if object.kind not in ["class", "dataclass"]:
-            signature = "(" + ",".join(object.signature.parameters.keys()) + ")"
+            args = [item.name for item in object.signature.parameters.items]
+            signature = "(" + ",".join(args) + ")"
         item.html = renderer.render_object_member(object.name, url, signature)
         section.items.append(item)
-    node.docstring[name] = section
+    node.docstring.set_section(section)
 
 
 def transform_class(node: Node):

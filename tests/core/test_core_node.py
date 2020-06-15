@@ -57,8 +57,6 @@ def test_get_markdown():
     x = "[mkapi.core.base](!mkapi.core.base).[Base](!mkapi.core.base.Base)"
     assert parts[0] == x
     assert parts[1] == "Base class."
-    assert parts[6] == "Sets `html` attribute."
-
     markdown = node.get_markdown(level=2)
     parts = [x.strip() for x in markdown.split("<!-- mkapi:sep -->")]
     x = "[mkapi.core.base](!mkapi.core.base).[Base](!mkapi.core.base.Base)"
@@ -99,4 +97,4 @@ def test_package():
 
 def test_repr():
     node = get_node("mkapi.core.base")
-    assert repr(node) == "Node('mkapi.core.base', num_sections=1, num_numbers=7)"
+    assert repr(node) == "Node('mkapi.core.base', num_sections=1, num_members=6)"

@@ -103,16 +103,16 @@ def test_parse_parameter(style):
     it = split_parameter(body)
     lines = next(it)
     assert len(lines) == 4 if style == "goole" else 5
-    name, markdown, type = parse_parameter(lines, style)
-    assert name == "x"
-    assert markdown == "The first\nparameter\n\nwith type."
-    assert type == "int"
+    item = parse_parameter(lines, style)
+    assert item.name == "x"
+    assert item.description.markdown == "The first\nparameter\n\nwith type."
+    assert item.type.name == "int"
     lines = next(it)
     assert len(lines) == 4 if style == "goole" else 5
-    name, markdown, type = parse_parameter(lines, style)
-    assert name == "y"
-    assert markdown == "The second\nparameter\n\nwithout type."
-    assert type == ""
+    item = parse_parameter(lines, style)
+    assert item.name == "y"
+    assert item.description.markdown == "The second\nparameter\n\nwithout type."
+    assert item.type.name == ""
 
 
 @pytest.mark.parametrize("style", ["google", "numpy"])
@@ -122,11 +122,6 @@ def test_parse_returns(style):
     next(it)
     next(it)
     section, body, style = next(it)
-    markdown, type = parse_returns(body, style)
+    type, markdown = parse_returns(body, style)
     assert markdown == "e\n\nf"
     assert type == "int"
-    # lines = next(it)
-    # assert len(lines) == 2 if style == "goole" else 3
-    # type, markdown = parse_raise(lines, style)
-    # assert type == "TypeError"
-    # assert markdown == "c\nd"

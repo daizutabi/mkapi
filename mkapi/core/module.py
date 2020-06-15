@@ -2,11 +2,11 @@
 import inspect
 import os
 from dataclasses import dataclass, field
-from typing import Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional
 
-from mkapi.core.node import get_kind
+from mkapi.core.node import Node, get_kind, get_node
 from mkapi.core.object import get_object, get_sourcefile_and_lineno
-from mkapi.core.tree import Tree
+from mkapi.core.structure import Tree
 
 
 @dataclass(repr=False)
@@ -16,24 +16,16 @@ class Module(Tree):
     Attributes:
         parent: Parent Module instance.
         members: Member Module instances.
-        objects: If self is module, object member names are
-            collected in this list.
+        node: Node inspect of self.
     """
 
     parent: Optional["Module"] = field(default=None, init=False)
     members: List["Module"] = field(init=False)
-    objects: List[str] = field(default_factory=list, init=False)
+    node: Node = field(init=False)
 
     def __post_init__(self):
         super().__post_init__()
-        if self.object.kind == "module":
-            objects = get_objects(self.obj)
-            self.objects = [".".join([self.object.id, obj]) for obj in objects]
-
-    def __repr__(self):
-        s = super().__repr__()[:-1]
-        objects = len(self.objects)
-        return f"{s}, num_objects={objects})"
+        self.node = get_node(self.obj, use_cache=False)
 
     def __iter__(self) -> Iterator["Module"]:
         if self.docstring:
@@ -70,7 +62,7 @@ class Module(Tree):
         """Returns a source for module."""
         from mkapi.core.source import get_source
 
-        return get_source(self, filters)
+        return get_source(self, filters)  # type:ignore
 
 
 def get_objects(obj) -> List[str]:
@@ -112,6 +104,9 @@ def get_members(obj) -> List[Module]:
     return members
 
 
+modules: Dict[str, Module] = {}
+
+
 def get_module(name) -> Module:
     """Returns a Module instace by name or object.
 
@@ -123,4 +118,10 @@ def get_module(name) -> Module:
     else:
         obj = name
 
-    return Module(obj)
+    name = obj.__name__
+    if name in modules:
+        return modules[name]
+    else:
+        module = Module(obj)
+        modules[name] = module
+        return module

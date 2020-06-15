@@ -51,12 +51,33 @@ def test_class_attribute_without_desc():
 
 @dataclass
 class C:
+    x: int  #: int
+    #: A
+    y: A
+    z: B
+    """B
+
+    end.
+    """
+
+
+def test_dataclass_attribute():
+    attrs = get_attributes(C)
+    for k, (name, (type, markdown)) in enumerate(attrs.items()):
+        assert name == ["x", "y", "z"][k]
+        assert markdown == ["int", "A", "B\n\nend."][k]
+        if k == 0:
+            assert type is int
+
+
+@dataclass
+class D:
     x: int
     y: List[str]
 
 
 def test_dataclass_attribute_without_desc():
-    attrs = get_attributes(C)
+    attrs = get_attributes(D)
     for k, (name, (type, markdown)) in enumerate(attrs.items()):
         assert name == ["x", "y"][k]
         assert markdown == ""
@@ -67,7 +88,7 @@ def test_dataclass_attribute_without_desc():
             assert x == "list of str"
 
 
-def test_module_attribute_without_desc():
+def test_module_attribute():
     attrs = get_attributes(google_style)
     for k, (name, (type, markdown)) in enumerate(attrs.items()):
         if k == 0:

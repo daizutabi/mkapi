@@ -46,12 +46,11 @@ def get_fullname(obj: Any, name: str) -> str:
         name: Object name in the module.
 
     Examples:
-        >>> import inspect
         >>> obj = get_object('mkapi.core.base.Item')
         >>> get_fullname(obj, 'Section')
         'mkapi.core.base.Section'
-        >>> get_fullname(obj, 'linker.link')
-        'mkapi.core.linker.link'
+        >>> get_fullname(obj, 'preprocess')
+        'mkapi.core.preprocess'
         >>> get_fullname(obj, 'abc')
         ''
     """

@@ -4,9 +4,9 @@ import inspect
 import re
 from typing import Any, Iterator, List, Tuple
 
-from mkapi.core.base import Docstring, Item, Section, Type
-from mkapi.core.linker import get_link, replace_link
 from mkapi.core import preprocess
+from mkapi.core.base import Docstring, Inline, Item, Section, Type
+from mkapi.core.linker import get_link, replace_link
 from mkapi.core.signature import get_signature
 from mkapi.utils import get_indent, join
 
@@ -123,8 +123,8 @@ def split_parameter(doc: str) -> Iterator[List[str]]:
             start = stop
 
 
-def parse_parameter(lines: List[str], style: str) -> Tuple[str, str, str]:
-    """Returns a tuple of (name, markdown, type).
+def parse_parameter(lines: List[str], style: str) -> Item:
+    """Returns a Item instance that represents a parameter.
 
     Args:
         lines: Splitted parameter docstring lines.
@@ -148,16 +148,16 @@ def parse_parameter(lines: List[str], style: str) -> Tuple[str, str, str]:
         name, type = m.group(1), m.group(2)
     else:
         type = ""
-    return name, "\n".join(parsed), type
+    return Item(name, Type(type), Inline("\n".join(parsed)))
 
 
-def parse_parameters(doc: str, style: str) -> List[Tuple[str, str, str]]:
-    """Returns a list of (name, markdown, type)."""
+def parse_parameters(doc: str, style: str) -> List[Item]:
+    """Returns a list of Item."""
     return [parse_parameter(lines, style) for lines in split_parameter(doc)]
 
 
 def parse_returns(doc: str, style: str) -> Tuple[str, str]:
-    """Returns a tuple of (markdown, type)."""
+    """Returns a tuple of (type, markdown)."""
     lines = doc.split("\n")
     if style == "google":
         if ":" in lines[0]:
@@ -169,7 +169,7 @@ def parse_returns(doc: str, style: str) -> Tuple[str, str]:
     else:
         type = lines[0].strip()
         lines = lines[1:]
-    return join(lines), type
+    return type, join(lines)
 
 
 def get_section(name: str, doc: str, style: str) -> Section:
@@ -178,9 +178,9 @@ def get_section(name: str, doc: str, style: str) -> Section:
     markdown = ""
     items = []
     if name in ["Parameters", "Attributes", "Raises"]:
-        items = [Item(n, m, Type(t)) for n, m, t in parse_parameters(doc, style)]
+        items = parse_parameters(doc, style)
     elif name in ["Returns", "Yields"]:
-        markdown, type = parse_returns(doc, style)
+        type, markdown = parse_returns(doc, style)
     else:
         markdown = doc
     return Section(name, markdown, items, Type(type))
@@ -195,7 +195,7 @@ def parse_bases(doc: Docstring, obj: Any):
         return
     types = [get_link(obj, include_module=True) for obj in objs]
     items = [Item(type=Type(type)) for type in types if type]
-    doc["Bases"] = Section("Bases", items=items)
+    doc.set_section(Section("Bases", items=items))
 
 
 def parse_property(doc: Docstring, obj: Any):
@@ -210,43 +210,43 @@ def parse_property(doc: Docstring, obj: Any):
             section.markdown = markdown
 
 
-def parse_attribute(doc: Docstring, obj: Any):
-    """Parses attributes' docstring to inspect type and description from source."""
-    signature = get_signature(obj)
-    attrs = signature.attributes
-    attrs_desc = signature.attributes_desc
+def parse_source(doc: Docstring, obj: Any):
+    """Parses parameters' docstring to inspect type and description from source.
 
-    if not attrs:
+    Examples:
+        >>> from mkapi.core.base import Base
+        >>> doc = Docstring()
+        >>> parse_source(doc, Base)
+        >>> section = doc['Parameters']
+        >>> section['name'].to_tuple()
+        ('name', 'str, optional', 'Name of self.')
+        >>> section = doc['Attributes']
+        >>> section['html'].to_tuple()
+        ('html', 'str', 'HTML string after conversion.')
+
+        s = get_signature(Base)
+        s['Parameters']
+    """
+    signature = get_signature(obj)
+    if not hasattr(signature, "parameters"):
         return
-    section = doc["Attributes"]
-    if section is None:
-        if any(x for x in attrs_desc.values()):
-            section = Section("Attributes")
-            doc["Attributes"] = section
-        else:
-            return
-    items = []
-    for name in attrs:
-        item = section[name]
-        if item:
-            if not item.type.markdown:
-                item.type = Type(attrs[name])
-            if not item.markdown:
-                item.markdown = attrs_desc[name]
-            del section[name]
-        elif attrs_desc[name]:
-            item = Item(name, attrs_desc[name], type=Type(attrs[name]))
-        else:
-            continue
-        items.append(item)
-    items.extend(section.items)
-    section.items = items
+    name = "Parameters"
+    section = signature[name]
+    if name in doc:
+        section = section.merge(doc[name], force=True)
+    if section:
+        doc.set_section(section, replace=True)
+
+    name = "Attributes"
+    section = signature[name]
+    if name not in doc and not section:
+        return
+    doc[name].update(section)
 
 
 def postprocess(doc: Docstring, obj: Any):
     parse_bases(doc, obj)
-    if inspect.ismodule(obj) or inspect.isclass(obj):
-        parse_attribute(doc, obj)
+    parse_source(doc, obj)
     if isinstance(obj, property):
         parse_property(doc, obj)
 
@@ -257,30 +257,21 @@ def postprocess(doc: Docstring, obj: Any):
     if signature.signature is None:
         return
 
-    def get_type(type: str) -> Type:
-        if type.startswith("("):  # tuple
-            type = type[1:-1]
-        return Type(type)
-
-    if doc["Parameters"] is not None:
+    if "Parameters" in doc:
         for item in doc["Parameters"].items:
-            if not item.type and item.name in signature.parameters:
-                item.type = get_type(signature.parameters[item.name])
-            if "{default}" in item.desc.markdown and item.name in signature:
+            description = item.description.name
+            if "{default}" in description and item.name in signature:
                 default = signature.defaults[item.name]
-                item.desc.markdown = item.desc.markdown.replace("{default}", default)
-
-    if doc["Attributes"] is not None and signature.attributes:
-        for item in doc["Attributes"].items:
-            if not item.type and item.name in signature.attributes:
-                item.type = get_type(signature.attributes[item.name])
+                description = description.replace("{default}", default)
+                item.set_description(Inline(description), force=True)
 
     for name in ["Returns", "Yields"]:
-        section = doc[name]
-        if section is not None and not section.type:
-            section.type = Type(getattr(signature, name.lower()))
+        if name in doc:
+            section = doc[name]
+            if not section.type:
+                section.type = Type(getattr(signature, name.lower()))
 
-    if doc["Returns"] is None and doc["Yields"] is None:
+    if "Returns" not in doc and "Yields" not in doc:
         from mkapi.core.node import get_kind
 
         kind = get_kind(obj)
@@ -308,11 +299,6 @@ def get_docstring(obj: Any) -> Docstring:
         for section in split_section(doc):
             sections.append(get_section(*section))
         docstring = Docstring(sections)
-    elif inspect.isclass(obj) and hasattr(obj, "mro"):
-        bases = obj.mro()[1:-1]
-        if not bases:
-            return Docstring()
-        docstring = Docstring([Section()])
     else:
         return Docstring()
     postprocess(docstring, obj)

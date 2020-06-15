@@ -39,7 +39,7 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
     if root not in sys.path:
         sys.path.insert(0, root)
 
-    package_path, filters = utils.filter(package_path)
+    package_path, filters = utils.split_filters(package_path)
 
     module = get_module(package_path)
     nav = []

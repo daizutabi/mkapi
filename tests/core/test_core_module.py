@@ -15,10 +15,10 @@ def test_get_module():
     assert base.parent is core
     assert base.object.markdown == "[mkapi.core](!mkapi.core).[base](!mkapi.core.base)"
     assert base.object.kind == "module"
-    assert len(base.objects) == 7
+    assert len(base.node.members) == 6
 
 
 def test_repr():
     module = get_module("mkapi.core.base")
-    s = "Module('mkapi.core.base', num_sections=1, num_numbers=0, num_objects=7)"
+    s = "Module('mkapi.core.base', num_sections=1, num_members=0)"
     assert repr(module) == s

@@ -224,9 +224,7 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
 }
 
 .mkapi-section-body-example pre code,
-.mkapi-section-body-example code,
-.mkapi-section-body-examples pre code,
-.mkapi-section-body-examples code {
+.mkapi-section-body-examples pre code {
   background: none;
   border: none;
   padding: 0px 0px;
@@ -294,8 +292,8 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
 
 .mkapi-node ul.mkapi-args-list li {
   margin: 0px 0px 2px 0px;
-  padding-left: 20px;
-  text-indent: -20px;
+  padding-left: 40px;
+  text-indent: -40px;
   list-style: none;
   line-height: 1.25em;
 }

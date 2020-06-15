@@ -3,12 +3,13 @@
 {%- endmacro %}
 
 {% macro base_type(base) -%}
-  {% if base.type %}<span class="mkapi-args-type">({{ base.type.html|safe }})</span>{% endif %}
+  {% if base.type %}<span class="mkapi-args-type">{% if not base.type.html.startswith("(") -%}
+  ({% endif %}{{ base.type.html|safe }}{% if not base.type.html.startswith("(") %}){% endif %}</span>{% endif %}
 {%- endmacro %}
 
-{% macro object_type(object) -%}
-  {% if object.type %}<span class="mkapi-args-type"> &#x2192; {{ select_type(object) }}</span>{% endif %}
-{%- endmacro %}
+{%- macro object_type(object) -%}
+  {% if object.type %}<span class="mkapi-args-type"> &#x2192; {{ object.type.html|safe }}</span>{% endif -%}
+{%- endmacro -%}
 
 {% macro object_prefix(object, url, upper) -%}
   {% if url %}<a href="{{ url }}">{% endif -%}
@@ -32,13 +33,12 @@
 {%- endif %}
 {%- endmacro %}
 
-{% macro object_body(object, prefix_url, name_url, tag, upper) -%}
+{%- macro object_body(object, prefix_url, name_url, tag, upper) -%}
   {% if object.prefix and '.' not in object.qualname -%}
     <{{ tag }} class="mkapi-object-prefix">{{ object_prefix(object, prefix_url, upper) }}</{{ tag }}>
   {%- endif -%}
-    <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>{{ object_signature(object.signature, tag) }}
-    {{ object_type(object) }}
-{%- endmacro %}
+    <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>{{ object_signature(object.signature, tag) }} {{ object_type(object) }}
+{%- endmacro -%}
 
 {% macro object_member(name, url, signature) -%}
 {% if url %}<a href="{{ url }}">{% endif -%}{{ name }}{% if url %}</a>{% endif %}{{ object_signature(signature, tag='code', in_code=True) }}

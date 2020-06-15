@@ -6,7 +6,7 @@ from typing import Iterator, List
 from mkapi import utils
 from mkapi.core import postprocess
 from mkapi.core.base import Base, Section
-from mkapi.core.inherit import inherit_by_filters
+from mkapi.core.inherit import inherit
 from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
 from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
@@ -53,9 +53,9 @@ class Page:
                 if markdown:
                     yield self.resolve_link(markdown)
             heading, name = match.groups()
-            name, filters = utils.filter(name)
+            name, filters = utils.split_filters(name)
             node = get_node(name)
-            inherit_by_filters(node, filters)
+            inherit(node)
             postprocess.transform(node, filters)
             self.nodes.append(node)
             markdown = node.get_markdown(level=len(heading), callback=callback)

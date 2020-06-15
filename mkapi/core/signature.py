@@ -1,12 +1,14 @@
 """This module provides Signature class that inspects object and creates
 signature and types."""
+import importlib
 import inspect
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field, is_dataclass
 from functools import lru_cache
 from typing import Any, Dict, Optional, TypeVar, Union
 
 from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
+from mkapi.core.base import Inline, Item, Section, Type
 
 
 @dataclass
@@ -18,29 +20,25 @@ class Signature:
 
     Attributes:
         signature: `inspect.Signature` instance.
-        parameters: Parameter dictionary. Key is parameter name
-            and value is type string.
-        defaults: Default value dictionary. Key is parameter name
-            and value is default value.
-        attributes: Attribute dictionary for dataclass. Key is attribute name
-            and value is type string.
+        parameters: Parameters section.
+        defaults: Default value dictionary. Key is parameter name and
+            value is default value.
+        attributes: Attributes section.
         returns: Returned type string. Used in Returns section.
         yields: Yielded type string. Used in Yields section.
     """
 
     obj: Any = field(default=None, repr=False)
     signature: Optional[inspect.Signature] = field(default=None, init=False)
-    parameters: Dict[str, str] = field(default_factory=dict, init=False)
+    parameters: Section = field(init=False)
     defaults: Dict[str, Any] = field(default_factory=dict, init=False)
-    attributes: Dict[str, str] = field(default_factory=dict, init=False)
-    attributes_desc: Dict[str, str] = field(default_factory=dict, init=False)
+    attributes: Section = field(init=False)
     returns: str = field(default="", init=False)
     yields: str = field(default="", init=False)
 
     def __post_init__(self):
         if self.obj is None:
             return
-        self.get_attributes()
         if not callable(self.obj):
             return
         try:
@@ -48,10 +46,11 @@ class Signature:
         except (TypeError, ValueError):
             pass
 
+        items = []
         for name, parameter in self.signature.parameters.items():
             if name == "self":
                 continue
-            type = to_string(parameter.annotation)
+            type = to_string(parameter.annotation, obj=self.obj)
             default = parameter.default
             if default == inspect.Parameter.empty:
                 self.defaults[name] = default
@@ -59,11 +58,12 @@ class Signature:
                 self.defaults[name] = f"{default!r}"
                 if not type.endswith(", optional"):
                     type += ", optional"
-            self.parameters[name] = type
-
+            items.append(Item(name, Type(type)))
+        self.parameters = Section("Parameters", items=items)
+        self.set_attributes()
         return_annotation = self.signature.return_annotation
-        self.returns = to_string(return_annotation, "returns")
-        self.yields = to_string(return_annotation, "yields")
+        self.returns = to_string(return_annotation, "returns", obj=self.obj)
+        self.yields = to_string(return_annotation, "yields", obj=self.obj)
 
     def __contains__(self, name):
         return name in self.parameters
@@ -76,25 +76,44 @@ class Signature:
             return ""
 
         args = []
-        for arg in self.parameters:
+        for item in self.parameters.items:
+            arg = item.name
             if self.defaults[arg] != inspect.Parameter.empty:
                 arg += "=" + self.defaults[arg]
             args.append(arg)
         return "(" + ", ".join(args) + ")"
 
-    def get_attributes(self):
-        for name, (type, desc) in get_attributes(self.obj).items():
-            type = to_string(type) if type else ""
+    def set_attributes(self):
+        """
+        Examples:
+            >>> from mkapi.core.base import Base
+            >>> s = Signature(Base)
+            >>> s.parameters['name'].to_tuple()
+            ('name', 'str, optional', 'Name of self.')
+            >>> s.attributes['html'].to_tuple()
+            ('html', 'str', 'HTML string after conversion.')
+        """
+        items = []
+        for name, (type, description) in get_attributes(self.obj).items():
+            type = to_string(type, obj=self.obj) if type else ""
             if not type:
-                type, desc = preprocess.split_type(desc)
-            self.attributes[name] = type
-            self.attributes_desc[name] = desc
+                type, description = preprocess.split_type(description)
 
-    def split(self, sep=','):
+            item = Item(name, Type(type), Inline(description))
+            if is_dataclass(self.obj):
+                if name in self.parameters:
+                    self.parameters[name].set_description(item.description)
+                if self.obj.__dataclass_fields__[name].type != InitVar:
+                    items.append(item)
+            else:
+                items.append(item)
+        self.attributes = Section("Attributes", items=items)
+
+    def split(self, sep=","):
         return str(self).split(sep)
 
 
-def to_string(annotation, kind: str = "returns") -> str:
+def to_string(annotation, kind: str = "returns", obj=None) -> str:
     """Returns string expression of annotation.
 
     If possible, type string includes link.
@@ -129,7 +148,7 @@ def to_string(annotation, kind: str = "returns") -> str:
     if annotation == ...:
         return "..."
     if hasattr(annotation, "__forward_arg__"):
-        return annotation.__forward_arg__
+        return resolve_forward_arg(obj, annotation.__forward_arg__)
     if annotation == inspect.Parameter.empty or annotation is None:
         return ""
     name = linker.get_link(annotation)
@@ -280,6 +299,15 @@ def to_string_args(annotation) -> str:
         return f"{name}({arg}{sends})"
     else:
         return ""
+
+
+def resolve_forward_arg(obj: Any, name: str) -> str:
+    if obj is None or not hasattr(obj, "__module__"):
+        return name
+    module = importlib.import_module(obj.__module__)
+    globals = dict(inspect.getmembers(module))
+    type = eval(name, globals)
+    return to_string(type)
 
 
 @lru_cache(maxsize=1000)

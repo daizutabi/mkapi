@@ -3,7 +3,7 @@ import importlib
 import inspect
 from dataclasses import InitVar, is_dataclass
 from functools import lru_cache
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 import _ast
 from mkapi import utils
@@ -42,6 +42,8 @@ def parse_node(x):
         return parse_subscript(x)
     elif isinstance(x, _ast.Tuple):
         return parse_tuple(x)
+    elif isinstance(x, _ast.Str):
+        return x.s
     else:
         raise NotImplementedError
 
@@ -82,74 +84,67 @@ def get_description(lines: List[str], lineno: int) -> str:
     return ""
 
 
-def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
-    """Returns a dictionary that maps attribute name to a tuple of
-    (type, description)."""
+def get_source(obj) -> str:
     try:
-        source = inspect.getsource(cls.__init__) or ""
+        source = inspect.getsource(obj) or ""
         if not source:
-            return {}
-    except TypeError:
-        return {}
-    source = utils.join(source.split("\n"))
-    node = ast.parse(source)
+            return ""
+    except (OSError, TypeError):
+        return ""
+    else:
+        return source
 
-    attr_list: List[Tuple] = []
-    module = importlib.import_module(cls.__module__)
+
+def get_attributes_list(
+    nodes: Iterable[ast.AST], module, is_module: bool = False
+) -> List[Tuple[str, int, Any]]:
+    attr_list: List[Tuple[str, int, Any]] = []
     globals = dict(inspect.getmembers(module))
-    for x in ast.walk(node):
+    for x in nodes:
         if isinstance(x, _ast.AnnAssign):
             attr, lineno, type_str = parse_annotation_assign(x)
             type = eval(type_str, globals)
             attr_list.append((attr, lineno, type))
         if isinstance(x, _ast.Attribute) and isinstance(x.ctx, _ast.Store):
-            attr_list.append(parse_attribute_with_lineno(x))
+            attr, lineno = parse_attribute_with_lineno(x)
+            attr_list.append((attr, lineno, ()))
+        if is_module and isinstance(x, _ast.Assign):
+            attr, lineno = parse_attribute_with_lineno(x)
+            attr_list.append((attr, lineno, ()))
+    attr_list = [x for x in attr_list if not x[0].startswith('_')]
     attr_list = sorted(attr_list, key=lambda x: x[1])
+    return attr_list
+
+
+def get_attributes_dict(
+    attr_list: List[Tuple[str, int, Any]], source: str, prefix: str = ""
+) -> Dict[str, Tuple[Any, str]]:
 
     attrs: Dict[str, Tuple[Any, str]] = {}
     lines = source.split("\n")
-    for name, lineno, *type in attr_list:
-        if name.startswith("self."):
-            name = name[5:]
-            desc = get_description(lines, lineno)
+    for name, lineno, type in attr_list:
+        if not prefix or name.startswith(prefix):
+            name = name[len(prefix) :]
+            description = get_description(lines, lineno)
             if type:
-                attrs[name] = type[0], desc  # Assignment with type annotation wins.
+                attrs[name] = type, description  # Assignment with type annotation wins.
             elif name not in attrs:
-                attrs[name] = None, desc
+                attrs[name] = None, description
     return attrs
 
 
-def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
+def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     """Returns a dictionary that maps attribute name to a tuple of
     (type, description)."""
-    try:
-        source = inspect.getsource(module) or ""
-        if not source:
-            return {}
-    except (OSError, TypeError):
+    source = get_source(cls)
+    if not source:
         return {}
+    source = utils.join(source.split("\n"))
     node = ast.parse(source)
-
-    attr_list: List[Tuple] = []
-    globals = dict(inspect.getmembers(module))
-    for x in ast.iter_child_nodes(node):
-        if isinstance(x, _ast.AnnAssign):
-            attr, lineno, type_str = parse_annotation_assign(x)
-            type = eval(type_str, globals)
-            attr_list.append((attr, lineno, type))
-        if isinstance(x, _ast.Assign):
-            attr_list.append(parse_attribute_with_lineno(x))
-    attr_list = sorted(attr_list, key=lambda x: x[1])
-
-    attrs: Dict[str, Tuple[Any, str]] = {}
-    lines = source.split("\n")
-    for name, lineno, *type in attr_list:
-        desc = get_description(lines, lineno)
-        if type:
-            attrs[name] = type[0], desc  # Assignment with type annotation wins.
-        elif name not in attrs:
-            attrs[name] = None, desc
-    return attrs
+    nodes = ast.walk(node)
+    module = importlib.import_module(cls.__module__)
+    attr_list = get_attributes_list(nodes, module)
+    return get_attributes_dict(attr_list, source, prefix="self.")
 
 
 def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
@@ -160,7 +155,40 @@ def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     for field in fields:
         if field.type != InitVar:
             attrs[field.name] = field.type, ""
+
+    source = get_source(cls)
+    source = utils.join(source.split("\n"))
+    if not source:
+        return {}
+    node = ast.parse(source).body[0]
+
+    def nodes():
+        for x in ast.iter_child_nodes(node):
+            if isinstance(x, _ast.FunctionDef):
+                break
+            yield x
+
+    module = importlib.import_module(cls.__module__)
+    attr_list = get_attributes_list(nodes(), module)
+    for name, (type, description) in get_attributes_dict(attr_list, source).items():
+        if name in attrs:
+            attrs[name] = attrs[name][0], description
+        else:
+            attrs[name] = type, description
+
     return attrs
+
+
+def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
+    """Returns a dictionary that maps attribute name to a tuple of
+    (type, description)."""
+    source = get_source(module)
+    if not source:
+        return {}
+    node = ast.parse(source)
+    nodes = ast.iter_child_nodes(node)
+    attr_list = get_attributes_list(nodes, module, is_module=True)
+    return get_attributes_dict(attr_list, source)
 
 
 @lru_cache(maxsize=1000)

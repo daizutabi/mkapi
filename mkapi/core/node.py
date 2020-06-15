@@ -3,9 +3,9 @@ import inspect
 from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional
 
-from mkapi.core.base import Base, Object
+from mkapi.core.base import Base
 from mkapi.core.object import from_object, get_object, get_sourcefiles
-from mkapi.core.tree import Tree
+from mkapi.core.structure import Object, Tree
 
 
 @dataclass(repr=False)
@@ -174,30 +174,36 @@ def get_members(obj: Any) -> List[Node]:
     if isinstance(obj, property):
         return []
 
-    recursive = not inspect.ismodule(obj)
     sourcefiles = get_sourcefiles(obj)
     members = []
     for name, obj in inspect.getmembers(obj):
         sourcefile_index = is_member(obj, name, sourcefiles)
         if sourcefile_index != -1 and not from_object(obj):
-            member = get_node(obj, recursive, sourcefile_index)
+            member = get_node(obj, sourcefile_index)
             if member.docstring:
                 members.append(member)
     return sorted(members, key=lambda x: (-x.sourcefile_index, x.lineno))
 
 
-def get_node(name, recursive: bool = True, sourcefile_index: int = 0) -> Node:
+def get_node(name, sourcefile_index: int = 0, use_cache: bool = True) -> Node:
     """Returns a Node instace by name or object.
 
     Args:
         name: Object name or object itself.
-        recursive: If True, member objects are collected recursively.
         sourcefile_index: If `obj` is a member of class, this value is the index of
             unique source files given by `mro()` of the class. Otherwise, 0.
     """
+    from mkapi.core.module import modules
+
     if isinstance(name, str):
         obj = get_object(name)
     else:
         obj = name
 
-    return Node(obj, recursive, sourcefile_index)
+    if use_cache:
+        if hasattr(obj, "__module__") and obj.__module__ in modules:
+            node = modules[obj.__module__]
+            if obj.__qualname__ in node:
+                return node[obj.__qualname__]
+
+    return Node(obj, sourcefile_index)

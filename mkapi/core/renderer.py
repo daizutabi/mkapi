@@ -10,9 +10,10 @@ from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
 from mkapi.core import linker
-from mkapi.core.base import Docstring, Object, Section
+from mkapi.core.base import Docstring, Section
 from mkapi.core.module import Module
 from mkapi.core.node import Node
+from mkapi.core.structure import Object
 
 
 @dataclass
@@ -42,8 +43,8 @@ class Renderer:
             node: Node instance.
         """
         object = self.render_object(node.object, filters=filters)
-        docstring = self.render_docstring(node.docstring)
-        members = [self.render(member) for member in node.members]
+        docstring = self.render_docstring(node.docstring, filters=filters)
+        members = [self.render(member, filters) for member in node.members]
         return self.render_node(node, object, docstring, members)
 
     def render_node(
@@ -91,7 +92,7 @@ class Renderer:
         template = self.templates["object_member"]
         return template.render(name=name, url=url, signature=signature)
 
-    def render_docstring(self, docstring: Docstring) -> str:
+    def render_docstring(self, docstring: Docstring, filters: List[str] = None) -> str:
         """Returns a rendered HTML for Docstring.
 
         Args:
@@ -102,19 +103,23 @@ class Renderer:
         template = self.templates["docstring"]
         for section in docstring.sections:
             if section.items:
-                section.html = self.render_section(section)
+                valid = any(item.description for item in section.items)
+                if filters and 'strict' in filters or valid:
+                    section.html = self.render_section(section, filters)
         return template.render(docstring=docstring)
 
-    def render_section(self, section: Section) -> str:
+    def render_section(self, section: Section, filters: List[str] = None) -> str:
         """Returns a rendered HTML for Section.
 
         Args:
             section: Section instance.
         """
+        if filters is None:
+            filters = []
         if section.name == "Bases":
             return self.templates["bases"].render(section=section)
         else:
-            return self.templates["args"].render(section=section)
+            return self.templates["args"].render(section=section, filters=filters)
 
     def render_module(self, module: Module, filters: List[str]) -> str:
         """Returns a rendered Markdown for Module.

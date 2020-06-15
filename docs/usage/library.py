@@ -86,10 +86,9 @@ section.name, section.markdown
 # argument list:
 
 item = section.items[0]
-print(f"name={item.name!r}")
-print(f"markdown={item.markdown!r}, html={item.html!r}")
+print(item)
 print(item.type)
-print(item.desc)
+print(item.description)
 
 # `Node.get_markdown()` creates a *joint* Markdown of this node.
 
@@ -131,7 +130,7 @@ section.markdown, section.html
 # -
 section = child.docstring.sections[1]  # type:ignore
 item = section.items[0]
-item.desc.markdown, item.desc.html  # A <p> tag is deleted.
+item.description.markdown, item.description.html  # A <p> tag is deleted.
 
 # ## Constructing HTML
 

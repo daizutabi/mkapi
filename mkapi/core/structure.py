@@ -1,13 +1,56 @@
 """This module provides base class of [Node](mkapi.core.node.Node) and
 [Module](mkapi.core.module.Module)."""
 from dataclasses import dataclass, field
-from typing import Any, List, Union
+from typing import Any, Iterator, List, Union
 
-from mkapi.core.base import Object
+from mkapi.core.base import Base, Type
 from mkapi.core.docstring import Docstring, get_docstring
 from mkapi.core.object import (get_qualname, get_sourcefile_and_lineno,
                                split_prefix_and_name)
-from mkapi.core.signature import get_signature
+from mkapi.core.signature import Signature, get_signature
+
+
+@dataclass
+class Object(Base):
+    """Object class represents an object.
+
+    Args:
+        name: Object name.
+        prefix: Object prefix.
+        qualname: Qualified name.
+        kind: Object kind such as 'class', 'function', *etc.*
+        signature: Signature if object is module or callable.
+
+    Attributes:
+        id: ID attribute of HTML.
+        type: Type for missing Returns and Yields sections.
+    """
+
+    prefix: str = ""
+    qualname: str = ""
+    markdown: str = field(init=False)
+    id: str = field(init=False)
+    kind: str = ""
+    type: Type = field(default_factory=Type, init=False)
+    signature: Signature = field(default_factory=Signature)
+
+    def __post_init__(self):
+        from mkapi.core import linker
+
+        self.id = self.name
+        if self.prefix:
+            self.id = ".".join([self.prefix, self.name])
+        if not self.markdown:
+            name = linker.link(self.name, self.id)
+            if self.prefix:
+                prefix = linker.link(self.prefix, self.prefix)
+                self.markdown = ".".join([prefix, name])
+            else:
+                self.markdown = name
+
+    def __iter__(self) -> Iterator[Base]:
+        yield from self.type
+        yield self
 
 
 @dataclass
@@ -25,7 +68,6 @@ class Tree:
         docstring: Docstring instance.
         parent: Parent instance.
         members: Member instances.
-        recursive: If True, member objects are collected recursively.
     """
 
     obj: Any = field()
@@ -35,7 +77,6 @@ class Tree:
     docstring: Docstring = field(init=False)
     parent: Any = field(default=None, init=False)
     members: List[Any] = field(init=False)
-    recursive: bool = field(default=True)
 
     def __post_init__(self):
         obj = self.obj
@@ -48,10 +89,7 @@ class Tree:
             prefix=prefix, name=name, qualname=qualname, kind=kind, signature=signature,
         )
         self.docstring = get_docstring(obj)
-        if self.recursive:
-            self.members = self.get_members()
-        else:
-            self.members = []
+        self.members = self.get_members()
         for member in self.members:
             member.parent = self
 
@@ -60,25 +98,36 @@ class Tree:
         id = self.object.id
         sections = len(self.docstring.sections)
         numbers = len(self.members)
-        return f"{class_name}({id!r}, num_sections={sections}, num_numbers={numbers})"
+        return f"{class_name}({id!r}, num_sections={sections}, num_members={numbers})"
 
-    def __getitem__(self, index: Union[int, str]):
+    def __getitem__(self, index: Union[int, str, List[str]]):
         """Returns a member Tree instance.
 
         If `index` is str, a member Tree instance whose name is equal to `index`
         is returned.
         """
+        if isinstance(index, list):
+            node = self
+            for name in index:
+                node = node[name]
+            return node
         if isinstance(index, int):
             return self.members[index]
-        else:
-            for member in self.members:
-                if member.object.name == index:
-                    return member
+        if isinstance(index, str) and "." in index:
+            names = index.split(".")
+            return self[names]
+        for member in self.members:
+            if member.object.name == index:
+                return member
+        raise IndexError
 
     def __getattr__(self, name: str):
         """Returns a member Tree instance whose name is equal to `name`.
         """
-        return self[name]
+        try:
+            return self[name]
+        except IndexError:
+            raise AttributeError
 
     def __len__(self):
         return len(self.members)

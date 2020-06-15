@@ -1,6 +1,5 @@
-from markdown import Markdown
-
-converter = Markdown()
+import importlib
+from typing import Any
 
 
 def get_indent(line: str) -> int:
@@ -17,29 +16,46 @@ def join(lines):
     return "\n".join(line[indent:] for line in lines).strip()
 
 
-def get_html(node):
-    from mkapi.core.node import Node, get_node
+def get_object(name: str) -> Any:
+    """Reutrns an object specified by `name`.
 
-    if not isinstance(node, Node):
-        node = get_node(node)
-    markdown = node.get_markdown()
-    html = converter.convert(markdown)
-    node.set_html(html)
-    return node.get_html()
+    Args:
+        name: Object name.
+
+    Examples:
+        >>> import inspect
+        >>> obj = get_object('mkapi.core')
+        >>> inspect.ismodule(obj)
+        True
+        >>> obj = get_object('mkapi.core.base')
+        >>> inspect.ismodule(obj)
+        True
+        >>> obj = get_object('mkapi.core.node.Node')
+        >>> inspect.isclass(obj)
+        True
+        >>> obj = get_object('mkapi.core.node.Node.get_markdown')
+        >>> inspect.isfunction(obj)
+        True
+    """
+    names = name.split(".")
+    for k in range(len(names), 0, -1):
+        module_name = ".".join(names[:k])
+        try:
+            obj = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            continue
+        for attr in names[k:]:
+            obj = getattr(obj, attr)
+        return obj
+    raise ValueError(f"Could not find object: {name}")
 
 
-def display(name):
-    from IPython.display import HTML
-
-    return HTML(get_html(name))
-
-
-def filter(name):
+def split_filters(name):
     """
     Examples:
-        >>> filter("a.b.c")
+        >>> split_filters("a.b.c")
         ('a.b.c', [])
-        >>> filter("a.b.c|upper|strict")
+        >>> split_filters("a.b.c|upper|strict")
         ('a.b.c', ['upper', 'strict'])
     """
     index = name.find("|")

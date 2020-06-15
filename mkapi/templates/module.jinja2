@@ -1,11 +1,11 @@
 # ![mkapi]({{ module.object.id }}{{ module_filter }}|link|plain)
 
 {% if module.object.kind == 'module' -%}
-{% for object in module.objects -%}
+{% for node in module.node.members -%}
 {% if 'noheading' in object_filter -%}
-![mkapi]({{ object }}{{ object_filter }})
+![mkapi]({{ node.object.id }}{{ object_filter }})
 {% else -%}
-## ![mkapi]({{ object }}{{ object_filter }})
+## ![mkapi]({{ node.object.id }}{{ object_filter }})
 {% endif -%}
 {% endfor -%}
 {% else -%}

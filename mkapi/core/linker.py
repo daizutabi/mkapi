@@ -179,7 +179,7 @@ def replace_link(obj: Any, markdown: str) -> str:
 
     Examples:
         >>> from mkapi.core.object import get_object
-        >>> obj = get_object('mkapi.core.base.Object')
+        >>> obj = get_object('mkapi.core.structure.Object')
         >>> replace_link(obj, '[Signature]()')
         '[Signature](!mkapi.core.signature.Signature)'
         >>> replace_link(obj, '[](Signature)')

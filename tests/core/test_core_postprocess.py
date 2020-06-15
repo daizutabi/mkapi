@@ -38,7 +38,8 @@ class A:
 
 @pytest.fixture
 def node():
-    return Node(A)
+    node = Node(A)
+    return node
 
 
 def test_transform_property(node):
@@ -52,8 +53,9 @@ def test_get_type(node):
     assert P.get_type(node).name == ""
     assert P.get_type(node.f).name == "str"
     assert P.get_type(node.g).name == "int"
-    assert P.get_type(node.a).name == "int, str"
+    assert P.get_type(node.a).name == "(int, str)"
     assert P.get_type(node.b).name == "str"
+    node.g.docstring.sections[1]
 
 
 def test_transform_class(node):
@@ -77,11 +79,11 @@ def test_transform_module(module):
     P.transform(node, ["link"])
     q = module.__name__
     section = node.docstring["Functions"]
-    assert 'add' in section
-    item = section['add']
-    item.markdown.startswith('Returns')
+    assert "add" in section
+    item = section["add"]
+    item.markdown.startswith("Returns")
     item.html.startswith(f'<a href="#{q}.add">add</a>')
-    assert 'gen' in section
+    assert "gen" in section
     section = node.docstring["Classes"]
-    assert 'ExampleClass' in section
-    assert 'ExampleDataClass' in section
+    assert "ExampleClass" in section
+    assert "ExampleDataClass" in section

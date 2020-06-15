@@ -2,6 +2,7 @@ import os
 import sys
 
 import click
+from markdown import Markdown
 
 from mkapi import __version__
 
@@ -14,3 +15,23 @@ version_msg = f"{__version__} from {pgk_dir} (Python {sys.version[:3]})."
 @click.version_option(version_msg, "-V", "--version")
 def cli(ctx):
     pass
+
+
+converter = Markdown()
+
+
+def get_html(node):
+    from mkapi.core.node import Node, get_node
+
+    if not isinstance(node, Node):
+        node = get_node(node)
+    markdown = node.get_markdown()
+    html = converter.convert(markdown)
+    node.set_html(html)
+    return node.get_html()
+
+
+def display(name):
+    from IPython.display import HTML
+
+    return HTML(get_html(name))
