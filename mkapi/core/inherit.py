@@ -27,7 +27,7 @@ def get_section(node: Node, name: str, mode: str) -> Section:
         else:
             return Section(name)
     else:
-        if hasattr(node.object.signature, name):
+        if hasattr(node.object.signature, name.lower()):
             return node.object.signature[name]
         else:
             return Section(name)
@@ -93,6 +93,14 @@ def inherit_base(node: Node, base: Node, name: str = "both"):
     base_section = get_section(base, name, "Docstring")
     node_section = get_section(node, name, "Docstring")
     section = base_section.merge(node_section, force=True)
+    if name == "Parameters":
+        sig_section = get_section(node, name, "Signature")
+        items = []
+        for item in section.items:
+            if item.name in sig_section:
+                items.append(item)
+
+        section.items = items
     if section:
         node.docstring.set_section(section, replace=True)
 

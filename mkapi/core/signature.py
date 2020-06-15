@@ -139,9 +139,9 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
     if kind == "yields":
         if hasattr(annotation, "__args__") and annotation.__args__:
             if len(annotation.__args__) == 1:
-                return to_string(annotation.__args__[0])
+                return to_string(annotation.__args__[0], obj=obj)
             else:
-                return to_string(annotation)
+                return to_string(annotation, obj=obj)
         else:
             return ""
 
@@ -160,7 +160,7 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
     if origin is Union:
         return union(annotation)
     if origin is tuple:
-        args = [to_string(x) for x in annotation.__args__]
+        args = [to_string(x, obj=obj) for x in annotation.__args__]
         if args:
             return "(" + ", ".join(args) + ")"
         else:
@@ -168,7 +168,7 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
     if origin is dict:
         if type(annotation.__args__[0]) == TypeVar:
             return "dict"
-        args = [to_string(x) for x in annotation.__args__]
+        args = [to_string(x, obj=obj) for x in annotation.__args__]
         if args:
             return "dict(" + ": ".join(args) + ")"
         else:
