@@ -13,13 +13,13 @@
 
 {% macro object_prefix(object, url, upper) -%}
   {% if url %}<a href="{{ url }}">{% endif -%}
-    {% if upper %}{{ object.prefix|upper }}{% else %}{{ object.prefix }}{% endif %}
+    {% if upper and object.kind in ['package', 'module'] %}{{ object.prefix|upper }}{% else %}{{ object.prefix }}{% endif %}
   {%- if url %}</a>{% endif %}.
 {%- endmacro %}
 
 {% macro object_name(object, url, upper) -%}
   {% if url and object.id != url[1:] %}<a href="{{ url }}">{% endif -%}
-    {% if upper %}{{ object.name|upper }}{% else %}{{ object.name }}{% endif %}
+    {% if upper and object.kind in ['package', 'module'] %}{{ object.name|upper }}{% else %}{{ object.name }}{% endif %}
   {%- if url and object.id != url[1:] %}</a>{% endif %}
 {%- endmacro %}
 
