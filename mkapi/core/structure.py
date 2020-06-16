@@ -112,6 +112,9 @@ class Tree:
 
         If `index` is str, a member Tree instance whose name is equal to `index`
         is returned.
+
+        Raises:
+            IndexError: If no member found.
         """
         if isinstance(index, list):
             node = self

@@ -4,17 +4,7 @@ from typing import List
 
 import markdown
 
-from mkapi.core.base import Base
 from mkapi.core.module import Module, get_module
-
-
-@dataclass(repr=False)
-class Block(Base):
-    def __post_init__(self):
-        self.markdown = f"~~~python\n{self.markdown}\n~~~\n"
-
-    def __iter__(self):
-        yield
 
 
 @dataclass
@@ -54,7 +44,7 @@ class Code:
 
     def __repr__(self):
         class_name = self.__class__.__name__
-        return f"{class_name}({self.module.object.id!r}, num_objects={len(self.nodes)})"
+        return f"{class_name}({self.module.object.id!r})"
 
     def get_markdown(self, level: int = 1) -> str:
         """Returns a Markdown source for docstring of this object."""

@@ -1,4 +1,5 @@
-from mkapi.core.node import get_node, is_member
+from mkapi.core.module import get_module
+from mkapi.core.node import get_kind, get_node, is_member
 
 
 def test_generator():
@@ -92,9 +93,26 @@ def test_set_html_and_render():
 
 def test_package():
     node = get_node("mkapi.core")
-    assert node.object.kind == 'package'
+    assert node.object.kind == "package"
 
 
 def test_repr():
     node = get_node("mkapi.core.base")
     assert repr(node) == "Node('mkapi.core.base', num_sections=2, num_members=6)"
+
+
+def test_get_kind():
+    class A:
+        def __getattr__(self, name):
+            raise KeyError
+
+    assert get_kind(A()) == ""
+
+
+def test_cache():
+    _ = get_module("mkapi.core")
+    x = get_node("mkapi.core.base.Base.__iter__")
+    y = get_node("mkapi.core.base.Base.__iter__")
+    assert x is y
+    z = get_node("mkapi.core.base.Base.__iter__", use_cache=False)
+    assert x is not z

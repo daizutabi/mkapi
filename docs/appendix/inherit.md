@@ -73,4 +73,4 @@ for name, obj in object.__dict__.items():
         print(f"{name}: {doc}")
 ```
 
-If docstring of an ojbect is equal to that of `object`, the object doesn't be added into API documentation.
+If docstring of an object is equal to that of `object`, the object doesn't be added into API documentation.

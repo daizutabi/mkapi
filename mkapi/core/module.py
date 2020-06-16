@@ -4,8 +4,8 @@ import os
 from dataclasses import dataclass, field
 from typing import Dict, Iterator, List, Optional
 
-from mkapi.core.node import Node, get_kind, get_node
-from mkapi.core.object import get_object, get_sourcefile_and_lineno
+from mkapi.core.node import Node, get_node
+from mkapi.core.object import get_object
 from mkapi.core.structure import Tree
 
 
@@ -59,26 +59,11 @@ class Module(Tree):
         return renderer.render_module(self, filters)  # type:ignore
 
 
-def get_objects(obj) -> List[str]:
-    obj_source_file = inspect.getsourcefile(obj)
-    members = []
-    for name, obj in inspect.getmembers(obj):
-        if name.startswith("_"):
-            continue
-        if not get_kind(obj):
-            continue
-        sourcefile, lineno = get_sourcefile_and_lineno(obj)
-        if sourcefile != obj_source_file:
-            continue
-        if not inspect.getdoc(obj):
-            continue
-        members.append((name, lineno))
-    members = sorted(members, key=lambda x: x[1])
-    return [x[0] for x in members]
-
-
 def get_members(obj) -> List[Module]:
-    sourcefile = inspect.getsourcefile(obj)
+    try:
+        sourcefile = inspect.getsourcefile(obj)
+    except TypeError:
+        return []
     if not sourcefile:
         return []
     root = os.path.dirname(sourcefile)

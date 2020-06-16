@@ -3,7 +3,7 @@ import inspect
 from dataclasses import dataclass, field
 from typing import Any, Iterator, List, Optional
 
-from mkapi.core.base import Base
+from mkapi.core.base import Base, Type
 from mkapi.core.object import from_object, get_object, get_sourcefiles
 from mkapi.core.structure import Object, Tree
 
@@ -38,9 +38,10 @@ class Node(Tree):
         self.members = [m for m in members if m.object.name != "__init__"]
         if self.docstring and self.docstring.type:
             self.object.type = self.docstring.type
+            self.docstring.type = Type()
 
     def __iter__(self) -> Iterator[Base]:
-        yield self.object
+        yield from self.object
         yield from self.docstring
         for member in self.members:
             yield from member
@@ -200,10 +201,11 @@ def get_node(name, sourcefile_index: int = 0, use_cache: bool = True) -> Node:
     else:
         obj = name
 
-    if use_cache:
+    if use_cache and hasattr(obj, "__qualname__"):
         if hasattr(obj, "__module__") and obj.__module__ in modules:
-            node = modules[obj.__module__]
-            if obj.__qualname__ in node:
+            node = modules[obj.__module__].node
+            try:
                 return node[obj.__qualname__]
-
+            except IndexError:
+                pass
     return Node(obj, sourcefile_index)

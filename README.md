@@ -7,20 +7,17 @@
 
 # MkApi
 
-MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard). The [Napoleon package](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html#) provides complete examples:
-
-* [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google)
-* [Example NumPy Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html#example-numpy)
+MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard). 
 
 Features of MkApi are:
 
-* **Section syntax**: Supported sections are `Args`, `Arguments`, `Attributes`, `Example[s]`, `Note[s]`, `Parameters`, `Raises`, `Returns`, `References`, `Todo`, `Warning[s]`, `Warns`, and `Yields`.
-* **Type annotation**: If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in `Args`, `Parameters`, `Returns`, or `Yields` section again. You can overwrite the type annotation in the corresponding docstring.
-* **Object type inspection**: MkApi plugin creates `CLASS`, `DATACLASS`, `FUNCTION`, `GENERATOR`, or `METHOD` prefix for each object.
-* **Attribute inspection**: If you write attributes with description as comment in `__init__()`, Attributes section is automatically created.
+* **Type annotation**: If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in Parameters, Returns, or Yields section again. You can overwrite the type annotation in the corresponding docstring.
+* **Object type inspection**: MkApi plugin creates CLASS, DATACLASS, FUNCTION, GENERATOR, or METHOD prefix for each object.
+* **Attribute inspection**: If you write attributes with description as comment in module or class, Attributes section is automatically created.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters and attributes description from its superclasses.
 * **Page mode**: Comprehensive API documentation for your project, in which objects are linked to each other by type annotation.
 * **Bidirectional Link**: Using the Page mode, bidirectional links are created between documentation and source code.
+* **Table of Contents**: Using the Page mode, table of contents are inserted into the documentation of each package, module, and class.
 
 ## Installation
 

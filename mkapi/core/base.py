@@ -514,7 +514,6 @@ class Docstring:
 
     def __iter__(self) -> Iterator[Base]:
         """Yields [Base]() instance."""
-        yield from self.type
         for section in self.sections:
             yield from section
 

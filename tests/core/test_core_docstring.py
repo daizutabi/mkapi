@@ -1,4 +1,4 @@
-from mkapi.core.docstring import get_docstring
+from mkapi.core.docstring import get_docstring, rename_section
 
 
 def test_function(add):
@@ -11,3 +11,7 @@ def test_function(add):
     assert doc.sections[1].items[0].type.name == "int"
     assert doc.sections[1].items[1].name == "y"
     assert doc.sections[1].items[1].type.name == "int, optional"
+
+
+def test_rename_section():
+    assert rename_section('Warns') == 'Warnings'

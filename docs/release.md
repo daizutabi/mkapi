@@ -1,5 +1,10 @@
 # Release Notes
 
+
+## Version 1.0.2 (2020-06-16)
+
+* BugFix: `get_node` returns cached instance unless `use_cache=False`.
+
 ## Version 1.0.1 (2020-06-16)
 
 * Add `title` attribute to [DOCS] and [SOURCE] link to display the object id.
@@ -10,7 +15,7 @@
 ### Additions to Version 1.0.0
 
 * Add support for NumPy docstring style ([#1](https://github.com/daizutabi/mkapi/issues/1)).
-* Document only a specifc method from a class ([#5](https://github.com/daizutabi/mkapi/issues/5)).
+* Document only a specific method from a class ([#5](https://github.com/daizutabi/mkapi/issues/5)).
 * Add support for magic/dunder methods ([#7](https://github.com/daizutabi/mkapi/issues/7)).
 * Include methods defined in different file ([#9](https://github.com/daizutabi/mkapi/issues/9)).
 * Display inheritance of class ([#10](https://github.com/daizutabi/mkapi/issues/10)).

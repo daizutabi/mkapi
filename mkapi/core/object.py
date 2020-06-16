@@ -1,4 +1,4 @@
-"""This module provides utility functions that relates to object."""
+"""This module provides utility functions that relate to object."""
 import importlib
 import inspect
 from typing import Any, List, Tuple

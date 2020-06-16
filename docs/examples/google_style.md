@@ -8,7 +8,7 @@
 -->
 </style>
 
-Let's start realistic examples. Here, a sample Python file `google_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so we would configure `mkdocs.yml` like below. In addition, we add two extensions and an extra javascript for demonstration.
+Let's start concrete examples. Here, a sample Python file `google_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so we would configure `mkdocs.yml` like below. In addition, we add two extensions and an extra javascript for demonstration.
 
 {{ # cache:clear }}
 
@@ -106,7 +106,7 @@ In this example, note that:
 * Attributes section is inserted with type and description. These information is collected from the source code.
 * Bound methods (`message` in this case) have a METHOD prefix instead of a FUNCTION prefix.
 * If callable objects have neither Returns nor Yields, the type appears on the object signature line like type annotation.
-* Propertes are moved to the Attributes section with [RO] or [RW] suffix that indicates whether the property is read-only or read-write.
+* Properties are moved to the Attributes section with [RO] or [RW] suffix that indicates whether the property is read-only or read-write.
 * Methods section is newly created that displays a list of methods defined in this class. Note that it has a hyperlink to the object.
 
 !!! note
@@ -145,3 +145,10 @@ In this example, note that:
 
 * A DATACLASS prefix instead of a CLASS prefix.
 * Attributes type inspection as well as parameters if they are data class fields.
+
+
+!!! note
+    The [Napoleon project](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html#) provides complete examples:
+
+    * [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google)
+    * [Example NumPy Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html#example-numpy)

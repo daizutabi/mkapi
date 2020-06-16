@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from examples import google_style
 from mkapi.core import signature
-from mkapi.core.attribute import get_attributes
+from mkapi.core.attribute import get_attributes, get_description
 
 
 class A:
@@ -104,3 +104,13 @@ def test_module_attribute():
             assert signature.to_string(type) == "list of int"
             assert markdown.startswith("The third module level attribute.")
             assert markdown.endswith("supported.")
+
+
+def test_one_line_docstring():
+    lines = ["x = 1", "'''docstring'''"]
+    assert get_description(lines, 1) == "docstring"
+
+
+def test_module_attribute_tye():
+    from mkapi.core import renderer
+    assert get_attributes(renderer)['renderer'][0] is renderer.Renderer

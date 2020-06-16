@@ -6,13 +6,12 @@ from mkapi.core.renderer import renderer
 
 
 def transform_property(node: Node):
-    section = node.docstring["Attributes"]
+    section = None
     members = []
     for member in node.members:
         if "property" in member.object.kind:
             if section is None:
-                section = Section("Attributes")
-                node.docstring["Attributes"] = section
+                section = node.docstring["Attributes"]
             name = member.object.name
             kind = member.object.kind
             type = member.object.type
@@ -90,16 +89,11 @@ def transform_module(node: Node, filters: Optional[List[str]] = None):
 
 
 def sort(node: Node):
-    def clean(name: str) -> str:
-        if name.startswith("["):
-            name = name[1:]
-        return name
-
     doc = node.docstring
     for section in doc.sections:
         if section.name in ["Classes", "Parameters"]:
             continue
-        section.items = sorted(section.items, key=lambda x: clean(x.name))
+        section.items = sorted(section.items, key=lambda x: x.name)
 
 
 def transform(node: Node, filters: Optional[List[str]] = None):

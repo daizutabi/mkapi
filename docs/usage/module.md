@@ -33,7 +33,7 @@ Although there is no Attributes section in docstring, MkApi automatically create
 
 ![mkapi](google_style)
 
-Furthermore, Classes and Functions sections are also created that display a list of members defined in the module.
+Furthermore, Classes and Functions sections are also created that display a list of members defined in the module and their short descriptions. The prefix [D] means dataclass and [G] means generator.
 
 ## Documentation with Heading
 

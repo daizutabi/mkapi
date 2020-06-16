@@ -1,21 +1,16 @@
 # MkApi Documentation
 
-MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard). The [Napoleon project](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html#) provides complete examples:
-
-* [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google)
-* [Example NumPy Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html#example-numpy)
+MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
 
 Features of MkApi are:
 
-* **Section syntax**: Supported section identifiers are `Args`, `Arguments`, `Attributes`, `Example[s]`, `Note[s]`, `Parameters`, `Raises`, `Returns`, `References`, `Todo`, `Warning[s]`, `Warns`, and `Yields`.
 * **Type annotation**: If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in Parameters, Returns, or Yields section again. You can overwrite the type annotation in the corresponding docstring.
 * **Object type inspection**: MkApi plugin creates CLASS, DATACLASS, FUNCTION, GENERATOR, or METHOD prefix for each object.
-* **Attribute inspection**: If you write attributes with description as comment at module level or in `__init__()` of class, Attributes section is automatically created.
+* **Attribute inspection**: If you write attributes with description as comment in module or class, Attributes section is automatically created.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters and attributes description from its superclasses.
 * **Page mode**: Comprehensive API documentation for your project, in which objects are linked to each other by type annotation.
 * **Bidirectional Link**: Using the Page mode, bidirectional links are created between documentation and source code.
-
-
+* **Table of Contents**: Using the Page mode, table of contents are inserted into the documentation of each package, module, and class.
 
 ## Installation
 
@@ -37,17 +32,17 @@ plugins:
 
 ## Usage
 
-MkApi provides two modes to generate API documentation: Embedding mode and Page mode.
+MkApi provides two modes to generate documentation: Embedding mode and Page mode.
 
 ### Embedding Mode
 
-To generate the API documentation in a Markdown source, add an exclamation mark (!), followed by `mkapi` in brackets, and the object full name in parentheses. Yes, this is like adding an image. The object can be a function, class, or module, *etc*.
+To generate the documentation from docstring in a Markdown source, add an exclamation mark (!), followed by `mkapi` in brackets, and the object full name in parentheses. Yes, this is like adding an image. The object can be a function, class, or module, *etc*.
 
 ~~~markdown
-![mkapi](<object.full.name>)
+![mkapi](<package.module.object>)
 ~~~
 
-MkApi imports objects that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:
+MkApi imports modules that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:
 
 ~~~yml
 plugins:
@@ -58,7 +53,7 @@ plugins:
 
 Here, `pathX`s are inserted to `sys.path`. These `pathX`s are relative to the `mkdocs.yml` directory.
 
-The embedding mode is useful to embed an object interface in an arbitrary position of a Markdown source. For more details, see:
+The embedding mode is useful to embed documentation of an object in an arbitrary position of a Markdown source. For more details, see:
 
 * [Google style examples](examples/google_style.md)
 * [NumPy style examples](examples/numpy_style.md)
