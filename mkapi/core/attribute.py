@@ -42,7 +42,9 @@ def parse_node(x):
         return parse_subscript(x)
     elif isinstance(x, _ast.Tuple):
         return parse_tuple(x)
-    elif isinstance(x, _ast.Str):
+    elif hasattr(_ast, "Constant") and isinstance(x, _ast.Constant):
+        return x.value
+    elif hasattr(_ast, "Str") and isinstance(x, _ast.Str):
         return x.s
     else:
         raise NotImplementedError
@@ -111,7 +113,7 @@ def get_attributes_list(
         if is_module and isinstance(x, _ast.Assign):
             attr, lineno = parse_attribute_with_lineno(x)
             attr_list.append((attr, lineno, ()))
-    attr_list = [x for x in attr_list if not x[0].startswith('_')]
+    attr_list = [x for x in attr_list if not x[0].startswith("_")]
     attr_list = sorted(attr_list, key=lambda x: x[1])
     return attr_list
 
