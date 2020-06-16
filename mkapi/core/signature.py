@@ -330,28 +330,3 @@ def resolve_forward_arg(obj: Any, name: str) -> str:
 @lru_cache(maxsize=1000)
 def get_signature(obj: Any) -> Signature:
     return Signature(obj)
-
-
-@pytest.fixture(scope="module")
-def chart_path_1() -> str:
-    """Docstring"""
-    return "text"
-
-
-@pytest.fixture(scope="module")
-def chart_path_2():
-    """Docstring"""
-    return "text"
-
-
-def chart_path_3() -> str:
-    """Docstring"""
-    return "text"
-
-
-class A:
-    "aaa"
-
-    @property
-    def x(self):
-        """ppp"""

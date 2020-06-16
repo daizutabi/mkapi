@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+* BugFix: Include functions decorated by Pytest.
+* Add link from property to source vice versa.
 * reStructuredText type link like `Object_`.
 * Support of string type annotation like `ForwardRef`.
 
