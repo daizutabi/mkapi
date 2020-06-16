@@ -25,7 +25,7 @@ class Module(Tree):
 
     def __post_init__(self):
         super().__post_init__()
-        self.node = get_node(self.obj, use_cache=False)
+        self.node = get_node(self.obj)
 
     def __iter__(self) -> Iterator["Module"]:
         if self.docstring:

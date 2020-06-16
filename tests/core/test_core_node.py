@@ -1,5 +1,5 @@
-# from mkapi.core.module import get_module
-from mkapi.core.node import get_kind, get_node, is_member
+from mkapi.core.module import get_module
+from mkapi.core.node import get_kind, get_node, get_node_from_module, is_member
 
 
 def test_generator():
@@ -109,10 +109,11 @@ def test_get_kind():
     assert get_kind(A()) == ""
 
 
-# def test_cache():
-#     _ = get_module("mkapi.core")
-#     x = get_node("mkapi.core.base.Base.__iter__")
-#     y = get_node("mkapi.core.base.Base.__iter__")
-#     assert x is y
-#     z = get_node("mkapi.core.base.Base.__iter__", use_cache=False)
-#     assert x is not z
+def test_get_node_from_module():
+    _ = get_module("mkapi.core")
+    x = get_node("mkapi.core.base.Base.__iter__")
+    y = get_node("mkapi.core.base.Base.__iter__")
+    assert x is not y
+    x = get_node_from_module("mkapi.core.base.Base.__iter__")
+    y = get_node_from_module("mkapi.core.base.Base.__iter__")
+    assert x is y

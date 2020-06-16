@@ -186,7 +186,7 @@ def get_members(obj: Any) -> List[Node]:
     return sorted(members, key=lambda x: (-x.sourcefile_index, x.lineno))
 
 
-def get_node(name, sourcefile_index: int = 0, use_cache: bool = True) -> Node:
+def get_node(name, sourcefile_index: int = 0) -> Node:
     """Returns a Node instace by name or object.
 
     Args:
@@ -194,18 +194,21 @@ def get_node(name, sourcefile_index: int = 0, use_cache: bool = True) -> Node:
         sourcefile_index: If `obj` is a member of class, this value is the index of
             unique source files given by `mro()` of the class. Otherwise, 0.
     """
-    # from mkapi.core.module import modules
 
     if isinstance(name, str):
         obj = get_object(name)
     else:
         obj = name
 
-    # if use_cache and hasattr(obj, "__qualname__"):
-    #     if hasattr(obj, "__module__") and obj.__module__ in modules:
-    #         node = modules[obj.__module__].node
-    #         try:
-    #             return node[obj.__qualname__]
-    #         except IndexError:
-    #             pass
     return Node(obj, sourcefile_index)
+
+
+def get_node_from_module(name):
+    from mkapi.core.module import modules
+
+    if isinstance(name, str):
+        obj = get_object(name)
+    else:
+        obj = name
+
+    return modules[obj.__module__].node[obj.__qualname__]
