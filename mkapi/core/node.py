@@ -194,7 +194,7 @@ def get_node(name, sourcefile_index: int = 0, use_cache: bool = True) -> Node:
         sourcefile_index: If `obj` is a member of class, this value is the index of
             unique source files given by `mro()` of the class. Otherwise, 0.
     """
-    from mkapi.core.module import modules
+    # from mkapi.core.module import modules
 
     if isinstance(name, str):
         obj = get_object(name)
