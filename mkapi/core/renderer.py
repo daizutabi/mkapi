@@ -77,6 +77,8 @@ class Renderer:
         if context.get("level"):
             if object.kind in ["module", "package"]:
                 filters.append("plain")
+            elif "plain" in filters:
+                del filters[filters.index("plain")]
             template = self.templates["object_heading"]
         else:
             template = self.templates["object_div"]
