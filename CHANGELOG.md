@@ -1,4 +1,9 @@
-# Release Notes
+# Changelog
+
+## [Unreleased]
+
+* reStructuredText type link like `Object_`.
+* Support of string type annotation like `ForwardRef`.
 
 ## Version 1.0.2 (2020-06-16)
 

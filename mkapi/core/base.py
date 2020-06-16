@@ -1,6 +1,6 @@
 """This module provides entity classes to represent docstring structure."""
 from dataclasses import dataclass, field
-from typing import Iterator, List, Tuple
+from typing import Callable, Iterator, List, Optional, Tuple
 
 from mkapi.core import preprocess
 from mkapi.core.regex import LINK_PATTERN
@@ -28,6 +28,8 @@ class Base:
     name: str = ""  #: Name of self.
     markdown: str = ""  #: Markdown source.
     html: str = field(default="", init=False)  #: HTML string after conversion.
+    callback: Optional[Callable[["Base"], str]] = field(default=None, init=False)
+    """Callback function to modify HTML string."""
 
     def __repr__(self):
         class_name = self.__class__.__name__
@@ -49,21 +51,11 @@ class Base:
             html: HTML string.
         """
         self.html = html
+        if self.callback:
+            self.html = self.callback(self)
 
     def copy(self):
-        """Copys self.
-
-        Examples:
-            >>> a = Base('x', 'text')
-            >>> b = a
-            >>> b.name = 'y'
-            >>> a.name
-            'y'
-            >>> c = a.copy()
-            >>> c.name = 'z'
-            >>> a.name
-            'y'
-        """
+        """Returns a copy of the {class} instance."""
         return self.__class__(name=self.name, markdown=self.markdown)
 
 
@@ -98,17 +90,17 @@ class Inline(Base):
 
     def set_html(self, html: str):
         """Sets `html` attribute cleaning `p` tags."""
-        self.html = preprocess.strip_ptags(html)
+        html = preprocess.strip_ptags(html)
+        super().set_html(html)
 
     def copy(self):
-        """Copys self."""
         return self.__class__(name=self.name)
 
 
 @dataclass(repr=False)
 class Type(Inline):
-    """Type class represents type of [Item](), [Section](), [Docstring](),
-    or [Object]().
+    """Type class represents type of Item_, Section_, Docstring_, or
+    [Object](mkapi.core.structure.Object).
 
     Examples:
         >>> a = Type('str')
@@ -213,7 +205,7 @@ class Item(Type):
                 description.
 
         See Also:
-            * [Item.update]()
+            * Item.update_
         """
         if not force and self.type.name:
             return
@@ -229,7 +221,7 @@ class Item(Type):
                 description.
 
         See Also:
-            * [Item.update]()
+            * Item.update_
         """
         if not force and self.description.name:
             return
@@ -267,16 +259,6 @@ class Item(Type):
         self.set_type(item.type, force)
 
     def copy(self):
-        """Copys self.
-
-        Examples:
-            >>> item = Item('x', 'str', 'description', kind='rw')
-            >>> new = item.copy()
-            >>> new.description
-            Inline('description')
-            >>> new.kind
-            'rw'
-        """
         return Item(*self.to_tuple(), kind=self.kind)
 
 
@@ -295,7 +277,6 @@ class Section(Base):
         Section('Parameters', num_items=3)
         >>> list(section)
         [Item('[y](a)', '')]
-
     """
 
     items: List[Item] = field(default_factory=list)
@@ -314,7 +295,7 @@ class Section(Base):
         return len(self.items) > 0
 
     def __iter__(self) -> Iterator[Base]:
-        """Yields a [Base]() instance that has non empty Markdown."""
+        """Yields a Base_ instance that has non empty Markdown."""
         yield from self.type
         if self.markdown:
             yield self
@@ -322,7 +303,7 @@ class Section(Base):
             yield from item
 
     def __getitem__(self, name: str) -> Item:
-        """Returns an [Item]() instance whose name is equal to `name`.
+        """Returns an Item_ instance whose name is equal to `name`.
 
         If there is no Item instance, a Item instance is newly created.
 
@@ -346,7 +327,7 @@ class Section(Base):
         return item
 
     def __delitem__(self, name: str):
-        """Delete an [Item]() instance whose name is equal to `name`.
+        """Delete an Item_ instance whose name is equal to `name`.
 
         Args:
             name: Item name.
@@ -389,7 +370,7 @@ class Section(Base):
             ['x', 'y', 'z']
 
         See Also:
-            * [Section.update]
+            * Section.update_
         """
         for k, x in enumerate(self.items):
             if x.name == item.name:
@@ -447,7 +428,7 @@ class Section(Base):
         return merged
 
     def copy(self):
-        """Copys self.
+        """Returns a copy of the {class} instace.
 
         Examples:
             >>> s = Section('E', 'markdown', [Item('a', 's'), Item('b', 'i')])

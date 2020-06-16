@@ -6,6 +6,8 @@ from dataclasses import InitVar, dataclass, field, is_dataclass
 from functools import lru_cache
 from typing import Any, Dict, Optional, TypeVar, Union
 
+import pytest
+
 from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Inline, Item, Section, Type
@@ -53,7 +55,10 @@ class Signature:
                 name = "*" + name
             elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
                 name = "**" + name
-            type = to_string(parameter.annotation, obj=self.obj)
+            if isinstance(parameter.annotation, str):
+                type = resolve_forward_arg(self.obj, parameter.annotation)
+            else:
+                type = to_string(parameter.annotation, obj=self.obj)
             default = parameter.default
             if default == inspect.Parameter.empty:
                 self.defaults[name] = default
@@ -67,8 +72,12 @@ class Signature:
         self.parameters = Section("Parameters", items=items)
         self.set_attributes()
         return_annotation = self.signature.return_annotation
-        self.returns = to_string(return_annotation, "returns", obj=self.obj)
-        self.yields = to_string(return_annotation, "yields", obj=self.obj)
+
+        if isinstance(return_annotation, str):
+            self.returns = resolve_forward_arg(self.obj, return_annotation)
+        else:
+            self.returns = to_string(return_annotation, "returns", obj=self.obj)
+            self.yields = to_string(return_annotation, "yields", obj=self.obj)
 
     def __contains__(self, name):
         return name in self.parameters
@@ -100,7 +109,10 @@ class Signature:
         """
         items = []
         for name, (type, description) in get_attributes(self.obj).items():
-            type = to_string(type, obj=self.obj) if type else ""
+            if isinstance(type, str) and type:
+                type = resolve_forward_arg(self.obj, type)
+            else:
+                type = to_string(type, obj=self.obj) if type else ""
             if not type:
                 type, description = preprocess.split_type(description)
 
@@ -299,7 +311,7 @@ def to_string_args(annotation, obj=None) -> str:
         return f"{name}({arg}{sends}{returns})"
     elif name == "asyncgenerator":
         arg, sends = args
-        arg = to_string(arg, obj)
+        arg = to_string(arg, obj=obj)
         sends = to_string_with_prefix(sends)
         return f"{name}({arg}{sends})"
     else:
@@ -318,3 +330,28 @@ def resolve_forward_arg(obj: Any, name: str) -> str:
 @lru_cache(maxsize=1000)
 def get_signature(obj: Any) -> Signature:
     return Signature(obj)
+
+
+@pytest.fixture(scope="module")
+def chart_path_1() -> str:
+    """Docstring"""
+    return "text"
+
+
+@pytest.fixture(scope="module")
+def chart_path_2():
+    """Docstring"""
+    return "text"
+
+
+def chart_path_3() -> str:
+    """Docstring"""
+    return "text"
+
+
+class A:
+    "aaa"
+
+    @property
+    def x(self):
+        """ppp"""

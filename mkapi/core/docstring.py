@@ -240,7 +240,7 @@ def parse_source(doc: Docstring, obj: Any):
     section = signature[name]
     if name not in doc and not section:
         return
-    if is_dataclass(obj) and 'Parameters' in doc:
+    if is_dataclass(obj) and "Parameters" in doc:
         for item in doc["Parameters"].items:
             if item.name in section:
                 doc[name].set_item(item)
@@ -262,11 +262,10 @@ def postprocess(doc: Docstring, obj: Any):
 
     if "Parameters" in doc:
         for item in doc["Parameters"].items:
-            description = item.description.name
-            if "{default}" in description and item.name in signature:
+            description = item.description
+            if "{default}" in description.name and item.name in signature:
                 default = signature.defaults[item.name]
-                description = description.replace("{default}", default)
-                item.set_description(Inline(description), force=True)
+                description.markdown = description.name.replace("{default}", default)
 
     for name in ["Returns", "Yields"]:
         if name in doc:
@@ -285,13 +284,9 @@ def postprocess(doc: Docstring, obj: Any):
 
     for section in doc.sections:
         if section.name in ["Example", "Examples"]:
-            break
-        if section.markdown:
-            section.markdown = replace_link(obj, section.markdown)
-        else:
-            for item in section.items:
-                if item.markdown:
-                    item.markdown = replace_link(obj, item.markdown)
+            continue
+        for base in section:
+            base.markdown = replace_link(obj, base.markdown)
 
 
 def get_docstring(obj: Any) -> Docstring:

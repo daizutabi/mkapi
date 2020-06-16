@@ -7,7 +7,7 @@
 
 # MkApi
 
-MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard). 
+MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
 
 Features of MkApi are:
 
@@ -46,7 +46,7 @@ MkApi provides two modes to generate API documentation: Embedding mode and Page 
 To generate the API documentation in a Markdown source, add an exclamation mark (!), followed by `mkapi` in brackets, and the object full name in parentheses. Yes, this is like adding an image. The object can be a function, class, or module.
 
 ~~~markdown
-![mkapi](<object.full.name>)
+![mkapi](<package.module.object>)
 ~~~
 
 MkApi imports objects that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:

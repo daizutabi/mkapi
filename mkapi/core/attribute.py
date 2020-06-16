@@ -31,6 +31,10 @@ def parse_tuple(x):
     return tuple(parse_node(x) for x in x.elts)
 
 
+def parse_list(x):
+    return "[" + ", ".join(parse_node(x) for x in x.elts) + "]"
+
+
 def parse_node(x):
     if isinstance(x, _ast.Name):
         return x.id
@@ -42,6 +46,8 @@ def parse_node(x):
         return parse_subscript(x)
     elif isinstance(x, _ast.Tuple):
         return parse_tuple(x)
+    elif isinstance(x, _ast.List):
+        return parse_list(x)
     elif hasattr(_ast, "Constant") and isinstance(x, _ast.Constant):
         return x.value
     elif hasattr(_ast, "Str") and isinstance(x, _ast.Str):

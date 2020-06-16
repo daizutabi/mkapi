@@ -167,7 +167,7 @@ def resolve_object(html: str) -> Dict[str, Any]:
     return parser.feed(html)
 
 
-REPLACE_LINK_PATTERN = re.compile(r"\[(.*?)\]\((.*?)\)")
+REPLACE_LINK_PATTERN = re.compile(r"\[(.*?)\]\((.*?)\)|(\S+)_")
 
 
 def replace_link(obj: Any, markdown: str) -> str:
@@ -188,11 +188,15 @@ def replace_link(obj: Any, markdown: str) -> str:
         '[text](!mkapi.core.signature.Signature)'
         >>> replace_link(obj, '[dummy.Dummy]()')
         '[dummy.Dummy]()'
+        >>> replace_link(obj, 'Signature_')
+        '[Signature](!mkapi.core.signature.Signature)'
     """
 
     def replace(match):
-        text, name = match.groups()
-        if not name:
+        text, name, rest = match.groups()
+        if rest:
+            name, text = rest, ""
+        elif not name:
             name, text = text, ""
         fullname = get_fullname(obj, name)
         if fullname == "":

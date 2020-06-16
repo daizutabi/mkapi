@@ -1,7 +1,7 @@
 """This modules provides Node class that has tree structure."""
 import inspect
 from dataclasses import dataclass, field
-from typing import Any, Iterator, List, Optional
+from typing import Any, Callable, Iterator, List, Optional
 
 from mkapi.core.base import Base, Type
 from mkapi.core.object import from_object, get_object, get_sourcefiles
@@ -57,26 +57,32 @@ class Node(Tree):
     def get_members(self) -> List["Node"]:  # type:ignore
         return get_members(self.obj)
 
-    def get_markdown(self, level: int = 0, callback=None) -> str:
+    def get_markdown(
+        self, level: int = 0, callback: Optional[Callable[[Base], str]] = None
+    ) -> str:
         """Returns a Markdown source for docstring of this object.
 
         Args:
             level: Heading level. If 0, `<div>` tags are used.
-            callback (callable, optional): To modify Markdown source.
+            callback: To modify Markdown source.
         """
         markdowns = []
         member_objects = [member.object for member in self.members]
+        class_name = ""
         for base in self:
             if callback:
                 markdown = callback(base)
             else:
                 markdown = base.markdown
+            markdown = markdown.replace("{class}", class_name)
             if isinstance(base, Object):
                 if level:
                     if base == self.object:
                         markdown = "#" * level + " " + markdown
                     elif base in member_objects:
                         markdown = "#" * (level + 1) + " " + markdown
+                if "class" in base.kind:
+                    class_name = base.name
             markdowns.append(markdown)
         return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
@@ -147,6 +153,8 @@ def is_member(obj: Any, name: str = "", sourcefiles: List[str] = None) -> int:
         name = obj.__name__
     if isinstance(obj, property):
         obj = obj.fget
+    if hasattr(obj, "__pytest_wrapped__"):
+        obj = obj.__pytest_wrapped__.obj
     if name in ["__func__", "__self__"]:
         return -1
     if name.startswith("_"):

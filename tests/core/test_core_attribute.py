@@ -32,6 +32,7 @@ def test_class_attribute():
         elif k == 1:
             assert type is None
         elif k == 2:
+            print(type)
             x = signature.to_string(type)
             assert x == "(list of int, dict(str: list of float))"
 
@@ -113,4 +114,5 @@ def test_one_line_docstring():
 
 def test_module_attribute_tye():
     from mkapi.core import renderer
-    assert get_attributes(renderer)['renderer'][0] is renderer.Renderer
+
+    assert get_attributes(renderer)["renderer"][0] is renderer.Renderer
