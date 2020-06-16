@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-* BugFix: Include functions decorated by Pytest.
+## Version 1.0.3 (2020-06-16)
+
+* BugFix: Include functions decorated by Pytest ([#14](https://github.com/daizutabi/mkapi/issues/14)).
 * Add link from property to source vice versa.
 * reStructuredText type link like `Object_`.
 * Support of string type annotation like `ForwardRef`.
