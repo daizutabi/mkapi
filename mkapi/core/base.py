@@ -27,9 +27,9 @@ class Base:
 
     name: str = ""  #: Name of self.
     markdown: str = ""  #: Markdown source.
-    html: str = field(default="", init=False)  #: HTML string after conversion.
+    html: str = field(default="", init=False)  #: HTML output after conversion.
     callback: Optional[Callable[["Base"], str]] = field(default=None, init=False)
-    """Callback function to modify HTML string."""
+    """Callback function to modify HTML output."""
 
     def __repr__(self):
         class_name = self.__class__.__name__
@@ -45,10 +45,10 @@ class Base:
             yield self
 
     def set_html(self, html: str):
-        """Sets HTML string.
+        """Sets HTML output.
 
         Args:
-            html: HTML string.
+            html: HTML output.
         """
         self.html = html
         if self.callback:

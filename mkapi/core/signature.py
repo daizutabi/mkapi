@@ -103,7 +103,7 @@ class Signature:
             >>> s.parameters['name'].to_tuple()
             ('name', 'str, optional', 'Name of self.')
             >>> s.attributes['html'].to_tuple()
-            ('html', 'str', 'HTML string after conversion.')
+            ('html', 'str', 'HTML output after conversion.')
         """
         items = []
         for name, (type, description) in get_attributes(self.obj).items():

@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 
-* BugFix: Include decorated functions if decorator uses `wraps()`.
-* `all` filter for package or module to display all of the members and add links.
+* BugFix: Include decorated functions if decorator uses `functools.wraps()`.
+* `all` filter for package or module to display all of the members and add links to them.
 
 ## Version 1.0.3 (2020-06-16)
 

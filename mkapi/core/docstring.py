@@ -223,7 +223,7 @@ def parse_source(doc: Docstring, obj: Any):
         ('name', 'str, optional', 'Name of self.')
         >>> section = doc['Attributes']
         >>> section['html'].to_tuple()
-        ('html', 'str', 'HTML string after conversion.')
+        ('html', 'str', 'HTML output after conversion.')
 
         s = get_signature(Base)
         s['Parameters']
