@@ -75,7 +75,7 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
             description = ""
         item = Item(object.name, type, Inline(description), kind)
         item.markdown, url, signature = "", "", ""
-        if filters and "link" in filters:
+        if filters and ("link" in filters or 'all' in filters):
             url = "#" + object.id
         elif filters and "apilink" in filters:
             url = "../" + node.object.id + "#" + object.id
@@ -96,7 +96,8 @@ def transform_class(node: Node, filters: Optional[List[str]] = None):
 def transform_module(node: Node, filters: Optional[List[str]] = None):
     transform_members(node, "class", filters)
     transform_members(node, "function", filters)
-    node.members = []
+    if not filters or 'all' not in filters:
+        node.members = []
 
 
 def sort(node: Node):
@@ -116,3 +117,5 @@ def transform(node: Node, filters: Optional[List[str]] = None):
         transform_module(node, filters)
     for x in node.walk():
         sort(x)
+    for member in node.members:
+        transform(member, filters)
