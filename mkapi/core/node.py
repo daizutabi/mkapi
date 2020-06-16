@@ -201,11 +201,11 @@ def get_node(name, sourcefile_index: int = 0, use_cache: bool = True) -> Node:
     else:
         obj = name
 
-    if use_cache and hasattr(obj, "__qualname__"):
-        if hasattr(obj, "__module__") and obj.__module__ in modules:
-            node = modules[obj.__module__].node
-            try:
-                return node[obj.__qualname__]
-            except IndexError:
-                pass
+    # if use_cache and hasattr(obj, "__qualname__"):
+    #     if hasattr(obj, "__module__") and obj.__module__ in modules:
+    #         node = modules[obj.__module__].node
+    #         try:
+    #             return node[obj.__qualname__]
+    #         except IndexError:
+    #             pass
     return Node(obj, sourcefile_index)
