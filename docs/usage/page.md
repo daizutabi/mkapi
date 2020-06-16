@@ -84,6 +84,7 @@ def func():
     * [](get_docstring) --- Imported object.
     * [Section.set_html]() --- Member of imported object.
     * [Section definition](Section) --- Alternative text.
+    * Section_  --- reStructuredText style.
     """
     return Section(), get_docstring(None)
 ~~~

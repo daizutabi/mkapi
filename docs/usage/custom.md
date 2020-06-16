@@ -7,7 +7,7 @@ user system environment. Here is an example directory structure and the correspo
 
 ~~~yml
 # Directory structure
-your_project:
+myproject:
   - docs:
     - index.md
   - examples:
