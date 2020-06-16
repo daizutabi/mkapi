@@ -6,8 +6,6 @@ from dataclasses import InitVar, dataclass, field, is_dataclass
 from functools import lru_cache
 from typing import Any, Dict, Optional, TypeVar, Union
 
-import pytest
-
 from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Inline, Item, Section, Type
