@@ -1,4 +1,4 @@
-from mkapi.core.module import get_module
+# from mkapi.core.module import get_module
 from mkapi.core.node import get_kind, get_node, is_member
 
 
