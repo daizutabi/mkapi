@@ -5,18 +5,29 @@ from mkapi.core.node import Node
 from mkapi.core.renderer import renderer
 
 
-def transform_property(node: Node):
+def transform_property(node: Node, filters: List[str] = None):
     section = None
     members = []
     for member in node.members:
-        if "property" in member.object.kind:
+        object = member.object
+        if "property" in object.kind:
             if section is None:
                 section = node.docstring["Attributes"]
-            name = member.object.name
-            kind = member.object.kind
-            type = member.object.type
+            name = object.name
+            kind = object.kind
+            type = object.type
             description = member.docstring.sections[0].markdown
             item = Item(name, type, Inline(description), kind=kind)
+
+            if filters and "sourcelink" in filters:
+                link = f'<span id="{object.id}"></span>'
+                link += f'<a class="mkapi-src-link" href="../source/{object.module}'
+                link += f'#{object.id}" title="{object.id}">SOURCE</a>'
+
+                def callback(inline, link=link):
+                    return inline.html + link
+
+                item.description.callback = callback
             section.items.append(item)
         else:
             members.append(member)
@@ -76,8 +87,8 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
     node.docstring.set_section(section)
 
 
-def transform_class(node: Node):
-    transform_property(node)
+def transform_class(node: Node, filters: Optional[List[str]] = None):
+    transform_property(node, filters)
     transform_members(node, "class", ["link"])
     transform_members(node, "method", ["link"])
 
@@ -100,7 +111,7 @@ def transform(node: Node, filters: Optional[List[str]] = None):
     if node.docstring is None:
         return
     if node.object.kind in ["class", "dataclass"]:
-        transform_class(node)
+        transform_class(node, filters)
     elif node.object.kind in ["module", "package"]:
         transform_module(node, filters)
     for x in node.walk():
