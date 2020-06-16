@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Iterator, List, Optional
 
 from mkapi.core.base import Base, Type
-from mkapi.core.object import from_object, get_object, get_sourcefiles
+from mkapi.core.object import (from_object, get_object, get_origin,
+                               get_sourcefiles)
 from mkapi.core.structure import Object, Tree
 
 
@@ -151,10 +152,7 @@ def is_member(obj: Any, name: str = "", sourcefiles: List[str] = None) -> int:
     """
     if name == "":
         name = obj.__name__
-    if isinstance(obj, property):
-        obj = obj.fget
-    if hasattr(obj, "__pytest_wrapped__"):
-        obj = obj.__pytest_wrapped__.obj
+    obj = get_origin(obj)
     if name in ["__func__", "__self__"]:
         return -1
     if name.startswith("_"):
