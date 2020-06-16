@@ -39,20 +39,20 @@ class Signature:
     def __post_init__(self):
         if self.obj is None:
             return
-        if inspect.ismodule(self.obj):
-            self.set_attributes()
-            return
-        if not callable(self.obj):
-            return
         try:
             self.signature = inspect.signature(self.obj)
         except (TypeError, ValueError):
-            pass
+            self.set_attributes()
+            return
 
         items = []
         for name, parameter in self.signature.parameters.items():
             if name == "self":
                 continue
+            elif parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+                name = "*" + name
+            elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
+                name = "**" + name
             type = to_string(parameter.annotation, obj=self.obj)
             default = parameter.default
             if default == inspect.Parameter.empty:
@@ -60,7 +60,7 @@ class Signature:
             else:
                 self.defaults[name] = f"{default!r}"
                 if not type:
-                    type = 'optional'
+                    type = "optional"
                 elif not type.endswith(", optional"):
                     type += ", optional"
             items.append(Item(name, Type(type)))

@@ -1,3 +1,4 @@
+import io
 import re
 from dataclasses import dataclass, field
 from typing import List
@@ -16,7 +17,7 @@ class Code:
 
     def __post_init__(self):
         sourcefile = self.module.sourcefile
-        with open(sourcefile, "r") as f:
+        with io.open(sourcefile, "r", encoding="utf-8-sig", errors="strict") as f:
             source = f.read()
         if not source:
             return

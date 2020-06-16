@@ -1,6 +1,6 @@
 from typing import Callable, Dict, List, Tuple
 
-from mkapi.core.signature import Signature, a_of_b, to_string
+from mkapi.core.signature import Signature, a_of_b, get_signature, to_string
 
 
 def test_function(add):
@@ -44,3 +44,12 @@ def test_a_of_b():
     assert a_of_b(List[Dict]) == "list of dict"
 
     to_string(Callable[[int, int], int])
+
+
+def test_var():
+    def func(x, *args, **kwargs):
+        pass
+
+    s = get_signature(func)
+    assert s.parameters.items[1].name == "*args"
+    assert s.parameters.items[2].name == "**kwargs"
