@@ -109,10 +109,10 @@ def test_get_kind():
     assert get_kind(A()) == ""
 
 
-def test_cache():
-    _ = get_module("mkapi.core")
-    x = get_node("mkapi.core.base.Base.__iter__")
-    y = get_node("mkapi.core.base.Base.__iter__")
-    assert x is y
-    z = get_node("mkapi.core.base.Base.__iter__", use_cache=False)
-    assert x is not z
+# def test_cache():
+#     _ = get_module("mkapi.core")
+#     x = get_node("mkapi.core.base.Base.__iter__")
+#     y = get_node("mkapi.core.base.Base.__iter__")
+#     assert x is y
+#     z = get_node("mkapi.core.base.Base.__iter__", use_cache=False)
+#     assert x is not z
