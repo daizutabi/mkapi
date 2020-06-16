@@ -78,7 +78,7 @@ def replace(html):
     def func(match):
         module, object = match.groups()
         link = f'<span id="{object}"></span>'
-        link += f'<a class="mkapi-docs-link"'
+        link += f'<a class="mkapi-docs-link" title="{object}" '
         link += f'href="../../{module}#{object}">DOCS</a>'
         return link
 

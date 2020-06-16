@@ -1,6 +1,10 @@
 # Release Notes
 
-## Version 1.0.0 (2020-06-16)
+## Version 1.0.1 (2020-06-16)
+
+* Add `title` attribute to [DOCS] and [SOURCE] link to display the object id.
+
+## Version 1.0.0 (2020-06-15)
 
 ### Additions to Version 1.0.0
 

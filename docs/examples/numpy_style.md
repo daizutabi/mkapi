@@ -106,16 +106,16 @@ In this example, note that:
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style.
 * Attributes section is inserted with type and description. These information is collected from the source code.
 * Bound methods (`message` in this case) have a METHOD prefix instead of a FUNCTION prefix.
-* If callable objects have neither Returns nor Yields, the type appears on the object definition line like type annotation.
+* If callable objects have neither Returns nor Yields, the type appears on the object signature line like type annotation.
 * Propertes are moved to the Attributes section with [RO] or [RW] suffix that indicates whether the property is read-only or read-write.
-* Methods section is newly created that displays a list of methods defined in this class. Note that it has a hyperlink to the definition.
+* Methods section is newly created that displays a list of methods defined in this class. Note that it has a hyperlink to the object.
 
 !!! note
     Although you can write the docstring for a class in the `__init__()` function, the attribute inspection only works when you write it as a class level docstring.
 
 ## Method
 
-You can select a method of class (or any other attribute that can have docstring) to generate the documentation.
+You can select a method of class (or any other object that can have docstring) to generate the documentation.
 
 ~~~markdown
 ![mkapi](numpy_style.ExampleClass.message)

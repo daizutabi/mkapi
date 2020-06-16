@@ -38,7 +38,7 @@
     <{{ tag }} class="mkapi-object-prefix">{{ object_prefix(object, prefix_url, upper) }}</{{ tag }}>
   {%- endif -%}
     <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>{{ object_signature(object.signature, tag) }}{{ object_type(object) }}
-  {%- if 'sourcelink' in filters or 'link' in filters or 'apilink' in filters %}<a class="mkapi-src-link" href="../source/{{ object.module }}#{{ object.id }}">SOURCE</a>{% endif %}
+  {%- if 'sourcelink' in filters or 'link' in filters or 'apilink' in filters %}<a class="mkapi-src-link" href="../source/{{ object.module }}#{{ object.id }}" title="{{ object.id }}">SOURCE</a>{% endif %}
 {%- endmacro -%}
 
 {% macro object_member(name, url, signature) -%}
