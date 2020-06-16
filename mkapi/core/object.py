@@ -88,8 +88,7 @@ def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
         >>> split_prefix_and_name(obj)
         ('mkapi.core.node.Node', 'get_markdown')
     """
-    if isinstance(obj, property):
-        obj = obj.fget
+    obj = get_origin(obj)
     if inspect.ismodule(obj):
         prefix, _, name = obj.__name__.rpartition(".")
     else:
@@ -106,18 +105,14 @@ def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
 
 
 def get_qualname(obj: Any):
-    if isinstance(obj, property):
-        obj = obj.fget
+    obj = get_origin(obj)
     if hasattr(obj, "__qualname__"):
         return obj.__qualname__
     return ""
 
 
 def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
-    if isinstance(obj, property):
-        obj = obj.fget
-    elif hasattr(obj, "__pytest_wrapped__"):
-        obj = obj.__pytest_wrapped__.obj
+    obj = get_origin(obj)
     try:
         sourcefile = inspect.getsourcefile(obj) or ""
     except TypeError:
@@ -175,3 +170,27 @@ def from_object(obj: Any) -> bool:
     if not hasattr(object, name):
         return False
     return inspect.getdoc(obj) == getattr(object, name).__doc__
+
+
+def get_origin(obj: Any) -> Any:
+    """Returns an original object.
+
+    Examples:
+        >>> class A:
+        ...    @property
+        ...    def x(self):
+        ...        pass
+        >>> hasattr(A.x, __name__)
+        False
+        >>> get_origin(A.x).__name__
+        'x'
+    """
+    if isinstance(obj, property):
+        return get_origin(obj.fget)
+    if not callable(obj):
+        return obj
+    if hasattr(obj, "__wrapped__"):
+        return get_origin(obj.__wrapped__)
+    if hasattr(obj, "__pytest_wrapped__"):
+        return get_origin(obj.__pytest_wrapped__.obj)
+    return obj
