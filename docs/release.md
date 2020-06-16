@@ -3,6 +3,7 @@
 ## Version 1.0.1 (2020-06-16)
 
 * Add `title` attribute to [DOCS] and [SOURCE] link to display the object id.
+* Add `hasattr` for `_ast.Str` because Python 3.8 does not provide the attribute.
 
 ## Version 1.0.0 (2020-06-15)
 
