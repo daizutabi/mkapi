@@ -1,10 +1,5 @@
 # Release Notes
 
-
-## Version 1.0.2 (2020-06-16)
-
-* BugFix: `get_node` returns cached instance unless `use_cache=False`.
-
 ## Version 1.0.1 (2020-06-16)
 
 * Add `title` attribute to [DOCS] and [SOURCE] link to display the object id.
