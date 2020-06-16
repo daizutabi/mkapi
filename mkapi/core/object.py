@@ -116,6 +116,8 @@ def get_qualname(obj: Any):
 def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
     if isinstance(obj, property):
         obj = obj.fget
+    elif hasattr(obj, "__pytest_wrapped__"):
+        obj = obj.__pytest_wrapped__.obj
     try:
         sourcefile = inspect.getsourcefile(obj) or ""
     except TypeError:
