@@ -86,9 +86,9 @@ def test_set_html_and_render():
     assert html.startswith('<div class="mkapi-node" id="mkapi.core.base.Base">')
     assert 'mkapi-object-kind-dataclass">DATACLASS</div>' in html
     assert '<div class="mkapi-section-body">1</div>' in html
-    assert '<span class="mkapi-args-desc">2</span></li>' in html
+    assert '<span class="mkapi-item-description">2</span></li>' in html
     assert '<code class="mkapi-object-name">set_html</code>' in html
-    assert '<li><code class="mkapi-args-name">html</code>' in html
+    assert '<li><code class="mkapi-item-name">html</code>' in html
 
 
 def test_package():
@@ -117,3 +117,22 @@ def test_get_node_from_module():
     x = get_node_from_module("mkapi.core.base.Base.__iter__")
     y = get_node_from_module("mkapi.core.base.Base.__iter__")
     assert x is y
+
+
+def test_get_markdown_bases():
+    node = get_node("examples.appendix.inherit.Sub")
+    markdown = node.get_markdown()
+    parts = [x.strip() for x in markdown.split("<!-- mkapi:sep -->")]
+    x = "[examples.appendix.inherit.Base]"
+    assert parts[1].startswith(x)
+
+
+def test_set_html_and_render_bases():
+    node = get_node("examples.appendix.inherit.Sub")
+    markdown = node.get_markdown()
+    sep = "<!-- mkapi:sep -->"
+    n = len(markdown.split(sep))
+    html = sep.join(str(x) for x in range(n))
+    node.set_html(html)
+    html = node.get_html()
+    assert 'mkapi-section-bases'

@@ -5,6 +5,6 @@
   font-weight: normal;
 }
 
-.mkapi-node ul.mkapi-args-list li::before {
+.mkapi-node ul.mkapi-items li::before {
   vertical-align: middle;
 }

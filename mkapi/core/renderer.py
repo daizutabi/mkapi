@@ -107,7 +107,7 @@ class Renderer:
         for section in docstring.sections:
             if section.items:
                 valid = any(item.description for item in section.items)
-                if filters and "strict" in filters or valid:
+                if filters and "strict" in filters or section.name == 'Bases' or valid:
                     section.html = self.render_section(section, filters)
         return template.render(docstring=docstring)
 
@@ -122,7 +122,7 @@ class Renderer:
         if section.name == "Bases":
             return self.templates["bases"].render(section=section)
         else:
-            return self.templates["args"].render(section=section, filters=filters)
+            return self.templates["items"].render(section=section, filters=filters)
 
     def render_module(self, module: Module, filters: List[str] = None) -> str:
         """Returns a rendered Markdown for Module.

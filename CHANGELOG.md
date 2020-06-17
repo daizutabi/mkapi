@@ -3,6 +3,7 @@
 ## [Unreleased]
 ### Fixed
 - Attribute inspection from docstring.
+- Display base class in non-strict mode.
 
 ## [1.0.4] - 2020-06-16
 ### Added

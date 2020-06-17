@@ -1,14 +1,10 @@
-{% macro select_type(base) -%}
-  {% if base.type.html %}{{ base.type.html|safe }}{% else %}{{ base.type.markdown }}{% endif %}
-{%- endmacro %}
-
 {% macro base_type(base) -%}
-  {% if base.type %}<span class="mkapi-args-type">{% if not base.type.html.startswith("(") -%}
+  {% if base.type %}<span class="mkapi-item-type">{% if not base.type.html.startswith("(") -%}
   ({% endif %}{{ base.type.html|safe }}{% if not base.type.html.startswith("(") %}){% endif %}</span>{% endif %}
 {%- endmacro %}
 
 {%- macro object_type(object) -%}
-  {% if object.type %}<span class="mkapi-args-type"> &#x2192; {{ object.type.html|safe }}</span>{% endif -%}
+  {% if object.type %}<span class="mkapi-item-type"> &#x2192; {{ object.type.html|safe }}</span>{% endif -%}
 {%- endmacro -%}
 
 {% macro object_prefix(object, url, upper) -%}

@@ -1,5 +1,3 @@
-{% from 'macros.jinja2' import select_type -%}
-
 {% for item in section.items %}
-<span class="mkapi-base">{{ select_type(item) }}</span>
+<span class="mkapi-base">{{ item.type.html|safe }}</span>
 {% endfor %}
