@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## Version 1.0.4 (2020-06-16)
+
 * BugFix: Include decorated functions if decorator uses `functools.wraps()`.
 * `all` filter for package or module to display all of the members and add links to them.
 * Add link from table of contents to source.
