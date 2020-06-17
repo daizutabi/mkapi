@@ -12,6 +12,7 @@ class A:
         self.x: int = 1  #: Doc comment *inline* with attribute.
         #: list of str: Doc comment *before* attribute, with type specified.
         self.y = ["123", "abc"]
+        self.a = "dummy"
         self.z: typing.Tuple[List[int], Dict[str, List[float]]] = (
             [1, 2, 3],
             {"a": [1.2]},
@@ -23,16 +24,18 @@ class A:
 
 def test_class_attribute():
     attrs = get_attributes(A)
+    assert attrs
     for k, (name, (type, markdown)) in enumerate(attrs.items()):
-        assert name == ["x", "y", "z"][k]
-        assert markdown.startswith(["Doc ", "list of", "Docstring *after*"][k])
-        assert markdown.endswith(["attribute.", "specified.", "supported."][k])
+        assert name == ["x", "y", "a", "z"][k]
+        assert markdown.startswith(["Doc ", "list of", '', "Docstring *after*"][k])
+        assert markdown.endswith(["attribute.", "specified.", '', "supported."][k])
         if k == 0:
             assert type is int
         elif k == 1:
             assert type is None
         elif k == 2:
-            print(type)
+            assert not markdown
+        elif k == 3:
             x = signature.to_string(type)
             assert x == "(list of int, dict(str: list of float))"
 

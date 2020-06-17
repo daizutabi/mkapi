@@ -89,6 +89,8 @@ def get_description(lines: List[str], lineno: int) -> str:
                 return "\n".join(docs).strip()
             elif in_doc:
                 docs.append(line)
+        if docs:
+            return "\n".join(docs).strip()
     return ""
 
 
@@ -103,25 +105,30 @@ def get_source(obj) -> str:
         return source
 
 
-def get_attributes_list(
+def get_attributes_with_lineno(
     nodes: Iterable[ast.AST], module, is_module: bool = False
 ) -> List[Tuple[str, int, Any]]:
-    attr_list: List[Tuple[str, int, Any]] = []
+    attr_dict: Dict[Tuple[str, int], Any] = {}
+
+    def update(attr, lineno, type):
+        if type or (attr, lineno) not in attr_dict:
+            attr_dict[(attr, lineno)] = type
+
     globals = dict(inspect.getmembers(module))
     for x in nodes:
         if isinstance(x, _ast.AnnAssign):
             attr, lineno, type_str = parse_annotation_assign(x)
             type = eval(type_str, globals)
-            attr_list.append((attr, lineno, type))
+            update(attr, lineno, type)
         if isinstance(x, _ast.Attribute) and isinstance(x.ctx, _ast.Store):
             attr, lineno = parse_attribute_with_lineno(x)
-            attr_list.append((attr, lineno, ()))
+            update(attr, lineno, ())
         if is_module and isinstance(x, _ast.Assign):
             attr, lineno = parse_attribute_with_lineno(x)
-            attr_list.append((attr, lineno, ()))
-    attr_list = [x for x in attr_list if not x[0].startswith("_")]
-    attr_list = sorted(attr_list, key=lambda x: x[1])
-    return attr_list
+            update(attr, lineno, ())
+    attr_lineno = [(attr, lineno, type) for (attr, lineno), type in attr_dict.items()]
+    attr_lineno = sorted(attr_lineno, key=lambda x: x[1])
+    return attr_lineno
 
 
 def get_attributes_dict(
@@ -130,10 +137,13 @@ def get_attributes_dict(
 
     attrs: Dict[str, Tuple[Any, str]] = {}
     lines = source.split("\n")
-    for name, lineno, type in attr_list:
+    for k, (name, lineno, type) in enumerate(attr_list):
         if not prefix or name.startswith(prefix):
             name = name[len(prefix) :]
-            description = get_description(lines, lineno)
+            stop = len(lines)
+            if k < len(attr_list) - 1:
+                stop = attr_list[k + 1][1] - 1
+            description = get_description(lines[:stop], lineno)
             if type:
                 attrs[name] = type, description  # Assignment with type annotation wins.
             elif name not in attrs:
@@ -151,8 +161,8 @@ def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     node = ast.parse(source)
     nodes = ast.walk(node)
     module = importlib.import_module(cls.__module__)
-    attr_list = get_attributes_list(nodes, module)
-    return get_attributes_dict(attr_list, source, prefix="self.")
+    attr_lineno = get_attributes_with_lineno(nodes, module)
+    return get_attributes_dict(attr_lineno, source, prefix="self.")
 
 
 def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
@@ -177,8 +187,8 @@ def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
             yield x
 
     module = importlib.import_module(cls.__module__)
-    attr_list = get_attributes_list(nodes(), module)
-    for name, (type, description) in get_attributes_dict(attr_list, source).items():
+    attr_lineno = get_attributes_with_lineno(nodes(), module)
+    for name, (type, description) in get_attributes_dict(attr_lineno, source).items():
         if name in attrs:
             attrs[name] = attrs[name][0], description
         else:
@@ -195,8 +205,8 @@ def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
         return {}
     node = ast.parse(source)
     nodes = ast.iter_child_nodes(node)
-    attr_list = get_attributes_list(nodes, module, is_module=True)
-    return get_attributes_dict(attr_list, source)
+    attr_lineno = get_attributes_with_lineno(nodes, module, is_module=True)
+    return get_attributes_dict(attr_lineno, source)
 
 
 @lru_cache(maxsize=1000)
