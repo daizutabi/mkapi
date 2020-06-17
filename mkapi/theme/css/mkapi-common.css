@@ -416,8 +416,25 @@ a.mkapi-src-link, a.mkapi-docs-link {
   color: #BEBEBE;
 }
 
-a.mkapi-src-link:hover, a.mkapi-docs-link:hover {
+a.mkapi-args-src-link {
+  font-size: 0.7rem;
+  font-weight: normal;
+  margin-left: 10px;
+  padding: 1px 3px;
+  border: 1px solid #E0E0E0;
+  background: #F8F8F8;
+  border-radius: 5px;
+  color: #E0E0E0;
+}
+
+a.mkapi-src-link:hover, a.mkapi-args-src-link:hover, a.mkapi-docs-link:hover {
   border: 1px solid #FF9999;
   background: #FFF0F0;
   color: red;
+}
+
+a.mkapi-args-src-link::before {
+  font-family: "Font Awesome 5 Free";
+  content: "\f121";
+  font-weight: 600;
 }

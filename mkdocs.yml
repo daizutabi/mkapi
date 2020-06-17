@@ -41,6 +41,7 @@ nav:
     - appendix/inherit.md
     - appendix/order.md
     - appendix/decorator.md
+    - appendix/filter.md
   - API: mkapi/api/mkapi|upper|strict
 
 markdown_extensions:

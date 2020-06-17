@@ -3,6 +3,26 @@ from typing import List, Optional
 from mkapi.core.base import Inline, Item, Section, Type
 from mkapi.core.node import Node
 from mkapi.core.renderer import renderer
+from mkapi.core.structure import Object
+
+
+def sourcelink(object: Object) -> str:
+    if "property" in object.kind:
+        link = f'<span id="{object.id}"></span>'
+    else:
+        link = ""
+    link += f'<a class="mkapi-args-src-link" href="../source/{object.module}'
+    link += f'#{object.id}" title="Source for {object.id}"></a>'
+    return link
+
+
+def source_link_from_section_item(item: Item, object: Object):
+    link = sourcelink(object)
+
+    def callback(inline, link=link):
+        return inline.html + link
+
+    item.description.callback = callback
 
 
 def transform_property(node: Node, filters: List[str] = None):
@@ -18,16 +38,8 @@ def transform_property(node: Node, filters: List[str] = None):
             type = object.type
             description = member.docstring.sections[0].markdown
             item = Item(name, type, Inline(description), kind=kind)
-
             if filters and "sourcelink" in filters:
-                link = f'<span id="{object.id}"></span>'
-                link += f'<a class="mkapi-src-link" href="../source/{object.module}'
-                link += f'#{object.id}" title="{object.id}">SOURCE</a>'
-
-                def callback(inline, link=link):
-                    return inline.html + link
-
-                item.description.callback = callback
+                source_link_from_section_item(item, object)
             section.items.append(item)
         else:
             members.append(member)
@@ -75,7 +87,7 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
             description = ""
         item = Item(object.name, type, Inline(description), kind)
         item.markdown, url, signature = "", "", ""
-        if filters and ("link" in filters or 'all' in filters):
+        if filters and ("link" in filters or "all" in filters):
             url = "#" + object.id
         elif filters and "apilink" in filters:
             url = "../" + node.object.id + "#" + object.id
@@ -83,20 +95,22 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
             args = [item.name for item in object.signature.parameters.items]
             signature = "(" + ",".join(args) + ")"
         item.html = renderer.render_object_member(object.name, url, signature)
+        if filters and "sourcelink" in filters:
+            source_link_from_section_item(item, object)
         section.items.append(item)
     node.docstring.set_section(section)
 
 
 def transform_class(node: Node, filters: Optional[List[str]] = None):
     transform_property(node, filters)
-    transform_members(node, "class", ["link"])
-    transform_members(node, "method", ["link"])
+    transform_members(node, "class", filters)
+    transform_members(node, "method", filters)
 
 
 def transform_module(node: Node, filters: Optional[List[str]] = None):
     transform_members(node, "class", filters)
     transform_members(node, "function", filters)
-    if not filters or 'all' not in filters:
+    if not filters or "all" not in filters:
         node.members = []
 
 

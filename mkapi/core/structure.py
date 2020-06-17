@@ -55,6 +55,11 @@ class Object(Base):
             else:
                 self.markdown = name
 
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        id = self.id
+        return f"{class_name}({id!r})"
+
     def __iter__(self) -> Iterator[Base]:
         yield from self.type
         yield self
