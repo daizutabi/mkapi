@@ -1,4 +1,4 @@
-# Filters and Varialbes
+# Filters and Variables
 
 ## Filters
 
@@ -10,7 +10,7 @@
 * `sourcelink`
 
 
-## Varialbes
+## Variables
 
 * `{default}`
 * `{class}`

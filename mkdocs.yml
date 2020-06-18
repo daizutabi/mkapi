@@ -45,7 +45,6 @@ nav:
   - API: mkapi/api/mkapi|upper|strict
 
 markdown_extensions:
-  - admonition
   - pymdownx.arithmatex
 
 extra_javascript:

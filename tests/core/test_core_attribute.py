@@ -27,8 +27,8 @@ def test_class_attribute():
     assert attrs
     for k, (name, (type, markdown)) in enumerate(attrs.items()):
         assert name == ["x", "y", "a", "z"][k]
-        assert markdown.startswith(["Doc ", "list of", '', "Docstring *after*"][k])
-        assert markdown.endswith(["attribute.", "specified.", '', "supported."][k])
+        assert markdown.startswith(["Doc ", "list of", "", "Docstring *after*"][k])
+        assert markdown.endswith(["attribute.", "specified.", "", "supported."][k])
         if k == 0:
             assert type is int
         elif k == 1:
@@ -119,3 +119,18 @@ def test_module_attribute_tye():
     from mkapi.core import renderer
 
     assert get_attributes(renderer)["renderer"][0] is renderer.Renderer
+
+
+class E:
+    def __init__(self):
+        self.a: int = 0  #: a
+        self.b: str = "b"  #: b
+
+    def func(self):
+        self.a, self.b = 1, "x"
+
+
+def test_multiple_assignments():
+    attrs = get_attributes(E)
+    assert attrs['a'] == (int, 'a')
+    assert attrs['b'] == (str, 'b')

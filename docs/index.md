@@ -8,9 +8,9 @@ Features of MkApi are:
 * **Object type inspection**: MkApi plugin creates CLASS, DATACLASS, FUNCTION, GENERATOR, or METHOD prefix for each object.
 * **Attribute inspection**: If you write attributes with description as comment in module or class, Attributes section is automatically created.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters and attributes description from its superclasses.
+* **Table of Contents**: Table of contents are inserted into the documentation of each package, module, and class.
 * **Page mode**: Comprehensive API documentation for your project, in which objects are linked to each other by type annotation.
 * **Bidirectional Link**: Using the Page mode, bidirectional links are created between documentation and source code.
-* **Table of Contents**: Using the Page mode, table of contents are inserted into the documentation of each package, module, and class.
 
 ## Installation
 

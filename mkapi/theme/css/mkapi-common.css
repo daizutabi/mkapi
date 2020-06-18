@@ -1,3 +1,8 @@
+/*
+Reference: https://github.com/daizutabi/mkapi/issues/8
+Thanks to [Ahrak](https://github.com/Ahrak).
+*/
+
 /**************************************************
  Main
 **************************************************/
@@ -10,51 +15,55 @@
   margin-bottom: 2px;
 }
 
-.mkapi-node pre{
+.mkapi-node pre {
   line-height: 1.2rem;
 }
 
 /**************************************************
  Node
 **************************************************/
-.mkapi-node {
+div.mkapi-node {
   margin-left: 0px;
   margin-bottom: 30px;
 }
 
-div.mkapi-object.code,
-h1.mkapi-object.code,
-h2.mkapi-object.code,
-h3.mkapi-object.code,
-h4.mkapi-object.code {
-  background: #F0F0F0;
-  border-left: solid 4px #7777FF;
-  border-radius: 0px;
-  margin: 0px;
-  padding-top: 3px;
-  padding-bottom: 5px;
-  font-size: 0.9rem;
-}
-
-div.mkapi-object.plain,
-h1.mkapi-object.plain,
-h2.mkapi-object.plain,
-h3.mkapi-object.plain,
-h4.mkapi-object.plain {
-  margin-bottom: 0px;
-}
-
-div.mkapi-object {
+div.mkapi-object-container {
   display: flex;
   align-items: baseline;
 }
 
-h1.mkapi-object,
-h2.mkapi-object,
-h3.mkapi-object,
-h4.mkapi-object {
-  text-indent: -30px;
-  padding-left: 30px;
+.mkapi-object {
+  display: flex;
+  align-items: baseline;
+}
+
+.mkapi-object code {
+  background: none;
+  border: none;
+  margin: 0px;
+  padding: 0px;
+  font-size: 0.9rem;
+}
+
+div.mkapi-object.code {
+  background: #F0F0F0;
+  border-left: solid 3px #CCC;
+  border-radius: 0px;
+  margin: 0px;
+  padding: 4px 12px 4px 4px;
+  color: #111;
+}
+
+div.mkapi-object.class.code, div.mkapi-object.dataclass.code {
+  border: none;
+  line-height: normal;
+  background: #e7f2fa;
+  color: #2980B9;
+  border-top: solid 3px #6ab0de;
+}
+
+.mkapi-object.plain {
+  margin-bottom: 0px;
 }
 
 .mkapi-object-kind {
@@ -65,24 +74,29 @@ h4.mkapi-object {
   font-size: 70%;
 }
 
-/* h1 .mkapi-object-kind-package, h1 .mkapi-object-kind-module,
-h2 .mkapi-object-kind-package, h2 .mkapi-object-kind-module,
-h3 .mkapi-object-kind-package, h3 .mkapi-object-kind-module {
-  font-size: 60%;
-} */
+.mkapi-object.code .mkapi-object-body {
+  margin: 0px;
+  margin-left: 4px;
+  padding: 0px;
+  font-size: 0.9rem;
+}
+
+.mkapi-object.plain .mkapi-object-body {
+  margin: 0px;
+  margin-left: 4px;
+  padding: 0px;
+}
 
 code.mkapi-object-prefix {
   font-weight: bold;
   color: #333333;
 }
 
-code.mkapi-object-prefix a,
-span.mkapi-object-prefix a {
+.mkapi-object-prefix a {
   color: inherit;
 }
 
-code.mkapi-object-prefix a:hover,
-span.mkapi-object-prefix a:hover {
+.mkapi-object-prefix a:hover {
   background: #FFDDCC;
 }
 
@@ -91,37 +105,41 @@ code.mkapi-object-name {
   color: #333333;
 }
 
-code.mkapi-object-name a,
-span.mkapi-object-name a {
+.mkapi-object-name a {
   color: inherit;
 }
 
-code.mkapi-object-name a:hover,
-span.mkapi-object-name a:hover {
+.mkapi-object-name a:hover {
   background: #FFDDCC;
 }
 
-code.mkapi-object-signature,
-span.mkapi-object-signature {
-  font-weight: bold;
-  color: #5577AA;
+.mkapi-node code.mkapi-object-parenthesis,
+.mkapi-node code.mkapi-object-signature {
+  color: #555;
+  font-weight: 700;
   border: none;
   padding: 0px;
   margin: 0px;
-  font-size: 0.9rem;
+  font-size: 0.81rem;
+}
+
+.mkapi-node code.mkapi-object-signature {
+  font-style: italic;
+}
+
+.mkapi-node .mkapi-object-body.class code.mkapi-object-parenthesis,
+.mkapi-node .mkapi-object-body.class code.mkapi-object-signature,
+.mkapi-node .mkapi-object-body.dataclass code.mkapi-object-parenthesis,
+.mkapi-node .mkapi-object-body.dataclass code.mkapi-object-signature {
+  font-weight: 700;
+  color: #2980B9;
 }
 
 /**************************************************
  Docstring
 **************************************************/
 .mkapi-docstring {
-  margin-left: 20px;
-}
-
-h1.mkapi-object.plain ~ .mkapi-docstring,
-h2.mkapi-object.plain ~ .mkapi-docstring,
-h3.mkapi-object.plain ~ .mkapi-docstring {
-  margin-left: 10px;
+  margin-left: 0px;
 }
 
 .mkapi-section {
@@ -141,128 +159,68 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
   letter-spacing: 0.05em;
 }
 
-.mkapi-section-name-parameters,
-.mkapi-section-name-attributes,
-.mkapi-section-name-returns,
-.mkapi-section-name-yields,
-.mkapi-section-name-raises,
-.mkapi-section-name-methods,
-.mkapi-section-name-functions,
-.mkapi-section-name-classes {
-  background: #F0F0F0;
-  border-bottom: solid 2px #7777FF;
-}
-
-.mkapi-section-name-note, .mkapi-section-name-notes {
-  color: white;
-  background: #33AA33;
-}
-
-.mkapi-section-name-note::before,
-.mkapi-section-name-notes::before {
-  font-family: "Font Awesome 5 Free";
-  content: "\f303";
-  font-weight: 900;
-  padding-right: 3px;
-  color: white;
-}
-
-.mkapi-section-name-warning, .mkapi-section-name-warnings {
-  color: white;
-  background: #FF6666;
-}
-
-.mkapi-section-name-warning::before,
-.mkapi-section-name-warnings::before {
-  font-family: "Font Awesome 5 Free";
-  content: "\f071";
-  font-weight: 900;
-  padding-right: 3px;
-  color: white;
-}
-
 .mkapi-section-body {
   padding: 4px 8px;
 }
 
-.mkapi-section-note, .mkapi-section-notes,
-.mkapi-section-warning, .mkapi-section-warnings {
-  margin: 0px 10px 25px 10px;
+.mkapi-section-body.returns,
+.mkapi-section-body.yields {
+  margin-left: 32px;
 }
 
-.mkapi-section-body-note, .mkapi-section-body-notes {
-  background: #EEFFEE;
-  padding: 8px 12px;
-}
-
-.mkapi-section-body-warning, .mkapi-section-body-warnings {
-  background: #FFEEEE;
-  padding: 8px 12px;
-}
-
-.mkapi-section-body-example, .mkapi-section-body-examples {
+div.mkapi-section-body.example, div.mkapi-section-body.examples {
   background: #EEEEEE;
-  padding: 8px 12px;
-  margin: 0px 10px 25px 10px;
+  padding: 6px 8px;
+  margin: 6px 10px 15px 10px;
 }
 
-
-.mkapi-object pre,
-.mkapi-section-body-example pre,
-.mkapi-section-body-examples pre {
+div.mkapi-section-body.example pre,
+div.mkapi-section-body.examples pre {
   background: none;
   border: none;
-  padding: 0px;
+  padding: 4px;
   margin: 5px 5px 10px 5px;
 }
 
-.mkapi-object code {
+div.mkapi-section-body.example pre code,
+div.mkapi-section-body.examples pre code {
   background: none;
   border: none;
-  margin: 0px;
   padding: 0px;
-  font-size: 0.9rem;
-}
-
-.mkapi-section-body-example pre code,
-.mkapi-section-body-examples pre code {
-  background: none;
-  border: none;
-  padding: 0px 0px;
   font-size: 0.83rem;
 }
 
 /**************************************************
  Bases
 **************************************************/
-.mkapi-section-bases {
-  margin-top: 0px;
+.mkapi-section.bases {
+  margin-top: 3px;
   margin-left: 8px;
   margin-bottom: 0px;
   padding: 0px;
   display: flex;
 }
 
-.mkapi-section-name-bases {
+.mkapi-section-name.bases {
   margin: 0px;
   padding: 0px;
   border-bottom: 1px solid #DDDDDD;
 }
 
-.mkapi-section-name-bases .mkapi-section-name-body {
+.mkapi-section-name-body.bases {
   margin: 0px 3px 0px 0px;
   padding: 0px;
   font-size: 0.85rem;
   font-weight: normal;
-  color: gray;
+  color: #777;
   letter-spacing: normal;
 }
 
-.mkapi-section-name-bases .mkapi-section-name-body::after {
+.mkapi-section-name-body.bases::after {
   content: ":"
 }
 
-.mkapi-section-body-bases {
+.mkapi-section-body.bases {
   margin: 0px;
   padding: 0px;
   border-bottom: 1px solid #DDDDDD;
@@ -284,11 +242,12 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
 }
 
 /**************************************************
- Args
+ Items
 **************************************************/
 .mkapi-node ul.mkapi-items {
   margin: 0px 0px 5px 0px;
   padding: 0px;
+  padding-left: 16px;
 }
 
 .mkapi-node ul.mkapi-items li {
@@ -380,13 +339,6 @@ h3.mkapi-object.plain ~ .mkapi-docstring {
   color: #AABBAA;
 }
 
-
-code.mkapi-item-name::after {
-  font-family: sans-serif;
-  font-size: 0.7rem;
-  color: gray;
-}
-
 /**************************************************
  Members
 **************************************************/
@@ -405,7 +357,7 @@ code.mkapi-item-name::after {
 /*****************************************************
  Source Code
 *****************************************************/
-a.mkapi-src-link, a.mkapi-item-src-link, a.mkapi-docs-link {
+a.mkapi-src-link, a.mkapi-docs-link {
   font-size: 0.7rem;
   font-weight: normal;
   margin-left: 10px;
@@ -416,11 +368,11 @@ a.mkapi-src-link, a.mkapi-item-src-link, a.mkapi-docs-link {
   color: #BEBEBE;
 }
 
-a.mkapi-item-src-link {
+a.mkapi-src-link {
   letter-spacing: -0.08em;
 }
 
-a.mkapi-src-link:hover, a.mkapi-item-src-link:hover, a.mkapi-docs-link:hover {
+a.mkapi-src-link:hover, a.mkapi-docs-link:hover {
   border: 1px solid #FF9999;
   background: #FFF0F0;
   color: red;

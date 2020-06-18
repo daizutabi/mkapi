@@ -4,7 +4,7 @@ to create API documentation.
 """
 import os
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
@@ -74,17 +74,21 @@ class Renderer:
         if filters is None:
             filters = []
         context = linker.resolve_object(object.html)
-        if context.get("level"):
+        level = context.get("level")
+        if level:
             if object.kind in ["module", "package"]:
                 filters.append("plain")
             elif "plain" in filters:
                 del filters[filters.index("plain")]
-            template = self.templates["object_heading"]
+            tag = f"h{level}"
         else:
-            template = self.templates["object_div"]
-        return template.render(context, object=object, filters=filters)
+            tag = "div"
+        template = self.templates["object"]
+        return template.render(context, object=object, tag=tag, filters=filters)
 
-    def render_object_member(self, name: str, url: str, signature: str) -> str:
+    def render_object_member(
+        self, name: str, url: str, signature: Dict[str, Any]
+    ) -> str:
         """Returns a rendered HTML for Object in toc.
 
         Args:
@@ -92,7 +96,7 @@ class Renderer:
             url: Link to definition.
             signature: Signature.
         """
-        template = self.templates["object_member"]
+        template = self.templates["member"]
         return template.render(name=name, url=url, signature=signature)
 
     def render_docstring(self, docstring: Docstring, filters: List[str] = None) -> str:
@@ -107,7 +111,7 @@ class Renderer:
         for section in docstring.sections:
             if section.items:
                 valid = any(item.description for item in section.items)
-                if filters and "strict" in filters or section.name == 'Bases' or valid:
+                if filters and "strict" in filters or section.name == "Bases" or valid:
                     section.html = self.render_section(section, filters)
         return template.render(docstring=docstring)
 

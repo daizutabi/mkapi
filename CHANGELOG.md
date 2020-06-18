@@ -1,9 +1,16 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- Use theme's admonition for Note[s] and Warning[s] sections.
+
 ### Fixed
 - Attribute inspection from docstring.
 - Display base class in non-strict mode.
+- Catch `NameError` in resolving `typing.ForwardRef` ([#14](https://github.com/daizutabi/mkapi/issues/14)).
+- Delete unrelated members in a decorated function.
+- Inspect type of decorated functions correctly.
+- Skip multiple assignments per line during attribute inspection ([#15](https://github.com/daizutabi/mkapi/issues/15)).
 
 ## [1.0.4] - 2020-06-16
 ### Added

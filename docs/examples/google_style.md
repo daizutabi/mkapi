@@ -8,7 +8,7 @@
 -->
 </style>
 
-Let's start concrete examples. Here, a sample Python file `google_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so we would configure `mkdocs.yml` like below. In addition, we add two extensions and an extra javascript for demonstration.
+Let's start concrete examples. Here, a sample Python file `google_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so we would configure `mkdocs.yml` like below. In addition, we add an extension and extra javascript for [Arithmatex](https://facelessuser.github.io/pymdown-extensions/extensions/arithmatex/).
 
 {{ # cache:clear }}
 
@@ -19,7 +19,6 @@ plugins:
       src_dirs: [examples]
 
 markdown_extensions:
-  - admonition
   - pymdownx.arithmatex
 
 extra_javascript:  # for pymdownx.arithmatex

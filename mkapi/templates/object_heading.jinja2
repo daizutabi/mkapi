@@ -1,8 +1,0 @@
-{% from 'macros.jinja2' import object_body -%}
-
-{% set upper = 'upper' in filters -%}
-{% set tag = 'span' if 'plain' in filters else 'code' -%}
-<h{{ level }}{% if heading_id %} id="{{ heading_id }}"{% endif %} class="mkapi-object mkapi-object-{{ object.kind }} {% if tag == 'span' %}plain{% else %}code{% endif %}">
-<span class="mkapi-object-kind mkapi-object-kind-{{ object.kind }}">{{ object.kind|upper }}</span>
-{{ object_body(object, prefix_url, name_url, tag, upper, filters) }}
-</h{{ level }}>

@@ -84,7 +84,7 @@ def test_set_html_and_render():
     html = node.get_html()
 
     assert html.startswith('<div class="mkapi-node" id="mkapi.core.base.Base">')
-    assert 'mkapi-object-kind-dataclass">DATACLASS</div>' in html
+    assert 'mkapi-object-kind dataclass">DATACLASS</div>' in html
     assert '<div class="mkapi-section-body">1</div>' in html
     assert '<span class="mkapi-item-description">2</span></li>' in html
     assert '<code class="mkapi-object-name">set_html</code>' in html
@@ -135,4 +135,13 @@ def test_set_html_and_render_bases():
     html = sep.join(str(x) for x in range(n))
     node.set_html(html)
     html = node.get_html()
-    assert 'mkapi-section-bases'
+    assert "mkapi-section-bases"
+
+
+def test_decorated_member():
+    from mkapi.core import attribute
+    from mkapi.core.signature import Signature
+
+    node = get_node(attribute)
+    assert node.members[-1].object.kind == "function"
+    assert get_node(Signature)["arguments"].object.kind == "readonly_property"

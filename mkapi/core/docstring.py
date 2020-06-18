@@ -199,18 +199,6 @@ def parse_bases(doc: Docstring, obj: Any):
     doc.set_section(Section("Bases", items=items))
 
 
-def parse_property(doc: Docstring, obj: Any):
-    """Parses property's docstring to inspect type."""
-    doc.type = Type(get_signature(obj.fget).returns)
-    if not doc.type:
-        section = doc.sections[0]
-        markdown = section.markdown
-        type, markdown = preprocess.split_type(markdown)
-        if type:
-            doc.type = Type(type)
-            section.markdown = markdown
-
-
 def parse_source(doc: Docstring, obj: Any):
     """Parses parameters' docstring to inspect type and description from source.
 
@@ -224,9 +212,6 @@ def parse_source(doc: Docstring, obj: Any):
         >>> section = doc['Attributes']
         >>> section['html'].to_tuple()
         ('html', 'str', 'HTML output after conversion.')
-
-        s = get_signature(Base)
-        s['Parameters']
     """
     signature = get_signature(obj)
     name = "Parameters"
@@ -240,19 +225,16 @@ def parse_source(doc: Docstring, obj: Any):
     section = signature[name]
     if name not in doc and not section:
         return
+    doc[name].update(section)
     if is_dataclass(obj) and "Parameters" in doc:
         for item in doc["Parameters"].items:
             if item.name in section:
                 doc[name].set_item(item)
-    doc[name].update(section)
 
 
 def postprocess(doc: Docstring, obj: Any):
     parse_bases(doc, obj)
     parse_source(doc, obj)
-    if isinstance(obj, property):
-        parse_property(doc, obj)
-
     if not callable(obj):
         return
 
@@ -281,12 +263,29 @@ def postprocess(doc: Docstring, obj: Any):
             doc.type = Type(signature.yields)
         else:
             doc.type = Type(signature.returns)
+        if not doc.type and doc.sections and doc.sections[0].name == "":
+            section = doc.sections[0]
+            markdown = section.markdown
+            type, markdown = preprocess.split_type(markdown)
+            if type:
+                doc.type = Type(type)
+                section.markdown = markdown
 
+    sections: List[Section] = []
     for section in doc.sections:
-        if section.name in ["Example", "Examples"]:
-            continue
-        for base in section:
-            base.markdown = replace_link(obj, base.markdown)
+        if section.name not in ["Example", "Examples"]:
+            for base in section:
+                base.markdown = replace_link(obj, base.markdown)
+        if section.name in ["Note", "Notes", "Warning", "Warnings"]:
+            markdown = preprocess.admonition(section.name, section.markdown)
+            if sections and sections[-1].name == "":
+                sections[-1].markdown += "\n\n" + markdown
+                continue
+            else:
+                section.name = ""
+                section.markdown = markdown
+        sections.append(section)
+    doc.sections = sections
 
 
 def get_docstring(obj: Any) -> Docstring:

@@ -53,7 +53,12 @@ class Node(Tree):
                 return "package"
             else:
                 return "module"
-        return get_kind(self.obj)
+        if isinstance(self.obj, property):
+            if self.obj.fset:
+                return "readwrite_property"
+            else:
+                return "readonly_property"
+        return get_kind(get_origin(self.obj))
 
     def get_members(self) -> List["Node"]:  # type:ignore
         return get_members(self.obj)
@@ -104,11 +109,6 @@ class Node(Tree):
 
 
 def get_kind(obj) -> str:
-    if isinstance(obj, property):
-        if obj.fset:
-            return "readwrite_property"
-        else:
-            return "readonly_property"
     try:  # KeyError on __dataclass_field__ (Issue#13).
         if hasattr(obj, "__dataclass_fields__") and hasattr(obj, "__qualname__"):
             return "dataclass"
@@ -178,9 +178,6 @@ def is_member(obj: Any, name: str = "", sourcefiles: List[str] = None) -> int:
 
 
 def get_members(obj: Any) -> List[Node]:
-    if isinstance(obj, property):
-        return []
-
     sourcefiles = get_sourcefiles(obj)
     members = []
     for name, obj in inspect.getmembers(obj):
