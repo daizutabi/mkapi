@@ -1,8 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.5] - 2020-06-18
 ### Changed
 - Use theme's admonition for Note[s] and Warning[s] sections.
+- Update CSS ([#8](https://github.com/daizutabi/mkapi/issues/8)). Thanks to [Ahrak](https://github.com/Ahrak).
 
 ### Fixed
 - Attribute inspection from docstring.
