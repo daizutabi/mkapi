@@ -13,3 +13,5 @@ htmlcov/
 tests/docs/site/
 .pheasant_cache/
 notebooks/
+.env/
+.venv/
