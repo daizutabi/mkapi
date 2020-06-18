@@ -60,6 +60,7 @@ div.mkapi-object.class.code, div.mkapi-object.dataclass.code {
   background: #e7f2fa;
   color: #2980B9;
   border-top: solid 3px #6ab0de;
+  padding: 6px 12px 6px 6px;
 }
 
 .mkapi-object.plain {
@@ -279,8 +280,8 @@ div.mkapi-section-body.examples pre code {
 
 .mkapi-node ul.mkapi-items li {
   margin: 0px 0px 2px 0px;
-  padding-left: 40px;
-  text-indent: -40px;
+  padding-left: 25px;
+  text-indent: -25px;
   list-style: none;
   line-height: 1.25em;
 }

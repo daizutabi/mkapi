@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 ### Changed
-- CSS
+- Delete prefix if an object has qualifide name with `.`.
 
 ## [1.0.5] - 2020-06-18
 ### Changed
