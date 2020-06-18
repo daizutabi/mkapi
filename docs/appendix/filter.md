@@ -8,6 +8,7 @@
 * `link`
 * `apilink`
 * `sourcelink`
+* `short`: removes prefix
 
 
 ## Varialbes
