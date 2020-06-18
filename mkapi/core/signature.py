@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional, TypeVar, Union
 from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Inline, Item, Section, Type
+from mkapi import utils
 
 
 @dataclass
@@ -321,7 +322,7 @@ def resolve_forward_arg(obj: Any, name: str) -> str:
         return name
     module = importlib.import_module(obj.__module__)
     globals = dict(inspect.getmembers(module))
-    type = eval(name, globals)
+    type = utils.get_type(name, globals)
     return to_string(type)
 
 

@@ -118,7 +118,7 @@ def get_attributes_with_lineno(
     for x in nodes:
         if isinstance(x, _ast.AnnAssign):
             attr, lineno, type_str = parse_annotation_assign(x)
-            type = eval(type_str, globals)
+            type = utils.get_type(type_str, globals)
             update(attr, lineno, type)
         if isinstance(x, _ast.Attribute) and isinstance(x.ctx, _ast.Store):
             attr, lineno = parse_attribute_with_lineno(x)
