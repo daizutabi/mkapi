@@ -135,6 +135,33 @@ code.mkapi-object-name {
   color: #2980B9;
 }
 
+.mkapi-member .mkapi-object-container {
+  position: relative;
+}
+
+.mkapi-member .mkapi-object::before {
+  position: absolute;
+  content: "";
+  left: -25px;
+  text-align: right;
+  font-size: 80%;
+  font-weight: normal;
+  color: #9999BB;
+  width: 20px;
+}
+
+.mkapi-member .mkapi-object.classmethod::before {
+  content: "[C]";
+}
+
+.mkapi-member .mkapi-object.staticmethod::before {
+  content: "[S]";
+}
+
+.mkapi-member .mkapi-object.generator::before {
+  content: "[G]";
+}
+
 /**************************************************
  Docstring
 **************************************************/
@@ -165,7 +192,7 @@ code.mkapi-object-name {
 
 .mkapi-section-body.returns,
 .mkapi-section-body.yields {
-  margin-left: 32px;
+  margin-left: 46px;
 }
 
 div.mkapi-section-body.example, div.mkapi-section-body.examples {
@@ -245,9 +272,9 @@ div.mkapi-section-body.examples pre code {
  Items
 **************************************************/
 .mkapi-node ul.mkapi-items {
-  margin: 0px 0px 5px 0px;
+  margin: 0px 0px 5px 46px;
   padding: 0px;
-  padding-left: 16px;
+  position: relative;
 }
 
 .mkapi-node ul.mkapi-items li {
@@ -259,44 +286,44 @@ div.mkapi-section-body.examples pre code {
 }
 
 .mkapi-node ul.mkapi-items li::before {
+  position: absolute;
   content: "•";
+  left: -25px;
   text-align: right;
-  display: inline-block;
   font-size: 60%;
   font-weight: normal;
-  padding-right: 5px;
   color: #9999BB;
   width: 20px;
 }
 
 .mkapi-node ul.mkapi-items li.readwrite_property::before {
   font-size: 80%;
-  content: " [RW]";
+  content: "[RW]";
 }
 
 .mkapi-node ul.mkapi-items li.readonly_property::before {
   font-size: 80%;
-  content: " [RO]";
+  content: "[RO]";
 }
 
 .mkapi-node ul.mkapi-items li.classmethod::before {
   font-size: 80%;
-  content: " [C]";
+  content: "[C]";
 }
 
 .mkapi-node ul.mkapi-items li.staticmethod::before {
   font-size: 80%;
-  content: " [S]";
+  content: "[S]";
 }
 
 .mkapi-node ul.mkapi-items li.generator::before {
   font-size: 80%;
-  content: " [G]";
+  content: "[G]";
 }
 
 .mkapi-node ul.mkapi-items li.dataclass::before {
   font-size: 80%;
-  content: " [D]";
+  content: "[D]";
 }
 
 .mkapi-node code.mkapi-item-name {
