@@ -8,7 +8,7 @@
 - Hide `method` prefix by `display: none;` in CSS.
 
 ### Fixed
-- `type: description` style docstring is interpreted as a pair of return type and description only if the object is `property` ([#17](https://github.com/daizutabi/mkapi/issues/17)).
+- `type: description` style docstring is interpreted as a pair of return type and description only if the object is a property ([#17](https://github.com/daizutabi/mkapi/issues/17)).
 
 ## [1.0.5] - 2020-06-18
 ### Changed

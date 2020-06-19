@@ -156,8 +156,15 @@ def test_colon_in_docstring():
         def prop(self):
             """this: is type."""
 
+    def func(self):
+        """this: is not type."""
+
     node = get_node(A)
-    assert node['func'].docstring[''].markdown == 'this: is not type.'
-    assert node['prop'].docstring[''].markdown == 'is type.'
-    assert node['prop'].object.type.name == 'this'
-    assert not node['prop'].docstring.type.name
+    assert node["func"].docstring[""].markdown == "this: is not type."
+    assert node["prop"].docstring[""].markdown == "is type."
+    assert node["prop"].object.type.name == "this"
+    assert not node["prop"].docstring.type.name
+
+    node = get_node(func)
+    assert node.docstring[""].markdown == "this: is not type."
+    assert not node.object.type
