@@ -63,11 +63,3 @@ def split_filters(name):
         return name, []
     name, filters = name[:index], name[index + 1 :]
     return name, filters.split("|")
-
-
-def get_type(type_str, glob_vars):
-    """ evaluates type string and returns the type object or None """
-    try:
-        return eval(type_str, glob_vars)
-    except NameError:
-        return None
