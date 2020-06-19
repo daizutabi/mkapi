@@ -1,12 +1,13 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- `short` filter to remove the prefix from an object name. ([#16](https://github.com/daizutabi/mkapi/pull/16)). Thanks to [Ahrak](https://github.com/Ahrak).
 
 ## [1.0.7] - 2020-06-19
 ### Changed
 - Top level object style.
 - Hide `function` prefix by `display: none;` in CSS.
-
 
 ## [1.0.6] - 2020-06-19
 ### Changed
