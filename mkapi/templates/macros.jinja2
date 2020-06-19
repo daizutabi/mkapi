@@ -31,7 +31,7 @@
 {%- endmacro %}
 
 {%- macro object_body(object, prefix_url, name_url, tag, upper, filters) -%}
-  {% if object.prefix and '.' not in object.qualname -%}
+  {% if object.prefix and '.' not in object.qualname and 'short' not in filters -%}
     <{{ tag }} class="mkapi-object-prefix">{{ object_prefix(object, prefix_url, upper) }}</{{ tag }}>
   {%- endif -%}
     <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>{{ object_signature(object.signature, tag) }}{{ object_type(object) }}
