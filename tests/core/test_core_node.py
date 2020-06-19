@@ -176,3 +176,15 @@ def test_colon_in_docstring():
     node = get_node(func)
     assert node.docstring[""].markdown == "this: is not type."
     assert not node.object.type
+
+
+def test_short_filter():
+    node = get_node("mkapi.core.base.Base")
+    markdown = node.get_markdown()
+    sep = "<!-- mkapi:sep -->"
+    n = len(markdown.split(sep))
+    html = sep.join(str(x) for x in range(n))
+    node.set_html(html)
+    h = node.get_html(filters=["short"])
+    assert '"mkapi-object-body dataclass top"><code class="mkapi-object-name">Base' in h
+    assert "prefix" not in h
