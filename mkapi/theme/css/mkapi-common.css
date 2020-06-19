@@ -75,16 +75,18 @@ div.mkapi-object.top.code {
   font-style: italic;
 }
 
+.mkapi-object-kind.top {
+  color: #2980B9;
+  font-size: 90%;
+}
+
 .mkapi-object-kind.module, .mkapi-object-kind.package {
   font-style: normal;
+  color: #888;
 }
 
 .mkapi-object-kind.function, .mkapi-object-kind.method {
   display: none;
-}
-.mkapi-object-kind.top {
-  color: #2980B9;
-  font-size: 90%;
 }
 
 .mkapi-object.code .mkapi-object-body {

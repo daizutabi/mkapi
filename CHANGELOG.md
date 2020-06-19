@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.7] - 2020-06-19
 ### Changed
 - Top level object style.
 - Hide `function` prefix by `display: none;` in CSS.
