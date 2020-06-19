@@ -552,7 +552,6 @@ class Docstring:
             >>> doc.set_section(s2, force=True)
             >>> doc['Attributes']['x'].to_tuple()
             ('x', 'str', 'X')
-
             >>> items = [Item('x', 'X', 'str'), Item('z', 'z', 'str')]
             >>> s3 = Section('Parameters', items=items)
             >>> doc.set_section(s3)

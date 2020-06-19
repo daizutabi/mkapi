@@ -1,8 +1,14 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.6] - 2020-06-19
 ### Changed
-- Delete prefix if an object has qualifide name with `.`.
+- Object type style: Bold upper case -> italic lower case, as in the readthedocs.
+- Hide `method` prefix by `display: none;` in CSS.
+
+### Fixed
+- `type: description` style docstring is interpreted as a pair of return type and description only if the object is `property` ([#17](https://github.com/daizutabi/mkapi/issues/17)).
 
 ## [1.0.5] - 2020-06-18
 ### Changed

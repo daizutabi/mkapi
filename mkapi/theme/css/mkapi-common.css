@@ -70,9 +70,23 @@ div.mkapi-object.class.code, div.mkapi-object.dataclass.code {
 .mkapi-object-kind {
   margin-left: 5px;
   margin-right: 0.2rem;
-  font-weight: bold;
-  color: #888888;
-  font-size: 70%;
+  color: #888;
+  font-weight: 700;
+  font-size: 85%;
+  font-style: italic;
+}
+
+.mkapi-object-kind.module, .mkapi-object-kind.package {
+  font-style: normal;
+}
+
+
+.mkapi-object-kind.method {
+  display: none;
+}
+.mkapi-object-kind.class, .mkapi-object-kind.dataclass {
+  color: #2980B9;
+  font-size: 90%;
 }
 
 .mkapi-object.code .mkapi-object-body {
@@ -138,29 +152,6 @@ code.mkapi-object-name {
 
 .mkapi-member .mkapi-object-container {
   position: relative;
-}
-
-.mkapi-member .mkapi-object::before {
-  position: absolute;
-  content: "";
-  left: -25px;
-  text-align: right;
-  font-size: 80%;
-  font-weight: normal;
-  color: #9999BB;
-  width: 20px;
-}
-
-.mkapi-member .mkapi-object.classmethod::before {
-  content: "[C]";
-}
-
-.mkapi-member .mkapi-object.staticmethod::before {
-  content: "[S]";
-}
-
-.mkapi-member .mkapi-object.generator::before {
-  content: "[G]";
 }
 
 /**************************************************

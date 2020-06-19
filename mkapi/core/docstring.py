@@ -263,13 +263,6 @@ def postprocess(doc: Docstring, obj: Any):
             doc.type = Type(signature.yields)
         else:
             doc.type = Type(signature.returns)
-        if not doc.type and doc.sections and doc.sections[0].name == "":
-            section = doc.sections[0]
-            markdown = section.markdown
-            type, markdown = preprocess.split_type(markdown)
-            if type:
-                doc.type = Type(type)
-                section.markdown = markdown
 
     sections: List[Section] = []
     for section in doc.sections:

@@ -84,7 +84,7 @@ def test_set_html_and_render():
     html = node.get_html()
 
     assert html.startswith('<div class="mkapi-node" id="mkapi.core.base.Base">')
-    assert 'mkapi-object-kind dataclass">DATACLASS</div>' in html
+    assert 'mkapi-object-kind dataclass">dataclass</div>' in html
     assert '<div class="mkapi-section-body">1</div>' in html
     assert '<span class="mkapi-item-description">2</span></li>' in html
     assert '<code class="mkapi-object-name">set_html</code>' in html
@@ -145,3 +145,19 @@ def test_decorated_member():
     node = get_node(attribute)
     assert node.members[-1].object.kind == "function"
     assert get_node(Signature)["arguments"].object.kind == "readonly_property"
+
+
+def test_colon_in_docstring():
+    class A:
+        def func(self):
+            """this: is not type."""
+
+        @property
+        def prop(self):
+            """this: is type."""
+
+    node = get_node(A)
+    assert node['func'].docstring[''].markdown == 'this: is not type.'
+    assert node['prop'].docstring[''].markdown == 'is type.'
+    assert node['prop'].object.type.name == 'this'
+    assert not node['prop'].docstring.type.name
