@@ -88,7 +88,6 @@ def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
         >>> split_prefix_and_name(obj)
         ('mkapi.core.node.Node', 'get_markdown')
     """
-    obj = get_origin(obj)
     if inspect.ismodule(obj):
         prefix, _, name = obj.__name__.rpartition(".")
     else:
@@ -105,14 +104,12 @@ def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
 
 
 def get_qualname(obj: Any):
-    obj = get_origin(obj)
     if hasattr(obj, "__qualname__"):
         return obj.__qualname__
     return ""
 
 
 def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
-    obj = get_origin(obj)
     try:
         sourcefile = inspect.getsourcefile(obj) or ""
     except TypeError:

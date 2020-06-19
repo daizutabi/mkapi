@@ -1,8 +1,33 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.7] - 2020-06-19
+### Changed
+- Top level object style.
+- Hide `function` prefix by `display: none;` in CSS.
+
+
+## [1.0.6] - 2020-06-19
+### Changed
+- Object type style: Bold upper case -> italic lower case, as in the readthedocs.
+- Hide `method` prefix by `display: none;` in CSS.
+
+### Fixed
+- `type: description` style docstring is interpreted as a pair of return type and description only if the object is a property ([#17](https://github.com/daizutabi/mkapi/issues/17)).
+
+## [1.0.5] - 2020-06-18
+### Changed
+- Use theme's admonition for Note[s] and Warning[s] sections.
+- Update CSS ([#8](https://github.com/daizutabi/mkapi/issues/8)). Thanks to [Ahrak](https://github.com/Ahrak).
+
 ### Fixed
 - Attribute inspection from docstring.
+- Display base class in non-strict mode.
+- Catch `NameError` in resolving `typing.ForwardRef` ([#14](https://github.com/daizutabi/mkapi/issues/14)).
+- Delete unrelated members in a decorated function.
+- Inspect type of decorated functions correctly.
+- Skip multiple assignments per line during attribute inspection ([#15](https://github.com/daizutabi/mkapi/issues/15)).
 
 ## [1.0.4] - 2020-06-16
 ### Added

@@ -8,7 +8,7 @@ repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 
 theme:
-  name: readthedocs
+  name: ivory
   highlightjs: true
   hljs_languages:
     - yaml
@@ -45,7 +45,6 @@ nav:
   - API: mkapi/api/mkapi|upper|strict
 
 markdown_extensions:
-  - admonition
   - pymdownx.arithmatex
 
 extra_javascript:

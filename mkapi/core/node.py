@@ -7,6 +7,7 @@ from mkapi.core.base import Base, Type
 from mkapi.core.object import (from_object, get_object, get_origin,
                                get_sourcefiles)
 from mkapi.core.structure import Object, Tree
+from mkapi.core import preprocess
 
 
 @dataclass(repr=False)
@@ -37,9 +38,20 @@ class Node(Tree):
                     if not markdown.startswith("Initialize self"):
                         self.docstring = member.docstring
         self.members = [m for m in members if m.object.name != "__init__"]
-        if self.docstring and self.docstring.type:
-            self.object.type = self.docstring.type
-            self.docstring.type = Type()
+
+        doc = self.docstring
+        if doc and 'property' in self.object.kind:
+            if not doc.type and len(doc.sections) == 1 and doc.sections[0].name == "":
+                section = doc.sections[0]
+                markdown = section.markdown
+                type, markdown = preprocess.split_type(markdown)
+                if type:
+                    doc.type = Type(type)
+                    section.markdown = markdown
+
+        if doc and doc.type:
+            self.object.type = doc.type
+            doc.type = Type()
 
     def __iter__(self) -> Iterator[Base]:
         yield from self.object
@@ -53,7 +65,12 @@ class Node(Tree):
                 return "package"
             else:
                 return "module"
-        return get_kind(self.obj)
+        if isinstance(self.obj, property):
+            if self.obj.fset:
+                return "readwrite_property"
+            else:
+                return "readonly_property"
+        return get_kind(get_origin(self.obj))
 
     def get_members(self) -> List["Node"]:  # type:ignore
         return get_members(self.obj)
@@ -104,11 +121,6 @@ class Node(Tree):
 
 
 def get_kind(obj) -> str:
-    if isinstance(obj, property):
-        if obj.fset:
-            return "readwrite_property"
-        else:
-            return "readonly_property"
     try:  # KeyError on __dataclass_field__ (Issue#13).
         if hasattr(obj, "__dataclass_fields__") and hasattr(obj, "__qualname__"):
             return "dataclass"
@@ -178,9 +190,6 @@ def is_member(obj: Any, name: str = "", sourcefiles: List[str] = None) -> int:
 
 
 def get_members(obj: Any) -> List[Node]:
-    if isinstance(obj, property):
-        return []
-
     sourcefiles = get_sourcefiles(obj)
     members = []
     for name, obj in inspect.getmembers(obj):

@@ -1,4 +1,4 @@
-# Filters and Varialbes
+# Filters and Variables
 
 ## Filters
 
@@ -11,7 +11,7 @@
 * `short`: removes prefix
 
 
-## Varialbes
+## Variables
 
 * `{default}`
 * `{class}`

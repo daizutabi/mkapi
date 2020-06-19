@@ -1,0 +1,3 @@
+{% from 'macros.jinja2' import object_signature -%}
+
+{% if url %}<a href="{{ url }}">{% endif -%}{{ name }}{% if url %}</a>{% endif %}{{ object_signature(signature, tag='code', in_code=True) }}

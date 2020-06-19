@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from mkapi.core.base import Inline, Item, Section, Type
 from mkapi.core.node import Node
@@ -11,8 +11,8 @@ def sourcelink(object: Object) -> str:
         link = f'<span id="{object.id}"></span>'
     else:
         link = ""
-    link += f'<a class="mkapi-args-src-link" href="../source/{object.module}'
-    link += f'#{object.id}" title="Source for {object.id}"></a>'
+    link += f'<a class="mkapi-src-link" href="../source/{object.module}'
+    link += f'#{object.id}" title="Source for {object.id}">&lt;/&gt;</a>'
     return link
 
 
@@ -86,14 +86,17 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
         else:
             description = ""
         item = Item(object.name, type, Inline(description), kind)
-        item.markdown, url, signature = "", "", ""
+        item.markdown, url = "", ""
         if filters and ("link" in filters or "all" in filters):
             url = "#" + object.id
         elif filters and "apilink" in filters:
             url = "../" + node.object.id + "#" + object.id
+        signature: Dict[str, Any] = {}
         if object.kind not in ["class", "dataclass"]:
             args = [item.name for item in object.signature.parameters.items]
-            signature = "(" + ",".join(args) + ")"
+            signature["arguments"] = args
+        else:
+            signature["arguments"] = None
         item.html = renderer.render_object_member(object.name, url, signature)
         if filters and "sourcelink" in filters:
             source_link_from_section_item(item, object)
@@ -102,9 +105,11 @@ def transform_members(node: Node, mode: str, filters: Optional[List[str]] = None
 
 
 def transform_class(node: Node, filters: Optional[List[str]] = None):
+    if filters is None:
+        filters = []
     transform_property(node, filters)
-    transform_members(node, "class", filters)
-    transform_members(node, "method", filters)
+    transform_members(node, "class", ["link"] + filters)
+    transform_members(node, "method", ["link"] + filters)
 
 
 def transform_module(node: Node, filters: Optional[List[str]] = None):

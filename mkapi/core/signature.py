@@ -4,7 +4,7 @@ import importlib
 import inspect
 from dataclasses import InitVar, dataclass, field, is_dataclass
 from functools import lru_cache
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
@@ -55,7 +55,7 @@ class Signature:
             elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
                 name = "**" + name
             if isinstance(parameter.annotation, str):
-                type = resolve_forward_arg(self.obj, parameter.annotation)
+                type = resolve_forward_ref(self.obj, parameter.annotation)
             else:
                 type = to_string(parameter.annotation, obj=self.obj)
             default = parameter.default
@@ -73,7 +73,7 @@ class Signature:
         return_annotation = self.signature.return_annotation
 
         if isinstance(return_annotation, str):
-            self.returns = resolve_forward_arg(self.obj, return_annotation)
+            self.returns = resolve_forward_ref(self.obj, return_annotation)
         else:
             self.returns = to_string(return_annotation, "returns", obj=self.obj)
             self.yields = to_string(return_annotation, "yields", obj=self.obj)
@@ -85,8 +85,17 @@ class Signature:
         return getattr(self, name.lower())
 
     def __str__(self):
-        if self.obj is None or not callable(self.obj):
+        args = self.arguments
+        if args is None:
             return ""
+        else:
+            return "(" + ", ".join(args) + ")"
+
+    @property
+    def arguments(self) -> Optional[List[str]]:
+        """Returns arguments list."""
+        if self.obj is None or not callable(self.obj):
+            return None
 
         args = []
         for item in self.parameters.items:
@@ -94,7 +103,7 @@ class Signature:
             if self.defaults[arg] != inspect.Parameter.empty:
                 arg += "=" + self.defaults[arg]
             args.append(arg)
-        return "(" + ", ".join(args) + ")"
+        return args
 
     def set_attributes(self):
         """
@@ -109,7 +118,7 @@ class Signature:
         items = []
         for name, (type, description) in get_attributes(self.obj).items():
             if isinstance(type, str) and type:
-                type = resolve_forward_arg(self.obj, type)
+                type = resolve_forward_ref(self.obj, type)
             else:
                 type = to_string(type, obj=self.obj) if type else ""
             if not type:
@@ -164,7 +173,7 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
     if annotation == ...:
         return "..."
     if hasattr(annotation, "__forward_arg__"):
-        return resolve_forward_arg(obj, annotation.__forward_arg__)
+        return resolve_forward_ref(obj, annotation.__forward_arg__)
     if annotation == inspect.Parameter.empty or annotation is None:
         return ""
     name = linker.get_link(annotation)
@@ -317,13 +326,30 @@ def to_string_args(annotation, obj=None) -> str:
         return ""
 
 
-def resolve_forward_arg(obj: Any, name: str) -> str:
+def resolve_forward_ref(obj: Any, name: str) -> str:
+    """Returns a resolved name for `typing.ForwardRef`.
+
+    Args:
+        obj: Object
+        name: Forward reference name.
+
+    Examples:
+        >>> from mkapi.core.base import Docstring
+        >>> resolve_forward_ref(Docstring, 'Docstring')
+        '[Docstring](!mkapi.core.base.Docstring)'
+        >>> resolve_forward_ref(Docstring, 'invalid_object_name')
+        'invalid_object_name'
+    """
     if obj is None or not hasattr(obj, "__module__"):
         return name
     module = importlib.import_module(obj.__module__)
     globals = dict(inspect.getmembers(module))
-    type = utils.get_type(name, globals)
-    return to_string(type)
+    try:
+        type = eval(name, globals)
+    except NameError:
+        return name
+    else:
+        return to_string(type)
 
 
 @lru_cache(maxsize=1000)

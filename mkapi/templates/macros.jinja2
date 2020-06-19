@@ -1,14 +1,10 @@
-{% macro select_type(base) -%}
-  {% if base.type.html %}{{ base.type.html|safe }}{% else %}{{ base.type.markdown }}{% endif %}
-{%- endmacro %}
-
 {% macro base_type(base) -%}
-  {% if base.type %}<span class="mkapi-args-type">{% if not base.type.html.startswith("(") -%}
+  {% if base.type %}<span class="mkapi-item-type">{% if not base.type.html.startswith("(") -%}
   ({% endif %}{{ base.type.html|safe }}{% if not base.type.html.startswith("(") %}){% endif %}</span>{% endif %}
 {%- endmacro %}
 
 {%- macro object_type(object) -%}
-  {% if object.type %}<span class="mkapi-args-type"> &#x2192; {{ object.type.html|safe }}</span>{% endif -%}
+  {% if object.type %}<span class="mkapi-item-type"> &#x2192; {{ object.type.html|safe }}</span>{% endif -%}
 {%- endmacro -%}
 
 {% macro object_prefix(object, url, upper) -%}
@@ -24,12 +20,13 @@
 {%- endmacro %}
 
 {% macro object_signature(signature, tag='span', in_code=False) -%}
-{% if signature -%}
-{% if in_code %}</code>{% endif -%}
-{% set args = signature.split(',') -%}
-{% for arg in args -%}
-<{{ tag }} class="mkapi-object-signature">{{ arg|trim }}{% if not loop.last %},{% endif %}{% if not (in_code and loop.last) %}</{{ tag }}>{% endif %}{% if not loop.last %} {% endif %}
+{% set args = signature.arguments -%}
+{% if args is iterable -%}
+{% if in_code %}</code>{% endif %}<{{ tag }} class="mkapi-object-parenthesis">(</{{ tag }}>
+{%- for arg in args -%}
+<{{ tag }} class="mkapi-object-signature">{{ arg }}</{{ tag }}>{% if not loop.last %}, {% endif %}
 {%- endfor -%}
+<{{ tag }} class="mkapi-object-parenthesis">){% if not in_code %}</{{ tag }}>{% endif %}
 {%- endif %}
 {%- endmacro %}
 
@@ -38,9 +35,4 @@
     <{{ tag }} class="mkapi-object-prefix">{{ object_prefix(object, prefix_url, upper) }}</{{ tag }}>
   {%- endif -%}
     <{{ tag }} class="mkapi-object-name">{{ object_name(object, name_url, upper) }}</{{ tag }}>{{ object_signature(object.signature, tag) }}{{ object_type(object) }}
-  {%- if 'sourcelink' in filters or 'link' in filters or 'apilink' in filters %}<a class="mkapi-src-link" href="../source/{{ object.module }}#{{ object.id }}" title="{{ object.id }}">SOURCE</a>{% endif %}
 {%- endmacro -%}
-
-{% macro object_member(name, url, signature) -%}
-{% if url %}<a href="{{ url }}">{% endif -%}{{ name }}{% if url %}</a>{% endif %}{{ object_signature(signature, tag='code', in_code=True) }}
-{%- endmacro %}

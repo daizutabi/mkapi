@@ -66,6 +66,10 @@ class MkapiPlugin(BasePlugin):
             if config_ is not None:
                 config = config_
 
+        ext = config["markdown_extensions"]
+        if "admonition" not in ext:
+            config["markdown_extensions"].append("admonition")
+
         return config
 
     def on_files(self, files, config):

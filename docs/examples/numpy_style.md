@@ -9,7 +9,7 @@
 </style>
 
 
-Let's start concrete examples. Here, a sample Python file `numpy_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so we would configure `mkdocs.yml` like below. In addition, we add two extensions and an extra javascript for demonstration.
+Let's start concrete examples. Here, a sample Python file `numpy_style.py` is stored under the `examples` directory relative to the `mkdocs.yml` directory, so we would configure `mkdocs.yml` like below. In addition, we add an extension and extra javascript for [Arithmatex](https://facelessuser.github.io/pymdown-extensions/extensions/arithmatex/).
 
 {{ # cache:clear }}
 
@@ -20,7 +20,6 @@ plugins:
       src_dirs: [examples]
 
 markdown_extensions:
-  - admonition
   - pymdownx.arithmatex
 
 extra_javascript:  # for pymdownx.arithmatex
@@ -56,7 +55,6 @@ MkApi generates the API documentation for the `add()` function.
 
 In this simple example, you can see some features of MkApi.
 
-* Type inspection of `add()` (FUNCTION prefix is added before `numpy_style.add`).
 * Use of type annotation for both Parameters and Returns sections.
 * Add *optional* if parameters have default values.
 * Default value replacement by the `{default}` keyword in the Parameters section.
@@ -81,9 +79,9 @@ creates the documentation for the `gen()` generator.
 
 In this simple example, note that:
 
-* A GENERATOR prefix instead of a FUNCTION prefix.
+* Type inspection of `gen()` (*generator* prefix is added before `google_style.gen`).
 * The parameter `n` has no type annotation but you can specify it in the Parameters section directly.
-* Yields type is not *iterator of str* but *str*, because the `gen()` is a generator.
+* Yields type is not "iterator of str" but "str", because the `gen()` is a generator.
 
 ## Class
 
@@ -105,9 +103,8 @@ In this example, note that:
 
 * Type annotation using `typing` package (`List` and `Tuple` in this case) is converted into readable style.
 * Attributes section is inserted with type and description. These information is collected from the source code.
-* Bound methods (`message` in this case) have a METHOD prefix instead of a FUNCTION prefix.
 * If callable objects have neither Returns nor Yields, the type appears on the object signature line like type annotation.
-* Properties are moved to the Attributes section with [RO] or [RW] suffix that indicates whether the property is read-only or read-write.
+* Properties are moved to the Attributes section with [RO] or [RW] prefix that indicates whether the property is read-only or read-write.
 * Methods section is newly created that displays a list of methods defined in this class. Note that it has a hyperlink to the object.
 
 !!! note
@@ -144,7 +141,7 @@ creates the documentation for the `ExampleDataClass` class.
 
 In this example, note that:
 
-* A DATACLASS prefix instead of a CLASS prefix.
+* A *dataclass* prefix instead of a *class* prefix.
 * Attributes type inspection as well as parameters if they are data class fields.
 
 !!! note

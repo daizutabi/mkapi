@@ -1,3 +1,4 @@
+"""This module provides attributes inspection from source code."""
 import ast
 import importlib
 import inspect
@@ -109,16 +110,21 @@ def get_attributes_with_lineno(
     nodes: Iterable[ast.AST], module, is_module: bool = False
 ) -> List[Tuple[str, int, Any]]:
     attr_dict: Dict[Tuple[str, int], Any] = {}
+    linenos: Dict[int, int] = {}
 
     def update(attr, lineno, type):
         if type or (attr, lineno) not in attr_dict:
             attr_dict[(attr, lineno)] = type
+            linenos[lineno] = linenos.get(lineno, 0) + 1
 
     globals = dict(inspect.getmembers(module))
     for x in nodes:
         if isinstance(x, _ast.AnnAssign):
             attr, lineno, type_str = parse_annotation_assign(x)
-            type = utils.get_type(type_str, globals)
+            try:
+                type = eval(type_str, globals)
+            except NameError:
+                type = type_str
             update(attr, lineno, type)
         if isinstance(x, _ast.Attribute) and isinstance(x.ctx, _ast.Store):
             attr, lineno = parse_attribute_with_lineno(x)
@@ -127,6 +133,7 @@ def get_attributes_with_lineno(
             attr, lineno = parse_attribute_with_lineno(x)
             update(attr, lineno, ())
     attr_lineno = [(attr, lineno, type) for (attr, lineno), type in attr_dict.items()]
+    attr_lineno = [x for x in attr_lineno if linenos[x[1]] == 1]
     attr_lineno = sorted(attr_lineno, key=lambda x: x[1])
     return attr_lineno
 
@@ -153,7 +160,23 @@ def get_attributes_dict(
 
 def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     """Returns a dictionary that maps attribute name to a tuple of
-    (type, description)."""
+    (type, description).
+
+    Args:
+        cls: Class object.
+
+    Examples:
+        >>> from examples.google_style import ExampleClass
+        >>> attrs = get_class_attributes(ExampleClass)
+        >>> attrs['a'][0] is str
+        True
+        >>> attrs['a'][1]
+        'The first attribute. Comment *inline* with attribute.'
+        >>> attrs['b'][0] == Dict[str, int]
+        True
+        >>> attrs['c'][0] is None
+        True
+    """
     source = get_source(cls)
     if not source:
         return {}
@@ -167,7 +190,19 @@ def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
 
 def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     """Returns a dictionary that maps attribute name to a tuple of
-    (type, description)."""
+    (type, description).
+
+    Args:
+        cls: Dataclass object.
+
+    Examples:
+        >>> from mkapi.core.base import Item, Type, Inline
+        >>> attrs = get_dataclass_attributes(Item)
+        >>> attrs['type'][0] is Type
+        True
+        >>> attrs['description'][0] is Inline
+        True
+    """
     fields = cls.__dataclass_fields__.values()
     attrs = {}
     for field in fields:
@@ -199,7 +234,17 @@ def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
 
 def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
     """Returns a dictionary that maps attribute name to a tuple of
-    (type, description)."""
+    (type, description).
+
+    Args:
+        module: Module object.
+
+    Examples:
+        >>> from mkapi.core import renderer
+        >>> attrs = get_module_attributes(renderer)
+        >>> attrs['renderer'][0] is renderer.Renderer
+        True
+    """
     source = get_source(module)
     if not source:
         return {}
@@ -212,7 +257,14 @@ def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
 @lru_cache(maxsize=1000)
 def get_attributes(obj) -> Dict[str, Tuple[Any, str]]:
     """Returns a dictionary that maps attribute name to
-    a tuple of (type, description)."""
+    a tuple of (type, description).
+
+    Args:
+        obj: Object.
+
+    See Alse:
+        get_class_attributes_, get_dataclass_attributes_, get_module_attributes_.
+    """
     if is_dataclass(obj):
         return get_dataclass_attributes(obj)
     elif inspect.isclass(obj):

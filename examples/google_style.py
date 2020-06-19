@@ -30,11 +30,11 @@ def add(x: int, y: int = 1) -> int:
         3
 
     !!! note
-        You can use the [admonition extension of
+        You can use the [Admonition extension of
         MkDocs](https://squidfunk.github.io/mkdocs-material/extensions/admonition/).
 
     Note:
-        But use `Note` section instead for consistency.
+        `Note` section is converted into the Admonition.
     """
     return x + y
 

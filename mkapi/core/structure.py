@@ -5,7 +5,8 @@ from typing import Any, Iterator, List, Union
 
 from mkapi.core.base import Base, Type
 from mkapi.core.docstring import Docstring, get_docstring
-from mkapi.core.object import (get_qualname, get_sourcefile_and_lineno,
+from mkapi.core.object import (get_origin, get_qualname,
+                               get_sourcefile_and_lineno,
                                split_prefix_and_name)
 from mkapi.core.signature import Signature, get_signature
 
@@ -91,7 +92,7 @@ class Tree:
     members: List[Any] = field(init=False)
 
     def __post_init__(self):
-        obj = self.obj
+        obj = get_origin(self.obj)
         self.sourcefile, self.lineno = get_sourcefile_and_lineno(obj)
         prefix, name = split_prefix_and_name(obj)
         qualname = get_qualname(obj)
@@ -101,6 +102,7 @@ class Tree:
             prefix=prefix, name=name, qualname=qualname, kind=kind, signature=signature,
         )
         self.docstring = get_docstring(obj)
+        self.obj = obj
         self.members = self.get_members()
         for member in self.members:
             member.parent = self

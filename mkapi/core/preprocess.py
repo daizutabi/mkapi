@@ -51,3 +51,15 @@ def split(text: str) -> Iterator[str]:
             in_code = False
     if start < len(lines):
         yield delete_indent(lines, start, len(lines))
+
+
+def admonition(name: str, markdown: str) -> str:
+    if name.startswith("Note"):
+        type = "note"
+    elif name.startswith("Warning"):
+        type = "warning"
+    else:
+        type = name.lower()
+    lines = ["    " + line for line in markdown.split("\n")]
+    lines.insert(0, f'!!! {type} "{name}"')
+    return "\n".join(lines)

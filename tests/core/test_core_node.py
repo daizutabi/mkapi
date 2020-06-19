@@ -84,11 +84,17 @@ def test_set_html_and_render():
     html = node.get_html()
 
     assert html.startswith('<div class="mkapi-node" id="mkapi.core.base.Base">')
-    assert 'mkapi-object-kind-dataclass">DATACLASS</div>' in html
+    assert 'mkapi-object-kind dataclass top">dataclass</div>' in html
+    assert '<div class="mkapi-object-body dataclass top">' in html
+    assert '<code class="mkapi-object-prefix">mkapi.core.base.</code>' in html
+    assert '<code class="mkapi-object-name">Base</code>' in html
+    assert '<code class="mkapi-object-parenthesis">(</code>' in html
+    assert '<code class="mkapi-object-signature">name=&#39;&#39;</code>, ' in html
+    assert '<code class="mkapi-object-signature">markdown=&#39;&#39;</code>' in html
     assert '<div class="mkapi-section-body">1</div>' in html
-    assert '<span class="mkapi-args-desc">2</span></li>' in html
+    assert '<span class="mkapi-item-description">2</span></li>' in html
     assert '<code class="mkapi-object-name">set_html</code>' in html
-    assert '<li><code class="mkapi-args-name">html</code>' in html
+    assert '<li><code class="mkapi-item-name">html</code>' in html
 
 
 def test_package():
@@ -117,3 +123,56 @@ def test_get_node_from_module():
     x = get_node_from_module("mkapi.core.base.Base.__iter__")
     y = get_node_from_module("mkapi.core.base.Base.__iter__")
     assert x is y
+
+
+def test_get_markdown_bases():
+    node = get_node("examples.appendix.inherit.Sub")
+    markdown = node.get_markdown()
+    parts = [x.strip() for x in markdown.split("<!-- mkapi:sep -->")]
+    x = "[examples.appendix.inherit.Base]"
+    assert parts[1].startswith(x)
+
+
+def test_set_html_and_render_bases():
+    node = get_node("examples.appendix.inherit.Sub")
+    markdown = node.get_markdown()
+    sep = "<!-- mkapi:sep -->"
+    n = len(markdown.split(sep))
+    html = sep.join(str(x) for x in range(n))
+    node.set_html(html)
+    html = node.get_html()
+    assert "mkapi-section-bases"
+
+
+def test_decorated_member():
+    from mkapi.core import attribute
+    from mkapi.core.signature import Signature
+
+    node = get_node(attribute)
+    assert node.members[-1].object.kind == "function"
+    assert get_node(Signature)["arguments"].object.kind == "readonly_property"
+
+
+def test_colon_in_docstring():
+    """Issue#17"""
+
+    class A:
+        def func(self):
+            """this: is not type."""
+
+        @property
+        def prop(self):
+            """this: is type."""
+
+    def func(self):
+        """this: is not type."""
+
+    node = get_node(A)
+    assert node["func"].docstring[""].markdown == "this: is not type."
+    assert node["prop"].docstring[""].markdown == "is type."
+    assert node["prop"].object.type.name == "this"
+    assert not node["prop"].docstring.type.name
+
+    node = get_node(func)
+    assert node.docstring[""].markdown == "this: is not type."
+    assert not node.object.type

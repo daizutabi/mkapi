@@ -87,3 +87,16 @@ def test_transform_module(module):
     section = node.docstring["Classes"]
     assert "ExampleClass" in section
     assert "ExampleDataClass" in section
+
+
+def test_link_from_toc():
+    from examples.google_style import ExampleClass
+
+    node = Node(ExampleClass)
+    assert len(node.docstring.sections) == 4
+    P.transform(node)
+    assert len(node.docstring.sections) == 5
+    assert "Methods" in node.docstring
+    section = node.docstring['Methods']
+    html = section.items[0].html
+    assert '<a href="#examples.google_style.ExampleClass.message">' in html
