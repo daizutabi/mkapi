@@ -41,7 +41,7 @@ def test_page():
     assert '<a href="../api/mkapi.core.base.md#mkapi.core.base">BASE</a>' in h
     assert '<a href="#mkapi.core.base.Base">Base</a>' in h
     assert '<div class="mkapi-node" id="mkapi.core.base.Base">' in h
-    assert '<div class="mkapi-object dataclass code">' in h
+    assert '<div class="mkapi-object dataclass code top">' in h
     assert '<a href="../api/mkapi.core.base.md#mkapi.core.base">mkapi.core.base' in h
     assert '<a href="../api/mkapi.core.base.md#mkapi.core.base.Base">Base</a>' in h
     assert '<span class="mkapi-section-name-body attributes">Attributes</span>' in h

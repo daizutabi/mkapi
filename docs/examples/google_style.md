@@ -54,9 +54,8 @@ MkApi generates the documentation for the `add()` function.
 
 In this simple example, you can see some features of MkApi.
 
-* Type inspection of `add()` (*function* prefix is added before `google_style.add`).
 * Use of type annotation for both Parameters and Returns sections.
-* Add *optional* if parameters have default values.
+* Add "optional" if parameters have default values.
 * Default value replacement by the `{default}` keyword in the Parameters section.
 * External hyperlink.
 * Use of MkDocs extensions: MathJax rendering and admonition.
@@ -79,9 +78,9 @@ creates the documentation for the `gen()` generator.
 
 In this simple example, note that:
 
-* A *generator* prefix instead of a *function* prefix.
+* Type inspection of `gen()` (*generator* prefix is added before `google_style.gen`).
 * The parameter `n` has no type annotation but you can specify it in the Parameters section directly.
-* Yields type is not *iterator of str* but *str*, because the `gen()` is a generator.
+* Yields type is not "iterator of str" but "str", because the `gen()` is a generator.
 
 ## Class
 
@@ -141,7 +140,7 @@ creates the documentation for the `ExampleDataClass` class.
 
 In this example, note that:
 
-* A DATACLASS prefix instead of a CLASS prefix.
+* A *dataclass* prefix instead of a *class* prefix.
 * Attributes type inspection as well as parameters if they are data class fields.
 
 

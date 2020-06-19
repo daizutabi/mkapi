@@ -54,11 +54,10 @@ div.mkapi-object.code {
   color: #111;
 }
 
-div.mkapi-object.class.code, div.mkapi-object.dataclass.code {
+div.mkapi-object.top.code {
   border: none;
   line-height: normal;
   background: #e7f2fa;
-  color: #2980B9;
   border-top: solid 3px #6ab0de;
   padding: 6px 12px 6px 6px;
 }
@@ -80,11 +79,10 @@ div.mkapi-object.class.code, div.mkapi-object.dataclass.code {
   font-style: normal;
 }
 
-
-.mkapi-object-kind.method {
+.mkapi-object-kind.function, .mkapi-object-kind.method {
   display: none;
 }
-.mkapi-object-kind.class, .mkapi-object-kind.dataclass {
+.mkapi-object-kind.top {
   color: #2980B9;
   font-size: 90%;
 }
@@ -142,10 +140,8 @@ code.mkapi-object-name {
   font-style: italic;
 }
 
-.mkapi-node .mkapi-object-body.class code.mkapi-object-parenthesis,
-.mkapi-node .mkapi-object-body.class code.mkapi-object-signature,
-.mkapi-node .mkapi-object-body.dataclass code.mkapi-object-parenthesis,
-.mkapi-node .mkapi-object-body.dataclass code.mkapi-object-signature {
+.mkapi-node .mkapi-object-body.top code.mkapi-object-parenthesis,
+.mkapi-node .mkapi-object-body.top code.mkapi-object-signature {
   font-weight: 700;
   color: #2980B9;
 }

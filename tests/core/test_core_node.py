@@ -84,7 +84,13 @@ def test_set_html_and_render():
     html = node.get_html()
 
     assert html.startswith('<div class="mkapi-node" id="mkapi.core.base.Base">')
-    assert 'mkapi-object-kind dataclass">dataclass</div>' in html
+    assert 'mkapi-object-kind dataclass top">dataclass</div>' in html
+    assert '<div class="mkapi-object-body dataclass top">' in html
+    assert '<code class="mkapi-object-prefix">mkapi.core.base.</code>' in html
+    assert '<code class="mkapi-object-name">Base</code>' in html
+    assert '<code class="mkapi-object-parenthesis">(</code>' in html
+    assert '<code class="mkapi-object-signature">name=&#39;&#39;</code>, ' in html
+    assert '<code class="mkapi-object-signature">markdown=&#39;&#39;</code>' in html
     assert '<div class="mkapi-section-body">1</div>' in html
     assert '<span class="mkapi-item-description">2</span></li>' in html
     assert '<code class="mkapi-object-name">set_html</code>' in html
@@ -148,6 +154,8 @@ def test_decorated_member():
 
 
 def test_colon_in_docstring():
+    """Issue#17"""
+
     class A:
         def func(self):
             """this: is not type."""
