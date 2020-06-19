@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, TypeVar, Union
 from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Inline, Item, Section, Type
-from mkapi import utils
 
 
 @dataclass
