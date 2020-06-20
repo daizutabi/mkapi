@@ -115,7 +115,7 @@ class Tree:
         return f"{class_name}({id!r}, num_sections={sections}, num_members={numbers})"
 
     def __getitem__(self, index: Union[int, str, List[str]]):
-        """Returns a member Tree instance.
+        """Returns a member {class} instance.
 
         If `index` is str, a member Tree instance whose name is equal to `index`
         is returned.

@@ -51,11 +51,11 @@ def test_transform_property(node):
 
 def test_get_type(node):
     assert P.get_type(node).name == ""
-    assert P.get_type(node['f']).name == "str"
-    assert P.get_type(node['g']).name == "int"
-    assert P.get_type(node['a']).name == "(int, str)"
-    assert P.get_type(node['b']).name == "str"
-    node['g'].docstring.sections[1]
+    assert P.get_type(node["f"]).name == "str"
+    assert P.get_type(node["g"]).name == "int"
+    assert P.get_type(node["a"]).name == "(int, str)"
+    assert P.get_type(node["b"]).name == "str"
+    node["g"].docstring.sections[1]
 
 
 def test_transform_class(node):
@@ -97,6 +97,6 @@ def test_link_from_toc():
     P.transform(node)
     assert len(node.docstring.sections) == 5
     assert "Methods" in node.docstring
-    section = node.docstring['Methods']
+    section = node.docstring["Methods"]
     html = section.items[0].html
     assert '<a href="#examples.google_style.ExampleClass.message">' in html

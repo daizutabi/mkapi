@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.8] - 2020-06-20
 ### Added
 - `short` filter to remove the prefix from an object name. ([#16](https://github.com/daizutabi/mkapi/pull/16)). Thanks to [Ahrak](https://github.com/Ahrak).
 

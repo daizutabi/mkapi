@@ -1,6 +1,6 @@
 import pytest
 
-from mkapi.core.base import Docstring, Item, Section
+from mkapi.core.base import Base, Docstring, Item, Section
 
 
 def test_update_item():
@@ -38,3 +38,10 @@ def test_docstring_copy():
     d.set_section(a, copy=True)
     assert "Arguments" in d
     assert d["Arguments"] is not a
+
+
+def test_copy():
+    x = Base("x", 'markdown')
+    y = x.copy()
+    assert y.name == 'x'
+    assert y.markdown == 'markdown'

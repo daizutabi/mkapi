@@ -132,5 +132,16 @@ class E:
 
 def test_multiple_assignments():
     attrs = get_attributes(E)
-    assert attrs['a'] == (int, 'a')
-    assert attrs['b'] == (str, 'b')
+    assert attrs["a"] == (int, "a")
+    assert attrs["b"] == (str, "b")
+
+
+def test_name_error():
+    abc = "abc"
+
+    class Name:
+        def __init__(self):
+            self.x: abc = 1  #: abc.
+
+    attrs = get_attributes(Name)
+    assert attrs["x"] == ("abc", "abc.")

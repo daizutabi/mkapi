@@ -1,4 +1,4 @@
-from mkapi.core.preprocess import convert
+from mkapi.core.preprocess import admonition, convert
 
 source = """ABC
 
@@ -32,3 +32,12 @@ GHI"""
 
 def test_convert():
     assert convert(source) == output
+
+
+def test_admonition():
+    markdown = admonition("Warnings", "abc\n\ndef")
+    assert markdown == '!!! warning "Warnings"\n    abc\n\n    def'
+    markdown = admonition("Note", "abc\n\ndef")
+    assert markdown == '!!! note "Note"\n    abc\n\n    def'
+    markdown = admonition("Tips", "abc\n\ndef")
+    assert markdown == '!!! tips "Tips"\n    abc\n\n    def'

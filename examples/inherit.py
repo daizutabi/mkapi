@@ -25,6 +25,10 @@ class Base:
         """
         self.name = name
 
+    def get(self):
+        """Returns {class} instace."""
+        return self
+
 
 @dataclass
 class Item(Base):

@@ -27,6 +27,7 @@ Taking a look at this example, you may notice that:
 * In the `Base`, there is no description for `type`.
 * In the `Item`, parameters inherited from the superclass are not written.
 * In the `Item.set_name()`, Parameters section itself doesn't exist.
+* In the `Base.set()`, `{class}` variable is used to replace it by class name.
 
 ## Inheritance from Superclasses
 

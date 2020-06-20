@@ -64,6 +64,6 @@ def test_plugins_mkdocs_build():
     def run(command):
         assert subprocess.run(command.split()).returncode == 0
 
-    if os.path.exists('docs/api'):
-        shutil.rmtree('docs/api')
+    if os.path.exists("docs/api"):
+        shutil.rmtree("docs/api")
     run("mkdocs build")

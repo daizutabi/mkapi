@@ -128,8 +128,6 @@ def sort(node: Node):
 
 
 def transform(node: Node, filters: Optional[List[str]] = None):
-    if node.docstring is None:
-        return
     if node.object.kind in ["class", "dataclass"]:
         transform_class(node, filters)
     elif node.object.kind in ["module", "package"]:

@@ -11,7 +11,7 @@ from mkapi.core.structure import Tree
 
 @dataclass(repr=False)
 class Module(Tree):
-    """Module class represents an module.
+    """Module class represents a module.
 
     Attributes:
         parent: Parent Module instance.

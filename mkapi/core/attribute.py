@@ -1,4 +1,4 @@
-"""This module provides attributes inspection from source code."""
+"""This module provides functions that inspect attributes from source code."""
 import ast
 import importlib
 import inspect
@@ -90,8 +90,6 @@ def get_description(lines: List[str], lineno: int) -> str:
                 return "\n".join(docs).strip()
             elif in_doc:
                 docs.append(line)
-        if docs:
-            return "\n".join(docs).strip()
     return ""
 
 

@@ -57,10 +57,10 @@ docstring = node.docstring
 len(docstring.sections)  # type:ignore
 # -
 section = docstring.sections[0]  # type:ignore
-section.name, section.markdown
+section.name
 # -
-section = docstring.sections[1]  # type:ignore
-section.name, section.markdown
+print(section.markdown)
+# -
 
 # The `members` attribute gives children, for example, bound methods of a class.
 
@@ -108,7 +108,7 @@ print(markdown)
 
 from markdown import Markdown  # isort:skip
 
-converter = Markdown()
+converter = Markdown(extensions=['admonition'])
 html = converter.convert(markdown)
 print(html)
 

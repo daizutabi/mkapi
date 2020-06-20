@@ -60,6 +60,6 @@ def admonition(name: str, markdown: str) -> str:
         type = "warning"
     else:
         type = name.lower()
-    lines = ["    " + line for line in markdown.split("\n")]
+    lines = ["    " + line if line else "" for line in markdown.split("\n")]
     lines.insert(0, f'!!! {type} "{name}"')
     return "\n".join(lines)

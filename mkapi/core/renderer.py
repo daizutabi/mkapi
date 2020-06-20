@@ -105,7 +105,7 @@ class Renderer:
         Args:
             docstring: Docstring instance.
         """
-        if docstring is None:
+        if not docstring:
             return ""
         template = self.templates["docstring"]
         for section in docstring.sections:
