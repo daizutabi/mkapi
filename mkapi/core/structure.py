@@ -159,7 +159,7 @@ class Tree:
         """Returns a Markdown source for docstring of self."""
         raise NotImplementedError
 
-    def walk(self):
+    def walk(self) -> Iterator["Tree"]:
         """Yields all members."""
         yield self
         for member in self.members:

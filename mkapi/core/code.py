@@ -1,3 +1,4 @@
+"""This module provides Code class for source code."""
 import io
 import re
 from dataclasses import dataclass, field
@@ -10,10 +11,12 @@ from mkapi.core.module import Module, get_module
 
 @dataclass
 class Code:
-    module: Module
-    markdown: str = field(default="", init=False)
-    html: str = field(default="", init=False)
-    level: int = field(default=1, init=False)
+    """Code class represents source code of an object."""
+
+    module: Module  #: Module instance.
+    markdown: str = field(default="", init=False)  #: Markdown source.
+    html: str = field(default="", init=False)  #: Converted HTML.
+    level: int = field(default=1, init=False)  #: Heading level.
 
     def __post_init__(self):
         sourcefile = self.module.sourcefile
@@ -77,5 +80,10 @@ def replace(html):
 
 
 def get_code(name: str) -> Code:
+    """Returns a Code instace by module name.
+
+    Args:
+        name: Module name.
+    """
     module = get_module(name)
     return Code(module)
