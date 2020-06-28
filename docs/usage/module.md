@@ -58,7 +58,7 @@ If you prefer upper case heading, use the `upper` filter.
 
 ## Display Members
 
-`all` filter generates entire module documentation including class and function members. Note that Classes and Functions sections have links to the members
+`all` filter generates entire module documentation including class and function members. Note that Classes and Functions sections have links to the members.
 
 ~~~
 ### ![mkapi](google_style|upper|all)

@@ -11,7 +11,7 @@ from mkapi.core.module import Module, get_module
 logger = logging.getLogger("mkdocs")
 
 
-def create_nav(config):
+def create_nav(config, global_filters):
     nav = config["nav"]
     docs_dir = config["docs_dir"]
     config_dir = os.path.dirname(config["config_file_path"])
@@ -20,12 +20,14 @@ def create_nav(config):
         if isinstance(page, dict):
             for key, value in page.items():
                 if isinstance(value, str) and value.startswith("mkapi/"):
-                    page[key], abs_api_paths_ = collect(value, docs_dir, config_dir)
+                    page[key], abs_api_paths_ = collect(
+                        value, docs_dir, config_dir, global_filters
+                    )
                     abs_api_paths.extend(abs_api_paths_)
     return config, abs_api_paths
 
 
-def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
+def collect(path: str, docs_dir: str, config_dir, global_filters) -> Tuple[list, list]:
     _, api_path, *paths, package_path = path.split("/")
     abs_api_path = os.path.join(docs_dir, api_path)
     if os.path.exists(abs_api_path):
@@ -40,6 +42,7 @@ def collect(path: str, docs_dir: str, config_dir) -> Tuple[list, list]:
         sys.path.insert(0, root)
 
     package_path, filters = utils.split_filters(package_path)
+    filters = utils.update_filters(global_filters, filters)
 
     module = get_module(package_path)
     nav = []

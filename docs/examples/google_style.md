@@ -149,3 +149,18 @@ In this example, note that:
 
     * [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google)
     * [Example NumPy Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html#example-numpy)
+
+
+## Heading Mode
+
+The other mode to create documentation is heading. For example,
+
+~~~markdown
+## ![mkapi](google_style.ExampleClass)
+~~~
+
+create a `<h2>` tag for the `google_style.ExampleClass`.
+
+## ![mkapi](google_style.ExampleClass)
+
+Note that an ExampleClass item in nav menu is created.

@@ -28,6 +28,7 @@ class MkapiPlugin(BasePlugin):
     config_scheme = (
         ("src_dirs", config_options.Type(list, default=[])),
         ("on_config", config_options.Type(str, default="")),
+        ("filters", config_options.Type(list, default=[])),
         ("callback", config_options.Type(str, default="")),
     )
     server = None
@@ -46,7 +47,9 @@ class MkapiPlugin(BasePlugin):
         self.pages = {}
         self.abs_api_paths = []
         if not self.server:
-            config, self.abs_api_paths = mkapi.plugins.api.create_nav(config)
+            config, self.abs_api_paths = mkapi.plugins.api.create_nav(
+                config, self.config["filters"]
+            )
             global_config["config"] = config
             global_config["abs_api_paths"] = self.abs_api_paths
         else:
@@ -109,7 +112,9 @@ class MkapiPlugin(BasePlugin):
         """Converts Markdown source to intermidiate version."""
         abs_src_path = page.file.abs_src_path
         clean_page_title(page)
-        page = Page(markdown, abs_src_path, self.abs_api_paths)
+        page = Page(
+            markdown, abs_src_path, self.abs_api_paths, filters=self.config["filters"]
+        )
         self.pages[abs_src_path] = page
         return page.markdown
 
@@ -125,6 +130,9 @@ class MkapiPlugin(BasePlugin):
         abs_src_path = page.file.abs_src_path
         if abs_src_path in self.abs_api_paths:
             clear_prefix(page.toc, 2)
+        else:
+            for level, id in self.pages[abs_src_path].headings:
+                clear_prefix(page.toc, level, id)
         return context
 
     def on_serve(self, server, config, builder):
@@ -135,9 +143,9 @@ class MkapiPlugin(BasePlugin):
         return server
 
 
-def clear_prefix(toc, level: int):
+def clear_prefix(toc, level: int, id: str = ""):
     for toc_item in toc:
-        if toc_item.level >= level:
+        if toc_item.level >= level and (not id or toc_item.title == id):
             toc_item.title = toc_item.title.split(".")[-1]
         clear_prefix(toc_item.children, level)
     return

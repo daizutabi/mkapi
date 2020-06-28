@@ -1,6 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Global filters and page filters.
+
+### Fixed
+- Delete prefix in nav menu for heading mode.
 
 ## [1.0.9]
 ### Added
