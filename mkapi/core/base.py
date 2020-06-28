@@ -134,7 +134,7 @@ class Item(Type):
     Args:
         type: Type of self.
         description: Description of self.
-        kind: Kind of self, for example `readonly_property`. This value is rendered
+        kind: Kind of self, for example `readonly property`. This value is rendered
             as a class attribute in HTML.
 
     Examples:
