@@ -86,7 +86,7 @@ class ExampleClass:
     @property
     def readonly_property(self):
         """str: Read-only property documentation."""
-        return "readonly_property"
+        return "readonly property"
 
     @property
     def readwrite_property(self) -> List[int]:

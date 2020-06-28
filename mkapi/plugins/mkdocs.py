@@ -124,7 +124,7 @@ class MkapiPlugin(BasePlugin):
     def on_page_context(self, context, page, config, nav):
         abs_src_path = page.file.abs_src_path
         if abs_src_path in self.abs_api_paths:
-            clear_prefix(page.toc)
+            clear_prefix(page.toc, 2)
         return context
 
     def on_serve(self, server, config, builder):
@@ -135,11 +135,11 @@ class MkapiPlugin(BasePlugin):
         return server
 
 
-def clear_prefix(toc):
+def clear_prefix(toc, level: int):
     for toc_item in toc:
-        if toc_item.level >= 2:
+        if toc_item.level >= level:
             toc_item.title = toc_item.title.split(".")[-1]
-        clear_prefix(toc_item.children)
+        clear_prefix(toc_item.children, level)
     return
 
 

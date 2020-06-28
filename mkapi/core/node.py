@@ -3,11 +3,11 @@ import inspect
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterator, List, Optional
 
+from mkapi.core import preprocess
 from mkapi.core.base import Base, Type
 from mkapi.core.object import (from_object, get_object, get_origin,
                                get_sourcefiles)
 from mkapi.core.structure import Object, Tree
-from mkapi.core import preprocess
 
 
 @dataclass(repr=False)
@@ -40,7 +40,7 @@ class Node(Tree):
         self.members = [m for m in members if m.object.name != "__init__"]
 
         doc = self.docstring
-        if doc and 'property' in self.object.kind:
+        if doc and "property" in self.object.kind:
             if not doc.type and len(doc.sections) == 1 and doc.sections[0].name == "":
                 section = doc.sections[0]
                 markdown = section.markdown
@@ -65,12 +65,18 @@ class Node(Tree):
                 return "package"
             else:
                 return "module"
+        abstract = is_abstract(self.obj)
         if isinstance(self.obj, property):
             if self.obj.fset:
-                return "readwrite_property"
+                kind = "readwrite property"
             else:
-                return "readonly_property"
-        return get_kind(get_origin(self.obj))
+                kind = "readonly property"
+        else:
+            kind = get_kind(get_origin(self.obj))
+        if abstract:
+            return "abstract " + kind
+        else:
+            return kind
 
     def get_members(self) -> List["Node"]:  # type:ignore
         return get_members(self.obj)
@@ -120,12 +126,22 @@ class Node(Tree):
         return renderer.render(self, filters)  # type:ignore
 
 
+def is_abstract(obj) -> bool:
+    if inspect.isabstract(obj):
+        return True
+    if hasattr(obj, "__isabstractmethod__") and obj.__isabstractmethod__:
+        return True
+    else:
+        return False
+
+
 def get_kind(obj) -> str:
     try:  # KeyError on __dataclass_field__ (Issue#13).
         if hasattr(obj, "__dataclass_fields__") and hasattr(obj, "__qualname__"):
             return "dataclass"
-        if hasattr(obj, "__self__") and type(obj.__self__) is type:
-            return "classmethod"
+        if hasattr(obj, "__self__"):
+            if type(obj.__self__) is type or type(type(obj.__self__)):  # Issue#18
+                return "classmethod"
     except Exception:
         pass
     if inspect.isclass(obj):

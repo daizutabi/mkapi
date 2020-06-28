@@ -3,10 +3,11 @@
 {% set upper = 'upper' in filters -%}
 {% set body_tag = 'span' if 'plain' in filters else 'code' -%}
 {% set top = ' top' if '.' not in object.qualname else '' -%}
+{% set kind_class = object.kind.replace(' ', '-') -%}
 <div class='mkapi-object-container'>
-  <div class="mkapi-object {{ object.kind }} {% if body_tag == 'span' %}plain{% else %}code{% endif %}{{ top }}">
-    <div class="mkapi-object-kind {{ object.kind }}{{ top }}">{% if upper and object.kind in ['package', 'module'] %}{{ object.kind|upper }}{% else %}{{ object.kind }}{% endif %}</div>
-    <{{tag}}{% if heading_id %} id="{{ heading_id }}"{% endif %} class="mkapi-object-body {{ object.kind }}{{ top }}">{{ object_body(object, prefix_url, name_url, body_tag, upper, filters) }}</{{tag}}>
+  <div class="mkapi-object {{ kind_class }} {% if body_tag == 'span' %}plain{% else %}code{% endif %}{{ top }}">
+    <div class="mkapi-object-kind {{ kind_class }}{{ top }}">{% if upper and object.kind in ['package', 'module'] %}{{ object.kind|upper }}{% else %}{{ object.kind }}{% endif %}</div>
+    <{{tag}}{% if heading_id %} id="{{ heading_id }}"{% endif %} class="mkapi-object-body {{ kind_class }}{{ top }}">{{ object_body(object, prefix_url, name_url, body_tag, upper, filters) }}</{{tag}}>
   </div>
   {% if 'sourcelink' in filters or 'link' in filters or 'apilink' in filters -%}
   <div class="mkapi-src-link">

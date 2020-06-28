@@ -128,7 +128,7 @@ def sort(node: Node):
 
 
 def transform(node: Node, filters: Optional[List[str]] = None):
-    if node.object.kind in ["class", "dataclass"]:
+    if node.object.kind.replace("abstract ", "") in ["class", "dataclass"]:
         transform_class(node, filters)
     elif node.object.kind in ["module", "package"]:
         transform_module(node, filters)

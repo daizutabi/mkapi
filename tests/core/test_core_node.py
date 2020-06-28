@@ -150,7 +150,7 @@ def test_decorated_member():
 
     node = get_node(attribute)
     assert node.members[-1].object.kind == "function"
-    assert get_node(Signature)["arguments"].object.kind == "readonly_property"
+    assert get_node(Signature)["arguments"].object.kind == "readonly property"
 
 
 def test_colon_in_docstring():

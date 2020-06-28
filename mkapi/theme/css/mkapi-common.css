@@ -286,14 +286,24 @@ div.mkapi-section-body.examples pre code {
   width: 20px;
 }
 
-.mkapi-node ul.mkapi-items li.readwrite_property::before {
+.mkapi-node ul.mkapi-items li.readwrite-property::before {
   font-size: 80%;
   content: "[RW]";
 }
 
-.mkapi-node ul.mkapi-items li.readonly_property::before {
+.mkapi-node ul.mkapi-items li.readonly-property::before {
   font-size: 80%;
   content: "[RO]";
+}
+
+.mkapi-node ul.mkapi-items li.abstract-readwrite-property::before {
+  font-size: 80%;
+  content: "[ARW]";
+}
+
+.mkapi-node ul.mkapi-items li.abstract-readonly-property::before {
+  font-size: 80%;
+  content: "[ARO]";
 }
 
 .mkapi-node ul.mkapi-items li.classmethod::before {
@@ -314,6 +324,31 @@ div.mkapi-section-body.examples pre code {
 .mkapi-node ul.mkapi-items li.dataclass::before {
   font-size: 80%;
   content: "[D]";
+}
+
+.mkapi-node ul.mkapi-items li.abstract-method::before {
+  font-size: 80%;
+  content: "[A]";
+}
+
+.mkapi-node ul.mkapi-items li.abstract-classmethod::before {
+  font-size: 80%;
+  content: "[AC]";
+}
+
+.mkapi-node ul.mkapi-items li.abstract-staticmethod::before {
+  font-size: 80%;
+  content: "[AS]";
+}
+
+.mkapi-node ul.mkapi-items li.abstract-generator::before {
+  font-size: 80%;
+  content: "[AG]";
+}
+
+.mkapi-node ul.mkapi-items li.abstract-dataclass::before {
+  font-size: 80%;
+  content: "[AD]";
 }
 
 .mkapi-node code.mkapi-item-name {

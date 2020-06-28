@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+- *Abstract* prefix for abstract class and method.
+
+### Changed
+- *readonly_property* -> *readonly property* and *readwrite_property* -> *readwrite property*.
+
+### Fixed
+- Detect classmethods on abstract base class ([#18](https://github.com/daizutabi/mkapi/issues/18))
+
 ## [1.0.8] - 2020-06-20
 ### Added
 - `short` filter to remove the prefix from an object name ([#16](https://github.com/daizutabi/mkapi/pull/16)). Thanks to [Ahrak](https://github.com/Ahrak).
@@ -50,8 +59,8 @@
 - Include functions decorated by Pytest ([#14](https://github.com/daizutabi/mkapi/issues/14)).
 
 ## [1.0.2] -  2020-06-16
-
-- BugFix: Correct parameter names for `*args` and `**kwargs`.
+### Fixed
+- Correct parameter names for `*args` and `**kwargs`.
 
 ## [1.0.1] - 2020-06-16
 ### Added
