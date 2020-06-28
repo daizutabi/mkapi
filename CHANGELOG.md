@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.10]
 ### Added
 - Global filters and page filters.
 
