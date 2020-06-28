@@ -2,14 +2,14 @@
 
 ## [Unreleased]
 
-## [1.0.10]
+## [1.0.10] - 2020-06-28
 ### Added
 - Global filters and page filters.
 
 ### Fixed
 - Delete prefix in nav menu for heading mode.
 
-## [1.0.9]
+## [1.0.9] - 2020-06-28
 ### Added
 - *Abstract* prefix for abstract class and method.
 
