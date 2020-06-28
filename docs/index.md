@@ -42,6 +42,12 @@ To generate the documentation from docstring in a Markdown source, add an exclam
 ![mkapi](<package.module.object>)
 ~~~
 
+You can combine this syntax with Markdown heading:
+
+~~~markdown
+## ![mkapi](<package.module.object>)
+~~~
+
 MkApi imports modules that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:
 
 ~~~yml

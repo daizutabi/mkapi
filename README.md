@@ -49,6 +49,12 @@ To generate the API documentation in a Markdown source, add an exclamation mark 
 ![mkapi](<package.module.object>)
 ~~~
 
+You can combine this syntax with Markdown heading:
+
+~~~markdown
+## ![mkapi](<package.module.object>)
+~~~
+
 MkApi imports objects that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:
 
 ~~~yml
