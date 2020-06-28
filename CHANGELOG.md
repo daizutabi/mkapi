@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+## [1.0.9]
 ### Added
 - *Abstract* prefix for abstract class and method.
 
