@@ -133,6 +133,6 @@ def transform(node: Node, filters: Optional[List[str]] = None):
     elif node.object.kind in ["module", "package"]:
         transform_module(node, filters)
     for x in node.walk():
-        sort(x)
+        sort(x)  # type:ignore
     for member in node.members:
         transform(member, filters)

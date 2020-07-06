@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.11] - 2020-07-06
 ### Fixed
 - TypeError in `<metaclass>.mro()` ([#19](https://github.com/daizutabi/mkapi/issues/19)).
 
