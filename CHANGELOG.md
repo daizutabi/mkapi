@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- TypeError in `<metaclass>.mro()` ([#19](https://github.com/daizutabi/mkapi/issues/19)).
+
 
 ## [1.0.10] - 2020-06-28
 ### Added
@@ -17,7 +20,7 @@
 - *readonly_property* -> *readonly property* and *readwrite_property* -> *readwrite property*.
 
 ### Fixed
-- Detect classmethods on abstract base class ([#18](https://github.com/daizutabi/mkapi/issues/18))
+- Detect classmethods on abstract base class ([#18](https://github.com/daizutabi/mkapi/issues/18)).
 
 ## [1.0.8] - 2020-06-20
 ### Added
