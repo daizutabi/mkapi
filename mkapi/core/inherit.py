@@ -3,6 +3,7 @@ from typing import Iterator, Tuple
 
 from mkapi.core.base import Section
 from mkapi.core.node import Node, get_node
+from mkapi.core.object import get_mro
 
 
 def get_section(node: Node, name: str, mode: str) -> Section:
@@ -126,7 +127,7 @@ def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
         >>> [x.object.name for x in gen]
         ['set_html', 'set_html']
     """
-    bases = node.obj.mro()[1:-1]
+    bases = get_mro(node.obj)[1:]
     yield node, (get_node(base) for base in bases)
     for member in node.members:
         name = member.object.name

@@ -181,7 +181,7 @@ def is_member(obj: Any, name: str = "", sourcefiles: List[str] = None) -> int:
     if name == "":
         name = obj.__name__
     obj = get_origin(obj)
-    if name in ["__func__", "__self__"]:
+    if name in ["__func__", "__self__", "__base__", "__bases__"]:
         return -1
     if name.startswith("_"):
         if not name.startswith("__") or not name.endswith("__"):
@@ -196,11 +196,6 @@ def is_member(obj: Any, name: str = "", sourcefiles: List[str] = None) -> int:
         return 0
     for sourcefile_index, parent_sourcefile in enumerate(sourcefiles):
         if sourcefile == parent_sourcefile:
-            if inspect.isclass(obj):
-                try:
-                    obj.mro()
-                except (TypeError, AttributeError):
-                    return -1
             return sourcefile_index
     return -1
 

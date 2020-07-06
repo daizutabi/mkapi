@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from mkapi.core.node import get_node
+from mkapi.core.object import get_sourcefiles
 
 
 class C(ABC):
@@ -47,8 +48,15 @@ class C(ABC):
         pass
 
 
+def test_get_sourcefiles():
+    files = get_sourcefiles(C)
+    assert len(files) == 1
+
+
 def test_abc():
     node = get_node(C)
+    assert len(node.members) == 8
     node.object.kind == "abstract class"
     for member in node.members:
-        member.object.kind.replace(" ", "_") == member.object.name
+        obj = member.object
+        assert obj.kind.replace(" ", "") == obj.name.replace("_", "")

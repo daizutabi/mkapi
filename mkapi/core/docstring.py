@@ -8,6 +8,7 @@ from typing import Any, Iterator, List, Tuple
 from mkapi.core import preprocess
 from mkapi.core.base import Docstring, Inline, Item, Section, Type
 from mkapi.core.linker import get_link, replace_link
+from mkapi.core.object import get_mro
 from mkapi.core.signature import get_signature
 from mkapi.utils import get_indent, join
 
@@ -191,7 +192,7 @@ def parse_bases(doc: Docstring, obj: Any):
     """Parses base classes to create a Base(s) line."""
     if not inspect.isclass(obj) or not hasattr(obj, "mro"):
         return
-    objs = obj.mro()[1:-1]
+    objs = get_mro(obj)[1:]
     if not objs:
         return
     types = [get_link(obj, include_module=True) for obj in objs]

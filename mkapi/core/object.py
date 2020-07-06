@@ -1,4 +1,5 @@
 """This module provides utility functions that relate to object."""
+import abc
 import importlib
 import inspect
 from typing import Any, List, Tuple
@@ -121,6 +122,17 @@ def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
     return sourcefile, lineno
 
 
+# Issue#19 (metaclass). TypeError: descriptor 'mro' of 'type' object needs an argument.
+def get_mro(obj):
+    try:
+        objs = obj.mro()[:-1]  # drop ['object']
+    except TypeError:
+        objs = obj.mro(obj)[:-2]  # drop ['type', 'object']
+    if objs[-1] == abc.ABC:
+        objs = objs[:-1]
+    return objs
+
+
 def get_sourcefiles(obj: Any) -> List[str]:
     """Returns a list of source file.
 
@@ -130,7 +142,7 @@ def get_sourcefiles(obj: Any) -> List[str]:
         obj: Object name.
     """
     if inspect.isclass(obj) and hasattr(obj, "mro"):
-        objs = obj.mro()[:-1]
+        objs = get_mro(obj)
     else:
         objs = [obj]
     sourfiles = []

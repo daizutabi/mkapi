@@ -1,7 +1,7 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 
-class AbstractMethodTypeExample(object, metaclass=ABCMeta):  # or (abc.ABC)
+class AbstractMethodTypeExample(ABC):
     """Abstract class."""
 
     def method(self):
