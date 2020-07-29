@@ -33,7 +33,7 @@ class MkapiPlugin(BasePlugin):
     )
     server = None
 
-    def on_config(self, config):
+    def on_config(self, config, **kwargs):
         """Inserts `src_dirs` to `sys.path`."""
         config_dir = os.path.dirname(config["config_file_path"])
         for src_dir in self.config["src_dirs"]:
@@ -75,7 +75,7 @@ class MkapiPlugin(BasePlugin):
 
         return config
 
-    def on_files(self, files, config):
+    def on_files(self, files, config, **kwargs):
         """Collects plugin CSS ans JavaScript and appends them to `files`."""
         root = os.path.join(os.path.dirname(mkapi.__file__), "theme")
         docs_dir = config["docs_dir"]
@@ -108,7 +108,7 @@ class MkapiPlugin(BasePlugin):
 
         return files
 
-    def on_page_markdown(self, markdown, page, config, files):
+    def on_page_markdown(self, markdown, page, config, files, **kwargs):
         """Converts Markdown source to intermidiate version."""
         abs_src_path = page.file.abs_src_path
         clean_page_title(page)
@@ -118,7 +118,7 @@ class MkapiPlugin(BasePlugin):
         self.pages[abs_src_path] = page
         return page.markdown
 
-    def on_page_content(self, html, page, config, files):
+    def on_page_content(self, html, page, config, files, **kwargs):
         """Merges html and MkApi's node structure."""
         if page.title:
             page.title = re.sub(r"<.*?>", "", page.title)
@@ -126,7 +126,7 @@ class MkapiPlugin(BasePlugin):
         page = self.pages[abs_src_path]
         return page.content(html)
 
-    def on_page_context(self, context, page, config, nav):
+    def on_page_context(self, context, page, config, nav, **kwargs):
         abs_src_path = page.file.abs_src_path
         if abs_src_path in self.abs_api_paths:
             clear_prefix(page.toc, 2)
@@ -135,7 +135,7 @@ class MkapiPlugin(BasePlugin):
                 clear_prefix(page.toc, level, id)
         return context
 
-    def on_serve(self, server, config, builder):
+    def on_serve(self, server, config, builder, **kwargs):
         for path in ["theme", "templates"]:
             root = os.path.join(os.path.dirname(mkapi.__file__), path)
             server.watch(root, builder)
