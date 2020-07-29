@@ -2,10 +2,13 @@
 
 ## [Unreleased]
 
+## [1.0.12] - 2020-07-29
+### Changed
+- Ensure compatibility with future MkDocs versions ([#20](https://github.com/daizutabi/mkapi/pull/20)). Thanks to [timvink](https://github.com/timvink).
+
 ## [1.0.11] - 2020-07-07
 ### Fixed
 - TypeError in `<metaclass>.mro()` ([#19](https://github.com/daizutabi/mkapi/issues/19)).
-
 
 ## [1.0.10] - 2020-06-28
 ### Added
