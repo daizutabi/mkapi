@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.13] - 2020-08-03
 ### Fixed
 - Handle parsing empty line ([#23](https://github.com/daizutabi/mkapi/pull/23)). Thanks to [tony](https://github.com/tony).
 - Typo ([#24](https://github.com/daizutabi/mkapi/pull/24)). Thanks to [tony](https://github.com/tony).
