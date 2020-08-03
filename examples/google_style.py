@@ -79,7 +79,7 @@ class ExampleClass:
         """Returns a message list.
 
         Args:
-            n: Repeatation.
+            n: Repetition.
         """
         return [self.a] * n
 

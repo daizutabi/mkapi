@@ -88,7 +88,7 @@ class ExampleClass:
         Parameters
         ----------
         n
-            Repeatation.
+            Repetition.
         """
         return [self.a] * n
 
