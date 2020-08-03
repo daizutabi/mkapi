@@ -11,7 +11,7 @@ def sourcelink(object: Object) -> str:
         link = f'<span id="{object.id}"></span>'
     else:
         link = ""
-    link += f'<a class="mkapi-src-link" href="../source/{object.module}'
+    link += f'<a class="mkapi-src-link" href="../source/{object.module}/'
     link += f'#{object.id}" title="Source for {object.id}">&lt;/&gt;</a>'
     return link
 

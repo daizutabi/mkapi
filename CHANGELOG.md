@@ -3,6 +3,8 @@
 ## [Unreleased]
 ### Fixed
 - Handle parsing empty line ([#23](https://github.com/daizutabi/mkapi/pull/23)). Thanks to [tony](https://github.com/tony).
+- Typo ([#24](https://github.com/daizutabi/mkapi/pull/24)). Thanks to [tony](https://github.com/tony).
+- Add a slash at the end of URL ([#25](https://github.com/daizutabi/mkapi/issues/25)).
 
 
 ## [1.0.12] - 2020-07-29
