@@ -3,7 +3,7 @@ from mkapi.core.docstring import get_docstring
 
 
 def func():
-    """Internal link example.
+    """Internal link examples.
 
     * [Section]() --- Imported object.
     * [](get_docstring) --- Imported object.
