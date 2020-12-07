@@ -51,6 +51,10 @@ def parse_node(x):
         return parse_list(x)
     elif hasattr(_ast, "Constant") and isinstance(x, _ast.Constant):
         return x.value
+    elif hasattr(_ast, "Index") and isinstance(x, _ast.Index):
+        return x.value
+    elif hasattr(_ast, "Ellipsis") and isinstance(x, _ast.Ellipsis):
+        return x.value
     elif hasattr(_ast, "Str") and isinstance(x, _ast.Str):
         return x.s
     else:
