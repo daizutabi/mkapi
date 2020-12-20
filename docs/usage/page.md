@@ -32,7 +32,7 @@ The rest (`'mkapi'`) is a root package name, which is assumed to exist in the `m
 MkApi searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the documentation of MkApi in the left navigation menu.
 
 !!! note
-    * If a package or module has no package- or module-level docstring, MkApi doesn't process it.
+    * If a package or module has no package- or module-level docstring and its members have no docstring as well, MkApi doesn't process it.
     * For upper case heading, use the `upper` filter. See [Documentation with Heading](../module/#documentation-with-heading).
 
 ## Internal Links

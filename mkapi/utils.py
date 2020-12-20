@@ -13,7 +13,7 @@ def get_indent(line: str) -> int:
 
 def join(lines):
     if not len(lines):
-        return ''
+        return ""
     indent = get_indent(lines[0])
     return "\n".join(line[indent:] for line in lines).strip()
 

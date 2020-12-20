@@ -20,7 +20,7 @@ def test_get_module():
 
 def test_repr():
     module = get_module("mkapi.core.base")
-    s = "Module('mkapi.core.base', num_sections=2, num_members=0)"
+    s = "Module('mkapi.core.base', num_sections=2, num_members=6)"
     assert repr(module) == s
 
 
@@ -37,6 +37,6 @@ def test_get_module_from_object():
 
 
 def test_cache():
-    assert 'mkapi.core.base' in modules
-    assert 'mkapi.core.code' in modules
-    assert 'mkapi.core.docstring' in modules
+    assert "mkapi.core.base" in modules
+    assert "mkapi.core.code" in modules
+    assert "mkapi.core.docstring" in modules

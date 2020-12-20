@@ -44,7 +44,6 @@ def collect(path: str, docs_dir: str, config_dir, global_filters) -> Tuple[list,
     package_path, filters = utils.split_filters(package_path)
     filters = utils.update_filters(global_filters, filters)
 
-    module = get_module(package_path)
     nav = []
     abs_api_paths = []
     modules: Dict[str, str] = {}
@@ -56,17 +55,16 @@ def collect(path: str, docs_dir: str, config_dir, global_filters) -> Tuple[list,
         abs_api_paths.append(abs_path)
         create_page(abs_path, module, filters)
         page_name = module.object.id
-        if package and "short_nav" in filters:
-            if module.object.id == package:
-                page_name = "[package]"
-            else:
-                page_name = module.object.id[len(package) + 1 :]
+        if package and "short_nav" in filters and page_name != package:
+            page_name = page_name[len(package) + 1 :]
         modules[page_name] = os.path.join(api_path, page_file)
 
         abs_path = os.path.join(abs_api_path, "source", page_file)
         create_source_page(abs_path, module, filters)
 
+    module = get_module(package_path)
     for m in module:
+        print(m)
         if m.object.kind == "package":
             if package and modules:
                 nav.append({package: modules})
