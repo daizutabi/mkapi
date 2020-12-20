@@ -65,6 +65,9 @@ def get_fullname(obj: Any, name: str) -> str:
             return ""
         obj = getattr(obj, name)
 
+    if isinstance(obj, property):
+        return ""
+
     return ".".join(split_prefix_and_name(obj))
 
 
