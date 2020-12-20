@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.14] - 2020-12-20
 ### Added
 - Short filter (`short_nav`) for nav items in page mode ([#41](https://github.com/daizutabi/mkapi/issues/41)).
 

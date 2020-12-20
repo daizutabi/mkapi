@@ -2,7 +2,7 @@
 import inspect
 import os
 from dataclasses import dataclass, field
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Dict, Iterator, List, Optional
 
 from mkapi.core.node import Node
 from mkapi.core.node import get_members as get_node_members
