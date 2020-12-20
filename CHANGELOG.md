@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- Use try-except instead of hasattr for detection of __wrapped__ and __pytest_wrapped__ ([#33](https://github.com/daizutabi/mkapi/issues/33))
 
 ## [1.0.14] - 2020-12-20
 ### Added
