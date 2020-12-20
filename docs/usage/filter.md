@@ -53,6 +53,16 @@ Remove prefix.
 
 ![mkapi](filter.C|short)
 
+### short_nav
+
+
+Remove prefix from nav items. For example,
+
+```yaml
+nav:
+  - index.md
+  - API: mkapi/api/mkapi|short_nav
+```
 
 ### strict
 
