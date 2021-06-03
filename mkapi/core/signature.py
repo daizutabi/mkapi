@@ -160,7 +160,7 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
         >>> to_string(List[Node])
         'list of [Node](!mkapi.core.node.Node)'
     """
-    ann_args = getattr(annotation,"__args__",[])
+    ann_args = getattr(annotation, "__args__", [])
 
     if kind == "yields":
         if hasattr(annotation, "__args__") and annotation.__args__:

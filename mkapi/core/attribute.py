@@ -22,10 +22,10 @@ def parse_subscript(x) -> str:
     value = parse_node(x.value)
     try:
         slice = parse_node(x.slice.value)
-    except:
+    except AttributeError:
         try:
             slice = str(x.slice.id)
-        except:
+        except AttributeError:
             return f"{value}"
     if isinstance(slice, str):
         return f"{value}[{slice}]"
