@@ -101,10 +101,7 @@ def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
             prefix, name = module, qualname
         else:
             prefix, _, name = qualname.rpartition(".")
-            try:
-                prefix = ".".join(map(str, [module, prefix]))
-            except Exception as e:
-                raise
+            prefix = ".".join(map(str, [module, prefix]))
         if prefix == "__main__":
             prefix = ""
     return prefix, name
