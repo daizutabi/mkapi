@@ -163,8 +163,8 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
     ann_args = getattr(annotation, "__args__", [])
 
     if kind == "yields":
-        if hasattr(annotation, "__args__") and annotation.__args__:
-            if len(annotation.__args__) == 1:
+        if ann_args:
+            if len(ann_args) == 1:
                 return to_string(ann_args[0], obj=obj)
             else:
                 return to_string(annotation, obj=obj)
