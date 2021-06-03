@@ -160,10 +160,12 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
         >>> to_string(List[Node])
         'list of [Node](!mkapi.core.node.Node)'
     """
+    ann_args = getattr(annotation,"__args__",[])
+
     if kind == "yields":
         if hasattr(annotation, "__args__") and annotation.__args__:
             if len(annotation.__args__) == 1:
-                return to_string(annotation.__args__[0], obj=obj)
+                return to_string(ann_args[0], obj=obj)
             else:
                 return to_string(annotation, obj=obj)
         else:
@@ -184,24 +186,24 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
     if origin is Union:
         return union(annotation, obj=obj)
     if origin is tuple:
-        args = [to_string(x, obj=obj) for x in annotation.__args__]
+        args = [to_string(x, obj=obj) for x in ann_args]
         if args:
             return "(" + ", ".join(args) + ")"
         else:
             return "tuple"
     if origin is dict:
-        if type(annotation.__args__[0]) == TypeVar:
+        if ann_args and type(ann_args[0]) == TypeVar:
             return "dict"
-        args = [to_string(x, obj=obj) for x in annotation.__args__]
+        args = [to_string(x, obj=obj) for x in ann_args]
         if args:
             return "dict(" + ": ".join(args) + ")"
         else:
             return "dict"
     if not hasattr(annotation, "__args__"):
         return ""
-    if len(annotation.__args__) == 0:
+    if len(ann_args) == 0:
         return annotation.__origin__.__name__.lower()
-    if len(annotation.__args__) == 1:
+    if len(ann_args) == 1:
         return a_of_b(annotation, obj=obj)
     else:
         return to_string_args(annotation, obj=obj)
@@ -346,6 +348,8 @@ def resolve_forward_ref(obj: Any, name: str) -> str:
     try:
         type = eval(name, globals)
     except NameError:
+        return name
+    except TypeError as e:
         return name
     else:
         return to_string(type)

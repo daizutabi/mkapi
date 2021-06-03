@@ -20,7 +20,13 @@ def parse_attribute_with_lineno(x) -> Tuple[str, int]:
 
 def parse_subscript(x) -> str:
     value = parse_node(x.value)
-    slice = parse_node(x.slice.value)
+    try:
+        slice = parse_node(x.slice.value)
+    except:
+        try:
+            slice = str(x.slice.id)
+        except:
+            return f"{value}"
     if isinstance(slice, str):
         return f"{value}[{slice}]"
     else:
@@ -122,6 +128,8 @@ def get_attributes_with_lineno(
             try:
                 type = eval(type_str, globals)
             except NameError:
+                type = type_str
+            except TypeError:
                 type = type_str
             update(attr, lineno, type)
         if isinstance(x, _ast.Attribute) and isinstance(x.ctx, _ast.Store):
