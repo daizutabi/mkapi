@@ -26,7 +26,7 @@ def parse_subscript(x) -> str:
         try:
             slice = str(x.slice.id)
         except AttributeError:
-            return f"{value}"
+            slice = "object"
     if isinstance(slice, str):
         return f"{value}[{slice}]"
     else:
@@ -127,9 +127,7 @@ def get_attributes_with_lineno(
             attr, lineno, type_str = parse_annotation_assign(x)
             try:
                 type = eval(type_str, globals)
-            except NameError:
-                type = type_str
-            except TypeError:
+            except (NameError, TypeError):
                 type = type_str
             update(attr, lineno, type)
         if isinstance(x, _ast.Attribute) and isinstance(x.ctx, _ast.Store):
