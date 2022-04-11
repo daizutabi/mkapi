@@ -10,6 +10,7 @@ from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Inline, Item, Section, Type
 
+from typing_extensions import _LiteralForm
 
 @dataclass
 class Signature:
@@ -47,6 +48,7 @@ class Signature:
 
         items = []
         for name, parameter in self.signature.parameters.items():
+            print(name, parameter)
             if name == "self":
                 continue
             elif parameter.kind is inspect.Parameter.VAR_POSITIONAL:
@@ -301,8 +303,16 @@ def to_string_args(annotation, obj=None) -> str:
         else:
             return " ".join([prefix, s])
 
+
     args = annotation.__args__
-    name = annotation.__origin__.__name__.lower()
+    try:
+        name = annotation.__origin__.__name__.lower()
+    except:
+        if type(annotation.__origin__) == _LiteralForm:
+            name = "Literal"
+        else:
+            name = ""
+
     if name == "callable":
         *args, returns = args
         args = ", ".join(to_string(x, obj=obj) for x in args)
@@ -321,6 +331,8 @@ def to_string_args(annotation, obj=None) -> str:
         arg = to_string(arg, obj=obj)
         sends = to_string_with_prefix(sends)
         return f"{name}({arg}{sends})"
+    elif name == "Literal":
+        return f"{name}[{args}]"
     else:
         return ""
 
