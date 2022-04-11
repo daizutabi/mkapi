@@ -48,7 +48,6 @@ class Signature:
 
         items = []
         for name, parameter in self.signature.parameters.items():
-            print(name, parameter)
             if name == "self":
                 continue
             elif parameter.kind is inspect.Parameter.VAR_POSITIONAL:
