@@ -76,21 +76,31 @@ deploy = "mkdocs gh-deploy --force"
 target-version = "py311"
 line-length = 88
 select = ["ALL"]
-ignore = ["ANN101", "ANN102", "ANN002", "ANN003", "ERA001", "N812"]
+ignore = [
+  "ANN002",
+  "ANN003",
+  "ANN101",
+  "ANN102",
+  "D105",
+  "D406",
+  "D407",
+  "ERA001",
+  "N812",
+]
 
 [tool.ruff.extend-per-file-ignores]
 "tests/*.py" = ["ANN", "D", "S101", "INP001", "T201", "PLR2004", "PGH003"]
 "src/mkapi/examples/*.py" = [
   "ANN",
+  "ARG001",
   "D",
+  "E741",
   "ERA001",
   "INP001",
+  "PLR0913",
   "PLR2004",
   "S101",
   "T201",
-  "ARG001",
-  "PLR0913",
-  "E741",
 ]
 
 [tool.ruff.lint]

@@ -7,6 +7,7 @@ from typing import Any
 from mkapi.core import preprocess
 from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Inline, Item, Section, Type
+from mkapi.inspect.typing import to_string
 
 
 @dataclass
@@ -14,11 +15,9 @@ class Signature:
     """Signature class.
 
     Args:
-    ----
         obj: Object
 
     Attributes:
-    ----------
         signature: `inspect.Signature` instance.
         parameters: Parameters section.
         defaults: Default value dictionary. Key is parameter name and
@@ -36,7 +35,7 @@ class Signature:
     returns: str = field(default="", init=False)
     yields: str = field(default="", init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.obj is None:
             return
         try:
@@ -45,50 +44,22 @@ class Signature:
             self.set_attributes()
             return
 
-        items = []
-        for name, parameter in self.signature.parameters.items():
-            if name == "self":
-                continue
-            if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
-                name = "*" + name
-            elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
-                name = "**" + name
-            if isinstance(parameter.annotation, str):
-                type = resolve_forward_ref(self.obj, parameter.annotation)
-            else:
-                type = to_string(parameter.annotation, obj=self.obj)
-            default = parameter.default
-            if default == inspect.Parameter.empty:
-                self.defaults[name] = default
-            else:
-                self.defaults[name] = f"{default!r}"
-                if not type:
-                    type = "optional"
-                elif not type.endswith(", optional"):
-                    type += ", optional"
-            items.append(Item(name, Type(type)))
+        items, self.defaults = get_parameters(self.obj)
         self.parameters = Section("Parameters", items=items)
         self.set_attributes()
-        return_annotation = self.signature.return_annotation
+        return_type = self.signature.return_annotation
+        self.returns = to_string(return_type, kind="returns", obj=self.obj)
+        self.yields = to_string(return_type, kind="yields", obj=self.obj)
 
-        if isinstance(return_annotation, str):
-            self.returns = resolve_forward_ref(self.obj, return_annotation)
-        else:
-            self.returns = to_string(return_annotation, "returns", obj=self.obj)
-            self.yields = to_string(return_annotation, "yields", obj=self.obj)
-
-    def __contains__(self, name) -> bool:
+    def __contains__(self, name: str) -> bool:
         return name in self.parameters
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str):  # noqa: ANN204
         return getattr(self, name.lower())
 
-    def __str__(self):
+    def __str__(self) -> str:
         args = self.arguments
-        if args is None:
-            return ""
-        else:
-            return "(" + ", ".join(args) + ")"
+        return "" if args is None else "(" + ", ".join(args) + ")"
 
     @property
     def arguments(self) -> list[str] | None:
@@ -104,25 +75,24 @@ class Signature:
             args.append(arg)
         return args
 
-    def set_attributes(self):
-        """Examples
-        >>> from mkapi.core.base import Base
-        >>> s = Signature(Base)
-        >>> s.parameters['name'].to_tuple()
-        ('name', 'str, optional', 'Name of self.')
-        >>> s.attributes['html'].to_tuple()
-        ('html', 'str', 'HTML output after conversion.')
+    def set_attributes(self) -> None:
+        """Set attributes.
+
+        Examples:
+            >>> from mkapi.core.base import Base
+            >>> s = Signature(Base)
+            >>> s.parameters['name'].to_tuple()
+            ('name', 'str, optional', 'Name of self.')
+            >>> s.attributes['html'].to_tuple()
+            ('html', 'str', 'HTML output after conversion.')
         """
         items = []
-        for name, (type, description) in get_attributes(self.obj).items():
-            if isinstance(type, str) and type:
-                type = resolve_forward_ref(self.obj, type)
-            else:
-                type = to_string(type, obj=self.obj) if type else ""
-            if not type:
-                type, description = preprocess.split_type(description)
+        for name, (tp, description) in get_attributes(self.obj).items():
+            type_str = to_string(tp, obj=self.obj) if tp else ""
+            if not type_str:
+                type_str, description = preprocess.split_type(description)  # noqa: PLW2901
 
-            item = Item(name, Type(type), Inline(description))
+            item = Item(name, Type(type_str), Inline(description))
             if is_dataclass(self.obj):
                 if name in self.parameters:
                     self.parameters[name].set_description(item.description)
@@ -132,7 +102,8 @@ class Signature:
                 items.append(item)
         self.attributes = Section("Attributes", items=items)
 
-    def split(self, sep=","):
+    def split(self, sep: str = ",") -> list[str]:
+        """Return a list of substring."""
         return str(self).split(sep)
 
 
@@ -151,12 +122,8 @@ def get_parameters(obj) -> tuple[list[Item], dict[str, Any]]:  # noqa: ANN001
             key = f"**{name}"
         else:
             key = name
-        if isinstance(parameter.annotation, str):
-            type_ = resolve_forward_ref(obj, parameter.annotation)
-        else:
-            type_ = to_string(parameter.annotation, obj=obj)
-        default = parameter.default
-        if default == inspect.Parameter.empty:
+        type_ = to_string(parameter.annotation, obj=obj)
+        if (default := parameter.default) == inspect.Parameter.empty:
             defaults[key] = default
         else:
             defaults[key] = f"{default!r}"
@@ -164,7 +131,7 @@ def get_parameters(obj) -> tuple[list[Item], dict[str, Any]]:  # noqa: ANN001
                 type_ = "optional"
             elif not type_.endswith(", optional"):
                 type_ += ", optional"
-        items.append(Item(name, Type(type_)))
+        items.append(Item(key, Type(type_)))
 
     return items, defaults
 

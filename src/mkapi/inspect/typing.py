@@ -1,10 +1,10 @@
-"""Annotation string."""
+"""Type string."""
 import importlib
 import inspect
 from types import UnionType
 from typing import ForwardRef, Union, get_args, get_origin
 
-from mkapi.core import linker
+from mkapi.core.linker import get_link
 
 
 def to_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noqa: ANN001, PLR0911
@@ -13,13 +13,11 @@ def to_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noqa:
     If possible, type string includes link.
 
     Args:
-    ----
         tp: type
         kind: 'returns' or 'yields'
         obj: Object
 
     Examples:
-    --------
         >>> to_string(str)
         'str'
         >>> from mkapi.core.node import Node
@@ -34,6 +32,8 @@ def to_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noqa:
     """
     if kind == "yields":
         return _to_string_for_yields(tp, obj)
+    if tp is None:
+        return ""
     if tp == ...:
         return "..."
     if isinstance(tp, list):
@@ -46,7 +46,7 @@ def to_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noqa:
     if isinstance(tp, ForwardRef):
         return resolve_forward_ref(tp.__forward_arg__, obj)
     if isinstance(tp, type):
-        return linker.get_link(tp)
+        return get_link(tp)
     if get_origin(tp):
         return resolve_orign_args(tp, obj)
     raise NotImplementedError
@@ -148,12 +148,12 @@ def resolve_orign_args(tp, obj: object = None) -> str:  # noqa: ANN001
     return f"{origin_str}[{args_str}]"
 
 
-def _to_string_for_yields(annotation, obj: object) -> str:  # noqa: ANN001
-    if hasattr(annotation, "__args__") and annotation.__args__:
-        if len(annotation.__args__) == 1:
-            return to_string(annotation.__args__[0], obj=obj)
-        return to_string(annotation, obj=obj)
-    raise ValueError
+def _to_string_for_yields(tp, obj: object) -> str:  # noqa: ANN001
+    if hasattr(tp, "__args__") and tp.__args__:
+        if len(tp.__args__) == 1:
+            return to_string(tp.__args__[0], obj=obj)
+        return to_string(tp, obj=obj)
+    return ""
 
 
 # def a_of_b(annotation, obj=None) -> str:
