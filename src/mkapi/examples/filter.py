@@ -1,8 +1,9 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 
 def func(x: int):
     """Function."""
+    return x
 
 
 def gen() -> Iterator[int]:

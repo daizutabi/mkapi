@@ -1,4 +1,4 @@
-"""This module provides utility functions that relate to object."""
+"""Utility functions relating to object."""
 import abc
 import importlib
 import inspect
@@ -9,9 +9,11 @@ def get_object(name: str) -> Any:
     """Reutrns an object specified by `name`.
 
     Args:
+    ----
         name: Object name.
 
     Examples:
+    --------
         >>> import inspect
         >>> obj = get_object('mkapi.core')
         >>> inspect.ismodule(obj)
@@ -43,10 +45,12 @@ def get_fullname(obj: Any, name: str) -> str:
     """Reutrns an object full name specified by `name`.
 
     Args:
+    ----
         obj: Object that has a module.
         name: Object name in the module.
 
     Examples:
+    --------
         >>> obj = get_object('mkapi.core.base.Item')
         >>> get_fullname(obj, 'Section')
         'mkapi.core.base.Section'
@@ -71,13 +75,15 @@ def get_fullname(obj: Any, name: str) -> str:
     return ".".join(split_prefix_and_name(obj))
 
 
-def split_prefix_and_name(obj: Any) -> Tuple[str, str]:
+def split_prefix_and_name(obj: Any) -> tuple[str, str]:
     """Splits an object full name into prefix and name.
 
     Args:
+    ----
         obj: Object that has a module.
 
     Examples:
+    --------
         >>> import inspect
         >>> obj = get_object('mkapi.core')
         >>> split_prefix_and_name(obj)
@@ -113,7 +119,7 @@ def get_qualname(obj: Any):
     return ""
 
 
-def get_sourcefile_and_lineno(obj: Any) -> Tuple[str, int]:
+def get_sourcefile_and_lineno(obj: Any) -> tuple[str, int]:
     try:
         sourcefile = inspect.getsourcefile(obj) or ""
     except TypeError:
@@ -136,12 +142,13 @@ def get_mro(obj):
     return objs
 
 
-def get_sourcefiles(obj: Any) -> List[str]:
+def get_sourcefiles(obj: Any) -> list[str]:
     """Returns a list of source file.
 
     If `obj` is a class, source files of its superclasses are also included.
 
     Args:
+    ----
         obj: Object name.
     """
     if inspect.isclass(obj) and hasattr(obj, "mro"):
@@ -164,10 +171,12 @@ def from_object(obj: Any) -> bool:
     """Returns True, if the docstring of `obj` is the same as that of `object`.
 
     Args:
+    ----
         name: Object name.
         obj: Object.
 
     Examples:
+    --------
         >>> class A: pass
         >>> from_object(A.__call__)
         True
@@ -187,7 +196,8 @@ def from_object(obj: Any) -> bool:
 def get_origin(obj: Any) -> Any:
     """Returns an original object.
 
-    Examples:
+    Examples
+    --------
         >>> class A:
         ...    @property
         ...    def x(self):

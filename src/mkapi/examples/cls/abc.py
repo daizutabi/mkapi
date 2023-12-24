@@ -6,14 +6,17 @@ class AbstractMethodTypeExample(ABC):
 
     def method(self):
         """Method."""
+        return self
 
     @classmethod
     def class_method(cls):
         """Class method."""
+        return cls
 
     @staticmethod
     def static_method():
         """Static method."""
+        return True
 
     @abstractmethod
     def abstract_method(self):
@@ -29,17 +32,17 @@ class AbstractMethodTypeExample(ABC):
     def abstract_static_method():
         """Abstract static method."""
 
-    @property  # type:ignore
+    @property
     @abstractmethod
     def abstract_read_only_property(self):
         """Abstract read only property."""
 
-    @property  # type:ignore
+    @property
     @abstractmethod
     def abstract_read_write_property(self):
         """Abstract read write property."""
 
-    @abstract_read_write_property.setter  # type:ignore
+    @abstract_read_write_property.setter
     @abstractmethod
     def abstract_read_write_property(self, val):
         pass

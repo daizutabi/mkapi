@@ -1,10 +1,6 @@
-import sys
-
 import pytest
 
-sys.path.insert(0, "examples")
-
-import google_style as example  # isort:skip
+import mkapi.examples.styles.google as example
 
 
 @pytest.fixture(scope="session")
@@ -23,10 +19,10 @@ def gen():
 
 
 @pytest.fixture(scope="session")
-def ExampleClass():
+def ExampleClass():  # noqa: N802
     return example.ExampleClass
 
 
 @pytest.fixture(scope="session")
-def ExampleDataClass():
+def ExampleDataClass():  # noqa: N802
     return example.ExampleDataClass

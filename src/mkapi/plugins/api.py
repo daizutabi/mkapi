@@ -31,7 +31,7 @@ def collect(path: str, docs_dir: str, config_dir, global_filters) -> Tuple[list,
     _, api_path, *paths, package_path = path.split("/")
     abs_api_path = os.path.join(docs_dir, api_path)
     if os.path.exists(abs_api_path):
-        logger.error(f"[MkApi] {abs_api_path} exists: Delete manually for safety.")
+        logger.error(f"[MkAPI] {abs_api_path} exists: Delete manually for safety.")
         sys.exit(1)
     os.mkdir(abs_api_path)
     os.mkdir(os.path.join(abs_api_path, "source"))
@@ -97,4 +97,4 @@ def rmtree(path: str):
     try:
         shutil.rmtree(path)
     except PermissionError:
-        logger.warning(f"[MkApi] Couldn't delete directory: {path}")
+        logger.warning(f"[MkAPI] Couldn't delete directory: {path}")

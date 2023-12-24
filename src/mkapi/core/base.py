@@ -1,16 +1,18 @@
-"""This module provides entity classes to represent docstring structure."""
+"""A module provides entity classes to represent docstring structure."""
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from typing import Callable, Iterator, List, Optional, Tuple
+from typing import Optional
 
 from mkapi.core import preprocess
-from mkapi.core.regex import LINK_PATTERN
+from mkapi.core.linker import LINK_PATTERN
 
 
 @dataclass
 class Base:
     """Base class.
 
-    Examples:
+    Examples
+    --------
         >>> base = Base('x', 'markdown')
         >>> base
         Base('x')
@@ -48,6 +50,7 @@ class Base:
         """Sets HTML output.
 
         Args:
+        ----
             html: HTML output.
         """
         self.html = html
@@ -63,7 +66,8 @@ class Base:
 class Inline(Base):
     """Inline class.
 
-    Examples:
+    Examples
+    --------
         >>> inline = Inline()
         >>> bool(inline)
         False
@@ -102,7 +106,8 @@ class Type(Inline):
     """Type class represents type of Item_, Section_, Docstring_, or
     [Object](mkapi.core.structure.Object).
 
-    Examples:
+    Examples
+    --------
         >>> a = Type('str')
         >>> a
         Type('str')
@@ -132,12 +137,14 @@ class Item(Type):
     *etc.*
 
     Args:
+    ----
         type: Type of self.
         description: Description of self.
         kind: Kind of self, for example `readonly property`. This value is rendered
             as a class attribute in HTML.
 
     Examples:
+    --------
         >>> item = Item('[x](x)', Type('int'), Inline('A parameter.'))
         >>> item
         Item('[x](x)', 'int')
@@ -161,7 +168,7 @@ class Item(Type):
     """
 
     markdown: str = field(default="", init=False)
-    type: Type = field(default_factory=Type)
+    type: Type = field(default_factory=Type)  # noqa: A003
     description: Inline = field(default_factory=Inline)
     kind: str = ""
 
@@ -186,10 +193,11 @@ class Item(Type):
         html = html.replace("<strong>", "__").replace("</strong>", "__")
         super().set_html(html)
 
-    def to_tuple(self) -> Tuple[str, str, str]:
+    def to_tuple(self) -> tuple[str, str, str]:
         """Returns a tuple of (name, type, description).
 
-        Examples:
+        Examples
+        --------
             >>> item = Item('[x](x)', 'int', 'A parameter.')
             >>> item.to_tuple()
             ('[x](x)', 'int', 'A parameter.')
@@ -200,11 +208,13 @@ class Item(Type):
         """Sets type.
 
         Args:
+        ----
             item: Type instance.
             force: If True, overwrite self regardless of existing type and
                 description.
 
         See Also:
+        --------
             * Item.update_
         """
         if not force and self.type.name:
@@ -216,11 +226,13 @@ class Item(Type):
         """Sets description.
 
         Args:
+        ----
             description: Inline instance.
             force: If True, overwrite self regardless of existing type and
                 description.
 
         See Also:
+        --------
             * Item.update_
         """
         if not force and self.description.name:
@@ -232,11 +244,13 @@ class Item(Type):
         """Updates type and description.
 
         Args:
+        ----
             item: Item instance.
             force: If True, overwrite self regardless of existing type and
                 description.
 
         Examples:
+        --------
             >>> item = Item('x')
             >>> item2 = Item('x', 'int', 'description')
             >>> item.update(item2)
@@ -267,10 +281,12 @@ class Section(Base):
     """Section class represents a section in docstring.
 
     Args:
+    ----
         items: List for Arguments, Attributes, or Raises sections, *etc.*
         type: Type of self.
 
     Examples:
+    --------
         >>> items = [Item('x'), Item('[y](a)'), Item('z')]
         >>> section = Section('Parameters', items=items)
         >>> section
@@ -279,7 +295,7 @@ class Section(Base):
         [Item('[y](a)', '')]
     """
 
-    items: List[Item] = field(default_factory=list)
+    items: list[Item] = field(default_factory=list)
     type: Type = field(default_factory=Type)
 
     def __post_init__(self):
@@ -308,9 +324,11 @@ class Section(Base):
         If there is no Item instance, a Item instance is newly created.
 
         Args:
+        ----
             name: Item name.
 
         Examples:
+        --------
             >>> section = Section("", items=[Item('x')])
             >>> section['x']
             Item('x', '')
@@ -330,6 +348,7 @@ class Section(Base):
         """Delete an Item_ instance whose name is equal to `name`.
 
         Args:
+        ----
             name: Item name.
         """
         for k, item in enumerate(self.items):
@@ -342,6 +361,7 @@ class Section(Base):
         """Returns True if there is an [Item]() instance whose name is equal to `name`.
 
         Args:
+        ----
             name: Item name.
         """
         for item in self.items:
@@ -353,10 +373,12 @@ class Section(Base):
         """Sets an [Item]().
 
         Args:
+        ----
             item: Item instance.
             force: If True, overwrite self regardless of existing item.
 
         Examples:
+        --------
             >>> items = [Item('x', 'int'), Item('y', 'str', 'y')]
             >>> section = Section('Parameters', items=items)
             >>> section.set_item(Item('x', 'float', 'X'))
@@ -370,6 +392,7 @@ class Section(Base):
             ['x', 'y', 'z']
 
         See Also:
+        --------
             * Section.update_
         """
         for k, x in enumerate(self.items):
@@ -382,10 +405,12 @@ class Section(Base):
         """Updates items.
 
         Args:
+        ----
             section: Section instance.
             force: If True, overwrite items of self regardless of existing value.
 
         Examples:
+        --------
             >>> s1 = Section('Parameters', items=[Item('a', 's'), Item('b', 'f')])
             >>> s2 = Section('Parameters', items=[Item('a', 'i', 'A'), Item('x', 'd')])
             >>> s1.update(s2)
@@ -405,7 +430,8 @@ class Section(Base):
     def merge(self, section: "Section", force: bool = False) -> "Section":
         """Returns a merged Section
 
-        Examples:
+        Examples
+        --------
             >>> s1 = Section('Parameters', items=[Item('a', 's'), Item('b', 'f')])
             >>> s2 = Section('Parameters', items=[Item('a', 'i'), Item('c', 'd')])
             >>> s3 = s1.merge(s2)
@@ -430,7 +456,8 @@ class Section(Base):
     def copy(self):
         """Returns a copy of the {class} instace.
 
-        Examples:
+        Examples
+        --------
             >>> s = Section('E', 'markdown', [Item('a', 's'), Item('b', 'i')])
             >>> s.copy()
             Section('E', num_items=2)
@@ -447,10 +474,12 @@ class Docstring:
     """Docstring class represents a docstring of an object.
 
     Args:
+    ----
         sections: List of Section instance.
         type: Type for Returns or Yields sections.
 
     Examples:
+    --------
         Empty docstring:
         >>> docstring = Docstring()
         >>> assert not docstring
@@ -481,7 +510,7 @@ class Docstring:
         ['', 'Parameters', 'Attributes', 'Todo']
     """
 
-    sections: List[Section] = field(default_factory=list)
+    sections: list[Section] = field(default_factory=list)
     type: Type = field(default_factory=Type)
 
     def __repr__(self):
@@ -504,6 +533,7 @@ class Docstring:
         If there is no Section instance, a Section instance is newly created.
 
         Args:
+        ----
             name: Section name.
         """
         for section in self.sections:
@@ -518,6 +548,7 @@ class Docstring:
         equal to `name`.
 
         Args:
+        ----
             name: Section name.
         """
         for section in self.sections:
@@ -535,10 +566,12 @@ class Docstring:
         """Sets a [Section]().
 
         Args:
+        ----
             section: Section instance.
             force: If True, overwrite self regardless of existing seciton.
 
         Examples:
+        --------
             >>> items = [Item('x', 'int'), Item('y', 'str', 'y')]
             >>> s1 = Section('Attributes', items=items)
             >>> items = [Item('x', 'str', 'X'), Item('z', 'str', 'z')]

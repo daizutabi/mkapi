@@ -1,35 +1,44 @@
-"""This module provides functions that relate to link."""
+"""Provide functions that relate to linking functionality."""
 import os
 import re
 from html.parser import HTMLParser
-from typing import Any, Dict, List
+from pathlib import Path
+from typing import Any
 
 from mkapi.core.object import get_fullname
-from mkapi.core.regex import LINK_PATTERN
+
+LINK_PATTERN = re.compile(r"\[(.+?)\]\((.+?)\)")
+REPLACE_LINK_PATTERN = re.compile(r"\[(.*?)\]\((.*?)\)|(\S+)_")
 
 
-def link(name: str, href: str) -> str:
-    """Reutrns Markdown link with a mark that indicates this link was created by MkApi.
+def link(name: str, ref: str) -> str:
+    """Return Markdown link with a mark that indicates this link was created by MkAPI.
 
     Args:
+    ----
         name: Link name.
-        href: Reference.
+        ref: Reference.
 
     Examples:
+    --------
         >>> link('abc', 'xyz')
         '[abc](!xyz)'
     """
-    return f"[{name}](!{href})"
+    return f"[{name}](!{ref})"
 
 
-def get_link(obj: Any, include_module: bool = False) -> str:
-    """Returns Markdown link for object, if possible.
+def get_link(obj: type, *, include_module: bool = False) -> str:
+    """Return Markdown link for object, if possible.
 
     Args:
+    ----
         obj: Object
         include_module: If True, link text includes module path.
 
     Examples:
+    --------
+        >>> get_link(int)
+        'int'
         >>> get_link(get_fullname)
         '[get_fullname](!mkapi.core.object.get_fullname)'
         >>> get_link(get_fullname, include_module=True)
@@ -46,35 +55,33 @@ def get_link(obj: Any, include_module: bool = False) -> str:
     module = obj.__module__
     if module == "builtins":
         return name
-    fullname = ".".join([module, name])
-    if include_module:
-        text = fullname
-    else:
-        text = name
+    fullname = f"{module}.{name}"
+    text = fullname if include_module else name
     if obj.__name__.startswith("_"):
         return text
-    else:
-        return link(text, fullname)
+    return link(text, fullname)
 
 
-def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: List[str]) -> str:
-    """Reutrns resolved link.
+def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: list[str]) -> str:
+    """Reutrn resolved link.
 
     Args:
+    ----
         markdown: Markdown source.
         abs_src_path: Absolute source path of Markdown.
         abs_api_paths: A list of API paths.
 
     Examples:
+    --------
         >>> abs_src_path = '/src/examples/example.md'
         >>> abs_api_paths = ['/api/a','/api/b', '/api/b.c']
         >>> resolve_link('[abc](!b.c.d)', abs_src_path, abs_api_paths)
         '[abc](../../api/b.c#b.c.d)'
     """
 
-    def replace(match):
+    def replace(match: re.Match) -> str:
         name, href = match.groups()
-        if href.startswith("!!"):  # Just for MkApi documentation.
+        if href.startswith("!!"):  # Just for MkAPI documentation.
             href = href[2:]
             return f"[{name}]({href})"
         if href.startswith("!"):
@@ -86,40 +93,39 @@ def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: List[str]) -> 
         href = resolve_href(href, abs_src_path, abs_api_paths)
         if href:
             return f"[{name}]({href})"
-        elif from_mkapi:
+        if from_mkapi:
             return name
-        else:
-            return match.group()
+        return match.group()
 
     return re.sub(LINK_PATTERN, replace, markdown)
 
 
-def resolve_href(name: str, abs_src_path: str, abs_api_paths: List[str]) -> str:
+def resolve_href(name: str, abs_src_path: str, abs_api_paths: list[str]) -> str:
     if not name:
         return ""
-    abs_api_path = match_last(name, abs_api_paths)
+    abs_api_path = _match_last(name, abs_api_paths)
     if not abs_api_path:
         return ""
-    relpath = os.path.relpath(abs_api_path, os.path.dirname(abs_src_path))
+    relpath = os.path.relpath(abs_api_path, Path(abs_src_path).parent)
     relpath = relpath.replace("\\", "/")
-    return "#".join([relpath, name])
+    return f"{relpath}#{name}"
 
 
-def match_last(name: str, abs_api_paths: List[str]) -> str:
+def _match_last(name: str, abs_api_paths: list[str]) -> str:
     match = ""
     for abs_api_path in abs_api_paths:
-        dirname, path = os.path.split(abs_api_path)
+        _, path = os.path.split(abs_api_path)
         if name.startswith(path[:-3]):
             match = abs_api_path
     return match
 
 
 class _ObjectParser(HTMLParser):
-    def feed(self, html):
+    def feed(self, html: str) -> dict[str, Any]:
         self.context = {"href": [], "heading_id": ""}
         super().feed(html)
         href = self.context["href"]
-        if len(href) == 2:
+        if len(href) == 2:  # noqa: PLR2004
             prefix_url, name_url = href
         elif len(href) == 1:
             prefix_url, name_url = "", href[0]
@@ -130,7 +136,7 @@ class _ObjectParser(HTMLParser):
         del self.context["href"]
         return self.context
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: list[str]) -> None:
         context = self.context
         if tag == "p":
             context["level"] = 0
@@ -151,13 +157,15 @@ class _ObjectParser(HTMLParser):
 parser = _ObjectParser()
 
 
-def resolve_object(html: str) -> Dict[str, Any]:
-    """Reutrns an object context dictionary.
+def resolve_object(html: str) -> dict[str, Any]:
+    """Reutrn an object context dictionary.
 
     Args:
+    ----
         html: HTML source.
 
     Examples:
+    --------
         >>> resolve_object("<p><a href='a'>p</a><a href='b'>n</a></p>")
         {'heading_id': '', 'level': 0, 'prefix_url': 'a', 'name_url': 'b'}
         >>> resolve_object("<h2 id='i'><a href='a'>p</a><a href='b'>n</a></h2>")
@@ -167,32 +175,31 @@ def resolve_object(html: str) -> Dict[str, Any]:
     return parser.feed(html)
 
 
-REPLACE_LINK_PATTERN = re.compile(r"\[(.*?)\]\((.*?)\)|(\S+)_")
-
-
-def replace_link(obj: Any, markdown: str) -> str:
-    """Returns a replaced link with object full name.
+def replace_link(obj: object, markdown: str) -> str:
+    """Return a replaced link with object's full name.
 
     Args:
+    ----
         obj: Object that has a module.
         markdown: Markdown
 
     Examples:
+    --------
         >>> from mkapi.core.object import get_object
         >>> obj = get_object('mkapi.core.structure.Object')
         >>> replace_link(obj, '[Signature]()')
-        '[Signature](!mkapi.core.signature.Signature)'
+        '[Signature](!mkapi.inspect.signature.Signature)'
         >>> replace_link(obj, '[](Signature)')
-        '[Signature](!mkapi.core.signature.Signature)'
+        '[Signature](!mkapi.inspect.signature.Signature)'
         >>> replace_link(obj, '[text](Signature)')
-        '[text](!mkapi.core.signature.Signature)'
+        '[text](!mkapi.inspect.signature.Signature)'
         >>> replace_link(obj, '[dummy.Dummy]()')
         '[dummy.Dummy]()'
         >>> replace_link(obj, 'Signature_')
-        '[Signature](!mkapi.core.signature.Signature)'
+        '[Signature](!mkapi.inspect.signature.Signature)'
     """
 
-    def replace(match):
+    def replace(match: re.Match) -> str:
         text, name, rest = match.groups()
         if rest:
             name, text = rest, ""
@@ -201,9 +208,6 @@ def replace_link(obj: Any, markdown: str) -> str:
         fullname = get_fullname(obj, name)
         if fullname == "":
             return match.group()
-        else:
-            if text:
-                name = text
-            return link(name, fullname)
+        return link(text or name, fullname)
 
     return re.sub(REPLACE_LINK_PATTERN, replace, markdown)

@@ -10,7 +10,7 @@
 
 {{ # cache:clear }}
 
-MkApi can create module and package documentation as well as function and class. Specify a package or module by its full path name.
+MkAPI can create module and package documentation as well as function and class. Specify a package or module by its full path name.
 
 ~~~
 ![mkapi](!!mkapi.core)
@@ -25,7 +25,7 @@ As class level attributes, module level attributes can be inspected. Here is the
 
 #File google_style.py: line number 1-18 {%=/examples/google_style.py[:18]%}
 
-Although there is no Attributes section in docstring, MkApi automatically creates the section if attributes are correctly documented.
+Although there is no Attributes section in docstring, MkAPI automatically creates the section if attributes are correctly documented.
 
 ~~~
 ![mkapi](google_style)

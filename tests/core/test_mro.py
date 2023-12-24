@@ -1,9 +1,9 @@
-import examples
-from examples.meta import C, F
 from mkapi.core.base import Docstring
 from mkapi.core.docstring import parse_bases
 from mkapi.core.inherit import inherit
 from mkapi.core.node import get_node
+from mkapi.examples import meta
+from mkapi.examples.meta import C, F
 
 
 def test_mro_docstring():
@@ -35,5 +35,5 @@ def test_mro_inherit():
 
 
 def test_mro_module():
-    node = get_node(examples.meta)
+    node = get_node(meta)
     assert len(node.members) == 6

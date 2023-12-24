@@ -1,10 +1,8 @@
-import typing
 from dataclasses import dataclass
-from typing import Dict, List
 
-from examples import google_style
-from mkapi.core import signature
 from mkapi.core.attribute import get_attributes, get_description
+from mkapi.examples.styles import google
+from mkapi.inspect import signature
 
 
 class A:
@@ -13,7 +11,7 @@ class A:
         #: list of str: Doc comment *before* attribute, with type specified.
         self.y = ["123", "abc"]
         self.a = "dummy"
-        self.z: typing.Tuple[List[int], Dict[str, List[float]]] = (
+        self.z: tuple[list[int], dict[str, list[float]]] = (
             [1, 2, 3],
             {"a": [1.2]},
         )
@@ -25,18 +23,18 @@ class A:
 def test_class_attribute():
     attrs = get_attributes(A)
     assert attrs
-    for k, (name, (type, markdown)) in enumerate(attrs.items()):
+    for k, (name, (type_, markdown)) in enumerate(attrs.items()):
         assert name == ["x", "y", "a", "z"][k]
         assert markdown.startswith(["Doc ", "list of", "", "Docstring *after*"][k])
         assert markdown.endswith(["attribute.", "specified.", "", "supported."][k])
         if k == 0:
-            assert type is int
+            assert type_ is int
         elif k == 1:
-            assert type is None
+            assert type_ is None
         elif k == 2:
             assert not markdown
         elif k == 3:
-            x = signature.to_string(type)
+            x = signature.to_string(type_)
             assert x == "(list of int, dict(str: list of float))"
 
 
@@ -48,7 +46,7 @@ class B:
 
 def test_class_attribute_without_desc():
     attrs = get_attributes(B)
-    for k, (name, (type, markdown)) in enumerate(attrs.items()):
+    for k, (name, (_, markdown)) in enumerate(attrs.items()):
         assert name == ["x", "y"][k]
         assert markdown == ""
 
@@ -67,45 +65,45 @@ class C:
 
 def test_dataclass_attribute():
     attrs = get_attributes(C)
-    for k, (name, (type, markdown)) in enumerate(attrs.items()):
+    for k, (name, (type_, markdown)) in enumerate(attrs.items()):
         assert name == ["x", "y", "z"][k]
         assert markdown == ["int", "A", "B\n\nend."][k]
         if k == 0:
-            assert type is int
+            assert type_ is int
 
 
 @dataclass
 class D:
     x: int
-    y: List[str]
+    y: list[str]
 
 
 def test_dataclass_attribute_without_desc():
     attrs = get_attributes(D)
-    for k, (name, (type, markdown)) in enumerate(attrs.items()):
+    for k, (name, (type_, markdown)) in enumerate(attrs.items()):
         assert name == ["x", "y"][k]
         assert markdown == ""
         if k == 0:
             assert type is int
         elif k == 1:
-            x = signature.to_string(type)
+            x = signature.to_string(type_)
             assert x == "list of str"
 
 
 def test_module_attribute():
-    attrs = get_attributes(google_style)
-    for k, (name, (type, markdown)) in enumerate(attrs.items()):
+    attrs = get_attributes(google)
+    for k, (name, (type_, markdown)) in enumerate(attrs.items()):
         if k == 0:
             assert name == "first_attribute"
-            assert type is int
+            assert type_ is int
             assert markdown.startswith("The first module level attribute.")
         if k == 1:
             assert name == "second_attribute"
-            assert type is None
+            assert type_ is None
             assert markdown.startswith("str: The second module level attribute.")
         if k == 2:
             assert name == "third_attribute"
-            assert signature.to_string(type) == "list of int"
+            assert signature.to_string(type_) == "list of int"
             assert markdown.startswith("The third module level attribute.")
             assert markdown.endswith("supported.")
 

@@ -1,11 +1,11 @@
 """Module level docstring."""
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Dict, Iterator, List, Tuple
 
 #: The first module level attribute. Comment *before* attribute.
 first_attribute: int = 1
 second_attribute = "abc"  #: str: The second module level attribute. *Inline* style.
-third_attribute: List[int] = [1, 2, 3]
+third_attribute: list[int] = [1, 2, 3]
 """The third module level attribute. Docstring *after* attribute.
 
 Multiple paragraphs are supported.
@@ -63,19 +63,19 @@ class ExampleClass:
         ValueError: If the length of `x` is equal to 0.
     """
 
-    def __init__(self, x: List[int], y: Tuple[str, int]):
-        if len(x) == 0:
-            raise ValueError()
+    def __init__(self, x: list[int], y: tuple[str, int]):
+        if len(x) == 0 or y[1] == 0:
+            raise ValueError
         self.a: str = "abc"  #: The first attribute. Comment *inline* with attribute.
         #: The second attribute. Comment *before* attribute.
-        self.b: Dict[str, int] = {"a": 1}
+        self.b: dict[str, int] = {"a": 1}
         self.c = None
         """int, optional: The third attribute. Docstring *after* attribute.
 
         Multiple paragraphs are supported."""
         self.d = 100  # Not attribute description because ':' is missing.
 
-    def message(self, n: int) -> List[str]:
+    def message(self, n: int) -> list[str]:
         """Returns a message list.
 
         Args:
@@ -89,7 +89,7 @@ class ExampleClass:
         return "readonly property"
 
     @property
-    def readwrite_property(self) -> List[int]:
+    def readwrite_property(self) -> list[int]:
         """Read-write property documentation."""
         return [1, 2, 3]
 

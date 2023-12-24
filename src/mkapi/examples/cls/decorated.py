@@ -1,7 +1,7 @@
 """Decorator examples."""
 import pytest
 
-from appendix.decorator import deco_with_wraps, deco_without_wraps
+from mkapi.examples.cls.decorator import deco_with_wraps, deco_without_wraps
 
 
 @deco_without_wraps
@@ -20,14 +20,14 @@ def func_with_wraps_double():
     """Doubly decorated function with `wraps`."""
 
 
-@pytest.fixture
+@pytest.fixture()
 def fixture():
     """Fixture."""
-    yield 1
+    return 1
 
 
-@pytest.fixture
+@pytest.fixture()
 @deco_with_wraps
 def fixture_with_wraps():
     """Fixture."""
-    yield 1
+    return 1

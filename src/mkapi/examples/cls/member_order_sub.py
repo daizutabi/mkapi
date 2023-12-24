@@ -1,4 +1,4 @@
-from appendix.member_order_base import A
+from mkapi.examples.cls.member_order_base import A
 
 
 class B:

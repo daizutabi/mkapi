@@ -1,14 +1,19 @@
 """This module provides base class of [Node](mkapi.core.node.Node) and
-[Module](mkapi.core.module.Module)."""
+[Module](mkapi.core.module.Module).
+"""
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Any, Iterator, List, Union
+from typing import Any, Union
 
 from mkapi.core.base import Base, Type
 from mkapi.core.docstring import Docstring, get_docstring
-from mkapi.core.object import (get_origin, get_qualname,
-                               get_sourcefile_and_lineno,
-                               split_prefix_and_name)
-from mkapi.core.signature import Signature, get_signature
+from mkapi.core.object import (
+    get_origin,
+    get_qualname,
+    get_sourcefile_and_lineno,
+    split_prefix_and_name,
+)
+from mkapi.inspect.signature import Signature, get_signature
 
 "a.b.c".rpartition(".")
 
@@ -18,6 +23,7 @@ class Object(Base):
     """Object class represents an object.
 
     Args:
+    ----
         name: Object name.
         prefix: Object prefix.
         qualname: Qualified name.
@@ -25,6 +31,7 @@ class Object(Base):
         signature: Signature if object is module or callable.
 
     Attributes:
+    ----------
         id: ID attribute of HTML.
         type: Type for missing Returns and Yields sections.
     """
@@ -72,9 +79,11 @@ class Tree:
     and [Module](mkapi.core.module.Module).
 
     Args:
+    ----
         obj: Object.
 
     Attributes:
+    ----------
         sourcefile: Source file path.
         lineno: Line number.
         object: Object instance.
@@ -89,7 +98,7 @@ class Tree:
     object: Object = field(init=False)
     docstring: Docstring = field(init=False)
     parent: Any = field(default=None, init=False)
-    members: List[Any] = field(init=False)
+    members: list[Any] = field(init=False)
 
     def __post_init__(self):
         obj = get_origin(self.obj)
@@ -99,7 +108,11 @@ class Tree:
         kind = self.get_kind()
         signature = get_signature(obj)
         self.object = Object(
-            prefix=prefix, name=name, qualname=qualname, kind=kind, signature=signature,
+            prefix=prefix,
+            name=name,
+            qualname=qualname,
+            kind=kind,
+            signature=signature,
         )
         self.docstring = get_docstring(obj)
         self.obj = obj
@@ -114,13 +127,14 @@ class Tree:
         numbers = len(self.members)
         return f"{class_name}({id!r}, num_sections={sections}, num_members={numbers})"
 
-    def __getitem__(self, index: Union[int, str, List[str]]):
+    def __getitem__(self, index: Union[int, str, list[str]]):
         """Returns a member {class} instance.
 
         If `index` is str, a member Tree instance whose name is equal to `index`
         is returned.
 
-        Raises:
+        Raises
+        ------
             IndexError: If no member found.
         """
         if isinstance(index, list):
@@ -151,7 +165,7 @@ class Tree:
         """Returns kind of self."""
         raise NotImplementedError
 
-    def get_members(self) -> List["Tree"]:
+    def get_members(self) -> list["Tree"]:
         """Returns a list of members."""
         raise NotImplementedError
 

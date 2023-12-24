@@ -1,10 +1,10 @@
 """md
-# Using MkApi within Python
+# Using MkAPI within Python
 
-MkApi is a standalone library as well as a MkDocs plugin, so that you can use it
+MkAPI is a standalone library as well as a MkDocs plugin, so that you can use it
 within Python.
 
-First, import MkApi:
+First, import MkAPI:
 
 {{ # cache:clear }}
 
@@ -19,7 +19,7 @@ import mkapi
 
 # ## Node object
 
-# Define a simple class to show how MkApi works.
+# Define a simple class to show how MkAPI works.
 
 
 class A:
@@ -99,7 +99,7 @@ print(markdown)
 # `Node.get_markdown()` divides docstrings into two parts. One is a plain Markdown that
 # will be converted into HTML by any Markdown converter, for example, MkDocs. The other
 # is the outline structure of docstrings such as sections or arguments that will be
-# processed by MkApi itself.
+# processed by MkAPI itself.
 
 # ## Converting Markdown
 
@@ -108,7 +108,7 @@ print(markdown)
 
 from markdown import Markdown  # isort:skip
 
-converter = Markdown(extensions=['admonition'])
+converter = Markdown(extensions=["admonition"])
 html = converter.convert(markdown)
 print(html)
 

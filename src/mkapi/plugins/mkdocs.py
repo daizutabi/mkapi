@@ -64,7 +64,7 @@ class MkapiPlugin(BasePlugin):
                 kwargs["config"] = config
             if "mkapi" in params:
                 kwargs["mkapi"] = self
-            logger.info(f"[MkApi] Calling user 'on_config' with {list(kwargs)}")
+            logger.info(f"[MkAPI] Calling user 'on_config' with {list(kwargs)}")
             config_ = on_config(**kwargs)
             if config_ is not None:
                 config = config_
@@ -119,7 +119,7 @@ class MkapiPlugin(BasePlugin):
         return page.markdown
 
     def on_page_content(self, html, page, config, files, **kwargs):
-        """Merges html and MkApi's node structure."""
+        """Merges html and MkAPI's node structure."""
         if page.title:
             page.title = re.sub(r"<.*?>", "", page.title)
         abs_src_path = page.file.abs_src_path

@@ -20,7 +20,7 @@ nav:
   - API: mkapi/api/mkapi
 ~~~
 
-MkApi scans the `nav` to find an entry that starts with `'mkapi/'`. This entry must include two or more slashes (`'/'`). Second part (`'api'`) splitted by slash is a directory name. MkApi automatically creates this directory in the `docs` directory at the beginning of the process and deletes it and its contents after the process.
+MkAPI scans the `nav` to find an entry that starts with `'mkapi/'`. This entry must include two or more slashes (`'/'`). Second part (`'api'`) splitted by slash is a directory name. MkAPI automatically creates this directory in the `docs` directory at the beginning of the process and deletes it and its contents after the process.
 
 The rest (`'mkapi'`) is a root package name, which is assumed to exist in the `mkdocs.yml` directory. However, if a root package is in `src` directory, for example, you can specify it like this:
 
@@ -29,10 +29,10 @@ The rest (`'mkapi'`) is a root package name, which is assumed to exist in the `m
 ~~~
 
 
-MkApi searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the documentation of MkApi in the left navigation menu.
+MkAPI searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the documentation of MkAPI in the left navigation menu.
 
 !!! note
-    * If a package or module has no package- or module-level docstring and its members have no docstring as well, MkApi doesn't process it.
+    * If a package or module has no package- or module-level docstring and its members have no docstring as well, MkAPI doesn't process it.
     * For upper case heading, use the `upper` filter. See [Documentation with Heading](../module/#documentation-with-heading).
 
 ## Internal Links
@@ -110,7 +110,7 @@ You can click the prefix (`mkapi.core.docstring`) or the function name (`section
 
 ### Link from Type
 
-[Docstring](mkapi.core.base.Docstring) class of MkApi has an attribute `sections` that is a list of `Section` class instance:
+[Docstring](mkapi.core.base.Docstring) class of MkAPI has an attribute `sections` that is a list of `Section` class instance:
 
 ~~~python
 # Mimic code of Docstring class.

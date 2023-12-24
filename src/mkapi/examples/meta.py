@@ -1,7 +1,7 @@
 class A(type):
     """A"""
 
-    def f(self):
+    def f(cls):
         """f"""
 
 

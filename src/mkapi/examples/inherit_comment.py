@@ -8,10 +8,10 @@ class Base:
     """Base class."""
 
     name: str  #: Object name.
-    type: Type  #: Object type.
+    type: Type  #: Object type.  # noqa: A003
 
     def set_name(self, name: str):
-        """Sets name.
+        """Set name.
 
         Args:
             name: A New name.
@@ -26,5 +26,5 @@ class Item(Base):
     markdown: str  #: Object Markdown.
 
     def set_name(self, name: str):
-        """Sets name in upper case."""
+        """Set name in upper case."""
         self.name = name.upper()

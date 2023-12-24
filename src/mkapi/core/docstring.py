@@ -2,14 +2,15 @@
 
 import inspect
 import re
+from collections.abc import Iterator
 from dataclasses import is_dataclass
-from typing import Any, Iterator, List, Tuple
+from typing import Any
 
 from mkapi.core import preprocess
 from mkapi.core.base import Docstring, Inline, Item, Section, Type
 from mkapi.core.linker import get_link, replace_link
 from mkapi.core.object import get_mro
-from mkapi.core.signature import get_signature
+from mkapi.inspect.signature import get_signature
 from mkapi.utils import get_indent, join
 
 SECTIONS = [
@@ -42,13 +43,15 @@ def rename_section(name: str) -> str:
     return name
 
 
-def section_heading(line: str) -> Tuple[str, str]:
+def section_heading(line: str) -> tuple[str, str]:
     """Returns a tuple of (section name, style name).
 
     Args:
+    ----
         line: Docstring line.
 
     Examples:
+    --------
         >>> section_heading("Args:")
         ('Args', 'google')
         >>> section_heading("Raises")
@@ -64,13 +67,15 @@ def section_heading(line: str) -> Tuple[str, str]:
         return "", ""
 
 
-def split_section(doc: str) -> Iterator[Tuple[str, str, str]]:
+def split_section(doc: str) -> Iterator[tuple[str, str, str]]:
     """Yields a tuple of (section name, contents, style).
 
     Args:
+    ----
         doc: Docstring
 
     Examples:
+    --------
         >>> doc = "abc\\n\\nArgs:\\n    x: X\\n"
         >>> it = split_section(doc)
         >>> next(it)
@@ -107,10 +112,11 @@ def split_section(doc: str) -> Iterator[Tuple[str, str, str]]:
         yield name, join(lines[start:]), style
 
 
-def split_parameter(doc: str) -> Iterator[List[str]]:
+def split_parameter(doc: str) -> Iterator[list[str]]:
     """Yields a list of parameter string.
 
     Args:
+    ----
         doc: Docstring
     """
     lines = [x.rstrip() for x in doc.split("\n")]
@@ -125,10 +131,11 @@ def split_parameter(doc: str) -> Iterator[List[str]]:
             start = stop
 
 
-def parse_parameter(lines: List[str], style: str) -> Item:
+def parse_parameter(lines: list[str], style: str) -> Item:
     """Returns a Item instance that represents a parameter.
 
     Args:
+    ----
         lines: Splitted parameter docstring lines.
         style: Docstring style. `google` or `numpy`.
     """
@@ -153,12 +160,12 @@ def parse_parameter(lines: List[str], style: str) -> Item:
     return Item(name, Type(type), Inline("\n".join(parsed)))
 
 
-def parse_parameters(doc: str, style: str) -> List[Item]:
+def parse_parameters(doc: str, style: str) -> list[Item]:
     """Returns a list of Item."""
     return [parse_parameter(lines, style) for lines in split_parameter(doc)]
 
 
-def parse_returns(doc: str, style: str) -> Tuple[str, str]:
+def parse_returns(doc: str, style: str) -> tuple[str, str]:
     """Returns a tuple of (type, markdown)."""
     lines = doc.split("\n")
     if style == "google":
@@ -203,7 +210,8 @@ def parse_bases(doc: Docstring, obj: Any):
 def parse_source(doc: Docstring, obj: Any):
     """Parses parameters' docstring to inspect type and description from source.
 
-    Examples:
+    Examples
+    --------
         >>> from mkapi.core.base import Base
         >>> doc = Docstring()
         >>> parse_source(doc, Base)
@@ -265,7 +273,7 @@ def postprocess(doc: Docstring, obj: Any):
         else:
             doc.type = Type(signature.returns)
 
-    sections: List[Section] = []
+    sections: list[Section] = []
     for section in doc.sections:
         if section.name not in ["Example", "Examples"]:
             for base in section:

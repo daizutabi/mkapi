@@ -15,10 +15,10 @@ class Base:
     """
 
     name: str
-    type: Type
+    type: Type  # noqa: A003
 
     def set_name(self, name: str):
-        """Sets name.
+        """Set name.
 
         Args:
             name: A New name.
@@ -26,7 +26,7 @@ class Base:
         self.name = name
 
     def get(self):
-        """Returns {class} instace."""
+        """Return {class} instace."""
         return self
 
 
@@ -44,5 +44,5 @@ class Item(Base):
     markdown: str
 
     def set_name(self, name: str):
-        """Sets name in upper case."""
+        """Set name in upper case."""
         self.name = name.upper()

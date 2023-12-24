@@ -48,7 +48,7 @@ Base.func.__doc__, inspect.getdoc(Base.func)
 Sub.func.__doc__, inspect.getdoc(Sub.func)
 ```
 
-Because `Sub.func()` has no docstring, its `__doc__` attribute is `None`. On the other hand, the super class `Base.func()` has docstring, so that you can get the *inherited* docstring using `inspect.getdoc()`. Therefore, MkApi uses `inspect.getdoc()`.
+Because `Sub.func()` has no docstring, its `__doc__` attribute is `None`. On the other hand, the super class `Base.func()` has docstring, so that you can get the *inherited* docstring using `inspect.getdoc()`. Therefore, MkAPI uses `inspect.getdoc()`.
 
 Now, let's see some special methods:
 

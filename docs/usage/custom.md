@@ -2,7 +2,7 @@
 
 ## Customization 'on_config'.
 
-MkApi has an option `on_config` to allow users to configure MkDocs/MkApi or
+MkAPI has an option `on_config` to allow users to configure MkDocs/MkAPI or
 user system environment. Here is an example directory structure and the corresponding `mkdocs.yml`:
 
 ~~~yml
@@ -32,7 +32,7 @@ Let's build the documentation.
 
 ~~~bash
 $ mkdocs build
-INFO    -  [MkApi] Calling user 'on_config' with []
+INFO    -  [MkAPI] Calling user 'on_config' with []
 Called.
 INFO    -  Cleaning site directory
 ...
@@ -51,7 +51,7 @@ plugins:
 
 ~~~bash
 $ mkdocs build
-INFO    -  [MkApi] Calling user 'on_config' with ['config']
+INFO    -  [MkAPI] Calling user 'on_config' with ['config']
 Called with config.
 C:\Users\daizu\Documents\github\mkapi\docs
 INFO    -  Cleaning site directory
@@ -69,7 +69,7 @@ plugins:
 
 ~~~bash
 $ mkdocs build
-INFO    -  [MkApi] Calling user 'on_config' with ['config', 'mkapi']
+INFO    -  [MkAPI] Calling user 'on_config' with ['config', 'mkapi']
 Called with config and mkapi.
 C:\Users\daizu\Documents\github\mkapi\docs
 <mkapi.plugins.mkdocs.MkapiPlugin object at 0x000001DF712D0F08>

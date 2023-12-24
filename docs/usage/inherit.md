@@ -43,7 +43,7 @@ By inheritance from superclasses, you don't need to write duplicated description
 
 ## Inheritance from Signature
 
-Using `strict` filter, MkApi also adds parameters and attributes without description using its signature. Description is still empty but type is inspected.
+Using `strict` filter, MkAPI also adds parameters and attributes without description using its signature. Description is still empty but type is inspected.
 
 ~~~markdown
 ![mkapi](inherit.Item|strict)

@@ -34,8 +34,6 @@ def test_is_member_private():
             pass
 
     class B(A):
-        pass
-
         def _private():
             pass
 
@@ -146,7 +144,7 @@ def test_set_html_and_render_bases():
 
 def test_decorated_member():
     from mkapi.core import attribute
-    from mkapi.core.signature import Signature
+    from mkapi.inspect.signature import Signature
 
     node = get_node(attribute)
     assert node.members[-1].object.kind == "function"

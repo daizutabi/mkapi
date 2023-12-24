@@ -1,7 +1,7 @@
-"""This module provides a Page class that works with other converter."""
+"""Provide a Page class that works with other converter."""
 import re
+from collections.abc import Iterator
 from dataclasses import InitVar, dataclass, field
-from typing import Iterator, List, Tuple, Union
 
 from mkapi import utils
 from mkapi.core import postprocess
@@ -10,7 +10,12 @@ from mkapi.core.code import Code, get_code
 from mkapi.core.inherit import inherit
 from mkapi.core.linker import resolve_link
 from mkapi.core.node import Node, get_node
-from mkapi.core.regex import MKAPI_PATTERN, NODE_PATTERN, node_markdown
+
+MKAPI_PATTERN = re.compile(r"^(#*) *?!\[mkapi\]\((.+?)\)$", re.MULTILINE)
+NODE_PATTERN = re.compile(
+    r"<!-- mkapi:begin:(\d+):\[(.*?)\] -->(.*?)<!-- mkapi:end -->",
+    re.MULTILINE | re.DOTALL,
+)
 
 
 @dataclass
@@ -18,32 +23,36 @@ class Page:
     """Page class works with [MkapiPlugin](mkapi.plugins.mkdocs.MkapiPlugin).
 
     Args:
+    ----
         source (str): Markdown source.
         abs_src_path: Absolute source path of Markdown.
         abs_api_paths: A list of API paths.
 
     Attributes:
+    ----------
         markdown: Converted Markdown including API documentation.
         nodes: A list of Node instances.
     """
 
     source: InitVar[str]
     abs_src_path: str
-    abs_api_paths: List[str] = field(default_factory=list, repr=False)
-    filters: List[str] = field(default_factory=list, repr=False)
+    abs_api_paths: list[str] = field(default_factory=list, repr=False)
+    filters: list[str] = field(default_factory=list, repr=False)
     markdown: str = field(init=False, repr=False)
-    nodes: List[Union[Node, Code]] = field(default_factory=list, init=False, repr=False)
-    headings: List[Tuple[int, str]] = field(
-        default_factory=list, init=False, repr=False
+    nodes: list[Node | Code] = field(default_factory=list, init=False, repr=False)
+    headings: list[tuple[int, str]] = field(
+        default_factory=list,
+        init=False,
+        repr=False,
     )
 
-    def __post_init__(self, source):
+    def __post_init__(self, source: str) -> None:
         self.markdown = "\n\n".join(self.split(source))
 
-    def resolve_link(self, markdown: str):
+    def resolve_link(self, markdown: str) -> str:
         return resolve_link(markdown, self.abs_src_path, self.abs_api_paths)
 
-    def resolve_link_from_base(self, base: Base):
+    def resolve_link_from_base(self, base: Base) -> str:
         if isinstance(base, Section) and base.name in ["Example", "Examples"]:
             return base.markdown
         return resolve_link(base.markdown, self.abs_src_path, self.abs_api_paths)
@@ -86,16 +95,23 @@ class Page:
                 yield self.resolve_link(markdown)
 
     def content(self, html: str) -> str:
-        """Returns updated HTML to [MkapiPlugin](mkapi.plugins.mkdocs.MkapiPlugin).
+        """Return updated HTML to [MkapiPlugin](mkapi.plugins.mkdocs.MkapiPlugin).
 
         Args:
+        ----
             html: Input HTML converted by MkDocs.
         """
 
-        def replace(match):
+        def replace(match: re.Match) -> str:
             node = self.nodes[int(match.group(1))]
             filters = match.group(2).split("|")
             node.set_html(match.group(3))
             return node.get_html(filters)
 
         return re.sub(NODE_PATTERN, replace, html)
+
+
+def node_markdown(index: int, markdown: str, filters: list[str] | None = None) -> str:
+    """Return Markdown text for node."""
+    fs = "|".join(filters) if filters else ""
+    return f"<!-- mkapi:begin:{index}:[{fs}] -->\n\n{markdown}\n\n<!-- mkapi:end -->"

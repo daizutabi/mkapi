@@ -4,12 +4,12 @@
 [![Python versions][pyversions-image]][pyversions-link]
 [![Code style: black][black-image]][black-link]
 
-MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
+MkAPI plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkAPI supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
 
-Features of MkApi are:
+Features of MkAPI are:
 
 * **Type annotation**: If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in Parameters, Returns, or Yields section again. You can overwrite the type annotation in the corresponding docstring.
-* **Object type inspection**: MkApi plugin creates *class*, *dataclass*, *function*, or *generator* prefix for each object.
+* **Object type inspection**: MkAPI plugin creates *class*, *dataclass*, *function*, or *generator* prefix for each object.
 * **Attribute inspection**: If you write attributes with description as comment in module or class, Attributes section is automatically created.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters and attributes description from its superclasses.
 * **Table of Contents**: Table of contents are inserted into the documentation of each package, module, and class.
@@ -36,7 +36,7 @@ plugins:
 
 ## Usage
 
-MkApi provides two modes to generate API documentation: Embedding mode and Page mode.
+MkAPI provides two modes to generate API documentation: Embedding mode and Page mode.
 
 ### Embedding Mode
 
@@ -52,7 +52,7 @@ You can combine this syntax with Markdown heading:
 ## ![mkapi](<package.module.object>)
 ~~~
 
-MkApi imports objects that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:
+MkAPI imports objects that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:
 
 ~~~yml
 plugins:
