@@ -1,5 +1,5 @@
 import importlib
-from typing import Any, List
+from typing import Any
 
 
 def get_indent(line: str) -> int:
@@ -71,7 +71,7 @@ def split_filters(name):
     return name, filters.split("|")
 
 
-def update_filters(org: List[str], update: List[str]) -> List[str]:
+def update_filters(org: list[str], update: list[str]) -> list[str]:
     """
     Examples:
         >>> update_filters(['upper'], ['lower'])

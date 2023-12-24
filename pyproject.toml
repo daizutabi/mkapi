@@ -1,0 +1,90 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mkapi"
+description = "A documentation generation tool for MkDocs"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: MkDocs",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Topic :: Documentation",
+  "Topic :: Software Development :: Documentation",
+]
+dynamic = ["version"]
+requires-python = ">=3.8"
+dependencies = ["jinja2", "markdown", "mkdocs"]
+
+[project.urls]
+Documentation = "https://github.com/daizutabi/mkapi#readme" # FIXME
+Source = "https://github.com/daizutabi/mkapi"
+Issues = "https://github.com/daizutabi/mkapi/issues"
+
+[project.scripts]
+mkapi = "mkapi.main:cli"
+
+[project.entry-points."mkdocs.plugins"]
+mkapi = "mkapi.plugins.mkdocs:MkapiPlugin"
+
+[tool.hatch.version]
+path = "src/mkapi/__about__.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/.github", "/docs"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/mkapi"]
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+[tool.hatch.envs.default]
+dependencies = ["pytest-cov"]
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests src/mkapi}"
+
+[tool.pytest.ini_options]
+addopts = [
+  "--verbose",
+  "--color=yes",
+  "--doctest-modules",
+  "--cov=mkapi",
+  "--cov-report=lcov:lcov.info",
+  # "--cov-report=term:skip-covered",
+]
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
+# testpaths = ["tests", "src/mkapi"]
+
+[tool.coverage.run]
+omit = ["src/mkapi/__about__.py"]
+
+[tool.coverage.report]
+exclude_lines = ["no cov"]
+
+[tool.hatch.envs.docs]
+dependencies = ["mkdocs", "mkdocs-material"]
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --clean --strict {args}"
+serve = "mkdocs serve --dev-addr localhost:8000 {args}"
+deploy = "mkdocs gh-deploy --force"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+select = ["ALL"]
+ignore = ["ANN101", "ANN102", "ANN002", "ANN003"]
+
+[tool.ruff.extend-per-file-ignores]
+"tests/*.py" = ["ANN", "D", "S101", "INP001", "PLR2004"]
+
+[tool.ruff.isort]
+known-first-party = ["mkapi"]
+
+[tool.ruff.lint]
+unfixable = [
+  "RUF100", # Don't touch noqa lines
+]

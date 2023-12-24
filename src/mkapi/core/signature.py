@@ -1,10 +1,9 @@
-"""This module provides Signature class that inspects object and creates
-signature and types."""
+"""Signature class that inspects object and creates signature and types."""
 import importlib
 import inspect
 from dataclasses import InitVar, dataclass, field, is_dataclass
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 from mkapi.core import linker, preprocess
 from mkapi.core.attribute import get_attributes
@@ -16,9 +15,11 @@ class Signature:
     """Signature class.
 
     Args:
+    ----
         obj: Object
 
     Attributes:
+    ----------
         signature: `inspect.Signature` instance.
         parameters: Parameters section.
         defaults: Default value dictionary. Key is parameter name and
@@ -29,9 +30,9 @@ class Signature:
     """
 
     obj: Any = field(default=None, repr=False)
-    signature: Optional[inspect.Signature] = field(default=None, init=False)
+    signature: inspect.Signature | None = field(default=None, init=False)
     parameters: Section = field(default_factory=Section, init=False)
-    defaults: Dict[str, Any] = field(default_factory=dict, init=False)
+    defaults: dict[str, Any] = field(default_factory=dict, init=False)
     attributes: Section = field(default_factory=Section, init=False)
     returns: str = field(default="", init=False)
     yields: str = field(default="", init=False)
@@ -77,7 +78,7 @@ class Signature:
             self.returns = to_string(return_annotation, "returns", obj=self.obj)
             self.yields = to_string(return_annotation, "yields", obj=self.obj)
 
-    def __contains__(self, name):
+    def __contains__(self, name) -> bool:
         return name in self.parameters
 
     def __getitem__(self, name):
@@ -91,7 +92,7 @@ class Signature:
             return "(" + ", ".join(args) + ")"
 
     @property
-    def arguments(self) -> Optional[List[str]]:
+    def arguments(self) -> list[str] | None:
         """Returns arguments list."""
         if self.obj is None or not callable(self.obj):
             return None
@@ -105,14 +106,13 @@ class Signature:
         return args
 
     def set_attributes(self):
-        """
-        Examples:
-            >>> from mkapi.core.base import Base
-            >>> s = Signature(Base)
-            >>> s.parameters['name'].to_tuple()
-            ('name', 'str, optional', 'Name of self.')
-            >>> s.attributes['html'].to_tuple()
-            ('html', 'str', 'HTML output after conversion.')
+        """Examples
+        >>> from mkapi.core.base import Base
+        >>> s = Signature(Base)
+        >>> s.parameters['name'].to_tuple()
+        ('name', 'str, optional', 'Name of self.')
+        >>> s.attributes['html'].to_tuple()
+        ('html', 'str', 'HTML output after conversion.')
         """
         items = []
         for name, (type, description) in get_attributes(self.obj).items():
@@ -138,15 +138,17 @@ class Signature:
 
 
 def to_string(annotation, kind: str = "returns", obj=None) -> str:
-    """Returns string expression of annotation.
+    """Return string expression of annotation.
 
     If possible, type string includes link.
 
     Args:
+    ----
         annotation: Annotation
         kind: 'returns' or 'yields'
 
     Examples:
+    --------
         >>> from typing import Callable, Iterator, List
         >>> to_string(Iterator[str])
         'iterator of str'
@@ -164,10 +166,8 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
         if hasattr(annotation, "__args__") and annotation.__args__:
             if len(annotation.__args__) == 1:
                 return to_string(annotation.__args__[0], obj=obj)
-            else:
-                return to_string(annotation, obj=obj)
-        else:
-            return ""
+            return to_string(annotation, obj=obj)
+        return ""
 
     if annotation == ...:
         return "..."
@@ -208,12 +208,14 @@ def to_string(annotation, kind: str = "returns", obj=None) -> str:
 
 
 def a_of_b(annotation, obj=None) -> str:
-    """Returns A of B style string.
+    """Return "A of B" style string.
 
     Args:
+    ----
         annotation: Annotation
 
     Examples:
+    --------
         >>> from typing import List, Iterable, Iterator
         >>> a_of_b(List[str])
         'list of str'
@@ -237,12 +239,14 @@ def a_of_b(annotation, obj=None) -> str:
 
 
 def union(annotation, obj=None) -> str:
-    """Returns a string for union annotation.
+    """Return a string for union annotation.
 
     Args:
+    ----
         annotation: Annotation
 
     Examples:
+    --------
         >>> from typing import List, Optional, Tuple, Union
         >>> union(Optional[List[str]])
         'list of str, optional'
@@ -272,12 +276,14 @@ def union(annotation, obj=None) -> str:
 
 
 def to_string_args(annotation, obj=None) -> str:
-    """Returns a string for callable and generator annotation.
+    """Return a string for callable and generator annotation.
 
     Args:
+    ----
         annotation: Annotation
 
     Examples:
+    --------
         >>> from typing import Callable, List, Tuple, Any
         >>> from typing import Generator, AsyncGenerator
         >>> to_string_args(Callable[[int, List[str]], Tuple[int, int]])
@@ -294,12 +300,11 @@ def to_string_args(annotation, obj=None) -> str:
         'asyncgenerator(int, float)'
     """
 
-    def to_string_with_prefix(annotation, prefix=","):
+    def to_string_with_prefix(annotation, prefix: str = ",") -> str:
         s = to_string(annotation, obj=obj)
         if s in ["NoneType", "any"]:
             return ""
-        else:
-            return " ".join([prefix, s])
+        return f"{prefix} {s}"
 
     args = annotation.__args__
     name = annotation.__origin__.__name__.lower()
@@ -308,7 +313,7 @@ def to_string_args(annotation, obj=None) -> str:
         args = ", ".join(to_string(x, obj=obj) for x in args)
         returns = to_string_with_prefix(returns, ":")
         return f"{name}({args}{returns})"
-    elif name == "generator":
+    if name == "generator":
         arg, sends, returns = args
         arg = to_string(arg, obj=obj)
         sends = to_string_with_prefix(sends)
@@ -316,23 +321,24 @@ def to_string_args(annotation, obj=None) -> str:
         if not sends and returns:
             sends = ","
         return f"{name}({arg}{sends}{returns})"
-    elif name == "asyncgenerator":
+    if name == "asyncgenerator":
         arg, sends = args
         arg = to_string(arg, obj=obj)
         sends = to_string_with_prefix(sends)
         return f"{name}({arg}{sends})"
-    else:
-        return ""
+    return ""
 
 
 def resolve_forward_ref(obj: Any, name: str) -> str:
-    """Returns a resolved name for `typing.ForwardRef`.
+    """Return a resolved name for `typing.ForwardRef`.
 
     Args:
+    ----
         obj: Object
         name: Forward reference name.
 
     Examples:
+    --------
         >>> from mkapi.core.base import Docstring
         >>> resolve_forward_ref(Docstring, 'Docstring')
         '[Docstring](!mkapi.core.base.Docstring)'
