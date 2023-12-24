@@ -11,20 +11,20 @@ LINK_PATTERN = re.compile(r"\[(.+?)\]\((.+?)\)")
 REPLACE_LINK_PATTERN = re.compile(r"\[(.*?)\]\((.*?)\)|(\S+)_")
 
 
-def link(name: str, ref: str) -> str:
+def link(name: str, href: str) -> str:
     """Return Markdown link with a mark that indicates this link was created by MkAPI.
 
     Args:
     ----
         name: Link name.
-        ref: Reference.
+        href: Reference.
 
     Examples:
     --------
         >>> link('abc', 'xyz')
         '[abc](!xyz)'
     """
-    return f"[{name}](!{ref})"
+    return f"[{name}](!{href})"
 
 
 def get_link(obj: type, *, include_module: bool = False) -> str:
@@ -49,11 +49,9 @@ def get_link(obj: type, *, include_module: bool = False) -> str:
     elif hasattr(obj, "__name__"):
         name = obj.__name__
     else:
-        return ""
-    if not hasattr(obj, "__module__"):
-        return name
-    module = obj.__module__
-    if module == "builtins":
+        msg = f"obj has no name: {obj}"
+        raise ValueError(msg)
+    if not hasattr(obj, "__module__") or (module := obj.__module__) == "builtins":
         return name
     fullname = f"{module}.{name}"
     text = fullname if include_module else name
@@ -69,7 +67,7 @@ def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: list[str]) -> 
     ----
         markdown: Markdown source.
         abs_src_path: Absolute source path of Markdown.
-        abs_api_paths: A list of API paths.
+        abs_api_paths: List of API paths.
 
     Examples:
     --------
@@ -90,7 +88,7 @@ def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: list[str]) -> 
         else:
             from_mkapi = False
 
-        href = resolve_href(href, abs_src_path, abs_api_paths)
+        href = _resolve_href(href, abs_src_path, abs_api_paths)
         if href:
             return f"[{name}]({href})"
         if from_mkapi:
@@ -100,7 +98,7 @@ def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: list[str]) -> 
     return re.sub(LINK_PATTERN, replace, markdown)
 
 
-def resolve_href(name: str, abs_src_path: str, abs_api_paths: list[str]) -> str:
+def _resolve_href(name: str, abs_src_path: str, abs_api_paths: list[str]) -> str:
     if not name:
         return ""
     abs_api_path = _match_last(name, abs_api_paths)
