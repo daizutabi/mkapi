@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 from examples.styles import google
-from mkapi.core.attribute import get_attributes, get_description
 from mkapi.inspect import signature
+from mkapi.inspect.attribute import get_attributes, get_description
 
 
 class A:

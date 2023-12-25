@@ -46,7 +46,7 @@ class Object(Base):
     type: Type = field(default_factory=Type, init=False)
 
     def __post_init__(self):
-        from mkapi.core import linker
+        from mkapi.core import link
 
         self.id = self.name
         if self.prefix:
@@ -56,9 +56,9 @@ class Object(Base):
         else:
             self.module = self.id[: -len(self.qualname) - 1]
         if not self.markdown:
-            name = linker.link(self.name, self.id)
+            name = link.link(self.name, self.id)
             if self.prefix:
-                prefix = linker.link(self.prefix, self.prefix)
+                prefix = link.link(self.prefix, self.prefix)
                 self.markdown = ".".join([prefix, name])
             else:
                 self.markdown = name

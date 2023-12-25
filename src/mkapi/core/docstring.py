@@ -6,12 +6,11 @@ from collections.abc import Iterator
 from dataclasses import is_dataclass
 from typing import Any
 
-from mkapi.core import preprocess
 from mkapi.core.base import Docstring, Inline, Item, Section, Type
-from mkapi.core.linker import get_link, replace_link
+from mkapi.core.link import get_link, replace_link
 from mkapi.core.object import get_mro
+from mkapi.core.preprocess import add_admonition, get_indent, join_without_indent
 from mkapi.inspect.signature import get_signature
-from mkapi.utils import get_indent, join
 
 SECTIONS = [
     "Args",
@@ -94,14 +93,14 @@ def split_section(doc: str) -> Iterator[tuple[str, str, str]]:
             next_indent = get_indent(lines[stop])
         if not line and next_indent < indent and name:
             if start < stop - 1:
-                yield name, join(lines[start : stop - 1]), style
+                yield name, join_without_indent(lines[start : stop - 1]), style
             start = stop
             name = ""
         else:
             section, style_ = section_heading(line)
             if section:
                 if start < stop - 1:
-                    yield name, join(lines[start : stop - 1]), style
+                    yield name, join_without_indent(lines[start : stop - 1]), style
                 style = style_
                 name = rename_section(section)
                 start = stop
@@ -109,7 +108,7 @@ def split_section(doc: str) -> Iterator[tuple[str, str, str]]:
                     start += 1
                 indent = next_indent
     if start < len(lines):
-        yield name, join(lines[start:]), style
+        yield name, join_without_indent(lines[start:]), style
 
 
 def split_parameter(doc: str) -> Iterator[list[str]]:
@@ -178,7 +177,7 @@ def parse_returns(doc: str, style: str) -> tuple[str, str]:
     else:
         type = lines[0].strip()
         lines = lines[1:]
-    return type, join(lines)
+    return type, join_without_indent(lines)
 
 
 def get_section(name: str, doc: str, style: str) -> Section:
@@ -279,7 +278,7 @@ def postprocess(doc: Docstring, obj: Any):
             for base in section:
                 base.markdown = replace_link(obj, base.markdown)
         if section.name in ["Note", "Notes", "Warning", "Warnings"]:
-            markdown = preprocess.admonition(section.name, section.markdown)
+            markdown = add_admonition(section.name, section.markdown)
             if sections and sections[-1].name == "":
                 sections[-1].markdown += "\n\n" + markdown
                 continue

@@ -5,8 +5,8 @@ from functools import lru_cache
 from typing import Any
 
 from mkapi.core import preprocess
-from mkapi.core.attribute import get_attributes
 from mkapi.core.base import Inline, Item, Section, Type
+from mkapi.inspect.attribute import get_attributes
 from mkapi.inspect.typing import to_string
 
 
@@ -63,7 +63,7 @@ class Signature:
 
     @property
     def arguments(self) -> list[str] | None:
-        """Returns arguments list."""
+        """Return argument list."""
         if self.obj is None or not callable(self.obj):
             return None
 

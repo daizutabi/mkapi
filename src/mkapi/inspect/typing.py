@@ -4,7 +4,7 @@ import inspect
 from types import UnionType
 from typing import ForwardRef, Union, get_args, get_origin
 
-from mkapi.core.linker import get_link
+from mkapi.core.link import get_link
 
 
 def to_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noqa: ANN001, PLR0911

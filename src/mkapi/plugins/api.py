@@ -5,7 +5,7 @@ import shutil
 import sys
 from typing import Dict, List, Optional, Tuple
 
-from mkapi import utils
+from mkapi.core import preprocess
 from mkapi.core.module import Module, get_module
 
 logger = logging.getLogger("mkdocs")
@@ -21,13 +21,16 @@ def create_nav(config, global_filters):
             for key, value in page.items():
                 if isinstance(value, str) and value.startswith("mkapi/"):
                     page[key], abs_api_paths_ = collect(
-                        value, docs_dir, config_dir, global_filters
+                        value,
+                        docs_dir,
+                        config_dir,
+                        global_filters,
                     )
                     abs_api_paths.extend(abs_api_paths_)
     return config, abs_api_paths
 
 
-def collect(path: str, docs_dir: str, config_dir, global_filters) -> Tuple[list, list]:
+def collect(path: str, docs_dir: str, config_dir, global_filters) -> tuple[list, list]:
     _, api_path, *paths, package_path = path.split("/")
     abs_api_path = os.path.join(docs_dir, api_path)
     if os.path.exists(abs_api_path):
@@ -41,12 +44,12 @@ def collect(path: str, docs_dir: str, config_dir, global_filters) -> Tuple[list,
     if root not in sys.path:
         sys.path.insert(0, root)
 
-    package_path, filters = utils.split_filters(package_path)
-    filters = utils.update_filters(global_filters, filters)
+    package_path, filters = preprocess.split_filters(package_path)
+    filters = preprocess.update_filters(global_filters, filters)
 
     nav = []
     abs_api_paths = []
-    modules: Dict[str, str] = {}
+    modules: dict[str, str] = {}
     package = None
 
     def add_page(module: Module, package: Optional[str]):
@@ -80,12 +83,12 @@ def collect(path: str, docs_dir: str, config_dir, global_filters) -> Tuple[list,
     return nav, abs_api_paths
 
 
-def create_page(path: str, module: Module, filters: List[str]):
+def create_page(path: str, module: Module, filters: list[str]):
     with open(path, "w") as f:
         f.write(module.get_markdown(filters))
 
 
-def create_source_page(path: str, module: Module, filters: List[str]):
+def create_source_page(path: str, module: Module, filters: list[str]):
     filters_str = "|".join(filters)
     with open(path, "w") as f:
         f.write(f"# ![mkapi]({module.object.id}|code|{filters_str})")

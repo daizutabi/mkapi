@@ -2,8 +2,8 @@
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 
-from mkapi.core import preprocess
-from mkapi.core.linker import LINK_PATTERN
+from mkapi.core.link import LINK_PATTERN
+from mkapi.core.preprocess import add_fence, delete_ptags
 
 
 @dataclass
@@ -90,7 +90,7 @@ class Inline(Base):
 
     def set_html(self, html: str) -> None:
         """Set `html` attribute cleaning `p` tags."""
-        html = preprocess.strip_ptags(html)
+        html = delete_ptags(html)
         super().set_html(html)
 
     def copy(self):  # noqa: ANN201, D102
@@ -287,7 +287,7 @@ class Section(Base):
 
     def __post_init__(self) -> None:
         if self.markdown:
-            self.markdown = preprocess.convert(self.markdown)
+            self.markdown = add_fence(self.markdown)
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__

@@ -1,20 +1,29 @@
-"""This module provides functions that inspect attributes from source code."""
-import ast
-import importlib
-import inspect
-from dataclasses import InitVar, is_dataclass
-from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Tuple
+"""Functions that inspect attributes from source code."""
+from __future__ import annotations
 
 import _ast
-from mkapi import utils
+import ast
+import dataclasses
+import importlib
+import inspect
+from ast import AST
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+
+from mkapi.core import preprocess
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from types import ModuleType
+
+    from _typeshed import DataclassInstance
 
 
 def parse_attribute(x) -> str:
     return ".".join([parse_node(x.value), x.attr])
 
 
-def parse_attribute_with_lineno(x) -> Tuple[str, int]:
+def parse_attribute_with_lineno(x) -> tuple[str, int]:
     return parse_node(x), x.lineno
 
 
@@ -61,13 +70,13 @@ def parse_node(x):
         raise NotImplementedError
 
 
-def parse_annotation_assign(assign) -> Tuple[str, int, str]:
+def parse_annotation_assign(assign) -> tuple[str, int, str]:
     type = parse_node(assign.annotation)
     attr, lineno = parse_attribute_with_lineno(assign.target)
     return attr, lineno, type
 
 
-def get_description(lines: List[str], lineno: int) -> str:
+def get_description(lines: list[str], lineno: int) -> str:
     index = lineno - 1
     line = lines[index]
     if "  #: " in line:
@@ -109,10 +118,12 @@ def get_source(obj) -> str:
 
 
 def get_attributes_with_lineno(
-    nodes: Iterable[ast.AST], module, is_module: bool = False
-) -> List[Tuple[str, int, Any]]:
-    attr_dict: Dict[Tuple[str, int], Any] = {}
-    linenos: Dict[int, int] = {}
+    nodes: Iterable[ast.AST],
+    module,
+    is_module: bool = False,
+) -> list[tuple[str, int, Any]]:
+    attr_dict: dict[tuple[str, int], Any] = {}
+    linenos: dict[int, int] = {}
 
     def update(attr, lineno, type):
         if type or (attr, lineno) not in attr_dict:
@@ -141,10 +152,11 @@ def get_attributes_with_lineno(
 
 
 def get_attributes_dict(
-    attr_list: List[Tuple[str, int, Any]], source: str, prefix: str = ""
-) -> Dict[str, Tuple[Any, str]]:
-
-    attrs: Dict[str, Tuple[Any, str]] = {}
+    attr_list: list[tuple[str, int, Any]],
+    source: str,
+    prefix: str = "",
+) -> dict[str, tuple[Any, str]]:
+    attrs: dict[str, tuple[Any, str]] = {}
     lines = source.split("\n")
     for k, (name, lineno, type) in enumerate(attr_list):
         if not prefix or name.startswith(prefix):
@@ -160,7 +172,7 @@ def get_attributes_dict(
     return attrs
 
 
-def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
+def get_class_attributes(cls) -> dict[str, tuple[Any, str]]:
     """Returns a dictionary that maps attribute name to a tuple of
     (type, description).
 
@@ -182,7 +194,7 @@ def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     source = get_source(cls)
     if not source:
         return {}
-    source = utils.join(source.split("\n"))
+    source = preprocess.join(source.split("\n"))
     node = ast.parse(source)
     nodes = ast.walk(node)
     module = importlib.import_module(cls.__module__)
@@ -190,9 +202,10 @@ def get_class_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     return get_attributes_dict(attr_lineno, source, prefix="self.")
 
 
-def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
-    """Returns a dictionary that maps attribute name to a tuple of
-    (type, description).
+def get_dataclass_attributes(
+    cls: type[DataclassInstance],
+) -> dict[str, tuple[Any, str]]:
+    """Return a dictionary that maps attribute name to a tuple of (type, description).
 
     Args:
         cls: Dataclass object.
@@ -200,19 +213,18 @@ def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     Examples:
         >>> from mkapi.core.base import Item, Type, Inline
         >>> attrs = get_dataclass_attributes(Item)
-        >>> attrs['type'][0] is Type
+        >>> attrs["type"][0] is Type
         True
-        >>> attrs['description'][0] is Inline
+        >>> attrs["description"][0] is Inline
         True
     """
-    fields = cls.__dataclass_fields__.values()
     attrs = {}
-    for field in fields:
-        if field.type != InitVar:
+    for field in dataclasses.fields(cls):
+        if field.type != dataclasses.InitVar:
             attrs[field.name] = field.type, ""
 
     source = get_source(cls)
-    source = utils.join(source.split("\n"))
+    source = preprocess.join(source.split("\n"))
     if not source:
         return {}
     node = ast.parse(source).body[0]
@@ -234,9 +246,8 @@ def get_dataclass_attributes(cls) -> Dict[str, Tuple[Any, str]]:
     return attrs
 
 
-def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
-    """Returns a dictionary that maps attribute name to a tuple of
-    (type, description).
+def get_module_attributes(module: ModuleType) -> dict[str, tuple[Any, str]]:
+    """Return a dictionary that maps attribute name to a tuple of (type, description).
 
     Args:
         module: Module object.
@@ -244,7 +255,7 @@ def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
     Examples:
         >>> from mkapi.core import renderer
         >>> attrs = get_module_attributes(renderer)
-        >>> attrs['renderer'][0] is renderer.Renderer
+        >>> attrs["renderer"][0] is renderer.Renderer
         True
     """
     source = get_source(module)
@@ -257,20 +268,19 @@ def get_module_attributes(module) -> Dict[str, Tuple[Any, str]]:
 
 
 @lru_cache(maxsize=1000)
-def get_attributes(obj) -> Dict[str, Tuple[Any, str]]:
-    """Returns a dictionary that maps attribute name to
-    a tuple of (type, description).
+def get_attributes(obj: object) -> dict[str, tuple[Any, str]]:
+    """Return a dictionary that maps attribute name to a tuple of (type, description).
 
     Args:
         obj: Object.
 
-    See Alse:
+    See Also:
         get_class_attributes_, get_dataclass_attributes_, get_module_attributes_.
     """
-    if is_dataclass(obj):
+    if dataclasses.is_dataclass(obj) and isinstance(obj, type):
         return get_dataclass_attributes(obj)
-    elif inspect.isclass(obj):
+    if inspect.isclass(obj):
         return get_class_attributes(obj)
-    elif inspect.ismodule(obj):
+    if inspect.ismodule(obj):
         return get_module_attributes(obj)
     return {}

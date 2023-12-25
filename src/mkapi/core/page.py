@@ -3,12 +3,12 @@ import re
 from collections.abc import Iterator
 from dataclasses import InitVar, dataclass, field
 
-from mkapi import utils
 from mkapi.core import postprocess
 from mkapi.core.base import Base, Section
 from mkapi.core.code import Code, get_code
+from mkapi.core.filter import split_filters, update_filters
 from mkapi.core.inherit import inherit
-from mkapi.core.linker import resolve_link
+from mkapi.core.link import resolve_link
 from mkapi.core.node import Node, get_node
 
 MKAPI_PATTERN = re.compile(r"^(#*) *?!\[mkapi\]\((.+?)\)$", re.MULTILINE)
@@ -70,11 +70,11 @@ class Page:
             cursor = end
             heading, name = match.groups()
             level = len(heading)
-            name, filters = utils.split_filters(name)
+            name, filters = split_filters(name)
             if not name:
                 self.filters = filters
                 continue
-            filters = utils.update_filters(self.filters, filters)
+            filters = update_filters(self.filters, filters)
             if "code" in filters:
                 code = get_code(name)
                 self.nodes.append(code)

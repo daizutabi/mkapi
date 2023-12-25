@@ -143,7 +143,7 @@ def test_set_html_and_render_bases():
 
 
 def test_decorated_member():
-    from mkapi.core import attribute
+    from mkapi.inspect import attribute
     from mkapi.inspect.signature import Signature
 
     node = get_node(attribute)
