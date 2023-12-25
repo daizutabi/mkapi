@@ -1,7 +1,7 @@
 """Decorator examples."""
 import pytest
 
-from mkapi.examples.cls.decorator import deco_with_wraps, deco_without_wraps
+from examples.cls.decorator import deco_with_wraps, deco_without_wraps
 
 
 @deco_without_wraps

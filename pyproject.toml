@@ -17,7 +17,7 @@ classifiers = [
   "Topic :: Software Development :: Documentation",
 ]
 dynamic = ["version"]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = ["jinja2", "markdown", "mkdocs"]
 
 [project.urls]
@@ -90,7 +90,7 @@ ignore = [
 
 [tool.ruff.extend-per-file-ignores]
 "tests/*.py" = ["ANN", "D", "S101", "INP001", "T201", "PLR2004", "PGH003"]
-"src/mkapi/examples/*.py" = [
+"examples/*.py" = [
   "ANN",
   "ARG001",
   "D",

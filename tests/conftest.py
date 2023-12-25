@@ -1,6 +1,6 @@
 import pytest
 
-import mkapi.examples.styles.google as example
+import examples.styles.google as example
 
 
 @pytest.fixture(scope="session")

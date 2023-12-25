@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
+from examples.styles import google
 from mkapi.core.attribute import get_attributes, get_description
-from mkapi.examples.styles import google
 from mkapi.inspect import signature
 
 

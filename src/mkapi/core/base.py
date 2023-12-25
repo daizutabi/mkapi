@@ -1,7 +1,6 @@
 """A module provides entity classes to represent docstring structure."""
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from typing import Optional
 
 from mkapi.core import preprocess
 from mkapi.core.linker import LINK_PATTERN
@@ -11,9 +10,8 @@ from mkapi.core.linker import LINK_PATTERN
 class Base:
     """Base class.
 
-    Examples
-    --------
-        >>> base = Base('x', 'markdown')
+    Examples:
+        >>> base = Base("x", "markdown")
         >>> base
         Base('x')
         >>> bool(base)
@@ -30,35 +28,34 @@ class Base:
     name: str = ""  #: Name of self.
     markdown: str = ""  #: Markdown source.
     html: str = field(default="", init=False)  #: HTML output after conversion.
-    callback: Optional[Callable[["Base"], str]] = field(default=None, init=False)
+    callback: Callable[["Base"], str] | None = field(default=None, init=False)
     """Callback function to modify HTML output."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         class_name = self.__class__.__name__
         return f"{class_name}({self.name!r})"
 
     def __bool__(self) -> bool:
-        """Returns True if name is not empty."""
+        """Return True if name is not empty."""
         return bool(self.name)
 
     def __iter__(self) -> Iterator["Base"]:
-        """Yields self if markdown is not empty."""
+        """Yield self if markdown is not empty."""
         if self.markdown:
             yield self
 
-    def set_html(self, html: str):
-        """Sets HTML output.
+    def set_html(self, html: str) -> None:
+        """Set HTML output.
 
         Args:
-        ----
             html: HTML output.
         """
         self.html = html
         if self.callback:
             self.html = self.callback(self)
 
-    def copy(self):
-        """Returns a copy of the {class} instance."""
+    def copy(self):  # noqa: ANN201
+        """Return a copy of the {class} instance."""
         return self.__class__(name=self.name, markdown=self.markdown)
 
 
@@ -66,12 +63,11 @@ class Base:
 class Inline(Base):
     """Inline class.
 
-    Examples
-    --------
+    Examples:
         >>> inline = Inline()
         >>> bool(inline)
         False
-        >>> inline = Inline('markdown')
+        >>> inline = Inline("markdown")
         >>> inline.name == inline.markdown
         True
         >>> inline
@@ -89,31 +85,29 @@ class Inline(Base):
 
     markdown: str = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.markdown = self.name
 
-    def set_html(self, html: str):
-        """Sets `html` attribute cleaning `p` tags."""
+    def set_html(self, html: str) -> None:
+        """Set `html` attribute cleaning `p` tags."""
         html = preprocess.strip_ptags(html)
         super().set_html(html)
 
-    def copy(self):
+    def copy(self):  # noqa: ANN201, D102
         return self.__class__(name=self.name)
 
 
 @dataclass(repr=False)
 class Type(Inline):
-    """Type class represents type of Item_, Section_, Docstring_, or
-    [Object](mkapi.core.structure.Object).
+    """Type of Item_, Section_, Docstring_, or [Object](mkapi.core.structure.Object).
 
-    Examples
-    --------
-        >>> a = Type('str')
+    Examples:
+        >>> a = Type("str")
         >>> a
         Type('str')
         >>> list(a)
         []
-        >>> b = Type('[Object](base.Object)')
+        >>> b = Type("[Object](base.Object)")
         >>> b.markdown
         '[Object](base.Object)'
         >>> list(b)
@@ -124,7 +118,7 @@ class Type(Inline):
 
     markdown: str = field(default="", init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if LINK_PATTERN.search(self.name):
             self.markdown = self.name
         else:
@@ -133,8 +127,7 @@ class Type(Inline):
 
 @dataclass
 class Item(Type):
-    """Item class represents an item in Parameters, Attributes, and Raises sections,
-    *etc.*
+    """Item in Parameters, Attributes, and Raises sections, *etc.*.
 
     Args:
     ----
@@ -172,14 +165,14 @@ class Item(Type):
     description: Inline = field(default_factory=Inline)
     kind: str = ""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if isinstance(self.type, str):
             self.type = Type(self.type)
         if isinstance(self.description, str):
             self.description = Inline(self.description)
         super().__post_init__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         class_name = self.__class__.__name__
         return f"{class_name}({self.name!r}, {self.type.name!r})"
 
@@ -189,50 +182,46 @@ class Item(Type):
         yield from self.type
         yield from self.description
 
-    def set_html(self, html: str):
+    def set_html(self, html: str) -> None:
+        """Set `html` attribute cleaning `strong` tags."""
         html = html.replace("<strong>", "__").replace("</strong>", "__")
         super().set_html(html)
 
     def to_tuple(self) -> tuple[str, str, str]:
-        """Returns a tuple of (name, type, description).
+        """Return a tuple of (name, type, description).
 
-        Examples
-        --------
-            >>> item = Item('[x](x)', 'int', 'A parameter.')
+        Examples:
+            >>> item = Item("[x](x)", "int", "A parameter.")
             >>> item.to_tuple()
             ('[x](x)', 'int', 'A parameter.')
         """
         return self.name, self.type.name, self.description.name
 
-    def set_type(self, type: Type, force: bool = False):
-        """Sets type.
+    def set_type(self, type_: Type, *, force: bool = False) -> None:
+        """Set type.
 
         Args:
-        ----
-            item: Type instance.
+            type_: Type instance.
             force: If True, overwrite self regardless of existing type and
                 description.
 
         See Also:
-        --------
             * Item.update_
         """
         if not force and self.type.name:
             return
-        if type.name:
-            self.type = type.copy()
+        if type_.name:
+            self.type = type_.copy()
 
-    def set_description(self, description: Inline, force: bool = False):
-        """Sets description.
+    def set_description(self, description: Inline, *, force: bool = False) -> None:
+        """Set description.
 
         Args:
-        ----
             description: Inline instance.
             force: If True, overwrite self regardless of existing type and
                 description.
 
         See Also:
-        --------
             * Item.update_
         """
         if not force and self.description.name:
@@ -240,55 +229,53 @@ class Item(Type):
         if description.name:
             self.description = description.copy()
 
-    def update(self, item: "Item", force: bool = False):
-        """Updates type and description.
+    def update(self, item: "Item", *, force: bool = False) -> None:
+        """Update type and description.
 
         Args:
-        ----
             item: Item instance.
             force: If True, overwrite self regardless of existing type and
                 description.
 
         Examples:
-        --------
-            >>> item = Item('x')
-            >>> item2 = Item('x', 'int', 'description')
+            >>> item = Item("x")
+            >>> item2 = Item("x", "int", "description")
             >>> item.update(item2)
             >>> item.to_tuple()
             ('x', 'int', 'description')
-            >>> item2 = Item('x', 'str', 'new description')
+            >>> item2 = Item("x", "str", "new description")
             >>> item.update(item2)
             >>> item.to_tuple()
             ('x', 'int', 'description')
             >>> item.update(item2, force=True)
             >>> item.to_tuple()
             ('x', 'str', 'new description')
-            >>> item.update(Item('x'), force=True)
+            >>> item.update(Item("x"), force=True)
             >>> item.to_tuple()
             ('x', 'str', 'new description')
         """
         if item.name != self.name:
-            raise ValueError(f"Different name: {self.name} != {item.name}.")
-        self.set_description(item.description, force)
-        self.set_type(item.type, force)
+            msg = f"Different name: {self.name} != {item.name}."
+            raise ValueError(msg)
+        self.set_description(item.description, force=force)
+        self.set_type(item.type, force=force)
 
-    def copy(self):
-        return Item(*self.to_tuple(), kind=self.kind)
+    def copy(self):  # noqa: ANN201, D102
+        name, type_, desc = self.to_tuple()
+        return Item(name, Type(type_), Inline(desc), kind=self.kind)
 
 
 @dataclass
 class Section(Base):
-    """Section class represents a section in docstring.
+    """Section in docstring.
 
     Args:
-    ----
         items: List for Arguments, Attributes, or Raises sections, *etc.*
         type: Type of self.
 
     Examples:
-    --------
-        >>> items = [Item('x'), Item('[y](a)'), Item('z')]
-        >>> section = Section('Parameters', items=items)
+        >>> items = [Item("x"), Item("[y](a)"), Item("z")]
+        >>> section = Section("Parameters", items=items)
         >>> section
         Section('Parameters', num_items=3)
         >>> list(section)
@@ -296,22 +283,22 @@ class Section(Base):
     """
 
     items: list[Item] = field(default_factory=list)
-    type: Type = field(default_factory=Type)
+    type: Type = field(default_factory=Type)  # noqa: A003
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.markdown:
             self.markdown = preprocess.convert(self.markdown)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         class_name = self.__class__.__name__
         return f"{class_name}({self.name!r}, num_items={len(self.items)})"
 
-    def __bool__(self):
-        """Returns True if the number of items is larger than 0."""
+    def __bool__(self) -> bool:
+        """Return True if the number of items is larger than 0."""
         return len(self.items) > 0
 
     def __iter__(self) -> Iterator[Base]:
-        """Yields a Base_ instance that has non empty Markdown."""
+        """Yield a Base_ instance that has non empty Markdown."""
         yield from self.type
         if self.markdown:
             yield self
@@ -319,20 +306,18 @@ class Section(Base):
             yield from item
 
     def __getitem__(self, name: str) -> Item:
-        """Returns an Item_ instance whose name is equal to `name`.
+        """Return an Item_ instance whose name is equal to `name`.
 
         If there is no Item instance, a Item instance is newly created.
 
         Args:
-        ----
             name: Item name.
 
         Examples:
-        --------
-            >>> section = Section("", items=[Item('x')])
-            >>> section['x']
+            >>> section = Section("", items=[Item("x")])
+            >>> section["x"]
             Item('x', '')
-            >>> section['y']
+            >>> section["y"]
             Item('y', '')
             >>> section.items
             [Item('x', ''), Item('y', '')]
@@ -344,96 +329,86 @@ class Section(Base):
         self.items.append(item)
         return item
 
-    def __delitem__(self, name: str):
+    def __delitem__(self, name: str) -> None:
         """Delete an Item_ instance whose name is equal to `name`.
 
         Args:
-        ----
             name: Item name.
         """
         for k, item in enumerate(self.items):
             if item.name == name:
                 del self.items[k]
                 return
-        raise KeyError(f"name not found: {name}")
+        msg = f"name not found: {name}"
+        raise KeyError(msg)
 
     def __contains__(self, name: str) -> bool:
-        """Returns True if there is an [Item]() instance whose name is equal to `name`.
+        """Return True if there is an [Item]() instance whose name is equal to `name`.
 
         Args:
-        ----
             name: Item name.
         """
-        for item in self.items:
-            if item.name == name:
-                return True
-        return False
+        return any(item.name == name for item in self.items)
 
-    def set_item(self, item: Item, force: bool = False):
-        """Sets an [Item]().
+    def set_item(self, item: Item, *, force: bool = False) -> None:
+        """Set an [Item]().
 
         Args:
-        ----
             item: Item instance.
             force: If True, overwrite self regardless of existing item.
 
         Examples:
-        --------
-            >>> items = [Item('x', 'int'), Item('y', 'str', 'y')]
-            >>> section = Section('Parameters', items=items)
-            >>> section.set_item(Item('x', 'float', 'X'))
-            >>> section['x'].to_tuple()
+            >>> items = [Item("x", "int"), Item("y", "str", "y")]
+            >>> section = Section("Parameters", items=items)
+            >>> section.set_item(Item("x", "float", "X"))
+            >>> section["x"].to_tuple()
             ('x', 'int', 'X')
-            >>> section.set_item(Item('y', 'int', 'Y'), force=True)
-            >>> section['y'].to_tuple()
+            >>> section.set_item(Item("y", "int", "Y"), force=True)
+            >>> section["y"].to_tuple()
             ('y', 'int', 'Y')
-            >>> section.set_item(Item('z', 'float', 'Z'))
+            >>> section.set_item(Item("z", "float", "Z"))
             >>> [item.name for item in section.items]
             ['x', 'y', 'z']
 
         See Also:
-        --------
             * Section.update_
         """
         for k, x in enumerate(self.items):
             if x.name == item.name:
-                self.items[k].update(item, force)
+                self.items[k].update(item, force=force)
                 return
         self.items.append(item.copy())
 
-    def update(self, section: "Section", force: bool = False):
-        """Updates items.
+    def update(self, section: "Section", *, force: bool = False) -> None:
+        """Update items.
 
         Args:
-        ----
             section: Section instance.
             force: If True, overwrite items of self regardless of existing value.
 
         Examples:
-        --------
-            >>> s1 = Section('Parameters', items=[Item('a', 's'), Item('b', 'f')])
-            >>> s2 = Section('Parameters', items=[Item('a', 'i', 'A'), Item('x', 'd')])
+            >>> s1 = Section("Parameters", items=[Item("a", "s"), Item("b", "f")])
+            >>> s2 = Section("Parameters", items=[Item("a", "i", "A"), Item("x", "d")])
             >>> s1.update(s2)
-            >>> s1['a'].to_tuple()
+            >>> s1["a"].to_tuple()
             ('a', 's', 'A')
-            >>> s1['x'].to_tuple()
+            >>> s1["x"].to_tuple()
             ('x', 'd', '')
             >>> s1.update(s2, force=True)
-            >>> s1['a'].to_tuple()
+            >>> s1["a"].to_tuple()
             ('a', 'i', 'A')
             >>> s1.items
             [Item('a', 'i'), Item('b', 'f'), Item('x', 'd')]
         """
         for item in section.items:
-            self.set_item(item, force)
+            self.set_item(item, force=force)
 
-    def merge(self, section: "Section", force: bool = False) -> "Section":
-        """Returns a merged Section
+    def merge(self, section: "Section", *, force: bool = False) -> "Section":
+        """Return a merged Section.
 
-        Examples
-        --------
-            >>> s1 = Section('Parameters', items=[Item('a', 's'), Item('b', 'f')])
-            >>> s2 = Section('Parameters', items=[Item('a', 'i'), Item('c', 'd')])
+        Examples:
+            >>> s1 = Section("Parameters", items=[Item("a", "s"), Item("b", "f")])
+            >>> s2 = Section("Parameters", items=[Item("a", "i"), Item("c", "d")])
             >>> s3 = s1.merge(s2)
             >>> s3.items
             [Item('a', 's'), Item('b', 'f'), Item('c', 'd')]
@@ -445,7 +420,8 @@ class Section(Base):
             [Item('a', 'i'), Item('c', 'd'), Item('b', 'f')]
         """
         if section.name != self.name:
-            raise ValueError(f"Different name: {self.name} != {section.name}.")
+            msg = f"Different name: {self.name} != {section.name}."
+            raise ValueError(msg)
         merged = Section(self.name)
         for item in self.items:
             merged.set_item(item)
@@ -453,12 +429,11 @@ class Section(Base):
             merged.set_item(item, force=force)
         return merged
 
-    def copy(self):
-        """Returns a copy of the {class} instace.
+    def copy(self):  # noqa: ANN201
+        """Return a copy of the {class} instace.
 
-        Examples
-        --------
-            >>> s = Section('E', 'markdown', [Item('a', 's'), Item('b', 'i')])
+        Examples:
+            >>> s = Section("E", "markdown", [Item("a", "s"), Item("b", "i")])
             >>> s.copy()
             Section('E', num_items=2)
         """
@@ -471,15 +446,13 @@ SECTION_ORDER = ["Bases", "", "Parameters", "Attributes", "Returns", "Yields", "
 
 @dataclass
 class Docstring:
-    """Docstring class represents a docstring of an object.
+    """Docstring of an object.
 
     Args:
-    ----
         sections: List of Section instance.
         type: Type for Returns or Yields sections.
 
     Examples:
-    --------
         Empty docstring:
         >>> docstring = Docstring()
         >>> assert not docstring
@@ -502,38 +475,37 @@ class Docstring:
 
         Section ordering:
         >>> docstring = Docstring()
-        >>> _ = docstring['']
-        >>> _ = docstring['Todo']
-        >>> _ = docstring['Attributes']
-        >>> _ = docstring['Parameters']
+        >>> _ = docstring[""]
+        >>> _ = docstring["Todo"]
+        >>> _ = docstring["Attributes"]
+        >>> _ = docstring["Parameters"]
         >>> [section.name for section in docstring.sections]
         ['', 'Parameters', 'Attributes', 'Todo']
     """
 
     sections: list[Section] = field(default_factory=list)
-    type: Type = field(default_factory=Type)
+    type: Type = field(default_factory=Type)  # noqa: A003
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         class_name = self.__class__.__name__
         num_sections = len(self.sections)
         return f"{class_name}(num_sections={num_sections})"
 
-    def __bool__(self):
-        """Returns True if the number of sections is larger than 0."""
+    def __bool__(self) -> bool:
+        """Return True if the number of sections is larger than 0."""
         return len(self.sections) > 0
 
     def __iter__(self) -> Iterator[Base]:
-        """Yields [Base]() instance."""
+        """Yield [Base]() instance."""
         for section in self.sections:
             yield from section
 
     def __getitem__(self, name: str) -> Section:
-        """Returns a [Section]() instance whose name is equal to `name`.
+        """Return a [Section]() instance whose name is equal to `name`.
 
         If there is no Section instance, a Section instance is newly created.
 
         Args:
-        ----
             name: Section name.
         """
         for section in self.sections:
@@ -543,50 +515,47 @@ class Docstring:
         self.set_section(section)
         return section
 
-    def __contains__(self, name) -> bool:
-        """Returns True if there is a [Section]() instance whose name is
-        equal to `name`.
+    def __contains__(self, name: str) -> bool:
+        """Return True if there is a [Section]() instance whose name is equal to `name`.
 
         Args:
-        ----
             name: Section name.
         """
-        for section in self.sections:
-            if section.name == name:
-                return True
-        return False
+        return any(section.name == name for section in self.sections)
 
     def set_section(
         self,
         section: Section,
+        *,
         force: bool = False,
         copy: bool = False,
         replace: bool = False,
-    ):
-        """Sets a [Section]().
+    ) -> None:
+        """Set a [Section]().
 
         Args:
-        ----
             section: Section instance.
             force: If True, overwrite self regardless of existing seciton.
+            copy: If True, section is copied.
+            replace: If True,section is replaced.
 
         Examples:
         --------
-            >>> items = [Item('x', 'int'), Item('y', 'str', 'y')]
+            >>> items = [Item("x", "int"), Item("y", "str", "y")]
             >>> s1 = Section('Attributes', items=items)
-            >>> items = [Item('x', 'str', 'X'), Item('z', 'str', 'z')]
-            >>> s2 = Section('Attributes', items=items)
+            >>> items = [Item("x", "str", "X"), Item("z", "str", "z")]
+            >>> s2 = Section("Attributes", items=items)
             >>> doc = Docstring([s1])
             >>> doc.set_section(s2)
-            >>> doc['Attributes']['x'].to_tuple()
+            >>> doc["Attributes"]["x"].to_tuple()
             ('x', 'int', 'X')
-            >>> doc['Attributes']['z'].to_tuple()
+            >>> doc["Attributes"]["z"].to_tuple()
             ('z', 'str', 'z')
             >>> doc.set_section(s2, force=True)
-            >>> doc['Attributes']['x'].to_tuple()
+            >>> doc["Attributes"]["x"].to_tuple()
             ('x', 'str', 'X')
-            >>> items = [Item('x', 'X', 'str'), Item('z', 'z', 'str')]
-            >>> s3 = Section('Parameters', items=items)
+            >>> items = [Item("x", "X", "str"), Item("z", "z", "str")]
+            >>> s3 = Section("Parameters", items=items)
             >>> doc.set_section(s3)
             >>> doc.sections
             [Section('Parameters', num_items=2), Section('Attributes', num_items=3)]
