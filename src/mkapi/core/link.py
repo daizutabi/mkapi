@@ -15,12 +15,10 @@ def link(name: str, href: str) -> str:
     """Return Markdown link with a mark that indicates this link was created by MkAPI.
 
     Args:
-    ----
         name: Link name.
         href: Reference.
 
     Examples:
-    --------
         >>> link('abc', 'xyz')
         '[abc](!xyz)'
     """
@@ -31,12 +29,10 @@ def get_link(obj: type, *, include_module: bool = False) -> str:
     """Return Markdown link for object, if possible.
 
     Args:
-    ----
         obj: Object
         include_module: If True, link text includes module path.
 
     Examples:
-    --------
         >>> get_link(int)
         'int'
         >>> get_link(get_fullname)
@@ -64,13 +60,11 @@ def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: list[str]) -> 
     """Reutrn resolved link.
 
     Args:
-    ----
         markdown: Markdown source.
         abs_src_path: Absolute source path of Markdown.
         abs_api_paths: List of API paths.
 
     Examples:
-    --------
         >>> abs_src_path = '/src/examples/example.md'
         >>> abs_api_paths = ['/api/a','/api/b', '/api/b.c']
         >>> resolve_link('[abc](!b.c.d)', abs_src_path, abs_api_paths)
@@ -159,11 +153,9 @@ def resolve_object(html: str) -> dict[str, Any]:
     """Reutrn an object context dictionary.
 
     Args:
-    ----
         html: HTML source.
 
     Examples:
-    --------
         >>> resolve_object("<p><a href='a'>p</a><a href='b'>n</a></p>")
         {'heading_id': '', 'level': 0, 'prefix_url': 'a', 'name_url': 'b'}
         >>> resolve_object("<h2 id='i'><a href='a'>p</a><a href='b'>n</a></h2>")
@@ -177,12 +169,10 @@ def replace_link(obj: object, markdown: str) -> str:
     """Return a replaced link with object's full name.
 
     Args:
-    ----
         obj: Object that has a module.
         markdown: Markdown
 
     Examples:
-    --------
         >>> from mkapi.core.object import get_object
         >>> obj = get_object('mkapi.core.structure.Object')
         >>> replace_link(obj, '[Signature]()')

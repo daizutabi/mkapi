@@ -1,16 +1,18 @@
 """Filter functions."""
 
 
-def split_filters(name):
-    """Examples:
-    >>> split_filters("a.b.c")
-    ('a.b.c', [])
-    >>> split_filters("a.b.c|upper|strict")
-    ('a.b.c', ['upper', 'strict'])
-    >>> split_filters("|upper|strict")
-    ('', ['upper', 'strict'])
-    >>> split_filters("")
-    ('', [])
+def split_filters(name: str) -> tuple[str, list[str]]:
+    """Split filters written after `|`s.
+
+    Examples:
+        >>> split_filters("a.b.c")
+        ('a.b.c', [])
+        >>> split_filters("a.b.c|upper|strict")
+        ('a.b.c', ['upper', 'strict'])
+        >>> split_filters("|upper|strict")
+        ('', ['upper', 'strict'])
+        >>> split_filters("")
+        ('', [])
     """
     index = name.find("|")
     if index == -1:
@@ -20,15 +22,17 @@ def split_filters(name):
 
 
 def update_filters(org: list[str], update: list[str]) -> list[str]:
-    """Examples:
-    >>> update_filters(['upper'], ['lower'])
-    ['lower']
-    >>> update_filters(['lower'], ['upper'])
-    ['upper']
-    >>> update_filters(['long'], ['short'])
-    ['short']
-    >>> update_filters(['short'], ['long'])
-    ['long']
+    """Update filters.
+
+    Examples:
+        >>> update_filters(['upper'], ['lower'])
+        ['lower']
+        >>> update_filters(['lower'], ['upper'])
+        ['upper']
+        >>> update_filters(['long'], ['short'])
+        ['short']
+        >>> update_filters(['short'], ['long'])
+        ['long']
     """
     filters = org + update
     for x, y in [["lower", "upper"], ["long", "short"]]:

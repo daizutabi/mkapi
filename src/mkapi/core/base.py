@@ -130,14 +130,12 @@ class Item(Type):
     """Item in Parameters, Attributes, and Raises sections, *etc.*.
 
     Args:
-    ----
         type: Type of self.
         description: Description of self.
         kind: Kind of self, for example `readonly property`. This value is rendered
             as a class attribute in HTML.
 
     Examples:
-    --------
         >>> item = Item('[x](x)', Type('int'), Inline('A parameter.'))
         >>> item
         Item('[x](x)', 'int')
@@ -540,7 +538,6 @@ class Docstring:
             replace: If True,section is replaced.
 
         Examples:
-        --------
             >>> items = [Item("x", "int"), Item("y", "str", "y")]
             >>> s1 = Section('Attributes', items=items)
             >>> items = [Item("x", "str", "X"), Item("z", "str", "z")]
