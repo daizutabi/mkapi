@@ -83,12 +83,10 @@ def resolve_forward_ref(name: str, obj: object) -> str:
     """Return a resolved name for `str` or `typing.ForwardRef`.
 
     Args:
-    ----
         name: Forward reference name.
         obj: Object
 
     Examples:
-    --------
         >>> from mkapi.core.base import Docstring
         >>> resolve_forward_ref('Docstring', Docstring)
         '[Docstring](!mkapi.core.base.Docstring)'
@@ -111,12 +109,10 @@ def resolve_orign_args(tp, obj: object = None) -> str:  # noqa: ANN001
     """Return string expression for X[Y, Z, ...].
 
     Args:
-    ----
         tp: type
         obj: Object
 
     Examples:
-    --------
         >>> resolve_orign_args(list[str])
         'list[str]'
         >>> from typing import List, Tuple
@@ -160,11 +156,9 @@ def _to_string_for_yields(tp, obj: object) -> str:  # noqa: ANN001
 #     """Return "A of B" style string.
 
 #     Args:
-#     ----
 #         annotation: Annotation
 
 #     Examples:
-#     --------
 #         >>> from typing import List, Iterable, Iterator
 #         >>> a_of_b(List[str])
 #         'list of str'
@@ -191,11 +185,9 @@ def _to_string_for_yields(tp, obj: object) -> str:  # noqa: ANN001
 #     """Return a string for union annotation.
 
 #     Args:
-#     ----
 #         annotation: Annotation
 
 #     Examples:
-#     --------
 #         >>> from typing import List, Optional, Tuple, Union
 #         >>> union(Optional[List[str]])
 #         'list of str, optional'
@@ -228,11 +220,9 @@ def _to_string_for_yields(tp, obj: object) -> str:  # noqa: ANN001
 #     """Return a string for callable and generator annotation.
 
 #     Args:
-#     ----
 #         annotation: Annotation
 
 #     Examples:
-#     --------
 #         >>> from typing import Callable, List, Tuple, Any
 #         >>> from typing import Generator, AsyncGenerator
 #         >>> to_string_args(Callable[[int, List[str]], Tuple[int, int]])
