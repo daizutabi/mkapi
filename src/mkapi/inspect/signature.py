@@ -7,7 +7,7 @@ from typing import Any
 from mkapi.core import preprocess
 from mkapi.core.base import Inline, Item, Section, Type
 from mkapi.inspect.attribute import get_attributes
-from mkapi.inspect.typing import to_string
+from mkapi.inspect.typing import type_string
 
 
 @dataclass
@@ -48,8 +48,8 @@ class Signature:
         self.parameters = Section("Parameters", items=items)
         self.set_attributes()
         return_type = self.signature.return_annotation
-        self.returns = to_string(return_type, kind="returns", obj=self.obj)
-        self.yields = to_string(return_type, kind="yields", obj=self.obj)
+        self.returns = type_string(return_type, kind="returns", obj=self.obj)
+        self.yields = type_string(return_type, kind="yields", obj=self.obj)
 
     def __contains__(self, name: str) -> bool:
         return name in self.parameters
@@ -88,7 +88,7 @@ class Signature:
         """
         items = []
         for name, (tp, description) in get_attributes(self.obj).items():
-            type_str = to_string(tp, obj=self.obj) if tp else ""
+            type_str = type_string(tp, obj=self.obj) if tp else ""
             if not type_str:
                 type_str, description = preprocess.split_type(description)  # noqa: PLW2901
 
@@ -122,16 +122,16 @@ def get_parameters(obj) -> tuple[list[Item], dict[str, Any]]:  # noqa: ANN001
             key = f"**{name}"
         else:
             key = name
-        type_ = to_string(parameter.annotation, obj=obj)
+        type_str = type_string(parameter.annotation, obj=obj)
         if (default := parameter.default) == inspect.Parameter.empty:
             defaults[key] = default
         else:
             defaults[key] = f"{default!r}"
-            if not type_:
-                type_ = "optional"
-            elif not type_.endswith(", optional"):
-                type_ += ", optional"
-        items.append(Item(key, Type(type_)))
+            if not type_str:
+                type_str = "optional"
+            elif not type_str.endswith(", optional"):
+                type_str += ", optional"
+        items.append(Item(key, Type(type_str)))
 
     return items, defaults
 

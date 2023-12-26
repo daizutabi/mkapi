@@ -63,7 +63,7 @@ doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
 omit = ["src/mkapi/__about__.py"]
 
 [tool.coverage.report]
-exclude_lines = ["no cov"]
+exclude_lines = ["no cov", "raise NotImplementedError"]
 
 [tool.hatch.envs.docs]
 dependencies = ["mkdocs", "mkdocs-material"]

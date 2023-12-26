@@ -8,12 +8,12 @@ import importlib
 import inspect
 from ast import AST
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, TypeGuard
 
-from mkapi.core import preprocess
+from mkapi.core.preprocess import join_without_indent
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
     from types import ModuleType
 
     from _typeshed import DataclassInstance
@@ -106,20 +106,18 @@ def get_description(lines: list[str], lineno: int) -> str:
     return ""
 
 
-def get_source(obj) -> str:
+def get_source(obj) -> str:  # noqa: ANN001
+    """Return the text of the source code for an object without exception."""
     try:
-        source = inspect.getsource(obj) or ""
-        if not source:
-            return ""
-    except (OSError, TypeError):
+        return inspect.getsource(obj)
+    except OSError:
         return ""
-    else:
-        return source
 
 
 def get_attributes_with_lineno(
-    nodes: Iterable[ast.AST],
-    module,
+    nodes: Iterable[AST],
+    module: ModuleType,
+    *,
     is_module: bool = False,
 ) -> list[tuple[str, int, Any]]:
     attr_dict: dict[tuple[str, int], Any] = {}
@@ -172,29 +170,26 @@ def get_attributes_dict(
     return attrs
 
 
-def get_class_attributes(cls) -> dict[str, tuple[Any, str]]:
-    """Returns a dictionary that maps attribute name to a tuple of
-    (type, description).
+def get_class_attributes(cls: type[Any]) -> dict[str, tuple[Any, str]]:
+    """Return a dictionary that maps attribute name to a tuple of (type, description).
 
     Args:
         cls: Class object.
 
     Examples:
-        >>> from examples.google_style import ExampleClass
-        >>> attrs = get_class_attributes(ExampleClass)
-        >>> attrs['a'][0] is str
+        >>> from mkapi.core.base import Base
+        >>> attrs = get_class_attributes(Base)
+        >>> attrs["name"][0] is str
         True
-        >>> attrs['a'][1]
-        'The first attribute. Comment *inline* with attribute.'
-        >>> attrs['b'][0] == Dict[str, int]
-        True
-        >>> attrs['c'][0] is None
+        >>> attrs["name"][1]
+        'Name of self.'
+        >>> attrs["callback"][0]
         True
     """
     source = get_source(cls)
     if not source:
         return {}
-    source = preprocess.join(source.split("\n"))
+    source = join_without_indent(source.split("\n"))
     node = ast.parse(source)
     nodes = ast.walk(node)
     module = importlib.import_module(cls.__module__)
@@ -224,12 +219,12 @@ def get_dataclass_attributes(
             attrs[field.name] = field.type, ""
 
     source = get_source(cls)
-    source = preprocess.join(source.split("\n"))
+    source = join_without_indent(source.split("\n"))
     if not source:
         return {}
     node = ast.parse(source).body[0]
 
-    def nodes():
+    def nodes() -> Iterator[AST]:
         for x in ast.iter_child_nodes(node):
             if isinstance(x, _ast.FunctionDef):
                 break
@@ -237,11 +232,11 @@ def get_dataclass_attributes(
 
     module = importlib.import_module(cls.__module__)
     attr_lineno = get_attributes_with_lineno(nodes(), module)
-    for name, (type, description) in get_attributes_dict(attr_lineno, source).items():
+    for name, (type_, description) in get_attributes_dict(attr_lineno, source).items():
         if name in attrs:
             attrs[name] = attrs[name][0], description
         else:
-            attrs[name] = type, description
+            attrs[name] = type_, description
 
     return attrs
 
@@ -267,6 +262,18 @@ def get_module_attributes(module: ModuleType) -> dict[str, tuple[Any, str]]:
     return get_attributes_dict(attr_lineno, source)
 
 
+def isdataclass(obj: object) -> TypeGuard[type[DataclassInstance]]:
+    """Return True if obj is a dataclass."""
+    return dataclasses.is_dataclass(obj) and isinstance(obj, type)
+
+
+ATTRIBUTES_FUNCTIONS = [
+    (isdataclass, get_dataclass_attributes),
+    (inspect.isclass, get_class_attributes),
+    (inspect.ismodule, get_module_attributes),
+]
+
+
 @lru_cache(maxsize=1000)
 def get_attributes(obj: object) -> dict[str, tuple[Any, str]]:
     """Return a dictionary that maps attribute name to a tuple of (type, description).
@@ -277,10 +284,7 @@ def get_attributes(obj: object) -> dict[str, tuple[Any, str]]:
     See Also:
         get_class_attributes_, get_dataclass_attributes_, get_module_attributes_.
     """
-    if dataclasses.is_dataclass(obj) and isinstance(obj, type):
-        return get_dataclass_attributes(obj)
-    if inspect.isclass(obj):
-        return get_class_attributes(obj)
-    if inspect.ismodule(obj):
-        return get_module_attributes(obj)
+    for is_, get in ATTRIBUTES_FUNCTIONS:
+        if is_(obj):
+            return get(obj)
     return {}

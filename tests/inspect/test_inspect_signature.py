@@ -1,14 +1,8 @@
 import inspect
-from collections.abc import Callable
 
 import pytest
 
-from mkapi.inspect.signature import (
-    Signature,
-    get_parameters,
-    get_signature,
-    to_string,
-)
+from mkapi.inspect.signature import Signature, get_parameters, get_signature
 
 
 def test_get_parameters_error():
@@ -55,12 +49,6 @@ def test_dataclass(ExampleDataClass):  # noqa: N803
     s = Signature(ExampleDataClass)
     assert s.attributes["x"].to_tuple()[1] == "int"
     assert s.attributes["y"].to_tuple()[1] == "int"
-
-
-def test_to_string():
-    assert to_string(list) == "list"
-    assert to_string(tuple) == "tuple"
-    assert to_string(dict) == "dict"
 
 
 def test_var():
