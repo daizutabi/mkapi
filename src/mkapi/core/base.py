@@ -28,7 +28,8 @@ class Base:
     name: str = ""  #: Name of self.
     markdown: str = ""  #: Markdown source.
     html: str = field(default="", init=False)  #: HTML output after conversion.
-    callback: Callable[["Base"], str] | None = field(default=None, init=False)
+    # callback: Callable[["Base"], str] | None = field(default=None, init=False)
+    callback: Callable[..., str] | None = field(default=None, init=False)
     """Callback function to modify HTML output."""
 
     def __repr__(self) -> str:
