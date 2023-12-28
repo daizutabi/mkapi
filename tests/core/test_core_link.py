@@ -13,8 +13,8 @@ def test_get_link_private():
     m = "test_core_link"
     assert link.get_link(A) == f"[{q}](!{m}.{q})"
     assert link.get_link(A, include_module=True) == f"[{m}.{q}](!{m}.{q})"
-    assert link.get_link(A.func) == f"[{q}.func](!{m}.{q}.func)"
-    assert link.get_link(A._private) == f"{q}._private"
+    assert link.get_link(A.func) == f"[{q}.func](!{m}.{q}.func)"  # type: ignore
+    assert link.get_link(A._private) == f"{q}._private"  # type: ignore  # noqa: SLF001
 
 
 def test_resolve_link():
