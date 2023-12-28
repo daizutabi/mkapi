@@ -6,11 +6,11 @@ def test_get_link_private():
         def func(self):
             pass
 
-        def _private():
+        def _private(self):
             pass
 
     q = "test_get_link_private.<locals>.A"
-    m = "test_core_linker"
+    m = "test_core_link"
     assert link.get_link(A) == f"[{q}](!{m}.{q})"
     assert link.get_link(A, include_module=True) == f"[{m}.{q}](!{m}.{q})"
     assert link.get_link(A.func) == f"[{q}.func](!{m}.{q}.func)"
@@ -21,10 +21,6 @@ def test_resolve_link():
     assert link.resolve_link("[A](!!a)", "", []) == "[A](a)"
     assert link.resolve_link("[A](!a)", "", []) == "A"
     assert link.resolve_link("[A](a)", "", []) == "[A](a)"
-
-
-def test_resolve_href():
-    assert link.resolve_href("", "", []) == ""
 
 
 def test_resolve_object():
