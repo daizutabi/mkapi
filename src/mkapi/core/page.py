@@ -1,4 +1,4 @@
-"""Provide a Page class that works with other converter."""
+"""Page class that works with other converter."""
 import re
 from collections.abc import Iterator
 from dataclasses import InitVar, dataclass, field
@@ -12,10 +12,8 @@ from mkapi.core.link import resolve_link
 from mkapi.core.node import Node, get_node
 
 MKAPI_PATTERN = re.compile(r"^(#*) *?!\[mkapi\]\((.+?)\)$", re.MULTILINE)
-NODE_PATTERN = re.compile(
-    r"<!-- mkapi:begin:(\d+):\[(.*?)\] -->(.*?)<!-- mkapi:end -->",
-    re.MULTILINE | re.DOTALL,
-)
+pattern = r"<!-- mkapi:begin:(\d+):\[(.*?)\] -->(.*?)<!-- mkapi:end -->"
+NODE_PATTERN = re.compile(pattern, re.MULTILINE | re.DOTALL)
 
 
 @dataclass
@@ -23,13 +21,11 @@ class Page:
     """Page class works with [MkapiPlugin](mkapi.plugins.mkdocs.MkapiPlugin).
 
     Args:
-    ----
         source (str): Markdown source.
         abs_src_path: Absolute source path of Markdown.
         abs_api_paths: A list of API paths.
 
     Attributes:
-    ----------
         markdown: Converted Markdown including API documentation.
         nodes: A list of Node instances.
     """
@@ -49,18 +45,17 @@ class Page:
     def __post_init__(self, source: str) -> None:
         self.markdown = "\n\n".join(self.split(source))
 
-    def resolve_link(self, markdown: str) -> str:
+    def resolve_link(self, markdown: str) -> str:  # noqa: D102
         return resolve_link(markdown, self.abs_src_path, self.abs_api_paths)
 
-    def resolve_link_from_base(self, base: Base) -> str:
+    def resolve_link_from_base(self, base: Base) -> str:  # noqa: D102
         if isinstance(base, Section) and base.name in ["Example", "Examples"]:
             return base.markdown
         return resolve_link(base.markdown, self.abs_src_path, self.abs_api_paths)
 
-    def split(self, source: str) -> Iterator[str]:
-        cursor = 0
+    def split(self, source: str) -> Iterator[str]:  # noqa: D102
         callback = self.resolve_link_from_base
-        index = 0
+        cursor = index = 0
         for match in MKAPI_PATTERN.finditer(source):
             start, end = match.start(), match.end()
             if cursor < start:
@@ -98,7 +93,6 @@ class Page:
         """Return updated HTML to [MkapiPlugin](mkapi.plugins.mkdocs.MkapiPlugin).
 
         Args:
-        ----
             html: Input HTML converted by MkDocs.
         """
 
