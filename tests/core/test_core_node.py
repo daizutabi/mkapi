@@ -3,42 +3,43 @@ from mkapi.core.node import get_kind, get_node, get_node_from_module, is_member
 
 
 def test_generator():
-    node = get_node("google_style.gen")
+    node = get_node("examples.styles.google.gen")
     assert node.object.kind == "generator"
 
 
 def test_class():
-    node = get_node("google_style.ExampleClass")
-    assert node.object.prefix == "google_style"
+    node = get_node("examples.styles.google.ExampleClass")
+    assert node.object.prefix == "examples.styles.google"
     assert node.object.name == "ExampleClass"
     assert node.object.kind == "class"
     assert len(node) == 3
     p = node.members[-1]
-    assert p.object.type.name == "list of int"
+    assert p.object.type.name == "list[int]"
     assert p.docstring.sections[0].markdown.startswith("Read-write property")
 
 
 def test_dataclass():
-    node = get_node("google_style.ExampleDataClass")
-    assert node.object.prefix == "google_style"
+    node = get_node("examples.styles.google.ExampleDataClass")
+    assert node.object.prefix == "examples.styles.google"
     assert node.object.name == "ExampleDataClass"
     assert node.object.kind == "dataclass"
 
 
 def test_is_member_private():
     class A:
-        def _private():
+        def _private(self):
             pass
 
-        def func():
+        def func(self):
             pass
 
     class B(A):
-        def _private():
+        def _private(self):
             pass
 
-    assert is_member(A._private) == -1
+    assert is_member(A._private) == -1  # noqa: SLF001
     assert is_member(A.func) == 0
+    assert is_member(B.func) == 0
 
 
 def test_is_member_source_file_index():
@@ -61,7 +62,7 @@ def test_get_markdown():
     x = "[mkapi.core.base](!mkapi.core.base).[Base](!mkapi.core.base.Base)"
     assert parts[0] == "## " + x
 
-    def callback(base):
+    def callback(_):
         return "123"
 
     markdown = node.get_markdown(callback=callback)
@@ -124,22 +125,22 @@ def test_get_node_from_module():
 
 
 def test_get_markdown_bases():
-    node = get_node("examples.appendix.inherit.Sub")
+    node = get_node("examples.cls.inherit.Sub")
     markdown = node.get_markdown()
     parts = [x.strip() for x in markdown.split("<!-- mkapi:sep -->")]
-    x = "[examples.appendix.inherit.Base]"
+    x = "[examples.cls.inherit.Base]"
     assert parts[1].startswith(x)
 
 
 def test_set_html_and_render_bases():
-    node = get_node("examples.appendix.inherit.Sub")
+    node = get_node("examples.cls.inherit.Sub")
     markdown = node.get_markdown()
     sep = "<!-- mkapi:sep -->"
     n = len(markdown.split(sep))
     html = sep.join(str(x) for x in range(n))
     node.set_html(html)
     html = node.get_html()
-    assert "mkapi-section-bases"
+    assert "mkapi-section bases" in html
 
 
 def test_decorated_member():
@@ -183,6 +184,7 @@ def test_short_filter():
     n = len(markdown.split(sep))
     html = sep.join(str(x) for x in range(n))
     node.set_html(html)
-    h = node.get_html(filters=["short"])
-    assert '"mkapi-object-body dataclass top"><code class="mkapi-object-name">Base' in h
-    assert "prefix" not in h
+    html = node.get_html(filters=["short"])
+    sub = '"mkapi-object-body dataclass top"><code class="mkapi-object-name">Base'
+    assert sub in html
+    assert "prefix" not in html
