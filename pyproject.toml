@@ -54,10 +54,8 @@ addopts = [
   "--doctest-modules",
   "--cov=mkapi",
   "--cov-report=lcov:lcov.info",
-  # "--cov-report=term:skip-covered",
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
-# testpaths = ["tests", "src/mkapi"]
 
 [tool.coverage.run]
 omit = ["src/mkapi/__about__.py"]

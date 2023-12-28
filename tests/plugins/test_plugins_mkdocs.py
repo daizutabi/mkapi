@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 from mkdocs.config import load_config
@@ -12,48 +13,42 @@ import mkapi
 
 @pytest.fixture(scope="module")
 def config_file():
-    root = os.path.join(mkapi.__file__, "../..")
-    config_file = os.path.join(root, "mkdocs.yml")
-    config_file = os.path.normpath(config_file)
-    return config_file
+    root = Path(mkapi.__file__).parent.parent
+    config_file = root / "mkdocs.yml"
+    return os.path.normpath(config_file)
 
 
 @pytest.fixture(scope="module")
 def config(config_file):
     config = load_config(config_file)
     plugin = config["plugins"]["mkapi"]
-    config = plugin.on_config(config)
-    return config
+    return plugin.on_config(config)
 
 
 @pytest.fixture(scope="module")
 def plugin(config):
-    plugin = config["plugins"]["mkapi"]
-    return plugin
+    return config["plugins"]["mkapi"]
 
 
 @pytest.fixture(scope="module")
 def env(config):
-    env = config["theme"].get_env()
-    return env
+    return config["theme"].get_env()
 
 
 @pytest.fixture(scope="module")
 def files(config, plugin, env):
     files = get_files(config)
     files.add_files_from_theme(env, config)
-    files = plugin.on_files(files, config)
-    return files
+    return plugin.on_files(files, config)
 
 
 @pytest.fixture(scope="module")
-def nav(config, plugin, files):
-    nav = get_navigation(files, config)
-    return nav
+def nav(config, files):
+    return get_navigation(files, config)
 
 
 def test_plugins_mkdocs_config_file(config_file):
-    assert os.path.exists(config_file)
+    assert Path(config_file).exists()
 
 
 def test_plugins_mkdocs_config(config):
@@ -61,9 +56,10 @@ def test_plugins_mkdocs_config(config):
 
 
 def test_plugins_mkdocs_build():
-    def run(command):
-        assert subprocess.run(command.split()).returncode == 0
+    def run(command: str):
+        args = command.split()
+        assert subprocess.run(args, check=False).returncode == 0  # noqa: S603
 
-    if os.path.exists("docs/api"):
+    if Path("docs/api").exists():
         shutil.rmtree("docs/api")
     run("mkdocs build")

@@ -1,6 +1,4 @@
-"""This module provides Renderer class that renders Node instance
-to create API documentation.
-"""
+"""Renderer class that renders Node instance to create API documentation."""
 import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
