@@ -169,7 +169,7 @@ def get_dataclass_attributes(cls: type) -> dict[str, tuple[Any, str]]:
     source = getsource_dedent(cls)
     module = inspect.getmodule(cls)
     if not source or not module:
-        raise NotImplementedError  # return {}
+        return {}
 
     node = ast.parse(source).body[0]
     nodes = _nodeiter_before_function(node)
@@ -195,7 +195,7 @@ def get_class_attributes(cls: type) -> dict[str, tuple[Any, str]]:
     source = getsource_dedent(cls)
     module = inspect.getmodule(cls)
     if not source or not module:
-        raise NotImplementedError  # return {}
+        return {}
 
     node = ast.parse(source)
     nodes = ast.walk(node)
@@ -217,7 +217,7 @@ def get_module_attributes(module: ModuleType) -> dict[str, tuple[Any, str]]:
     """
     source = getsource_dedent(module)
     if not source:
-        raise NotImplementedError  # return {}
+        return {}
 
     node = ast.parse(source)
     nodes = ast.iter_child_nodes(node)
@@ -250,4 +250,4 @@ def get_attributes(obj: object) -> dict[str, tuple[Any, str]]:
     for is_, get in ATTRIBUTES_FUNCTIONS:
         if is_(obj):
             return get(obj)
-    raise NotImplementedError  # return {}
+    return {}
