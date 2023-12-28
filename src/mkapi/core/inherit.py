@@ -1,4 +1,4 @@
-"""This module implements the functionality of docstring inheritance."""
+"""Functionality of docstring inheritance."""
 from collections.abc import Iterator
 
 from mkapi.core.base import Section
@@ -7,7 +7,7 @@ from mkapi.core.object import get_mro
 
 
 def get_section(node: Node, name: str, mode: str) -> Section:
-    """Returns a tuple of (docstring section, signature section).
+    """Return a tuple of (docstring section, signature section).
 
     Args:
         node: Node instance.
@@ -15,27 +15,24 @@ def get_section(node: Node, name: str, mode: str) -> Section:
         mode: Mode name: `Docstring` or `Signature`.
 
     Examples:
-        >>> node = get_node('mkapi.core.base.Type')
-        >>> section = get_section(node, 'Parameters', 'Docstring')
-        >>> 'name' in section
+        >>> node = get_node("mkapi.core.base.Type")
+        >>> section = get_section(node, "Parameters", "Docstring")
+        >>> "name" in section
         True
-        >>> section['name'].to_tuple()
+        >>> section["name"].to_tuple()
         ('name', 'str, optional', '')
     """
     if mode == "Docstring":
         if name in node.docstring:
             return node.docstring[name]
-        else:
-            return Section(name)
-    else:
-        if hasattr(node.object.signature, name.lower()):
-            return node.object.signature[name]
-        else:
-            return Section(name)
+        return Section(name)
+    if hasattr(node.object.signature, name.lower()):
+        return node.object.signature[name]
+    return Section(name)
 
 
 def is_complete(node: Node, name: str = "both") -> bool:
-    """Returns True if docstring is complete.
+    """Return True if docstring is complete.
 
     Args:
         node: Node instance.
@@ -44,10 +41,10 @@ def is_complete(node: Node, name: str = "both") -> bool:
 
     Examples:
         >>> from mkapi.core.object import get_object
-        >>> node = Node(get_object('mkapi.core.base.Base'))
-        >>> is_complete(node, 'Parameters')
+        >>> node = Node(get_object("mkapi.core.base.Base"))
+        >>> is_complete(node, "Parameters")
         True
-        >>> node = Node(get_object('mkapi.core.base.Type'))
+        >>> node = Node(get_object("mkapi.core.base.Type"))
         >>> is_complete(node)
         False
     """
@@ -61,14 +58,11 @@ def is_complete(node: Node, name: str = "both") -> bool:
             return False
     if not doc_section:
         return True
-    for item in doc_section.items:
-        if not item.description.name:
-            return False
-    return True
+    return all(item.description.name for item in doc_section.items)
 
 
-def inherit_base(node: Node, base: Node, name: str = "both"):
-    """Inherits Parameters or Attributes section from base class.
+def inherit_base(node: Node, base: Node, name: str = "both") -> None:
+    """Inherit Parameters or Attributes section from base class.
 
     Args:
         node: Node instance.
@@ -78,12 +72,12 @@ def inherit_base(node: Node, base: Node, name: str = "both"):
 
     Examples:
         >>> from mkapi.core.object import get_object
-        >>> base = Node(get_object('mkapi.core.base.Base'))
-        >>> node = Node(get_object('mkapi.core.base.Type'))
-        >>> node.docstring['Parameters']['name'].to_tuple()
+        >>> base = Node(get_object("mkapi.core.base.Base"))
+        >>> node = Node(get_object("mkapi.core.base.Type"))
+        >>> node.docstring["Parameters"]["name"].to_tuple()
         ('name', 'str, optional', '')
         >>> inherit_base(node, base)
-        >>> node.docstring['Parameters']['name'].to_tuple()
+        >>> node.docstring["Parameters"]["name"].to_tuple()
         ('name', 'str, optional', 'Name of self.')
     """
     if name == "both":
@@ -96,11 +90,7 @@ def inherit_base(node: Node, base: Node, name: str = "both"):
     section = base_section.merge(node_section, force=True)
     if name == "Parameters":
         sig_section = get_section(node, name, "Signature")
-        items = []
-        for item in section.items:
-            if item.name in sig_section:
-                items.append(item)
-
+        items = [item for item in section.items if item.name in sig_section]
         section.items = items
     if section:
         node.docstring.set_section(section, replace=True)
@@ -138,7 +128,7 @@ def get_bases(node: Node) -> Iterator[tuple[Node, Iterator[Node]]]:
 
 
 def inherit(node: Node) -> None:
-    """Inherits Parameters and Attributes from superclasses.
+    """Inherit Parameters and Attributes from superclasses.
 
     Args:
         node: Node instance.
