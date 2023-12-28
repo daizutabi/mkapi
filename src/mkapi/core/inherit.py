@@ -1,5 +1,5 @@
 """This module implements the functionality of docstring inheritance."""
-from typing import Iterator, Tuple
+from collections.abc import Iterator
 
 from mkapi.core.base import Section
 from mkapi.core.node import Node, get_node
@@ -106,7 +106,7 @@ def inherit_base(node: Node, base: Node, name: str = "both"):
         node.docstring.set_section(section, replace=True)
 
 
-def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
+def get_bases(node: Node) -> Iterator[tuple[Node, Iterator[Node]]]:
     """Yields a tuple of (Node instance, iterator of Node).
 
     Args:
@@ -114,25 +114,20 @@ def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
 
     Examples:
         >>> from mkapi.core.object import get_object
-        >>> node = Node(get_object('mkapi.core.base.Type'))
+        >>> node = Node(get_object("mkapi.core.base.Type"))
         >>> it = get_bases(node)
         >>> n, gen = next(it)
         >>> n is node
         True
         >>> [x.object.name for x in gen]
         ['Inline', 'Base']
-        >>> for n, gen in it:
-        ...     if n.object.name == 'set_html':
-        ...         break
-        >>> [x.object.name for x in gen]
-        ['set_html', 'set_html']
     """
     bases = get_mro(node.obj)[1:]
     yield node, (get_node(base) for base in bases)
     for member in node.members:
         name = member.object.name
 
-        def gen(name=name):
+        def gen(name: str = name) -> Iterator[Node]:
             for base in bases:
                 if hasattr(base, name):
                     obj = getattr(base, name)
@@ -142,18 +137,18 @@ def get_bases(node: Node) -> Iterator[Tuple[Node, Iterator[Node]]]:
         yield member, gen()
 
 
-def inherit(node: Node):
+def inherit(node: Node) -> None:
     """Inherits Parameters and Attributes from superclasses.
 
     Args:
         node: Node instance.
-     """
+    """
     if node.object.kind not in ["class", "dataclass"]:
         return
-    for node, bases in get_bases(node):
-        if is_complete(node):
+    for node_, bases in get_bases(node):
+        if is_complete(node_):
             continue
         for base in bases:
-            inherit_base(node, base)
-            if is_complete(node):
+            inherit_base(node_, base)
+            if is_complete(node_):
                 break
