@@ -2,18 +2,16 @@
 import abc
 import importlib
 import inspect
-from typing import Any, List, Tuple
+from typing import Any
 
 
-def get_object(name: str) -> Any:
+def get_object(name: str) -> Any:  # noqa: ANN401
     """Reutrns an object specified by `name`.
 
     Args:
-    ----
         name: Object name.
 
     Examples:
-    --------
         >>> import inspect
         >>> obj = get_object('mkapi.core')
         >>> inspect.ismodule(obj)
@@ -38,36 +36,31 @@ def get_object(name: str) -> Any:
         for attr in names[k:]:
             obj = getattr(obj, attr)
         return obj
-    raise ValueError(f"Could not find object: {name}")
+    msg = f"Could not find object: {name}"
+    raise ValueError(msg)
 
 
-def get_fullname(obj: Any, name: str) -> str:
+def get_fullname(obj: object, name: str) -> str:
     """Reutrns an object full name specified by `name`.
 
     Args:
-    ----
         obj: Object that has a module.
         name: Object name in the module.
 
     Examples:
-    --------
-        >>> obj = get_object('mkapi.core.base.Item')
-        >>> get_fullname(obj, 'Section')
+        >>> obj = get_object("mkapi.core.base.Item")
+        >>> get_fullname(obj, "Section")
         'mkapi.core.base.Section'
-        >>> get_fullname(obj, 'preprocess')
-        'mkapi.core.preprocess'
+        >>> get_fullname(obj, "add_fence")
+        'mkapi.core.preprocess.add_fence'
         >>> get_fullname(obj, 'abc')
         ''
     """
-    if not hasattr(obj, "__module__"):
-        return ""
-    obj = importlib.import_module(obj.__module__)
-    names = name.split(".")
-
-    for name in names:
-        if not hasattr(obj, name):
+    obj = inspect.getmodule(obj)
+    for name_ in name.split("."):
+        if not hasattr(obj, name_):
             return ""
-        obj = getattr(obj, name)
+        obj = getattr(obj, name_)
 
     if isinstance(obj, property):
         return ""
@@ -75,15 +68,13 @@ def get_fullname(obj: Any, name: str) -> str:
     return ".".join(split_prefix_and_name(obj))
 
 
-def split_prefix_and_name(obj: Any) -> tuple[str, str]:
+def split_prefix_and_name(obj: object) -> tuple[str, str]:
     """Splits an object full name into prefix and name.
 
     Args:
-    ----
         obj: Object that has a module.
 
     Examples:
-    --------
         >>> import inspect
         >>> obj = get_object('mkapi.core')
         >>> split_prefix_and_name(obj)
@@ -107,32 +98,34 @@ def split_prefix_and_name(obj: Any) -> tuple[str, str]:
             prefix, name = module, qualname
         else:
             prefix, _, name = qualname.rpartition(".")
-            prefix = ".".join([module, prefix])
+            prefix = f"{module}.{prefix}"
         if prefix == "__main__":
             prefix = ""
     return prefix, name
 
 
-def get_qualname(obj: Any):
+def get_qualname(obj: object) -> str:
+    """Return `qualname`."""
     if hasattr(obj, "__qualname__"):
         return obj.__qualname__
     return ""
 
 
-def get_sourcefile_and_lineno(obj: Any) -> tuple[str, int]:
+def get_sourcefile_and_lineno(obj: type) -> tuple[str, int]:
+    """Return source file and line number."""
     try:
         sourcefile = inspect.getsourcefile(obj) or ""
     except TypeError:
         sourcefile = ""
     try:
-        lineno = inspect.getsourcelines(obj)[1]
+        _, lineno = inspect.getsourcelines(obj)
     except (TypeError, OSError):
         lineno = -1
     return sourcefile, lineno
 
 
 # Issue#19 (metaclass). TypeError: descriptor 'mro' of 'type' object needs an argument.
-def get_mro(obj):
+def get_mro(obj: Any) -> list[type]:  # noqa: D103, ANN401
     try:
         objs = obj.mro()[:-1]  # drop ['object']
     except TypeError:
@@ -142,19 +135,15 @@ def get_mro(obj):
     return objs
 
 
-def get_sourcefiles(obj: Any) -> list[str]:
+def get_sourcefiles(obj: type) -> list[str]:
     """Returns a list of source file.
 
     If `obj` is a class, source files of its superclasses are also included.
 
     Args:
-    ----
         obj: Object name.
     """
-    if inspect.isclass(obj) and hasattr(obj, "mro"):
-        objs = get_mro(obj)
-    else:
-        objs = [obj]
+    objs = get_mro(obj) if inspect.isclass(obj) and hasattr(obj, "mro") else [obj]
     sourfiles = []
     for obj in objs:
         try:
@@ -167,16 +156,14 @@ def get_sourcefiles(obj: Any) -> list[str]:
     return sourfiles
 
 
-def from_object(obj: Any) -> bool:
+def from_object(obj: object) -> bool:
     """Returns True, if the docstring of `obj` is the same as that of `object`.
 
     Args:
-    ----
         name: Object name.
         obj: Object.
 
     Examples:
-    --------
         >>> class A: pass
         >>> from_object(A.__call__)
         True
@@ -193,11 +180,10 @@ def from_object(obj: Any) -> bool:
     return inspect.getdoc(obj) == getattr(object, name).__doc__
 
 
-def get_origin(obj: Any) -> Any:
+def get_origin(obj):  # noqa: ANN001, ANN201
     """Returns an original object.
 
-    Examples
-    --------
+    Examples:
         >>> class A:
         ...    @property
         ...    def x(self):
@@ -211,10 +197,6 @@ def get_origin(obj: Any) -> Any:
         return get_origin(obj.fget)
     if not callable(obj):
         return obj
-    # if hasattr(obj, "__wrapped__"):
-    #     return get_origin(obj.__wrapped__)
-    # if hasattr(obj, "__pytest_wrapped__"):
-    #     return get_origin(obj.__pytest_wrapped__.obj)
     try:
         wrapped = obj.__wrapped__
     except AttributeError:

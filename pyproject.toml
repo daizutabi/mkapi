@@ -111,3 +111,6 @@ unfixable = [
 
 [tool.ruff.isort]
 known-first-party = ["mkapi"]
+
+[tool.ruff.pydocstyle]
+convention = "google"
