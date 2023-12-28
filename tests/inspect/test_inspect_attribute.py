@@ -1,8 +1,16 @@
 from dataclasses import dataclass
 
 from examples.styles import google
-from mkapi.inspect import signature
-from mkapi.inspect.attribute import get_attributes, get_description
+from mkapi.core.base import Base
+from mkapi.inspect.attribute import get_attributes, get_description, getsource_dedent
+from mkapi.inspect.typing import type_string
+
+
+def test_getsource_dedent():
+    src = getsource_dedent(Base)
+    assert src.startswith("@dataclass\nclass Base:\n")
+    src = getsource_dedent(google.ExampleClass)
+    assert src.startswith("class ExampleClass:\n")
 
 
 class A:
@@ -22,20 +30,20 @@ class A:
 
 def test_class_attribute():
     attrs = get_attributes(A)
-    assert attrs
     for k, (name, (type_, markdown)) in enumerate(attrs.items()):
         assert name == ["x", "y", "a", "z"][k]
         assert markdown.startswith(["Doc ", "list of", "", "Docstring *after*"][k])
         assert markdown.endswith(["attribute.", "specified.", "", "supported."][k])
         if k == 0:
-            assert type_ is int
-        elif k == 1:
+            assert type_ == "int"
+        if k == 1:
             assert type_ is None
-        elif k == 2:
+        if k == 2:
             assert not markdown
-        elif k == 3:
-            x = signature.to_string(type_)
-            assert x == "(list of int, dict(str: list of float))"
+        if k == 3:
+            x = type_string(type_)
+            assert x == "tuple[list[int], dict[str, list[float]]]"
+            assert ".\n\nM" in markdown
 
 
 class B:
@@ -62,6 +70,9 @@ class C:
     end.
     """
 
+    def func(self):
+        pass
+
 
 def test_dataclass_attribute():
     attrs = get_attributes(C)
@@ -84,18 +95,18 @@ def test_dataclass_attribute_without_desc():
         assert name == ["x", "y"][k]
         assert markdown == ""
         if k == 0:
-            assert type is int
-        elif k == 1:
-            x = signature.to_string(type_)
-            assert x == "list of str"
+            assert type_ is int
+        if k == 1:
+            x = type_string(type_)
+            assert x == "list[str]"
 
 
 def test_module_attribute():
-    attrs = get_attributes(google)
+    attrs = get_attributes(google)  # type:ignore
     for k, (name, (type_, markdown)) in enumerate(attrs.items()):
         if k == 0:
             assert name == "first_attribute"
-            assert type_ is int
+            assert type_ == "int"
             assert markdown.startswith("The first module level attribute.")
         if k == 1:
             assert name == "second_attribute"
@@ -103,7 +114,7 @@ def test_module_attribute():
             assert markdown.startswith("str: The second module level attribute.")
         if k == 2:
             assert name == "third_attribute"
-            assert signature.to_string(type_) == "list of int"
+            assert type_string(type_) == "list[int]"
             assert markdown.startswith("The third module level attribute.")
             assert markdown.endswith("supported.")
 
@@ -116,30 +127,19 @@ def test_one_line_docstring():
 def test_module_attribute_tye():
     from mkapi.core import renderer
 
-    assert get_attributes(renderer)["renderer"][0] is renderer.Renderer
+    assert get_attributes(renderer)["renderer"][0] is renderer.Renderer  # type: ignore
 
 
 class E:
     def __init__(self):
-        self.a: int = 0  #: a
-        self.b: str = "b"  #: b
+        self.a: int = 0  #: attr-a
+        self.b: "E" = self  #: attr-b
 
     def func(self):
-        self.a, self.b = 1, "x"
+        pass
 
 
 def test_multiple_assignments():
     attrs = get_attributes(E)
-    assert attrs["a"] == (int, "a")
-    assert attrs["b"] == (str, "b")
-
-
-def test_name_error():
-    abc = "abc"
-
-    class Name:
-        def __init__(self):
-            self.x: abc = 1  #: abc.
-
-    attrs = get_attributes(Name)
-    assert attrs["x"] == ("abc", "abc.")
+    assert attrs["a"] == ("int", "attr-a")
+    assert attrs["b"] == (E, "attr-b")

@@ -1,205 +1,158 @@
 """Functions that inspect attributes from source code."""
 from __future__ import annotations
 
-import _ast
 import ast
 import dataclasses
-import importlib
 import inspect
 from ast import AST
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, TypeGuard
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from mkapi.core.preprocess import join_without_indent
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
     from types import ModuleType
 
     from _typeshed import DataclassInstance
 
 
-def parse_attribute(x) -> str:
-    return ".".join([parse_node(x.value), x.attr])
-
-
-def parse_attribute_with_lineno(x) -> tuple[str, int]:
-    return parse_node(x), x.lineno
-
-
-def parse_subscript(x) -> str:
-    value = parse_node(x.value)
-    slice = parse_node(x.slice)
-    if isinstance(slice, str):
-        return f"{value}[{slice}]"
-
-    type_str = ", ".join([str(elt) for elt in slice])
-    return f"{value}[{type_str}]"
-
-
-def parse_tuple(x):
-    return tuple(parse_node(x) for x in x.elts)
-
-
-def parse_list(x):
-    return "[" + ", ".join(parse_node(x) for x in x.elts) + "]"
-
-
-def parse_node(x):
-    if isinstance(x, _ast.Name):
-        return x.id
-    elif isinstance(x, _ast.Assign):
-        return parse_node(x.targets[0])
-    elif isinstance(x, _ast.Attribute):
-        return parse_attribute(x)
-    elif isinstance(x, _ast.Subscript):
-        return parse_subscript(x)
-    elif isinstance(x, _ast.Tuple):
-        return parse_tuple(x)
-    elif isinstance(x, _ast.List):
-        return parse_list(x)
-    elif hasattr(_ast, "Constant") and isinstance(x, _ast.Constant):
-        return x.value
-    elif hasattr(_ast, "Index") and isinstance(x, _ast.Index):
-        return x.value
-    elif hasattr(_ast, "Ellipsis") and isinstance(x, _ast.Ellipsis):
-        return x.value
-    elif hasattr(_ast, "Str") and isinstance(x, _ast.Str):
-        return x.s
-    else:
-        raise NotImplementedError
-
-
-def parse_annotation_assign(assign) -> tuple[str, int, str]:
-    type = parse_node(assign.annotation)
-    attr, lineno = parse_attribute_with_lineno(assign.target)
-    return attr, lineno, type
-
-
-def get_description(lines: list[str], lineno: int) -> str:
-    index = lineno - 1
-    line = lines[index]
-    if "  #: " in line:
-        return line.split("  #: ")[1].strip()
-    if index != 0:
-        line = lines[index - 1].strip()
-        if line.startswith("#: "):
-            return line[3:].strip()
-    if index + 1 < len(lines):
-        docs = []
-        in_doc = False
-        for line in lines[index + 1 :]:
-            line = line.strip()
-            if not in_doc and not line:
-                break
-            elif not in_doc and (line.startswith("'''") or line.startswith('"""')):
-                mark = line[:3]
-                if line.endswith(mark):
-                    return line[3:-3]
-                in_doc = True
-                docs.append(line[3:])
-            elif in_doc and line.endswith(mark):
-                docs.append(line[:-3])
-                return "\n".join(docs).strip()
-            elif in_doc:
-                docs.append(line)
-    return ""
-
-
-def get_source(obj) -> str:  # noqa: ANN001
+def getsource_dedent(obj) -> str:  # noqa: ANN001
     """Return the text of the source code for an object without exception."""
     try:
-        return inspect.getsource(obj)
+        source = inspect.getsource(obj)
     except OSError:
         return ""
+    return join_without_indent(source)
 
 
-def get_attributes_with_lineno(
+def parse_attribute(node: ast.Attribute) -> str:  # noqa: D103
+    return ".".join([parse_node(node.value), node.attr])
+
+
+def parse_subscript(node: ast.Subscript) -> str:  # noqa: D103
+    value = parse_node(node.value)
+    slice_ = parse_node(node.slice)
+    return f"{value}[{slice_}]"
+
+
+def parse_tuple(node: ast.Tuple) -> str:  # noqa: D103
+    return ", ".join(parse_node(n) for n in node.elts)
+
+
+def parse_list(node: ast.List) -> str:  # noqa: D103
+    return "[" + ", ".join(parse_node(n) for n in node.elts) + "]"
+
+
+PARSE_NODE_FUNCTIONS: list[tuple[type, Callable[..., str] | str]] = [
+    (ast.Attribute, parse_attribute),
+    (ast.Subscript, parse_subscript),
+    (ast.Tuple, parse_tuple),
+    (ast.List, parse_list),
+    (ast.Name, "id"),
+    (ast.Constant, "value"),
+    (ast.Name, "value"),
+    (ast.Ellipsis, "value"),
+    (ast.Str, "value"),
+]
+
+
+def parse_node(node: AST) -> str:
+    """Return a string expression for AST node."""
+    for type_, parse in PARSE_NODE_FUNCTIONS:
+        if isinstance(node, type_):
+            if callable(parse):
+                return parse(node)
+            return getattr(node, parse)
+    return ast.unparse(node)
+
+
+def get_attribute_list(
     nodes: Iterable[AST],
     module: ModuleType,
     *,
     is_module: bool = False,
 ) -> list[tuple[str, int, Any]]:
+    """Retrun list of tuple of (name, lineno, type)."""
     attr_dict: dict[tuple[str, int], Any] = {}
     linenos: dict[int, int] = {}
 
-    def update(attr, lineno, type):
-        if type or (attr, lineno) not in attr_dict:
-            attr_dict[(attr, lineno)] = type
+    def update(name, lineno, type_=()) -> None:  # noqa: ANN001
+        if type_ or (name, lineno) not in attr_dict:
+            attr_dict[(name, lineno)] = type_
             linenos[lineno] = linenos.get(lineno, 0) + 1
 
-    globals = dict(inspect.getmembers(module))
-    for x in nodes:
-        if isinstance(x, _ast.AnnAssign):
-            attr, lineno, type_str = parse_annotation_assign(x)
-            try:
-                type = eval(type_str, globals)
-            except NameError:
-                type = type_str
-            update(attr, lineno, type)
-        if isinstance(x, _ast.Attribute) and isinstance(x.ctx, _ast.Store):
-            attr, lineno = parse_attribute_with_lineno(x)
-            update(attr, lineno, ())
-        if is_module and isinstance(x, _ast.Assign):
-            attr, lineno = parse_attribute_with_lineno(x)
-            update(attr, lineno, ())
-    attr_lineno = [(attr, lineno, type) for (attr, lineno), type in attr_dict.items()]
-    attr_lineno = [x for x in attr_lineno if linenos[x[1]] == 1]
-    attr_lineno = sorted(attr_lineno, key=lambda x: x[1])
-    return attr_lineno
+    members = dict(inspect.getmembers(module))
+    for node in nodes:
+        if isinstance(node, ast.AnnAssign):
+            type_str = parse_node(node.annotation)
+            type_ = members.get(type_str, type_str)
+            update(parse_node(node.target), node.lineno, type_)
+        elif isinstance(node, ast.Attribute):  # and isinstance(node.ctx, ast.Store):
+            update(parse_node(node), node.lineno)
+        elif is_module and isinstance(node, ast.Assign):
+            update(parse_node(node.targets[0]), node.lineno)
+    attrs = [(name, lineno, type_) for (name, lineno), type_ in attr_dict.items()]
+    attrs = [attr for attr in attrs if linenos[attr[1]] == 1]
+    return sorted(attrs, key=lambda attr: attr[1])
 
 
-def get_attributes_dict(
+def get_description(lines: list[str], lineno: int) -> str:
+    """Return description from lines of source."""
+    index = lineno - 1
+    line = lines[index]
+    if "  #: " in (line := lines[lineno - 1]):
+        return line.split("  #: ")[1].strip()
+    if lineno > 1 and (line := lines[lineno - 2].strip()).startswith("#: "):
+        return line[3:].strip()
+    if lineno < len(lines):
+        docs, in_doc, mark = [], False, ""
+        for line_ in lines[lineno:]:
+            line = line_.strip()
+            if in_doc:
+                if line.endswith(mark):
+                    docs.append(line[:-3])
+                    return "\n".join(docs).strip()
+                docs.append(line)
+            elif line.startswith(("'''", '"""')):
+                in_doc, mark = True, line[:3]
+                if line.endswith(mark):
+                    return line[3:-3]
+                docs.append(line[3:])
+            elif not line:
+                return ""
+    return ""
+
+
+def get_attribute_dict(
     attr_list: list[tuple[str, int, Any]],
     source: str,
     prefix: str = "",
 ) -> dict[str, tuple[Any, str]]:
+    """Return an attribute dictionary."""
     attrs: dict[str, tuple[Any, str]] = {}
     lines = source.split("\n")
-    for k, (name, lineno, type) in enumerate(attr_list):
-        if not prefix or name.startswith(prefix):
-            name = name[len(prefix) :]
-            stop = len(lines)
-            if k < len(attr_list) - 1:
-                stop = attr_list[k + 1][1] - 1
-            description = get_description(lines[:stop], lineno)
-            if type:
-                attrs[name] = type, description  # Assignment with type annotation wins.
-            elif name not in attrs:
-                attrs[name] = None, description
+    for k, (name, lineno, type_) in enumerate(attr_list):
+        if not name.startswith(prefix):
+            continue
+        name = name[len(prefix) :]  # noqa: PLW2901
+        stop = attr_list[k + 1][1] - 1 if k < len(attr_list) - 1 else len(lines)
+        description = get_description(lines[:stop], lineno)
+        if type_:
+            attrs[name] = (type_, description)  # Assignment with type wins.
+        elif name not in attrs:
+            attrs[name] = None, description
     return attrs
 
 
-def get_class_attributes(cls: type[Any]) -> dict[str, tuple[Any, str]]:
-    """Return a dictionary that maps attribute name to a tuple of (type, description).
-
-    Args:
-        cls: Class object.
-
-    Examples:
-        >>> from mkapi.core.base import Base
-        >>> attrs = get_class_attributes(Base)
-        >>> attrs["name"][0] is str
-        True
-        >>> attrs["name"][1]
-        'Name of self.'
-        >>> attrs["callback"][0]
-        True
-    """
-    source = get_source(cls)
-    if not source:
-        return {}
-    source = join_without_indent(source.split("\n"))
-    node = ast.parse(source)
-    nodes = ast.walk(node)
-    module = importlib.import_module(cls.__module__)
-    attr_lineno = get_attributes_with_lineno(nodes, module)
-    return get_attributes_dict(attr_lineno, source, prefix="self.")
+def _nodeiter_before_function(node: AST) -> Iterator[AST]:
+    for x in ast.iter_child_nodes(node):
+        if isinstance(x, ast.FunctionDef):
+            break
+        yield x
 
 
-def get_dataclass_attributes(
-    cls: type[DataclassInstance],
-) -> dict[str, tuple[Any, str]]:
+def get_dataclass_attributes(cls: type) -> dict[str, tuple[Any, str]]:
     """Return a dictionary that maps attribute name to a tuple of (type, description).
 
     Args:
@@ -213,32 +166,41 @@ def get_dataclass_attributes(
         >>> attrs["description"][0] is Inline
         True
     """
-    attrs = {}
+    source = getsource_dedent(cls)
+    module = inspect.getmodule(cls)
+    if not source or not module:
+        raise NotImplementedError  # return {}
+
+    node = ast.parse(source).body[0]
+    nodes = _nodeiter_before_function(node)
+    attr_lineno = get_attribute_list(nodes, module)
+    attr_dict = get_attribute_dict(attr_lineno, source)
+
+    attrs: dict[str, tuple[Any, str]] = {}
     for field in dataclasses.fields(cls):
         if field.type != dataclasses.InitVar:
             attrs[field.name] = field.type, ""
-
-    source = get_source(cls)
-    source = join_without_indent(source.split("\n"))
-    if not source:
-        return {}
-    node = ast.parse(source).body[0]
-
-    def nodes() -> Iterator[AST]:
-        for x in ast.iter_child_nodes(node):
-            if isinstance(x, _ast.FunctionDef):
-                break
-            yield x
-
-    module = importlib.import_module(cls.__module__)
-    attr_lineno = get_attributes_with_lineno(nodes(), module)
-    for name, (type_, description) in get_attributes_dict(attr_lineno, source).items():
-        if name in attrs:
-            attrs[name] = attrs[name][0], description
-        else:
-            attrs[name] = type_, description
+    for name, (type_, description) in attr_dict.items():
+        attrs[name] = attrs.get(name, [type_])[0], description
 
     return attrs
+
+
+def get_class_attributes(cls: type) -> dict[str, tuple[Any, str]]:
+    """Return a dictionary that maps attribute name to a tuple of (type, description).
+
+    Args:
+        cls: Class object.
+    """
+    source = getsource_dedent(cls)
+    module = inspect.getmodule(cls)
+    if not source or not module:
+        raise NotImplementedError  # return {}
+
+    node = ast.parse(source)
+    nodes = ast.walk(node)
+    attr_lineno = get_attribute_list(nodes, module)
+    return get_attribute_dict(attr_lineno, source, prefix="self.")
 
 
 def get_module_attributes(module: ModuleType) -> dict[str, tuple[Any, str]]:
@@ -253,13 +215,14 @@ def get_module_attributes(module: ModuleType) -> dict[str, tuple[Any, str]]:
         >>> attrs["renderer"][0] is renderer.Renderer
         True
     """
-    source = get_source(module)
+    source = getsource_dedent(module)
     if not source:
-        return {}
+        raise NotImplementedError  # return {}
+
     node = ast.parse(source)
     nodes = ast.iter_child_nodes(node)
-    attr_lineno = get_attributes_with_lineno(nodes, module, is_module=True)
-    return get_attributes_dict(attr_lineno, source)
+    attr_lineno = get_attribute_list(nodes, module, is_module=True)
+    return get_attribute_dict(attr_lineno, source)
 
 
 def isdataclass(obj: object) -> TypeGuard[type[DataclassInstance]]:
@@ -287,4 +250,4 @@ def get_attributes(obj: object) -> dict[str, tuple[Any, str]]:
     for is_, get in ATTRIBUTES_FUNCTIONS:
         if is_(obj):
             return get(obj)
-    return {}
+    raise NotImplementedError  # return {}

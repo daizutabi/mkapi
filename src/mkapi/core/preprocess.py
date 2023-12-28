@@ -52,7 +52,7 @@ def get_indent(line: str) -> int:
 
 
 def join_without_indent(
-    lines: list[str],
+    lines: list[str] | str,
     start: int = 0,
     stop: int | None = None,
 ) -> str:
@@ -74,6 +74,8 @@ def join_without_indent(
     """
     if not lines:
         return ""
+    if isinstance(lines, str):
+        return join_without_indent(lines.split("\n"))
     indent = get_indent(lines[start])
     return "\n".join(line[indent:] for line in lines[start:stop]).strip()
 
