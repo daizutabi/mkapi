@@ -50,6 +50,8 @@ def type_string_init_var(tp: InitVar, obj: object) -> str:  # noqa: D103
     return type_string(tp.type, obj=obj)
 
 
+TYPE_STRING_IS = {inspect.Parameter.empty: "", tuple: "()"}
+
 TYPE_STRING_FUNCTIONS = {
     NoneType: type_string_none,
     EllipsisType: type_string_ellipsis,
@@ -87,6 +89,12 @@ def type_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noq
         '...'
         >>> type_string([int, str])
         '[int, str]'
+        >>> type_string(tuple)
+        '()'
+        >>> type_string(tuple[int, str])
+        '(int, str)'
+        >>> type_string(tuple[int, ...])
+        '(int, ...)'
         >>> type_string(int | str)
         'int | str'
         >>> type_string("Node", obj=Node)
@@ -103,14 +111,35 @@ def type_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noq
     """
     if kind == "yields":
         return type_string_yields(tp, obj)
-    if tp == inspect.Parameter.empty:
-        return ""
+    for obj_, str_ in TYPE_STRING_IS.items():
+        if tp is obj_:
+            return str_
     for type_, func in TYPE_STRING_FUNCTIONS.items():
         if isinstance(tp, type_):
             return func(tp, obj)
     if get_origin(tp):
         return type_string_origin_args(tp, obj)
     return get_link(tp)
+
+
+def origin_args_string_union(args: tuple, args_list: list[str]) -> str:  # noqa: D103
+    if len(args) == 2 and args[1] == type(None):  # noqa: PLR2004
+        return f"{args_list[0]} | None"
+    return " | ".join(args_list)
+
+
+def origin_args_string_tuple(args: tuple, args_list: list[str]) -> str:  # noqa: D103
+    if not args:
+        return "()"
+    if len(args) == 1:
+        return f"({args_list[0]},)"
+    return "(" + ", ".join(args_list) + ")"
+
+
+ORIGIN_FUNCTIONS = [
+    (Union, origin_args_string_union),
+    (tuple, origin_args_string_tuple),
+]
 
 
 def type_string_origin_args(tp, obj: object = None) -> str:  # noqa: ANN001
@@ -123,9 +152,11 @@ def type_string_origin_args(tp, obj: object = None) -> str:  # noqa: ANN001
     Examples:
         >>> type_string_origin_args(list[str])
         'list[str]'
+        >>> type_string_origin_args(tuple[str, int])
+        '(str, int)'
         >>> from typing import List, Tuple
         >>> type_string_origin_args(List[Tuple[int, str]])
-        'list[tuple[int, str]]'
+        'list[(int, str)]'
         >>> from mkapi.core.node import Node
         >>> type_string_origin_args(list[Node])
         'list[[Node](!mkapi.core.node.Node)]'
@@ -142,10 +173,9 @@ def type_string_origin_args(tp, obj: object = None) -> str:  # noqa: ANN001
     """
     origin, args = get_origin(tp), get_args(tp)
     args_list = [type_string(arg, obj=obj) for arg in args]
-    if origin is Union:
-        if len(args) == 2 and args[1] == type(None):  # noqa: PLR2004
-            return f"{args_list[0]} | None"
-        return " | ".join(args_list)
+    for origin_, func in ORIGIN_FUNCTIONS:
+        if origin is origin_:
+            return func(args, args_list)
     origin_str = type_string(origin, obj=obj)
     args_str = ", ".join(args_list)
     return f"{origin_str}[{args_str}]"
