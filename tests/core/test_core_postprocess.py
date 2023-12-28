@@ -1,4 +1,4 @@
-from typing import Iterator, Tuple
+from collections.abc import Iterator
 
 import pytest
 
@@ -13,10 +13,10 @@ class A:
     def p(self):
         """ppp"""
 
-    def f(self) -> str:
+    def f(self) -> str:  # type: ignore
         """fff"""
 
-    def g(self) -> int:
+    def g(self) -> int:  # type: ignore
         """ggg
 
         aaa
@@ -25,7 +25,7 @@ class A:
             value.
         """
 
-    def a(self) -> Tuple[int, str]:
+    def a(self) -> tuple[int, str]:  # type: ignore
         """aaa"""
 
     def b(self) -> Iterator[str]:
@@ -36,20 +36,19 @@ class A:
         """BBB"""
 
 
-@pytest.fixture
+@pytest.fixture()
 def node():
-    node = Node(A)
-    return node
+    return Node(A)
 
 
-def test_transform_property(node):
+def test_transform_property(node: Node):
     P.transform_property(node)
     section = node.docstring["Attributes"]
     assert "p" in section
     assert "f" in node
 
 
-def test_get_type(node):
+def test_get_type(node: Node):
     assert P.get_type(node).name == ""
     assert P.get_type(node["f"]).name == "str"
     assert P.get_type(node["g"]).name == "int"
@@ -58,7 +57,7 @@ def test_get_type(node):
     node["g"].docstring.sections[1]
 
 
-def test_transform_class(node):
+def test_transform_class(node: Node):
     P.transform(node)
     section = node.docstring["Methods"]
     q = A.__qualname__
@@ -90,7 +89,7 @@ def test_transform_module(module):
 
 
 def test_link_from_toc():
-    from examples.google_style import ExampleClass
+    from examples.styles.google import ExampleClass
 
     node = Node(ExampleClass)
     assert len(node.docstring.sections) == 4
@@ -99,4 +98,4 @@ def test_link_from_toc():
     assert "Methods" in node.docstring
     section = node.docstring["Methods"]
     html = section.items[0].html
-    assert '<a href="#examples.google_style.ExampleClass.message">' in html
+    assert '<a href="#examples.styles.google.ExampleClass.message">' in html

@@ -1,5 +1,5 @@
 from mkapi.core.module import get_module
-from mkapi.core.node import get_kind, get_node, get_node_from_module, is_member
+from mkapi.core.node import Node, get_kind, get_node, get_node_from_module, is_member
 from mkapi.inspect import attribute
 from mkapi.inspect.signature import Signature
 
@@ -25,6 +25,14 @@ def test_dataclass():
     assert node.object.prefix == "examples.styles.google"
     assert node.object.name == "ExampleDataClass"
     assert node.object.kind == "dataclass"
+
+
+def test_node_object_type():
+    class A:
+        """AAA"""
+
+    node = Node(A)
+    assert node.object.type.name == ""
 
 
 def test_is_member_private():

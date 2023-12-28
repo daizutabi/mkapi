@@ -103,6 +103,8 @@ def type_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noq
     """
     if kind == "yields":
         return type_string_yields(tp, obj)
+    if tp == inspect.Parameter.empty:
+        return ""
     for type_, func in TYPE_STRING_FUNCTIONS.items():
         if isinstance(tp, type_):
             return func(tp, obj)

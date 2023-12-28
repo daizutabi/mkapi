@@ -2,6 +2,7 @@
 import inspect
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
+from pathlib import Path
 from types import FunctionType
 from typing import Optional
 
@@ -32,14 +33,13 @@ class Node(Tree):
     def __post_init__(self) -> None:
         super().__post_init__()
 
-        members = self.members
         if self.object.kind in ["class", "dataclass"] and not self.docstring:
-            for member in members:
+            for member in self.members:
                 if member.object.name == "__init__" and member.docstring:
                     markdown = member.docstring.sections[0].markdown
                     if not markdown.startswith("Initialize self"):
                         self.docstring = member.docstring
-        self.members = [m for m in members if m.object.name != "__init__"]
+        self.members = [m for m in self.members if m.object.name != "__init__"]
 
         doc = self.docstring
         if doc and "property" in self.object.kind:  # noqa: SIM102
@@ -207,10 +207,13 @@ def is_member(obj: object, name: str = "", sourcefiles: list[str] | None = None)
         sourcefile = inspect.getsourcefile(obj)  # type: ignore  # noqa: PGH003
     except TypeError:
         return -1
+    if not sourcefile:
+        return -1
     if not sourcefiles:
         return 0
+    sourcefile_path = Path(sourcefile)
     for sourcefile_index, parent_sourcefile in enumerate(sourcefiles):
-        if sourcefile == parent_sourcefile:
+        if Path(parent_sourcefile) == sourcefile_path:
             return sourcefile_index
     return -1
 

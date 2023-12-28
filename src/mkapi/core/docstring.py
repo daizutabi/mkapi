@@ -209,7 +209,7 @@ def parse_bases(doc: Docstring, obj: Any):
 def parse_source(doc: Docstring, obj: Any):
     """Parses parameters' docstring to inspect type and description from source.
 
-    Examples
+    Examples:
     --------
         >>> from mkapi.core.base import Base
         >>> doc = Docstring()
@@ -240,7 +240,7 @@ def parse_source(doc: Docstring, obj: Any):
                 doc[name].set_item(item)
 
 
-def postprocess(doc: Docstring, obj: Any):
+def postprocess(doc: Docstring, obj: object):
     parse_bases(doc, obj)
     parse_source(doc, obj)
     if not callable(obj):
@@ -282,20 +282,17 @@ def postprocess(doc: Docstring, obj: Any):
             if sections and sections[-1].name == "":
                 sections[-1].markdown += "\n\n" + markdown
                 continue
-            else:
-                section.name = ""
-                section.markdown = markdown
+            section.name = ""
+            section.markdown = markdown
         sections.append(section)
     doc.sections = sections
 
 
-def get_docstring(obj: Any) -> Docstring:
+def get_docstring(obj: object) -> Docstring:
     """Returns a [Docstring]() instance."""
     doc = inspect.getdoc(obj)
     if doc:
-        sections = []
-        for section in split_section(doc):
-            sections.append(get_section(*section))
+        sections = [get_section(*section) for section in split_section(doc)]
         docstring = Docstring(sections)
     else:
         return Docstring()
