@@ -1,5 +1,7 @@
 from mkapi.core.module import get_module
 from mkapi.core.node import get_kind, get_node, get_node_from_module, is_member
+from mkapi.inspect import attribute
+from mkapi.inspect.signature import Signature
 
 
 def test_generator():
@@ -144,17 +146,12 @@ def test_set_html_and_render_bases():
 
 
 def test_decorated_member():
-    from mkapi.inspect import attribute
-    from mkapi.inspect.signature import Signature
-
     node = get_node(attribute)
     assert node.members[-1].object.kind == "function"
     assert get_node(Signature)["arguments"].object.kind == "readonly property"
 
 
-def test_colon_in_docstring():
-    """Issue#17"""
-
+def test_colon_in_docstring():  # Issue #17
     class A:
         def func(self):
             """this: is not type."""
@@ -163,7 +160,7 @@ def test_colon_in_docstring():
         def prop(self):
             """this: is type."""
 
-    def func(self):
+    def func(self):  # noqa: ARG001
         """this: is not type."""
 
     node = get_node(A)

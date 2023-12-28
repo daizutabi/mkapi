@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import dataclasses
 import inspect
+import warnings
 from ast import AST
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, TypeGuard
@@ -36,6 +37,15 @@ def parse_subscript(node: ast.Subscript) -> str:  # noqa: D103
     return f"{value}[{slice_}]"
 
 
+def parse_constant(node: ast.Constant) -> str:  # noqa: D103
+    value = node.value
+    if value is Ellipsis:
+        return "..."
+    if not isinstance(value, str):
+        warnings.warn("Not `str`", stacklevel=1)
+    return value
+
+
 def parse_tuple(node: ast.Tuple) -> str:  # noqa: D103
     return ", ".join(parse_node(n) for n in node.elts)
 
@@ -47,13 +57,10 @@ def parse_list(node: ast.List) -> str:  # noqa: D103
 PARSE_NODE_FUNCTIONS: list[tuple[type, Callable[..., str] | str]] = [
     (ast.Attribute, parse_attribute),
     (ast.Subscript, parse_subscript),
+    (ast.Constant, parse_constant),
     (ast.Tuple, parse_tuple),
     (ast.List, parse_list),
     (ast.Name, "id"),
-    (ast.Constant, "value"),
-    (ast.Name, "value"),
-    (ast.Ellipsis, "value"),
-    (ast.Str, "value"),
 ]
 
 
@@ -61,9 +68,8 @@ def parse_node(node: AST) -> str:
     """Return a string expression for AST node."""
     for type_, parse in PARSE_NODE_FUNCTIONS:
         if isinstance(node, type_):
-            if callable(parse):
-                return parse(node)
-            return getattr(node, parse)
+            node_str = parse(node) if callable(parse) else getattr(node, parse)
+            return node_str if isinstance(node_str, str) else str(node_str)
     return ast.unparse(node)
 
 

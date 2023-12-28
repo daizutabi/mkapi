@@ -3,6 +3,7 @@ import inspect
 import pytest
 
 from mkapi.core.node import Node
+from mkapi.core.page import Page
 from mkapi.inspect.signature import Signature, get_parameters, get_signature
 
 

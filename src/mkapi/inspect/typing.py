@@ -1,5 +1,6 @@
 """Type string."""
 import inspect
+from dataclasses import InitVar
 from types import EllipsisType, NoneType, UnionType
 from typing import ForwardRef, Union, get_args, get_origin
 
@@ -45,6 +46,10 @@ def type_string_forward_ref(tp: ForwardRef, obj: object) -> str:  # noqa: D103
     return type_string_str(tp.__forward_arg__, obj)
 
 
+def type_string_init_var(tp: InitVar, obj: object) -> str:  # noqa: D103
+    return type_string(tp.type, obj=obj)
+
+
 TYPE_STRING_FUNCTIONS = {
     NoneType: type_string_none,
     EllipsisType: type_string_ellipsis,
@@ -52,6 +57,7 @@ TYPE_STRING_FUNCTIONS = {
     list: type_string_list,
     str: type_string_str,
     ForwardRef: type_string_forward_ref,
+    InitVar: type_string_init_var,
 }
 
 
@@ -85,12 +91,15 @@ def type_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noq
         'int | str'
         >>> type_string("Node", obj=Node)
         '[Node](!mkapi.core.node.Node)'
-        >>> from typing import List
+        >>> from typing import List, get_origin
         >>> type_string(List["Node"], obj=Node)
         'list[[Node](!mkapi.core.node.Node)]'
         >>> from collections.abc import Iterable
         >>> type_string(Iterable[int], kind="yields")
         'int'
+        >>> from dataclasses import InitVar
+        >>> type_string(InitVar[Node])
+        '[Node](!mkapi.core.node.Node)'
     """
     if kind == "yields":
         return type_string_yields(tp, obj)
@@ -128,7 +137,6 @@ def type_string_origin_args(tp, obj: object = None) -> str:  # noqa: ANN001
         'int | str'
         >>> type_string_origin_args(Optional[bool])
         'bool | None'
-
     """
     origin, args = get_origin(tp), get_args(tp)
     args_list = [type_string(arg, obj=obj) for arg in args]

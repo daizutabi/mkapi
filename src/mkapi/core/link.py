@@ -1,6 +1,7 @@
 """Provide functions that relate to linking functionality."""
 import os
 import re
+import warnings
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
@@ -46,7 +47,9 @@ def get_link(obj: type, *, include_module: bool = False) -> str:
         name = obj.__name__
     else:
         msg = f"obj has no name: {obj}"
-        raise ValueError(msg)
+        warnings.warn(msg, stacklevel=1)
+        return str(obj)
+
     if not hasattr(obj, "__module__") or (module := obj.__module__) == "builtins":
         return name
     fullname = f"{module}.{name}"
