@@ -2,6 +2,7 @@ import inspect
 
 import pytest
 
+from mkapi.core.node import Node
 from mkapi.inspect.signature import Signature, get_parameters, get_signature
 
 
@@ -58,3 +59,11 @@ def test_var():
     s = get_signature(func)
     assert s.parameters.items[1].name == "*args"
     assert s.parameters.items[2].name == "**kwargs"
+
+
+def test_get_signature_special():
+    s = Signature(Node.__getitem__)
+    assert s.parameters.items[0].name == "index"
+    assert s.returns == "[Self](!typing.Self)"
+    t = "int | str | list[str]"
+    assert s.parameters["index"].to_tuple() == ("index", t, "")

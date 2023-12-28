@@ -97,11 +97,9 @@ def type_string(tp, *, kind: str = "returns", obj: object = None) -> str:  # noq
     for type_, func in TYPE_STRING_FUNCTIONS.items():
         if isinstance(tp, type_):
             return func(tp, obj)
-    if isinstance(tp, type):
-        return get_link(tp)
     if get_origin(tp):
         return type_string_origin_args(tp, obj)
-    raise NotImplementedError
+    return get_link(tp)
 
 
 def type_string_origin_args(tp, obj: object = None) -> str:  # noqa: ANN001
