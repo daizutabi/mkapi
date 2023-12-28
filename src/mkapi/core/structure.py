@@ -1,9 +1,7 @@
-"""This module provides base class of [Node](mkapi.core.node.Node) and
-[Module](mkapi.core.module.Module).
-"""
+"""Base class of [Node](mkapi.core.node.Node) and [Module](mkapi.core.module.Module)."""
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Any, Union
+from typing import Any, Self
 
 from mkapi.core.base import Base, Type
 from mkapi.core.docstring import Docstring, get_docstring
@@ -15,15 +13,12 @@ from mkapi.core.object import (
 )
 from mkapi.inspect.signature import Signature, get_signature
 
-"a.b.c".rpartition(".")
-
 
 @dataclass
 class Object(Base):
     """Object class represents an object.
 
     Args:
-    ----
         name: Object name.
         prefix: Object prefix.
         qualname: Qualified name.
@@ -31,7 +26,6 @@ class Object(Base):
         signature: Signature if object is module or callable.
 
     Attributes:
-    ----------
         id: ID attribute of HTML.
         type: Type for missing Returns and Yields sections.
     """
@@ -42,15 +36,15 @@ class Object(Base):
     signature: Signature = field(default_factory=Signature)
     module: str = field(init=False)
     markdown: str = field(init=False)
-    id: str = field(init=False)
-    type: Type = field(default_factory=Type, init=False)
+    id: str = field(init=False)  # noqa: A003
+    type: Type = field(default_factory=Type, init=False)  # noqa: A003
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         from mkapi.core import link
 
         self.id = self.name
         if self.prefix:
-            self.id = ".".join([self.prefix, self.name])
+            self.id = f"{self.prefix}.{self.name}"
         if not self.qualname:
             self.module = self.id
         else:
@@ -59,14 +53,13 @@ class Object(Base):
             name = link.link(self.name, self.id)
             if self.prefix:
                 prefix = link.link(self.prefix, self.prefix)
-                self.markdown = ".".join([prefix, name])
+                self.markdown = f"{prefix}.{name}"
             else:
                 self.markdown = name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         class_name = self.__class__.__name__
-        id = self.id
-        return f"{class_name}({id!r})"
+        return f"{class_name}({self.id!r})"
 
     def __iter__(self) -> Iterator[Base]:
         yield from self.type
@@ -75,15 +68,12 @@ class Object(Base):
 
 @dataclass
 class Tree:
-    """Tree class. This class is the base class of [Node](mkapi.core.node.Node)
-    and [Module](mkapi.core.module.Module).
+    """Base of [Node](mkapi.core.node.Node) and [Module](mkapi.core.module.Module).
 
     Args:
-    ----
         obj: Object.
 
     Attributes:
-    ----------
         sourcefile: Source file path.
         lineno: Line number.
         object: Object instance.
@@ -95,12 +85,12 @@ class Tree:
     obj: Any = field()
     sourcefile: str = field(init=False)
     lineno: int = field(init=False)
-    object: Object = field(init=False)
+    object: Object = field(init=False)  # noqa: A003
     docstring: Docstring = field(init=False)
     parent: Any = field(default=None, init=False)
-    members: list[Any] = field(init=False)
+    members: list[Self] = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         obj = get_origin(self.obj)
         self.sourcefile, self.lineno = get_sourcefile_and_lineno(obj)
         prefix, name = split_prefix_and_name(obj)
@@ -120,21 +110,20 @@ class Tree:
         for member in self.members:
             member.parent = self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         class_name = self.__class__.__name__
-        id = self.object.id
+        id_ = self.object.id
         sections = len(self.docstring.sections)
         numbers = len(self.members)
-        return f"{class_name}({id!r}, num_sections={sections}, num_members={numbers})"
+        return f"{class_name}({id_!r}, num_sections={sections}, num_members={numbers})"
 
-    def __getitem__(self, index: Union[int, str, list[str]]):
-        """Returns a member {class} instance.
+    def __getitem__(self, index: int | str | list[str]) -> Self:
+        """Return a member {class} instance.
 
         If `index` is str, a member Tree instance whose name is equal to `index`
         is returned.
 
-        Raises
-        ------
+        Raises:
             IndexError: If no member found.
         """
         if isinstance(index, list):
@@ -152,20 +141,17 @@ class Tree:
                 return member
         raise IndexError
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.members)
 
-    def __contains__(self, name):
-        for member in self.members:
-            if member.object.name == name:
-                return True
-        return False
+    def __contains__(self, name: str) -> bool:
+        return any(member.object.name == name for member in self.members)
 
     def get_kind(self) -> str:
         """Returns kind of self."""
         raise NotImplementedError
 
-    def get_members(self) -> list["Tree"]:
+    def get_members(self) -> list[Self]:
         """Returns a list of members."""
         raise NotImplementedError
 
@@ -173,7 +159,7 @@ class Tree:
         """Returns a Markdown source for docstring of self."""
         raise NotImplementedError
 
-    def walk(self) -> Iterator["Tree"]:
+    def walk(self) -> Iterator[Self]:
         """Yields all members."""
         yield self
         for member in self.members:
