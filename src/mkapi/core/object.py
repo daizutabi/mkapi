@@ -135,7 +135,7 @@ def get_mro(obj: Any) -> list[type]:  # noqa: D103, ANN401
     return objs
 
 
-def get_sourcefiles(obj: type) -> list[str]:
+def get_sourcefiles(obj: object) -> list[str]:
     """Returns a list of source file.
 
     If `obj` is a class, source files of its superclasses are also included.
@@ -147,7 +147,7 @@ def get_sourcefiles(obj: type) -> list[str]:
     sourfiles = []
     for obj in objs:
         try:
-            sourcefile = inspect.getsourcefile(obj) or ""
+            sourcefile = inspect.getsourcefile(obj) or ""  # type: ignore  # noqa: PGH003
         except TypeError:
             pass
         else:

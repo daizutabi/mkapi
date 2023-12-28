@@ -36,7 +36,7 @@ class Renderer:
             name = os.path.splitext(name)[0]
             self.templates[name] = template
 
-    def render(self, node: Node, filters: list[str] = None) -> str:
+    def render(self, node: Node, filters: list[str] | None = None) -> str:
         """Returns a rendered HTML for Node.
 
         Args:
