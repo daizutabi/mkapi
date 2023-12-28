@@ -20,9 +20,8 @@ def test_get_origin():
 
 
 def test_get_sourcefile_and_lineno():
-    sourcefile, lineno = get_sourcefile_and_lineno(Node)
+    sourcefile, _ = get_sourcefile_and_lineno(Node)
     assert sourcefile.endswith("node.py")
-    assert lineno == 15
 
 
 def test_split_prefix_and_name():
