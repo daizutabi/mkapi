@@ -1,6 +1,6 @@
 # Customization
 
-## Customization 'on_config'.
+## Customization 'on_config'
 
 MkAPI has an option `on_config` to allow users to configure MkDocs/MkAPI or
 user system environment. Here is an example directory structure and the corresponding `mkdocs.yml`:
@@ -26,7 +26,7 @@ plugins:
 
 Customization script is defined in `examples/custom.py`:
 
-#File examples/custom.py {%=/examples/custom.py%}
+# File examples/custom.py {%=/examples/custom.py%}
 
 Let's build the documentation.
 
@@ -72,7 +72,7 @@ $ mkdocs build
 INFO    -  [MkAPI] Calling user 'on_config' with ['config', 'mkapi']
 Called with config and mkapi.
 C:\Users\daizu\Documents\github\mkapi\docs
-<mkapi.plugins.mkdocs.MkapiPlugin object at 0x000001DF712D0F08>
+<mkapi.plugins.mkdocs.MkAPIPlugin object at 0x000001DF712D0F08>
 INFO    -  Cleaning site directory
 ...
 ~~~

@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 
 from examples.styles import google
-from mkapi.core.base import Base
-from mkapi.inspect.attribute import get_attributes, get_description, getsource_dedent
+from mkapi.core.base import Base, Item
+from mkapi.inspect.attribute import (
+    get_attributes,
+    get_dataclass_attributes,
+    get_description,
+    getsource_dedent,
+)
 from mkapi.inspect.typing import type_string
 
 

@@ -18,7 +18,7 @@ NODE_PATTERN = re.compile(pattern, re.MULTILINE | re.DOTALL)
 
 @dataclass
 class Page:
-    """Page class works with [MkapiPlugin](mkapi.plugins.mkdocs.MkapiPlugin).
+    """Page class works with [MkAPIPlugin](mkapi.plugins.mkdocs.MkAPIPlugin).
 
     Args:
         source (str): Markdown source.
@@ -90,7 +90,7 @@ class Page:
                 yield self.resolve_link(markdown)
 
     def content(self, html: str) -> str:
-        """Return updated HTML to [MkapiPlugin](mkapi.plugins.mkdocs.MkapiPlugin).
+        """Return modified HTML to [MkAPIPlugin](mkapi.plugins.mkdocs.MkAPIPlugin).
 
         Args:
             html: Input HTML converted by MkDocs.

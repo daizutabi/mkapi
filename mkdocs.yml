@@ -8,7 +8,7 @@ repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 
 theme:
-  name: ivory
+  name: mkdocs
   highlightjs: true
   hljs_languages:
     - yaml
@@ -18,8 +18,6 @@ extra_css:
 
 plugins:
   - search
-  - pheasant:
-      version: mkapi
   - mkapi:
       src_dirs: [examples]
       on_config: custom.on_config

@@ -29,7 +29,7 @@ Issues = "https://github.com/daizutabi/mkapi/issues"
 mkapi = "mkapi.main:cli"
 
 [project.entry-points."mkdocs.plugins"]
-mkapi = "mkapi.plugins.mkdocs:MkapiPlugin"
+mkapi = "mkapi.plugins.mkdocs:MkAPIPlugin"
 
 [tool.hatch.version]
 path = "src/mkapi/__about__.py"
@@ -43,7 +43,7 @@ packages = ["src/mkapi"]
 python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
 [tool.hatch.envs.default]
-dependencies = ["pytest-cov"]
+dependencies = ["pytest-cov", "pymdown-extensions"]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests src/mkapi}"
 

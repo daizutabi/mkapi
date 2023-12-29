@@ -1,0 +1,29 @@
+site_name: Doc for CI
+site_url: https://daizutabi.github.io/mkapi/
+site_description: API documentation with MkDocs.
+site_author: daizutabi
+repo_url: https://github.com/daizutabi/mkapi/
+edit_uri: ""
+theme:
+  name: mkdocs
+  highlightjs: true
+  hljs_languages:
+    - yaml
+plugins:
+  - mkapi:
+      src_dirs: [.]
+      on_config: custom.on_config
+nav:
+  - index.md
+  - Examples:
+    - example.md
+    - mkapi/api/mkapi.plugins
+    - ABC: mkapi/api/mkapi.inspect
+  - API: mkapi/api/mkapi.inspect|upper|strict
+  - mkapi/api/mkapi.plugins
+extra_css:
+  - custom.css
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+markdown_extensions:
+  - pymdownx.arithmatex

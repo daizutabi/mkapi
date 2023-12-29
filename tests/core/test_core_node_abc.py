@@ -7,14 +7,14 @@ from mkapi.core.object import get_sourcefiles
 class C(ABC):
     """Abstract class."""
 
-    def method(self):
+    def method(self):  # noqa: B027
         """Method."""
 
-    @classmethod
+    @classmethod  # noqa: B027
     def class_method(cls):
         """Classmethod."""
 
-    @staticmethod
+    @staticmethod  # noqa: B027
     def static_method():
         """Staticmethod."""
 
@@ -55,8 +55,7 @@ def test_get_sourcefiles():
 
 def test_abc():
     node = get_node(C)
-    # assert len(node.members) == 8
-    node.object.kind == "abstract class"
+    assert node.object.kind == "abstract class"
     for member in node.members:
         obj = member.object
         assert obj.kind.replace(" ", "") == obj.name.replace("_", "")
