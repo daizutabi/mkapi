@@ -1,13 +1,8 @@
 from dataclasses import dataclass
 
 from examples.styles import google
-from mkapi.core.base import Base, Item
-from mkapi.inspect.attribute import (
-    get_attributes,
-    get_dataclass_attributes,
-    get_description,
-    getsource_dedent,
-)
+from mkapi.core.base import Base
+from mkapi.inspect.attribute import get_attributes, get_description, getsource_dedent
 from mkapi.inspect.typing import type_string
 
 
@@ -86,6 +81,18 @@ def test_dataclass_attribute():
         assert markdown == ["int", "A", "B\n\nend."][k]
         if k == 0:
             assert type_ is int
+
+
+def test_dataclass_ast_parse():
+    import ast
+    import inspect
+
+    x = C
+    s = inspect.getsource(x)
+    print(s)
+    n = ast.parse(s)
+    print(n)
+    assert 0
 
 
 @dataclass
