@@ -17,7 +17,7 @@ classifiers = [
   "Topic :: Software Development :: Documentation",
 ]
 dynamic = ["version"]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = ["jinja2", "markdown", "mkdocs"]
 
 [project.urls]
@@ -56,6 +56,9 @@ addopts = [
   "--cov-report=lcov:lcov.info",
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
+filterwarnings = [
+  'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated:DeprecationWarning',
+]
 
 [tool.coverage.run]
 omit = ["src/mkapi/__about__.py"]
