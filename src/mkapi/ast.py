@@ -26,6 +26,20 @@ if TYPE_CHECKING:
     from ast import AST
     from collections.abc import Callable, Iterator, Sequence
 
+Import_: TypeAlias = Import | ImportFrom
+Def: TypeAlias = AsyncFunctionDef | FunctionDef | ClassDef
+Assign_: TypeAlias = Assign | AnnAssign
+Doc: TypeAlias = Module | Def | Assign_
+
+
+def iter_import_nodes(node: AST) -> Iterator[Import_]:
+    """Yield import nodes."""
+    for child in ast.iter_child_nodes(node):
+        if isinstance(child, Import_):
+            yield child
+        elif not isinstance(child, Def):
+            yield from iter_import_nodes(child)
+
 
 def iter_import_names(node: AST) -> Iterator[tuple[str | None, str, str | None]]:
     """Yield imported names."""
@@ -35,21 +49,9 @@ def iter_import_names(node: AST) -> Iterator[tuple[str | None, str, str | None]]
             yield from_module, alias.name, alias.asname
 
 
-def iter_import_nodes(node: AST) -> Iterator[Import | ImportFrom]:
-    """Yield import nodes."""
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, Import | ImportFrom):
-            yield child
-        elif not isinstance(child, AsyncFunctionDef | ClassDef | FunctionDef):
-            yield from iter_import_nodes(child)
-
-
 def get_import_names(node: AST) -> list[tuple[str | None, str, str | None]]:
     """Return a list of imported names."""
     return list(iter_import_names(node))
-
-
-Def: TypeAlias = AsyncFunctionDef | FunctionDef | ClassDef
 
 
 def iter_def_nodes(node: AST) -> Iterator[Def]:
@@ -62,9 +64,6 @@ def iter_def_nodes(node: AST) -> Iterator[Def]:
 def get_def_nodes(node: AST) -> list[Def]:
     """Return a list of definition nodes."""
     return list(iter_def_nodes(node))
-
-
-Assign_: TypeAlias = Assign | AnnAssign
 
 
 def _get_docstring(node: AST) -> str | None:
@@ -93,9 +92,6 @@ def iter_assign_nodes(node: AST) -> Iterator[Assign_]:
 def get_assign_nodes(node: AST) -> list[Assign_]:
     """Return a list of assign nodes."""
     return list(iter_assign_nodes(node))
-
-
-Doc: TypeAlias = Module | Def | Assign_
 
 
 def get_docstring(node: Doc) -> str | None:
