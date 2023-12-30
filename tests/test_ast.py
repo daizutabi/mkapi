@@ -3,48 +3,47 @@ import ast
 import pytest
 
 from mkapi.ast import (
+    get_assign_names,
     get_assign_nodes,
     get_by_name,
     get_def_nodes,
     get_docstring,
     get_import_names,
     get_name,
+    get_names,
     iter_import_nodes,
 )
-from mkapi.modules import get_module
+from mkapi.modules import Module, get_module
 
 
 @pytest.fixture(scope="module")
-def source():
-    return get_module("mkdocs.structure.files").source
+def module():
+    return get_module("mkdocs.structure.files")
 
 
-@pytest.fixture(scope="module")
-def module(source):
-    return ast.parse(source, type_comments=True)
-
-
-def test_iter_import_nodes(module):
-    node = next(iter_import_nodes(module))
+def test_iter_import_nodes(module: Module):
+    node = next(iter_import_nodes(module.node))
     assert isinstance(node, ast.ImportFrom)
     assert len(node.names) == 1
-
     alias = node.names[0]
     assert node.module == "__future__"
     assert alias.name == "annotations"
     assert alias.asname is None
 
 
-def test_get_import_names(module):
-    names = get_import_names(module)
-    assert (None, "logging", None) in names
-    assert ("pathlib", "PurePath", None) in names
-    assert ("urllib.parse", "quote", "urlquote") in names
+def test_get_import_names(module: Module):
+    names = get_import_names(module.node)
+    assert "logging" in names
+    assert names["logging"] == "logging"
+    assert "PurePath" in names
+    assert names["PurePath"] == "pathlib.PurePath"
+    assert "urlquote" in names
+    assert names["urlquote"] == "urllib.parse.quote"
 
 
 @pytest.fixture(scope="module")
-def def_nodes(module):
-    return get_def_nodes(module)
+def def_nodes(module: Module):
+    return get_def_nodes(module.node)
 
 
 def test_get_def_nodes(def_nodes):
@@ -80,6 +79,30 @@ def test_get_docstring(def_nodes):
     doc = get_docstring(node)  # type: ignore
     assert isinstance(doc, str)
     assert doc.startswith("The file is part of the site.")
+
+
+def test_get_assign_names(module: Module, def_nodes):
+    names = get_assign_names(module.node)
+    assert names["log"] is not None
+    assert names["log"].startswith("logging.getLogger")
+    node = get_by_name(def_nodes, "InclusionLevel")
+    assert isinstance(node, ast.ClassDef)
+    names = get_assign_names(node)
+    assert names["NOT_IN_NAV"] is not None
+    assert names["NOT_IN_NAV"] == "-1"
+
+
+def test_get_names(module: Module, def_nodes):
+    names = get_names(module.node)
+    assert names["Callable"] == "typing.Callable"
+    assert names["File"] == ".File"
+    assert names["get_files"] == ".get_files"
+    assert names["log"] == ".log"
+    node = get_by_name(def_nodes, "File")
+    assert isinstance(node, ast.ClassDef)
+    names = get_names(node)
+    assert names["src_path"] == ".src_path"
+    assert names["url"] == ".url"
 
 
 # def test_source(source):
