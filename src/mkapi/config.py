@@ -1,3 +1,4 @@
 """Configuration file."""
 
-exclude = ["/tests"]
+exclude: list[str] = ["/tests"]
+filters: list[str] = []

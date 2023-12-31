@@ -17,9 +17,9 @@ nav:
   - index.md
   - Examples:
     - example.md
-    - <api>/mkapi.plugins|upper
+    - <api>/mkdocs
     - ABC: <api>/mkdocs.structure
-  - API: <api>/mkdocs.structure.files|upper|strict
+  - API: <api>/mkdocs
   - <api>/mkapi
 extra_css:
   - custom.css

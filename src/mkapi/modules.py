@@ -38,8 +38,22 @@ class Module:
     def __iter__(self) -> Iterator[Module]:
         yield self
         if self.is_package():
-            for module in iter_submodules(self):  # TODO @D: cache
+            for module in iter_submodules(self):
                 yield from module
+
+    def get_tree(self) -> tuple[Module, list]:
+        """Return the package tree structure."""
+        modules: list[Module | tuple[Module, list]] = []
+        for module in find_submodules(self):
+            if module.is_package():
+                modules.append(module.get_tree())
+            else:
+                modules.append(module)
+        return (self, modules)
+
+    def get_markdown(self, filters: list[str] | None) -> str:
+        """Return the markdown text of the module."""
+        return "# test\n"
 
 
 cache: dict[str, Module] = {}
@@ -68,7 +82,8 @@ def _is_module(path: Path) -> bool:
     for pattern in config.exclude:
         if re.search(pattern, path_str):
             return False
-    if path.is_dir() and "__init__.py" in [p.name for p in path.iterdir()]:
+    it = (p.name for p in path.iterdir())
+    if path.is_dir() and "__init__.py" in it:
         return True
     if path.is_file() and not path.stem.startswith("__") and path.suffix == ".py":
         return True
@@ -89,4 +104,5 @@ def iter_submodules(module: Module) -> Iterator[Module]:
 
 def find_submodules(module: Module) -> list[Module]:
     """Return a list of submodules."""
-    return list(iter_submodules(module))
+    modules = iter_submodules(module)
+    return sorted(modules, key=lambda module: not module.is_package())

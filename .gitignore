@@ -68,5 +68,6 @@ ENV/
 
 # MkDocs documentation
 site*/
+docs/api
 
 lcov.info

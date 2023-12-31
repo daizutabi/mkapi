@@ -40,5 +40,4 @@ def update_filters(org: list[str], update: list[str]) -> list[str]:
             del filters[filters.index(x)]
         if y in org and x in update:
             del filters[filters.index(y)]
-
     return filters

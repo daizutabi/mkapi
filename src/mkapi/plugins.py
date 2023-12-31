@@ -28,7 +28,7 @@ from mkdocs.structure.pages import Page as MkDocsPage
 from mkdocs.structure.toc import AnchorLink, TableOfContents
 from mkdocs.utils.templates import TemplateContext
 
-# import mkapi
+import mkapi.config
 from mkapi.filter import split_filters, update_filters
 from mkapi.modules import Module, get_module
 
@@ -170,6 +170,31 @@ def _insert_sys_path(config: MkAPIConfig) -> None:
         sys.path.insert(0, str(path))
 
 
+def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    if not plugin.server:
+        plugin.config.abs_api_paths = _update_nav(config, plugin.config.filters)
+        global_config["nav"] = config.nav
+        global_config["abs_api_paths"] = plugin.config.abs_api_paths
+    else:
+        config.nav = global_config["nav"]
+        plugin.config.abs_api_paths = global_config["abs_api_paths"]
+
+
+def _update_nav(config: MkDocsConfig, filters: list[str]) -> list[Path]:
+    if not isinstance(config.nav, list):
+        return []
+
+    def create_api_nav(item: str) -> list:
+        nav, paths = _collect(item, config.docs_dir, filters)
+        abs_api_paths.extend(paths)
+        return nav
+
+    abs_api_paths: list[Path] = []
+    _walk_nav(config.nav, create_api_nav)
+
+    return abs_api_paths
+
+
 API_URL_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
 
 
@@ -197,63 +222,41 @@ def _collect(item: str, docs_dir: str, filters: list[str]) -> tuple[list, list[P
     module_name, filters_ = split_filters(module_name)
     filters = update_filters(filters, filters_)
 
-    # def add_module(module: Module, package: str | None) -> None:
-    #     module_path = module.object.id + ".md"
-    #     abs_module_path = abs_api_path / module_path
-    #     abs_api_paths.append(abs_module_path)
-    #     create_page(abs_module_path, module, filters)
-    #     module_name = module.object.id
-    #     if package and "short_nav" in filters and module_name != package:
-    #         module_name = module_name[len(package) + 1 :]
-    #     modules[module_name] = (Path(api_path) / module_path).as_posix()
-    #     abs_source_path = abs_api_path / "source" / module_path
-    #     create_source_page(abs_source_path, module, filters)
+    def add_module(module: Module, package: str | None) -> None:
+        module_path = module.name + ".md"
+        abs_module_path = abs_api_path / module_path
+        abs_api_paths.append(abs_module_path)
+        _create_page(abs_module_path, module, filters)
+        module_name = module.name
+        if package and "short_nav" in filters and module_name != package:
+            module_name = module_name[len(package) + 1 :]
+        modules[module_name] = (Path(api_path) / module_path).as_posix()
+        # abs_source_path = abs_api_path / "source" / module_path
+        # create_source_page(abs_source_path, module, filters)
 
     abs_api_paths: list[Path] = []
     modules: dict[str, str] = {}
     nav, package = [], None
-    module = get_module(module_name)
-    print(module)
-    assert 0
-    # for module in get_module(package_path):
-    #     if module.object.kind == "package":
-    #         if package and modules:
-    #             nav.append({package: modules})
-    #         package = module.object.id
-    #         modules.clear()
-    #         if module.docstring or any(m.docstring for m in module.members):
-    #             add_module(module, package)
-    #     else:
-    #         add_module(module, package)
+    # module = get_module(module_name)
+
+    # if not module.is_package():
+    #     pass  # TODO
+
+    for module in get_module(module_name):
+        if module.is_package():
+            if package and modules:
+                nav.append({package: modules})
+            package = module.name
+            modules = {}
+            add_module(module, package)  # Skip if no docstring.
+        else:
+            add_module(module, package)
     # if package and modules:
     #     nav.append({package: modules})
+    if modules:
+        nav.append({package or module.name: modules})
 
     return nav, abs_api_paths
-
-
-def _update_nav(config: MkDocsConfig, filters: list[str]) -> list[Path]:
-    if not isinstance(config.nav, list):
-        return []
-
-    def create_api_nav(item: str) -> list:
-        nav, paths = _collect(item, config.docs_dir, filters)
-        abs_api_paths.extend(paths)
-        return nav
-
-    abs_api_paths: list[Path] = []
-    _walk_nav(config.nav, create_api_nav)
-
-    return abs_api_paths
-
-
-def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
-    if not plugin.server:
-        plugin.config.abs_api_paths = _update_nav(config, plugin.config.filters)
-        global_config["nav"] = config.nav
-        global_config["abs_api_paths"] = plugin.config.abs_api_paths
-    else:
-        config.nav = global_config["nav"]
-        plugin.config.abs_api_paths = global_config["abs_api_paths"]
 
 
 def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
@@ -272,10 +275,10 @@ def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig
     return config
 
 
-# def create_page(path: Path, module: Module, filters: list[str]) -> None:
-#     """Create a page."""
-#     with path.open("w") as f:
-#         f.write(module.get_markdown(filters))
+def _create_page(path: Path, module: Module, filters: list[str]) -> None:
+    """Create a page."""
+    with path.open("w") as f:
+        f.write(module.get_markdown(filters))
 
 
 # def create_source_page(path: Path, module: Module, filters: list[str]) -> None:

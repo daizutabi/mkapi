@@ -27,7 +27,18 @@ def test_iter_submodules(module: Module):
     config.exclude = exclude
 
 
+def test_get_tree():
+    module = get_module("mkdocs.structure.files")
+    tree = module.get_tree()
+    assert isinstance(tree[0], Module)
+    assert tree[1] == []
+    module = get_module("mkdocs.structure")
+    tree = module.get_tree()
+    assert isinstance(tree[0], Module)
+    assert len(tree[1])
+    assert isinstance(tree[1][0], Module)
+
+
 def test_cache(module: Module):
     assert "mkdocs" in cache
-    id_ = id(module)
-    assert id(get_module("mkdocs")) == id_
+    assert id(get_module("mkdocs")) == id(module)
