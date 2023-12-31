@@ -1,0 +1,3 @@
+"""Configuration file."""
+
+exclude = ["/tests"]

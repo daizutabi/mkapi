@@ -17,10 +17,10 @@ nav:
   - index.md
   - Examples:
     - example.md
-    - mkapi/api/mkapi.plugins
-    - ABC: mkapi/api/mkapi.inspect
-  - API: mkapi/api/mkapi.inspect|upper|strict
-  - mkapi/api/mkapi.plugins
+    - <api>/mkapi.plugins|upper
+    - ABC: <api>/mkdocs.structure
+  - API: <api>/mkdocs.structure.files|upper|strict
+  - <api>/mkapi
 extra_css:
   - custom.css
 extra_javascript:

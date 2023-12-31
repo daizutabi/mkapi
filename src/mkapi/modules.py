@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import ast
+import re
 from dataclasses import dataclass
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from mkapi import config
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -32,6 +35,15 @@ class Module:
     def update(self) -> None:
         """Update contents."""
 
+    def __iter__(self) -> Iterator[Module]:
+        yield self
+        if self.is_package():
+            for module in iter_submodules(self):  # TODO @D: cache
+                yield from module
+
+
+cache: dict[str, Module] = {}
+
 
 def get_module(name: str) -> Module:
     """Return a [Module] instance by name."""
@@ -39,13 +51,28 @@ def get_module(name: str) -> Module:
     if not spec or not spec.origin:
         raise ModuleNotFoundError
     path = Path(spec.origin)
+    mtime = path.stat().st_mtime
+    if name in cache and mtime == cache[name].mtime:
+        return cache[name]
     if not path.exists():
         raise ModuleNotFoundError
     with path.open(encoding="utf-8") as f:
         source = f.read()
     node = ast.parse(source)
-    mtime = path.stat().st_mtime
-    return Module(name, path, source, mtime, node)
+    cache[name] = Module(name, path, source, mtime, node)
+    return cache[name]
+
+
+def _is_module(path: Path) -> bool:
+    path_str = path.as_posix()
+    for pattern in config.exclude:
+        if re.search(pattern, path_str):
+            return False
+    if path.is_dir() and "__init__.py" in [p.name for p in path.iterdir()]:
+        return True
+    if path.is_file() and not path.stem.startswith("__") and path.suffix == ".py":
+        return True
+    return False
 
 
 def iter_submodules(module: Module) -> Iterator[Module]:
@@ -55,7 +82,7 @@ def iter_submodules(module: Module) -> Iterator[Module]:
         return
     for location in spec.submodule_search_locations:
         for path in Path(location).iterdir():
-            if path.suffix == ".py":
+            if _is_module(path):
                 name = f"{module.name}.{path.stem}"
                 yield get_module(name)
 

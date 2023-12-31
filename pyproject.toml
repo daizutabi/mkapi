@@ -29,7 +29,7 @@ Issues = "https://github.com/daizutabi/mkapi/issues"
 mkapi = "mkapi.main:cli"
 
 [project.entry-points."mkdocs.plugins"]
-mkapi = "mkapi.plugins.mkdocs:MkAPIPlugin"
+mkapi = "mkapi.plugins:MkAPIPlugin"
 
 [tool.hatch.version]
 path = "src/mkapi/__about__.py"
