@@ -1,5 +1,3 @@
-import ast
-
 import pytest
 
 from mkapi.ast.node import Module, get_module, get_module_node
@@ -12,12 +10,13 @@ def module():
 
 
 def test_args(module: Module):
-    print(module.classes)
+    g = module.globals
+    for n in g:
+        print(n)
     assert 0
 
 
-def test_attrs(module: Module):
-    attrs = module.attrs
-    print(attrs)
-    assert 0
-    # args = get_arguments
+# def test_attrs(module: Module):
+#     attrs = module.attrs
+#     print(attrs)
+#     assert 0

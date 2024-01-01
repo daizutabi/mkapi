@@ -4,12 +4,7 @@ from __future__ import annotations
 import ast
 from ast import Attribute, Call, Constant, List, Name, Slice, Starred, Subscript, Tuple
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from typing import TypeAlias
-
-# Callback: TypeAlias = Callable[[ast.expr], str | ast.expr | None] | None
 type Callback = Callable[[ast.expr], str | ast.expr]  # Python 3.12
 
 

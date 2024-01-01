@@ -12,23 +12,23 @@ from ast import (
     Import,
     ImportFrom,
     Name,
+    TypeAlias,
 )
 from dataclasses import dataclass
 from importlib.util import find_spec
 from inspect import Parameter, cleandoc
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias, TypeGuard
+from typing import TYPE_CHECKING, TypeGuard
 
 if TYPE_CHECKING:
     from ast import AST
     from collections.abc import Iterator, Sequence
     from inspect import _ParameterKind
 
-Import_: TypeAlias = Import | ImportFrom
-FuncDef: TypeAlias = AsyncFunctionDef | FunctionDef
-Def: TypeAlias = AsyncFunctionDef | FunctionDef | ClassDef
-Assign_: TypeAlias = ast.Assign | AnnAssign
-Doc: TypeAlias = ast.Module | Def | Assign_
+type FunctionDef_ = AsyncFunctionDef | FunctionDef
+type Def = FunctionDef_ | ClassDef
+type Assign_ = ast.Assign | AnnAssign | TypeAlias
+type Doc = ast.Module | Def | Assign_
 
 module_cache: dict[str, tuple[float, ast.Module]] = {}
 
@@ -51,12 +51,12 @@ def get_module_node(name: str) -> ast.Module:
     return node
 
 
-def iter_import_nodes(node: AST) -> Iterator[Import_]:
+def iter_import_nodes(node: AST) -> Iterator[Import | ImportFrom]:
     """Yield import nodes."""
     for child in ast.iter_child_nodes(node):
-        if isinstance(child, Import_):
+        if isinstance(child, Import | ImportFrom):
             yield child
-        elif not isinstance(child, Def):
+        elif not isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
             yield from iter_import_nodes(child)
 
 
@@ -80,6 +80,8 @@ def _is_assign_name(node: AST) -> TypeGuard[Assign_]:
         return True
     if isinstance(node, ast.Assign) and isinstance(node.targets[0], Name):
         return True
+    if isinstance(node, TypeAlias) and isinstance(node.name, Name):
+        return True
     return False
 
 
@@ -89,12 +91,14 @@ def _get_assign_name(node: AST) -> str | None:
         return node.target.id
     if isinstance(node, ast.Assign) and isinstance(node.targets[0], Name):
         return node.targets[0].id
+    if isinstance(node, TypeAlias) and isinstance(node.name, Name):
+        return node.name.id
     return None
 
 
 def get_name(node: AST) -> str | None:
     """Return the node name."""
-    if isinstance(node, Def):
+    if isinstance(node, AsyncFunctionDef | FunctionDef | ClassDef):
         return node.name
     return _get_assign_name(node)
 
@@ -154,7 +158,7 @@ def get_assign_names(node: ast.Module | ClassDef) -> dict[str, str | None]:
 def iter_definition_nodes(node: ast.Module | ClassDef) -> Iterator[Def]:
     """Yield definition nodes."""
     for child in ast.iter_child_nodes(node):
-        if isinstance(child, Def):
+        if isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
             yield child
 
 
@@ -201,9 +205,9 @@ def get_names(node: ast.Module | ClassDef) -> dict[str, str]:
 
 def get_docstring(node: Doc) -> str | None:
     """Return the docstring for the given node or None if no docstring can be found."""
-    if isinstance(node, ast.Module | Def):
+    if isinstance(node, AsyncFunctionDef | FunctionDef | ClassDef | ast.Module):
         return ast.get_docstring(node)
-    if isinstance(node, Assign_):
+    if isinstance(node, ast.Assign | AnnAssign | TypeAlias):
         return node.__doc__
     msg = f"{node.__class__.__name__!r} can't have docstrings"
     raise TypeError(msg)
@@ -218,14 +222,14 @@ ARGS_KIND: dict[_ParameterKind, str] = {
 }
 
 
-def _iter_arguments(node: FuncDef) -> Iterator[tuple[ast.arg, _ParameterKind]]:
+def _iter_arguments(node: FunctionDef_) -> Iterator[tuple[ast.arg, _ParameterKind]]:
     for kind, attr in ARGS_KIND.items():
         if args := getattr(node.args, attr):
             it = args if isinstance(args, list) else [args]
             yield from ((arg, kind) for arg in it)
 
 
-def _iter_defaults(node: FuncDef) -> Iterator[ast.expr | None]:
+def _iter_defaults(node: FunctionDef_) -> Iterator[ast.expr | None]:
     args = node.args
     num_positional = len(args.posonlyargs) + len(args.args)
     nones = [None] * num_positional
@@ -271,7 +275,7 @@ class Arguments(_Items[Argument]):
     """Arguments class."""
 
 
-def iter_arguments(node: FuncDef) -> Iterator[Argument]:
+def iter_arguments(node: FunctionDef_) -> Iterator[Argument]:
     """Yield arguments from the function node."""
     it = _iter_defaults(node)
     for arg, kind in _iter_arguments(node):
@@ -282,7 +286,7 @@ def iter_arguments(node: FuncDef) -> Iterator[Argument]:
         yield Argument(arg.arg, arg.annotation, default, kind)
 
 
-def get_arguments(node: FuncDef) -> Arguments:
+def get_arguments(node: FunctionDef_) -> Arguments:
     """Return the function arguments."""
     return Arguments(list(iter_arguments(node)))
 
@@ -301,14 +305,24 @@ class Attributes(_Items[Attribute]):
     """Assigns class."""
 
 
+def get_annotation(node: Assign_) -> ast.expr | None:
+    """Return annotation."""
+    if isinstance(node, AnnAssign):
+        return node.annotation
+    if isinstance(node, TypeAlias):
+        return node.value
+    return None
+
+
 def iter_attributes(node: ast.Module | ClassDef) -> Iterator[Attribute]:
     """Yield assign nodes."""
     for assign in iter_assign_nodes(node):
         if not (name := get_name(assign)):
             continue
-        annotation = assign.annotation if isinstance(assign, AnnAssign) else None
+        annotation = get_annotation(assign)
+        value = None if isinstance(assign, TypeAlias) else assign.value
         docstring = get_docstring(assign)
-        yield Attribute(name, annotation, assign.value, docstring)
+        yield Attribute(name, annotation, value, docstring)
 
 
 def get_attributes(node: ast.Module | ClassDef) -> Attributes:
@@ -338,7 +352,7 @@ class Function(_Item):
     docstring: str | None
     args: Arguments
     returns: ast.expr | None
-    kind: type[FuncDef]
+    kind: type[FunctionDef_]
 
 
 @dataclass(repr=False)
