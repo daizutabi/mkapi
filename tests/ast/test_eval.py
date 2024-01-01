@@ -10,10 +10,10 @@ def module():
 
 
 def test_args(module: Module):
-    g = module.globals
+    g = module.attrs
     for n in g:
         print(n)
-    assert 0
+    # assert 0
 
 
 # def test_attrs(module: Module):
