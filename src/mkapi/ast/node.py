@@ -70,7 +70,7 @@ def iter_import_names(node: ast.Module | Def) -> Iterator[tuple[str, str]]:
             yield name, fullname
 
 
-def get_assign_name(node: AST) -> str | None:
+def get_assign_name(node: Assign_) -> str | None:
     """Return the name of the assign node."""
     if isinstance(node, AnnAssign) and isinstance(node.target, Name):
         return node.target.id
@@ -92,12 +92,11 @@ def iter_assign_nodes(node: ast.Module | ClassDef) -> Iterator[Assign_]:
     """Yield assign nodes."""
     assign_node: Assign_ | None = None
     for child in ast.iter_child_nodes(node):
-        # if _is_assign_name(child):
-        if get_assign_name(child):
+        if isinstance(child, AnnAssign | ast.Assign | TypeAlias):
             if assign_node:
                 yield assign_node
             child.__doc__ = None
-            assign_node = child  # type: ignore  # noqa: PGH003
+            assign_node = child
         else:
             if assign_node:
                 assign_node.__doc__ = _get_docstring(child)
@@ -198,8 +197,10 @@ def iter_arguments(node: FunctionDef_) -> Iterator[Argument]:
         yield Argument(arg.arg, arg.annotation, default, kind)
 
 
-def get_arguments(node: FunctionDef_) -> Arguments:
+def get_arguments(node: FunctionDef_ | ClassDef) -> Arguments:
     """Return the function arguments."""
+    if isinstance(node, ClassDef):
+        return Arguments([])
     return Arguments(list(iter_arguments(node)))
 
 
@@ -211,6 +212,7 @@ class Attribute(_Item):
     value: ast.expr | None
     docstring: str | None
     kind: type[Assign_]
+    type_params: list[ast.type_param] | None
 
 
 @dataclass(repr=False)
@@ -235,7 +237,8 @@ def iter_attributes(node: ast.Module | ClassDef) -> Iterator[Attribute]:
         annotation = get_annotation(assign)
         value = None if isinstance(assign, TypeAlias) else assign.value
         docstring = get_docstring(assign)
-        yield Attribute(name, annotation, value, docstring, type(assign))
+        type_params = assign.type_params if isinstance(assign, TypeAlias) else None
+        yield Attribute(name, annotation, value, docstring, type(assign), type_params)
 
 
 def get_attributes(node: ast.Module | ClassDef) -> Attributes:
@@ -244,28 +247,27 @@ def get_attributes(node: ast.Module | ClassDef) -> Attributes:
 
 
 @dataclass(repr=False)
-class Class(_Item):
+class _Def(_Item):
+    docstring: str | None
+    args: Arguments
+    decorators: list[ast.expr]
+    type_params: list[ast.type_param]
+
+
+@dataclass(repr=False)
+class Function(_Def):
+    """Function class."""
+
+    returns: ast.expr | None
+    kind: type[FunctionDef_]
+
+
+@dataclass(repr=False)
+class Class(_Def):
     """Class class."""
 
     bases: list[ast.expr]
-    docstring: str | None
-    args: Arguments | None
     attrs: Attributes
-
-
-@dataclass(repr=False)
-class Classes(_Items[Class]):
-    """Classes class."""
-
-
-@dataclass(repr=False)
-class Function(_Item):
-    """Function class."""
-
-    docstring: str | None
-    args: Arguments
-    returns: ast.expr | None
-    kind: type[FunctionDef_]
 
 
 @dataclass(repr=False)
@@ -273,18 +275,37 @@ class Functions(_Items[Function]):
     """Functions class."""
 
 
+@dataclass(repr=False)
+class Classes(_Items[Class]):
+    """Classes class."""
+
+
+def _get_def_args(
+    node: ClassDef | FunctionDef_,
+) -> tuple[str, str | None, Arguments, list[ast.expr], list[ast.type_param]]:
+    name = node.name
+    docstring = get_docstring(node)
+    args = get_arguments(node)
+    decorators = node.decorator_list
+    type_params = node.type_params
+    return name, docstring, args, decorators, type_params
+
+
+def get_class(node: ClassDef) -> Class:
+    """Return a [Class] instance."""
+    attrs = get_attributes(node)
+    return Class(*_get_def_args(node), node.bases, attrs)
+
+
+def get_function(node: FunctionDef_) -> Function:
+    """Return a [Function] instance."""
+    return Function(*_get_def_args(node), node.returns, type(node))
+
+
 def iter_definitions(module: ast.Module) -> Iterator[Class | Function]:
     """Yield classes or functions."""
     for node in iter_definition_nodes(module):
-        name = node.name
-        docstring = get_docstring(node)
-        if isinstance(node, ClassDef):
-            args = Arguments([])
-            attrs = get_attributes(node)
-            yield Class(name, node.bases, docstring, None, attrs)
-        else:
-            args = get_arguments(node)
-            yield Function(name, docstring, args, node.returns, type(node))
+        yield get_class(node) if isinstance(node, ClassDef) else get_function(node)
 
 
 @dataclass
