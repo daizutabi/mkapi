@@ -2,7 +2,7 @@ import ast
 
 import pytest
 
-from mkapi.ast import (
+from mkapi.ast.node import (
     get_assign_names,
     get_assign_nodes,
     get_by_name,

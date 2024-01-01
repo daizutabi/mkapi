@@ -1,32 +1,32 @@
-"""Object class."""
-from __future__ import annotations
+# """Object class."""
+# from __future__ import annotations
 
-import ast
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeAlias
+# import ast
+# from dataclasses import dataclass
+# from typing import TYPE_CHECKING, TypeAlias
 
-from mkapi.ast import iter_def_nodes
+# from mkapi.ast import iter_def_nodes
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-    from pathlib import Path
+# if TYPE_CHECKING:
+#     from collections.abc import Iterator
+#     from pathlib import Path
 
-    from mkapi.modules import Module
-
-
-Node: TypeAlias = ast.ClassDef | ast.Module | ast.FunctionDef
+#     from mkapi.modules import Module
 
 
-@dataclass
-class Object:
-    """Object class."""
-
-    name: str
-    path: Path
-    source: str
-    module: Module
-    node: Node
+# Node: TypeAlias = ast.ClassDef | ast.Module | ast.FunctionDef
 
 
-def iter_objects(module: Module) -> Iterator:
-    pass
+# @dataclass
+# class Object:
+#     """Object class."""
+
+#     name: str
+#     path: Path
+#     source: str
+#     module: Module
+#     node: Node
+
+
+# def iter_objects(module: Module) -> Iterator:
+#     pass

@@ -8,7 +8,7 @@ from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
 
-import mkapi.ast
+import mkapi.ast.node
 from mkapi import config
 
 if TYPE_CHECKING:
@@ -42,15 +42,15 @@ class Module:
 
     def get_node(self, name: str) -> Node:
         """Return a node by name."""
-        nodes = mkapi.ast.get_nodes(self.node)
-        node = mkapi.ast.get_by_name(nodes, name)
+        nodes = mkapi.ast.node.get_nodes(self.node)
+        node = mkapi.ast.node.get_by_name(nodes, name)
         if node is None:
             raise NameError
         return node
 
     def get_names(self) -> dict[str, str]:
         """Return a dictionary of names as (name => fullname)."""
-        return dict(mkapi.ast.iter_names(self.node))
+        return dict(mkapi.ast.node.iter_names(self.node))
 
     def iter_submodules(self) -> Iterator[Module]:
         """Yield submodules."""

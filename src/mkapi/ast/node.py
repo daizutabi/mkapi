@@ -119,7 +119,7 @@ def iter_assign_names(node: Module | ClassDef) -> Iterator[tuple[str, str | None
     """Yield assign node names."""
     for child in iter_assign_nodes(node):
         if name := _get_assign_name(child):
-            fullname = child.value and ast.unparse(child.value)  # TODO @D: fix unparse
+            fullname = child.value and ast.unparse(child.value)
             yield name, fullname
 
 
