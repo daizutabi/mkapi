@@ -21,9 +21,9 @@ def test_get_module(module: Module):
 
 def test_iter_submodules(module: Module):
     exclude = config.exclude.copy()
-    assert len(list(module)) < 45
+    assert len(list(module.iter_submodules())) < 45
     config.exclude.clear()
-    assert len(list(module)) > 45
+    assert len(list(module.iter_submodules())) > 45
     config.exclude = exclude
 
 

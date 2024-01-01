@@ -15,12 +15,12 @@ plugins:
       on_config: custom.on_config
 nav:
   - index.md
-  - Examples:
-    - example.md
-    - <api>/mkdocs
-    - ABC: <api>/mkdocs.structure
-  - API: <api>/mkdocs
-  - <api>/mkapi
+  - <api>/mkdocs.structure
+  - example.md
+  # - D: example.md
+  # - E: example.md
+
+
 extra_css:
   - custom.css
 extra_javascript:

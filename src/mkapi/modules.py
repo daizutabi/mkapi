@@ -6,12 +6,17 @@ import re
 from dataclasses import dataclass
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
+import mkapi.ast
 from mkapi import config
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+Def: TypeAlias = ast.AsyncFunctionDef | ast.FunctionDef | ast.ClassDef
+Assign_: TypeAlias = ast.Assign | ast.AnnAssign
+Node: TypeAlias = Def | Assign_
 
 
 @dataclass
@@ -35,11 +40,24 @@ class Module:
     def update(self) -> None:
         """Update contents."""
 
-    def __iter__(self) -> Iterator[Module]:
-        yield self
+    def get_node(self, name: str) -> Node:
+        """Return a node by name."""
+        nodes = mkapi.ast.get_nodes(self.node)
+        node = mkapi.ast.get_by_name(nodes, name)
+        if node is None:
+            raise NameError
+        return node
+
+    def get_names(self) -> dict[str, str]:
+        """Return a dictionary of names as (name => fullname)."""
+        return dict(mkapi.ast.iter_names(self.node))
+
+    def iter_submodules(self) -> Iterator[Module]:
+        """Yield submodules."""
         if self.is_package():
             for module in iter_submodules(self):
-                yield from module
+                yield module
+                yield from module.iter_submodules()
 
     def get_tree(self) -> tuple[Module, list]:
         """Return the package tree structure."""
@@ -53,7 +71,7 @@ class Module:
 
     def get_markdown(self, filters: list[str] | None) -> str:
         """Return the markdown text of the module."""
-        return "# test\n"
+        return f"# {self.name}\n\n## {self.name}\n"
 
 
 cache: dict[str, Module] = {}

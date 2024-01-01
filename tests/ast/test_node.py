@@ -41,16 +41,6 @@ def test_get_import_names(module: Module):
     assert names["urlquote"] == "urllib.parse.quote"
 
 
-@pytest.fixture(scope="module")
-def def_nodes(module: Module):
-    return get_def_nodes(module.node)
-
-
-def test_get_def_nodes(def_nodes):
-    assert any(node.name == "get_files" for node in def_nodes)
-    assert any(node.name == "Files" for node in def_nodes)
-
-
 def test_get_by_name(def_nodes):
     node = get_by_name(def_nodes, "get_files")
     assert isinstance(node, ast.FunctionDef)
@@ -64,21 +54,14 @@ def test_get_by_name(def_nodes):
     assert get_name(node) == "EXCLUDED"
 
 
-def test_get_docstring(def_nodes):
-    node = get_by_name(def_nodes, "get_files")
-    assert isinstance(node, ast.FunctionDef)
-    doc = get_docstring(node)
-    assert isinstance(doc, str)
-    assert doc.startswith("Walk the `docs_dir`")
-    with pytest.raises(TypeError):
-        get_docstring(node.args)  # type: ignore
-    node = get_by_name(def_nodes, "InclusionLevel")
-    assert isinstance(node, ast.ClassDef)
-    nodes = get_assign_nodes(node)
-    node = get_by_name(nodes, "INCLUDED")
-    doc = get_docstring(node)  # type: ignore
-    assert isinstance(doc, str)
-    assert doc.startswith("The file is part of the site.")
+@pytest.fixture(scope="module")
+def def_nodes(module: Module):
+    return get_def_nodes(module.node)
+
+
+def test_get_def_nodes(def_nodes):
+    assert any(node.name == "get_files" for node in def_nodes)
+    assert any(node.name == "Files" for node in def_nodes)
 
 
 def test_get_assign_names(module: Module, def_nodes):
@@ -105,15 +88,18 @@ def test_get_names(module: Module, def_nodes):
     assert names["url"] == ".url"
 
 
-# def test_source(source):
-#     print(source)
-#     assert 0
-
-
-# def test_get_assign_nodes(def_nodes):
-#     for node in def_nodes:
-#         if node.name == "InclusionLevel":
-#             nodes = get_assign_nodes(node)
-#             for node
-#             print(len(nodes))
-#     assert 0
+def test_get_docstring(def_nodes):
+    node = get_by_name(def_nodes, "get_files")
+    assert isinstance(node, ast.FunctionDef)
+    doc = get_docstring(node)
+    assert isinstance(doc, str)
+    assert doc.startswith("Walk the `docs_dir`")
+    with pytest.raises(TypeError):
+        get_docstring(node.args)  # type: ignore
+    node = get_by_name(def_nodes, "InclusionLevel")
+    assert isinstance(node, ast.ClassDef)
+    nodes = get_assign_nodes(node)
+    node = get_by_name(nodes, "INCLUDED")
+    doc = get_docstring(node)  # type: ignore
+    assert isinstance(doc, str)
+    assert doc.startswith("The file is part of the site.")

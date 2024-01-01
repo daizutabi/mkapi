@@ -1,0 +1,3 @@
+# mkdocs.structure
+
+## mkdocs.structure

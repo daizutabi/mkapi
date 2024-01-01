@@ -64,101 +64,100 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             config.markdown_extensions.append("admonition")
         return _on_config_plugin(config, self)
 
+    #     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:  # noqa: ARG002
+    #         """Collect plugin CSS/JavaScript and appends them to `files`."""
+    #         root = Path(mkapi.__file__).parent / "theme"
+    #         docs_dir = config.docs_dir
+    #         config.docs_dir = root.as_posix()
+    #         theme_files = get_files(config)
+    #         config.docs_dir = docs_dir
+    #         theme_name = config.theme.name or "mkdocs"
 
-#     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:  # noqa: ARG002
-#         """Collect plugin CSS/JavaScript and appends them to `files`."""
-#         root = Path(mkapi.__file__).parent / "theme"
-#         docs_dir = config.docs_dir
-#         config.docs_dir = root.as_posix()
-#         theme_files = get_files(config)
-#         config.docs_dir = docs_dir
-#         theme_name = config.theme.name or "mkdocs"
+    #         css = []
+    #         js = []
+    #         for file in theme_files:
+    #             path = Path(file.src_path).as_posix()
+    #             if path.endswith(".css"):
+    #                 if "common" in path or theme_name in path:
+    #                     files.append(file)
+    #                     css.append(path)
+    #             elif path.endswith(".js"):
+    #                 files.append(file)
+    #                 js.append(path)
+    #             elif path.endswith(".yml"):
+    #                 with (root / path).open() as f:
+    #                     data = yaml.safe_load(f)
+    #                 css = data.get("extra_css", []) + css
+    #                 js = data.get("extra_javascript", []) + js
+    #         css = [x for x in css if x not in config.extra_css]
+    #         js = [x for x in js if x not in config.extra_javascript]
+    #         config.extra_css.extend(css)
+    #         config.extra_javascript.extend(js)
 
-#         css = []
-#         js = []
-#         for file in theme_files:
-#             path = Path(file.src_path).as_posix()
-#             if path.endswith(".css"):
-#                 if "common" in path or theme_name in path:
-#                     files.append(file)
-#                     css.append(path)
-#             elif path.endswith(".js"):
-#                 files.append(file)
-#                 js.append(path)
-#             elif path.endswith(".yml"):
-#                 with (root / path).open() as f:
-#                     data = yaml.safe_load(f)
-#                 css = data.get("extra_css", []) + css
-#                 js = data.get("extra_javascript", []) + js
-#         css = [x for x in css if x not in config.extra_css]
-#         js = [x for x in js if x not in config.extra_javascript]
-#         config.extra_css.extend(css)
-#         config.extra_javascript.extend(js)
+    #         return files
 
-#         return files
+    #     def on_page_markdown(
+    #         self,
+    #         markdown: str,
+    #         page: MkDocsPage,
+    #         config: MkDocsConfig,  # noqa: ARG002
+    #         files: Files,  # noqa: ARG002
+    #         **kwargs,  # noqa: ARG002
+    #     ) -> str:
+    #         """Convert Markdown source to intermidiate version."""
+    #         abs_src_path = page.file.abs_src_path
+    #         clean_page_title(page)
+    #         abs_api_paths = self.config.abs_api_paths
+    #         filters = self.config.filters
+    #         mkapi_page = MkAPIPage(markdown, abs_src_path, abs_api_paths, filters)
+    #         self.config.pages[abs_src_path] = mkapi_page
+    #         return mkapi_page.markdown
 
-#     def on_page_markdown(
-#         self,
-#         markdown: str,
-#         page: MkDocsPage,
-#         config: MkDocsConfig,  # noqa: ARG002
-#         files: Files,  # noqa: ARG002
-#         **kwargs,  # noqa: ARG002
-#     ) -> str:
-#         """Convert Markdown source to intermidiate version."""
-#         abs_src_path = page.file.abs_src_path
-#         clean_page_title(page)
-#         abs_api_paths = self.config.abs_api_paths
-#         filters = self.config.filters
-#         mkapi_page = MkAPIPage(markdown, abs_src_path, abs_api_paths, filters)
-#         self.config.pages[abs_src_path] = mkapi_page
-#         return mkapi_page.markdown
+    #     def on_page_content(
+    #         self,
+    #         html: str,
+    #         page: MkDocsPage,
+    #         config: MkDocsConfig,  # noqa: ARG002
+    #         files: Files,  # noqa: ARG002
+    #         **kwargs,  # noqa: ARG002
+    #     ) -> str:
+    #         """Merge HTML and MkAPI's node structure."""
+    #         if page.title:
+    #             page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore  # noqa: PGH003
+    #         abs_src_path = page.file.abs_src_path
+    #         mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
+    #         return mkapi_page.content(html)
 
-#     def on_page_content(
-#         self,
-#         html: str,
-#         page: MkDocsPage,
-#         config: MkDocsConfig,  # noqa: ARG002
-#         files: Files,  # noqa: ARG002
-#         **kwargs,  # noqa: ARG002
-#     ) -> str:
-#         """Merge HTML and MkAPI's node structure."""
-#         if page.title:
-#             page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore  # noqa: PGH003
-#         abs_src_path = page.file.abs_src_path
-#         mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
-#         return mkapi_page.content(html)
+    #     def on_page_context(
+    #         self,
+    #         context: TemplateContext,
+    #         page: MkDocsPage,
+    #         config: MkDocsConfig,  # noqa: ARG002
+    #         nav: Navigation,  # noqa: ARG002
+    #         **kwargs,  # noqa: ARG002
+    #     ) -> TemplateContext:
+    #         """Clear prefix in toc."""
+    #         abs_src_path = page.file.abs_src_path
+    #         if abs_src_path in self.config.abs_api_paths:
+    #             clear_prefix(page.toc, 2)
+    #         else:
+    #             mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
+    #             for level, id_ in mkapi_page.headings:
+    #                 clear_prefix(page.toc, level, id_)
+    #         return context
 
-#     def on_page_context(
-#         self,
-#         context: TemplateContext,
-#         page: MkDocsPage,
-#         config: MkDocsConfig,  # noqa: ARG002
-#         nav: Navigation,  # noqa: ARG002
-#         **kwargs,  # noqa: ARG002
-#     ) -> TemplateContext:
-#         """Clear prefix in toc."""
-#         abs_src_path = page.file.abs_src_path
-#         if abs_src_path in self.config.abs_api_paths:
-#             clear_prefix(page.toc, 2)
-#         else:
-#             mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
-#             for level, id_ in mkapi_page.headings:
-#                 clear_prefix(page.toc, level, id_)
-#         return context
-
-#     def on_serve(  # noqa: D102
-#         self,
-#         server: LiveReloadServer,
-#         config: MkDocsConfig,  # noqa: ARG002
-#         builder: Callable,
-#         **kwargs,  # noqa: ARG002
-#     ) -> LiveReloadServer:
-#         for path in ["theme", "templates"]:
-#             path_str = (Path(mkapi.__file__).parent / path).as_posix()
-#             server.watch(path_str, builder)
-#         self.__class__.server = server
-#         return server
+    def on_serve(  # noqa: D102
+        self,
+        server: LiveReloadServer,
+        config: MkDocsConfig,  # noqa: ARG002
+        builder: Callable,
+        **kwargs,  # noqa: ARG002
+    ) -> LiveReloadServer:
+        # for path in ["theme", "templates"]:
+        #     path_str = (Path(mkapi.__file__).parent / path).as_posix()
+        #     server.watch(path_str, builder)
+        self.__class__.server = server
+        return server
 
 
 def _insert_sys_path(config: MkAPIConfig) -> None:
@@ -191,8 +190,23 @@ def _update_nav(config: MkDocsConfig, filters: list[str]) -> list[Path]:
 
     abs_api_paths: list[Path] = []
     _walk_nav(config.nav, create_api_nav)
-
+    print("AAAAAAAAAAAAAAAAAAA\n", config.nav)
+    abs_api_paths = list(set(abs_api_paths))
     return abs_api_paths
+
+
+def _walk_nav(nav: list | dict, create_api_nav: Callable[[str], list]) -> None:
+    print("DDD", nav)
+    it = enumerate(nav) if isinstance(nav, list) else nav.items()
+    for k, item in it:
+        if _is_api_entry(item):
+            api_nav = create_api_nav(item)
+            print("EEE", k, api_nav, type(nav))
+            # nav[k] = api_nav if isinstance(nav, dict) else {item: api_nav}
+            nav[k] = {"AAAA": [api_nav]}
+            print("FFF", nav)
+        elif isinstance(item, list | dict):
+            _walk_nav(item, create_api_nav)
 
 
 API_URL_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
@@ -200,16 +214,6 @@ API_URL_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
 
 def _is_api_entry(item: str | list | dict) -> TypeGuard[str]:
     return isinstance(item, str) and re.match(API_URL_PATTERN, item) is not None
-
-
-def _walk_nav(nav: list | dict, create_api_nav: Callable[[str], list]) -> None:
-    it = enumerate(nav) if isinstance(nav, list) else nav.items()
-    for k, item in it:
-        if _is_api_entry(item):
-            api_nav = create_api_nav(item)
-            nav[k] = api_nav if isinstance(nav, dict) else {item: api_nav}
-        elif isinstance(item, list | dict):
-            _walk_nav(item, create_api_nav)
 
 
 def _collect(item: str, docs_dir: str, filters: list[str]) -> tuple[list, list[Path]]:
@@ -237,26 +241,35 @@ def _collect(item: str, docs_dir: str, filters: list[str]) -> tuple[list, list[P
     abs_api_paths: list[Path] = []
     modules: dict[str, str] = {}
     nav, package = [], None
-    # module = get_module(module_name)
+    module = get_module(module_name)
+    print(module.get_tree())
+    add_module(module, None)
+    nav = modules
 
     # if not module.is_package():
     #     pass  # TODO
 
-    for module in get_module(module_name):
-        if module.is_package():
-            if package and modules:
-                nav.append({package: modules})
-            package = module.name
-            modules = {}
-            add_module(module, package)  # Skip if no docstring.
-        else:
-            add_module(module, package)
+    # for module in get_module(module_name):
+    #     if module.is_package():
+    #         if package and modules:
+    #             nav.append({package: modules})
+    #         package = module.name
+    #         modules = {}
+    #         add_module(module, package)  # Skip if no docstring.
+    #     else:
+    #         add_module(module, package)
     # if package and modules:
     #     nav.append({package: modules})
-    if modules:
-        nav.append({package or module.name: modules})
+    # if modules:
+    #     nav.append({package or module.name: modules})
 
     return nav, abs_api_paths
+
+
+def _create_page(path: Path, module: Module, filters: list[str]) -> None:
+    """Create a page."""
+    with path.open("w") as f:
+        f.write(module.get_markdown(filters))
 
 
 def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
@@ -273,12 +286,6 @@ def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig
     #     if isinstance(config_, MkDocsConfig):
     #         return config_
     return config
-
-
-def _create_page(path: Path, module: Module, filters: list[str]) -> None:
-    """Create a page."""
-    with path.open("w") as f:
-        f.write(module.get_markdown(filters))
 
 
 # def create_source_page(path: Path, module: Module, filters: list[str]) -> None:

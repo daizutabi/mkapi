@@ -6,27 +6,26 @@ from ast import (
     AnnAssign,
     Assign,
     AsyncFunctionDef,
-    Attribute,
     ClassDef,
     Constant,
     Expr,
     FunctionDef,
     Import,
     ImportFrom,
-    List,
     Module,
     Name,
-    Subscript,
-    Tuple,
 )
-from inspect import cleandoc
-from typing import TYPE_CHECKING, Any, TypeAlias, TypeGuard
+from dataclasses import dataclass
+from inspect import Parameter, cleandoc
+from typing import TYPE_CHECKING, TypeAlias, TypeGuard
 
 if TYPE_CHECKING:
     from ast import AST
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Iterator, Sequence
+    from inspect import _ParameterKind
 
 Import_: TypeAlias = Import | ImportFrom
+FuncDef: TypeAlias = AsyncFunctionDef | FunctionDef
 Def: TypeAlias = AsyncFunctionDef | FunctionDef | ClassDef
 Assign_: TypeAlias = Assign | AnnAssign
 Doc: TypeAlias = Module | Def | Assign_
@@ -152,17 +151,28 @@ def get_def_names(node: Module | ClassDef) -> list[str]:
     return list(iter_def_names(node))
 
 
+def iter_nodes(node: Module | ClassDef) -> Iterator[Def | Assign_]:
+    """Yield nodes."""
+    yield from iter_assign_nodes(node)
+    yield from iter_def_nodes(node)
+
+
+def get_nodes(node: Module | ClassDef) -> list[Def | Assign_]:
+    """Return a list of nodes."""
+    return list(iter_nodes(node))
+
+
 def iter_names(node: Module | ClassDef) -> Iterator[tuple[str, str]]:
-    """Yield import and def names."""
+    """Yield names as (name, fullname) pairs."""
     yield from iter_import_names(node)
-    for name in iter_def_names(node):
-        yield name, f".{name}"
     for name, _ in iter_assign_names(node):
+        yield name, f".{name}"
+    for name in iter_def_names(node):
         yield name, f".{name}"
 
 
 def get_names(node: Module | ClassDef) -> dict[str, str]:
-    """Return a dictionary of import and def names."""
+    """Return a dictionary of names as (name => fullname)."""
     return dict(iter_names(node))
 
 
@@ -176,50 +186,55 @@ def get_docstring(node: Doc) -> str | None:
     raise TypeError(msg)
 
 
-def parse_attribute(node: Attribute) -> str:  # noqa: D103
-    return ".".join([parse_node(node.value), node.attr])
+ARGS_KIND: dict[_ParameterKind, str] = {
+    Parameter.POSITIONAL_ONLY: "posonlyargs",  # before '/', list
+    Parameter.POSITIONAL_OR_KEYWORD: "args",  # normal, list
+    Parameter.VAR_POSITIONAL: "vararg",  # *args, arg or None
+    Parameter.KEYWORD_ONLY: "kwonlyargs",  # after '*' or '*args', list
+    Parameter.VAR_KEYWORD: "kwarg",  # **kwargs, arg or None
+}
 
 
-def parse_subscript(node: Subscript) -> str:  # noqa: D103
-    value = parse_node(node.value)
-    slice_ = parse_node(node.slice)
-    return f"{value}[{slice_}]"
+def iter_arguments(node: FuncDef) -> Iterator[tuple[ast.arg, _ParameterKind]]:
+    """Yield arguments from the function node."""
+    for kind, attr in ARGS_KIND.items():
+        if args := getattr(node.args, attr):
+            it = args if isinstance(args, list) else [args]
+            yield from ((arg, kind) for arg in it)
 
 
-def parse_constant(node: Constant) -> str:  # noqa: D103
-    if node.value is Ellipsis:
-        return "..."
-    if isinstance(node.value, str):
-        return node.value
-    return parse_value(node.value)
+def iter_defaults(node: FuncDef) -> Iterator[ast.expr | None]:
+    """Yield defaults from the function node."""
+    args = node.args
+    num_positional = len(args.posonlyargs) + len(args.args)
+    nones = [None] * num_positional
+    yield from [*nones, *args.defaults][-num_positional:]
+    yield from args.kw_defaults
 
 
-def parse_list(node: List) -> str:  # noqa: D103
-    return "[" + ", ".join(parse_node(n) for n in node.elts) + "]"
+@dataclass
+class _Argument:
+    annotation: ast.expr | None
+    default: ast.expr | None
+    kind: _ParameterKind
 
 
-def parse_tuple(node: Tuple) -> str:  # noqa: D103
-    return ", ".join(parse_node(n) for n in node.elts)
+@dataclass
+class _Arguments:
+    _args: dict[str, _Argument]
+
+    def __getattr__(self, name: str) -> _Argument:
+        return self._args[name]
 
 
-def parse_value(value: Any) -> str:  # noqa: D103, ANN401
-    return str(value)
-
-
-PARSE_NODE_FUNCTIONS: list[tuple[type, Callable[..., str] | str]] = [
-    (Attribute, parse_attribute),
-    (Subscript, parse_subscript),
-    (Constant, parse_constant),
-    (List, parse_list),
-    (Tuple, parse_tuple),
-    (Name, "id"),
-]
-
-
-def parse_node(node: AST) -> str:
-    """Return the string expression for an AST node."""
-    for type_, parse in PARSE_NODE_FUNCTIONS:
-        if isinstance(node, type_):
-            node_str = parse(node) if callable(parse) else getattr(node, parse)
-            return node_str if isinstance(node_str, str) else str(node_str)
-    return ast.unparse(node)
+def get_arguments(node: FuncDef) -> _Arguments:
+    """Return a dictionary of the function arguments."""
+    it = iter_defaults(node)
+    args: dict[str, _Argument] = {}
+    for arg, kind in iter_arguments(node):
+        if kind in [Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD]:
+            default = None
+        else:
+            default = next(it)
+        args[arg.arg] = _Argument(arg.annotation, default, kind)
+    return _Arguments(args)
