@@ -12,7 +12,7 @@ def _get_args(source: str):
 
 def test_get_arguments_1():
     args = _get_args("def f():\n pass")
-    assert not args._args  # noqa: SLF001
+    assert not args.items
     args = _get_args("def f(x):\n pass")
     assert args.x.annotation is None
     assert args.x.default is None

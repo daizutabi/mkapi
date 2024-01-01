@@ -1,7 +1,6 @@
 """Utility code."""
 from __future__ import annotations
 
-import ast
 import re
 from importlib.util import find_spec
 from pathlib import Path
@@ -9,26 +8,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
-module_cache: dict[str, tuple[float, ast.Module]] = {}
-
-
-def get_module_node(name: str) -> ast.Module:
-    """Return a [Module] node by name."""
-    spec = find_spec(name)
-    if not spec or not spec.origin:
-        raise ModuleNotFoundError
-    path = Path(spec.origin)
-    mtime = path.stat().st_mtime
-    if name in module_cache and mtime == module_cache[name][0]:
-        return module_cache[name][1]
-    if not path.exists():
-        raise ModuleNotFoundError
-    with path.open(encoding="utf-8") as f:
-        source = f.read()
-    node = ast.parse(source)
-    module_cache[name] = (mtime, node)
-    return node
 
 
 def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:

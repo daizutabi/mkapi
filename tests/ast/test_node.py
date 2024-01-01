@@ -10,11 +10,22 @@ from mkapi.ast.node import (
     get_definition_nodes,
     get_docstring,
     get_import_names,
+    get_module_node,
     get_name,
     get_names,
     iter_import_nodes,
 )
-from mkapi.utils import get_module_node
+
+
+def test_get_module_node():
+    node = get_module_node("mkdocs")
+    assert isinstance(node, Module)
+
+
+def test_module_cache():
+    node1 = get_module_node("mkdocs")
+    node2 = get_module_node("mkdocs")
+    assert node1 is node2
 
 
 @pytest.fixture(scope="module")
