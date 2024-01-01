@@ -5,7 +5,7 @@
 # from dataclasses import dataclass
 # from typing import TYPE_CHECKING, TypeAlias
 
-# from mkapi.ast import iter_def_nodes
+# from mkapi.ast import iter_definition_nodes
 
 # if TYPE_CHECKING:
 #     from collections.abc import Iterator

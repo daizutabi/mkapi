@@ -30,7 +30,8 @@ from mkdocs.utils.templates import TemplateContext
 
 import mkapi.config
 from mkapi.filter import split_filters, update_filters
-from mkapi.modules import Module, get_module
+
+# from mkapi.modules import Module, get_module
 
 # from mkapi.core.module import Module, get_module
 # from mkapi.core.object import get_object

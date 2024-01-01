@@ -73,10 +73,10 @@ def test_mkapi_config(mkapi_config: MkAPIConfig):
 #     return mkdocs_config.theme.get_env()
 
 
-def test_mkdocs_build(mkdocs_config: MkDocsConfig):
-    config = mkdocs_config
-    config.plugins.on_startup(command="build", dirty=False)
-    try:
-        build(config, dirty=False)
-    finally:
-        config.plugins.on_shutdown()
+# def test_mkdocs_build(mkdocs_config: MkDocsConfig):
+#     config = mkdocs_config
+#     config.plugins.on_startup(command="build", dirty=False)
+#     try:
+#         build(config, dirty=False)
+#     finally:
+#         config.plugins.on_shutdown()

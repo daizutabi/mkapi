@@ -1,4 +1,5 @@
 import ast
+from ast import Module
 
 import pytest
 
@@ -6,23 +7,23 @@ from mkapi.ast.node import (
     get_assign_names,
     get_assign_nodes,
     get_by_name,
-    get_def_nodes,
+    get_definition_nodes,
     get_docstring,
     get_import_names,
     get_name,
     get_names,
     iter_import_nodes,
 )
-from mkapi.modules import Module, get_module
+from mkapi.utils import get_module_node
 
 
 @pytest.fixture(scope="module")
 def module():
-    return get_module("mkdocs.structure.files")
+    return get_module_node("mkdocs.structure.files")
 
 
 def test_iter_import_nodes(module: Module):
-    node = next(iter_import_nodes(module.node))
+    node = next(iter_import_nodes(module))
     assert isinstance(node, ast.ImportFrom)
     assert len(node.names) == 1
     alias = node.names[0]
@@ -32,7 +33,7 @@ def test_iter_import_nodes(module: Module):
 
 
 def test_get_import_names(module: Module):
-    names = get_import_names(module.node)
+    names = get_import_names(module)
     assert "logging" in names
     assert names["logging"] == "logging"
     assert "PurePath" in names
@@ -56,16 +57,16 @@ def test_get_by_name(def_nodes):
 
 @pytest.fixture(scope="module")
 def def_nodes(module: Module):
-    return get_def_nodes(module.node)
+    return get_definition_nodes(module)
 
 
-def test_get_def_nodes(def_nodes):
+def test_get_definition_nodes(def_nodes):
     assert any(node.name == "get_files" for node in def_nodes)
     assert any(node.name == "Files" for node in def_nodes)
 
 
 def test_get_assign_names(module: Module, def_nodes):
-    names = get_assign_names(module.node)
+    names = get_assign_names(module)
     assert names["log"] is not None
     assert names["log"].startswith("logging.getLogger")
     node = get_by_name(def_nodes, "InclusionLevel")
@@ -76,7 +77,7 @@ def test_get_assign_names(module: Module, def_nodes):
 
 
 def test_get_names(module: Module, def_nodes):
-    names = get_names(module.node)
+    names = get_names(module)
     assert names["Callable"] == "typing.Callable"
     assert names["File"] == ".File"
     assert names["get_files"] == ".get_files"
