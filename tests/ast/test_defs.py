@@ -1,15 +1,13 @@
 import ast
 
+from mkapi.ast.node import get_module
 
-def _get_def(src: str):
-    node = ast.parse(src).body[0]
-    assert isinstance(node, ast.ClassDef | ast.FunctionDef)
-    return node
+
+def _get(src: str):
+    return get_module(ast.parse(src))
 
 
 def test_deco():
-    node = _get_def("@f(x,a=1)\nclass A:\n pass")
-    assert isinstance(node, ast.ClassDef)
-    print(node.decorator_list)
-    node.type_params
-    assert 0
+    module = _get("@f(x,a=1)\nclass A:\n pass")
+    deco = module.classes.A.decorators[0]
+    assert isinstance(deco, ast.Call)

@@ -160,6 +160,9 @@ class _Item:
 class _Items[T]:
     items: list[T]
 
+    def __getitem__(self, index: int) -> T:
+        return self.items[index]
+
     def __getattr__(self, name: str) -> T:
         names = [elem.name for elem in self.items]  # type: ignore  # noqa: PGH003
         return self.items[names.index(name)]
@@ -291,21 +294,15 @@ def _get_def_args(
     return name, docstring, args, decorators, type_params
 
 
-def get_class(node: ClassDef) -> Class:
-    """Return a [Class] instance."""
-    attrs = get_attributes(node)
-    return Class(*_get_def_args(node), node.bases, attrs)
-
-
-def get_function(node: FunctionDef_) -> Function:
-    """Return a [Function] instance."""
-    return Function(*_get_def_args(node), node.returns, type(node))
-
-
 def iter_definitions(module: ast.Module) -> Iterator[Class | Function]:
     """Yield classes or functions."""
     for node in iter_definition_nodes(module):
-        yield get_class(node) if isinstance(node, ClassDef) else get_function(node)
+        args = _get_def_args(node)
+        if isinstance(node, ClassDef):
+            attrs = get_attributes(node)
+            yield Class(*args, node.bases, attrs)
+        else:
+            yield Function(*args, node.returns, type(node))
 
 
 @dataclass
