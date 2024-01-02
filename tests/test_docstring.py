@@ -1,12 +1,70 @@
 import pytest
 
-from mkapi.core.docstring import (parse_parameter, parse_returns,
-                                  split_parameter, split_section)
+from mkapi.docstring import (
+    Base,
+    Docstring,
+    Inline,
+    Item,
+    Section,
+    Type,
+    _rename_section,
+    parse_parameter,
+    parse_returns,
+    split_parameter,
+    split_section,
+)
+
+
+def test_update_item():
+    a = Item("a", Type("int"), Inline("aaa"))
+    b = Item("b", Type("str"), Inline("bbb"))
+    with pytest.raises(ValueError):  # noqa: PT011
+        a.update(b)
+
+
+def test_section_delete_item():
+    a = Item("a", Type("int"), Inline("aaa"))
+    b = Item("b", Type("str"), Inline("bbb"))
+    c = Item("c", Type("float"), Inline("ccc"))
+    s = Section("Parameters", items=[a, b, c])
+    del s["b"]
+    assert "b" not in s
+    with pytest.raises(KeyError):
+        del s["x"]
+
+
+def test_section_merge():
+    a = Section("a")
+    b = Section("b")
+    with pytest.raises(ValueError):  # noqa: PT011
+        a.merge(b)
+
+
+def test_docstring_copy():
+    d = Docstring()
+    a = Section("Parameters")
+    d.set_section(a)
+    assert "Parameters" in d
+    assert d["Parameters"] is a
+    a = Section("Arguments")
+    d.set_section(a, copy=True)
+    assert "Arguments" in d
+    assert d["Arguments"] is not a
+
+
+def test_copy():
+    x = Base("x", "markdown")
+    y = x.copy()
+    assert y.name == "x"
+    assert y.markdown == "markdown"
+
+
+def test_rename_section():
+    assert _rename_section("Warns") == "Warnings"
+
 
 doc = {}
-doc[
-    "google"
-] = """a
+doc["google"] = """a
 
     b
 
@@ -34,9 +92,7 @@ Returns:
     f
 """
 
-doc[
-    "numpy"
-] = """a
+doc["numpy"] = """a
 
     b
 
@@ -122,6 +178,6 @@ def test_parse_returns(style):
     next(it)
     next(it)
     section, body, style = next(it)
-    type, markdown = parse_returns(body, style)
+    type_, markdown = parse_returns(body, style)
     assert markdown == "e\n\nf"
-    assert type == "int"
+    assert type_ == "int"

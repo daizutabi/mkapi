@@ -57,8 +57,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     server = None
 
-    def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:  # noqa: ARG002
-        """Insert `src_dirs` to `sys.path`."""
+    def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:  # noqa: ARG002, D102
         _insert_sys_path(self.config)
         _update_config(config, self)
         if "admonition" not in config.markdown_extensions:

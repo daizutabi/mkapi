@@ -2,8 +2,13 @@ import ast
 
 import pytest
 
-from mkapi.ast.eval import StringTransformer, iter_identifiers
-from mkapi.ast.node import Module, get_module, get_module_node
+from mkapi.ast import (
+    Module,
+    StringTransformer,
+    get_module,
+    get_module_node,
+    iter_identifiers,
+)
 
 
 def _unparse(src: str) -> str:
@@ -33,7 +38,7 @@ def test_parse_expr_str():
 
 @pytest.fixture(scope="module")
 def module():
-    node = get_module_node("mkapi.ast.node")
+    node = get_module_node("mkapi.ast")
     return get_module(node)
 
 
@@ -59,10 +64,14 @@ def test_iter_identifiers():
     assert x[1] == ("α.β.γ", True)  # noqa: RUF001
 
 
-# def test_functions(module: Module):
-#     func = module.functions._get_def_args  # noqa: SLF001
-#     ann = func.args[0].annotation
-#     assert isinstance(ann, ast.expr)
-#     print(Transformer().unparse(ann))
-#     print(Transformer().unparse(func.returns))
-#     assert 0
+def test_functions(module: Module):
+    func = module.functions._get_def_args  # noqa: SLF001
+    ann = func.arguments[0].annotation
+    assert isinstance(ann, ast.expr)
+    text = StringTransformer().unparse(ann)
+    for s in iter_identifiers(text):
+        print(s)
+    print(module.imports)
+    print(module.classes)
+    print(module.attributes)
+    print(module.functions)

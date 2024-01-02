@@ -1,6 +1,6 @@
 import ast
 
-from mkapi.ast.node import get_module
+from mkapi.ast import get_module
 
 
 def _get(src: str):

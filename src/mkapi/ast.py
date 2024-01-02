@@ -124,6 +124,35 @@ def get_docstring(node: Doc) -> str | None:
     raise TypeError(msg)
 
 
+@dataclass
+class _Item:
+    name: str
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r})"
+
+
+@dataclass
+class _Items[T]:
+    items: list[T]
+
+    def __getitem__(self, index: int | str) -> T:
+        if isinstance(index, int):
+            return self.items[index]
+        return getattr(self, index)
+
+    def __getattr__(self, name: str) -> T:
+        names = [elem.name for elem in self.items]  # type: ignore  # noqa: PGH003
+        return self.items[names.index(name)]
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self.items)
+
+    def __repr__(self) -> str:
+        names = ", ".join(f"{elem.name!r}" for elem in self.items)  # type: ignore  # noqa: PGH003
+        return f"{self.__class__.__name__}({names})"
+
+
 ARGS_KIND: dict[_ParameterKind, str] = {
     Parameter.POSITIONAL_ONLY: "posonlyargs",  # before '/', list
     Parameter.POSITIONAL_OR_KEYWORD: "args",  # normal, list
@@ -146,33 +175,6 @@ def _iter_defaults(node: FunctionDef_) -> Iterator[ast.expr | None]:
     nones = [None] * num_positional
     yield from [*nones, *args.defaults][-num_positional:]
     yield from args.kw_defaults
-
-
-@dataclass
-class _Item:
-    name: str
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r})"
-
-
-@dataclass
-class _Items[T]:
-    items: list[T]
-
-    def __getitem__(self, index: int) -> T:
-        return self.items[index]
-
-    def __getattr__(self, name: str) -> T:
-        names = [elem.name for elem in self.items]  # type: ignore  # noqa: PGH003
-        return self.items[names.index(name)]
-
-    def __iter__(self) -> Iterator[T]:
-        return iter(self.items)
-
-    def __repr__(self) -> str:
-        names = ", ".join(f"{elem.name!r}" for elem in self.items)  # type: ignore  # noqa: PGH003
-        return f"{self.__class__.__name__}({names})"
 
 
 @dataclass(repr=False)
@@ -252,7 +254,7 @@ def get_attributes(node: ast.Module | ClassDef) -> Attributes:
 @dataclass(repr=False)
 class _Def(_Item):
     docstring: str | None
-    args: Arguments
+    arguments: Arguments
     decorators: list[ast.expr]
     type_params: list[ast.type_param]
 
@@ -270,7 +272,7 @@ class Class(_Def):
     """Class class."""
 
     bases: list[ast.expr]
-    attrs: Attributes
+    attributes: Attributes
 
 
 @dataclass(repr=False)
@@ -288,10 +290,10 @@ def _get_def_args(
 ) -> tuple[str, str | None, Arguments, list[ast.expr], list[ast.type_param]]:
     name = node.name
     docstring = get_docstring(node)
-    args = get_arguments(node)
+    arguments = get_arguments(node)
     decorators = node.decorator_list
     type_params = node.type_params
-    return name, docstring, args, decorators, type_params
+    return name, docstring, arguments, decorators, type_params
 
 
 def iter_definitions(module: ast.Module) -> Iterator[Class | Function]:
@@ -311,7 +313,7 @@ class Module:
 
     docstring: str | None
     imports: dict[str, str]
-    attrs: Attributes
+    attributes: Attributes
     classes: Classes
     functions: Functions
 
@@ -329,3 +331,43 @@ def get_module(node: ast.Module) -> Module:
         else:
             functions.append(obj)
     return Module(docstring, imports, attrs, Classes(classes), Functions(functions))
+
+
+class Transformer(ast.NodeTransformer):  # noqa: D101
+    def _rename(self, name: str) -> ast.Name:
+        return ast.Name(id=f"__mkapi__.{name}")
+
+    def visit_Name(self, node: ast.Name) -> ast.Name:  # noqa: N802, D102
+        return self._rename(node.id)
+
+    def unparse(self, node: ast.expr | ast.type_param) -> str:  # noqa: D102
+        return ast.unparse(self.visit(node))
+
+
+class StringTransformer(Transformer):  # noqa: D101
+    def visit_Constant(self, node: ast.Constant) -> ast.Constant | ast.Name:  # noqa: N802, D102
+        if isinstance(node.value, str):
+            return self._rename(node.value)
+        return node
+
+
+def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
+    """Yield identifiers as a tuple of (code, is_identifier)."""
+    start = 0
+    while start < len(source):
+        index = source.find("__mkapi__.", start)
+        if index == -1:
+            yield source[start:], False
+            return
+        else:
+            if index != 0:
+                yield source[start:index], False
+            start = end = index + 10  # 10 == len("__mkapi__.")
+            while end < len(source):
+                s = source[end]
+                if s == "." or s.isdigit() or s.isidentifier():
+                    end += 1
+                else:
+                    break
+            yield source[start:end], True
+            start = end

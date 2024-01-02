@@ -1,6 +1,6 @@
 import ast
 
-from mkapi.ast.node import get_attributes
+from mkapi.ast import get_attributes
 
 
 def _get_attributes(source: str):

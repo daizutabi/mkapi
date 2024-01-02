@@ -1,7 +1,7 @@
 import ast
 from inspect import Parameter
 
-from mkapi.ast.node import get_arguments
+from mkapi.ast import get_arguments
 
 
 def _get_args(source: str):

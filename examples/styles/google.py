@@ -63,6 +63,9 @@ class ExampleClass:
         ValueError: If the length of `x` is equal to 0.
     """
 
+    e: str
+    """dde"""
+
     def __init__(self, x: list[int], y: tuple[str, int]):
         if len(x) == 0 or y[1] == 0:
             raise ValueError

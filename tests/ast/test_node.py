@@ -3,7 +3,7 @@ from ast import Module
 
 import pytest
 
-from mkapi.ast.node import (
+from mkapi.ast import (
     get_module,
     get_module_node,
     iter_definition_nodes,
@@ -59,10 +59,10 @@ def test_iter_definition_nodes(def_nodes):
 
 
 def test_get_module():
-    node = get_module_node("mkapi.ast.node")
+    node = get_module_node("mkapi.ast")
     module = get_module(node)
     assert module.docstring
     assert "_ParameterKind" in module.imports
-    assert module.attrs.Assign_
+    assert module.attributes.Assign_
     assert module.classes.Module
     assert module.functions.get_module

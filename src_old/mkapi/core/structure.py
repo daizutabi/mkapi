@@ -1,17 +1,13 @@
-"""Base class of [Node](mkapi.core.node.Node) and [Module](mkapi.core.module.Module)."""
-from collections.abc import Iterator
-from dataclasses import dataclass, field
-from typing import Any, Self
+"""Base class of [Node](mkapi.nodes.Node) and [Module](mkapi.modules.Module)."""
+from __future__ import annotations
 
-from mkapi.core.base import Base, Type
-from mkapi.core.docstring import Docstring, get_docstring
-from mkapi.core.object import (
-    get_origin,
-    get_qualname,
-    get_sourcefile_and_lineno,
-    split_prefix_and_name,
-)
-from mkapi.inspect.signature import Signature, get_signature
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Self
+
+from mkapi.docstring import Base, Docstring, Type, parse_docstring
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 @dataclass
