@@ -56,7 +56,7 @@ def get_module_node(name: str) -> ast.Module:
 
 @dataclass
 class Node:  # noqa: D101
-    _node: ast.AST
+    _node: AST
     name: str
     docstring: str | None
 

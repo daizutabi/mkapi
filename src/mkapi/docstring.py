@@ -12,6 +12,63 @@ if TYPE_CHECKING:
 
 type Style = Literal["google", "numpy"]
 
+
+@dataclass
+class Item:  # noqa: D101
+    name: str
+    type: str  # noqa: A003
+    description: str
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r})"
+
+
+SPLIT_ITEM_PATTERN = re.compile(r"\n\S")
+SPLIT_NAME_TYPE_DESC_PATTERN = re.compile(r"^\s*(\S+?)\s*\((.+?)\)\s*:\s*(.*)$")
+
+
+def _iter_items(section: str) -> Iterator[str]:
+    """Yield items for Parameters, Attributes, and Raises sections."""
+    start = 0
+    for m in SPLIT_ITEM_PATTERN.finditer(section):
+        yield section[start : m.start()].strip()
+        start = m.start()
+    yield section[start:].strip()
+
+
+def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
+    if m := re.match(SPLIT_NAME_TYPE_DESC_PATTERN, lines[0]):
+        name, type_, desc = m.groups()
+    elif ":" in lines[0]:
+        name, desc = lines[0].split(":", maxsplit=1)
+        type_ = ""
+    else:
+        name, type_, desc = lines[0], "", ""
+    return name, type_, "\n".join([desc.strip(), *lines[1:]])
+
+
+def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:
+    if ":" in lines[0]:
+        name, type_ = lines[0].split(":", maxsplit=1)
+    else:
+        name, type_ = lines[0], ""
+    return name.strip(), type_.strip(), "\n".join(lines[1:])
+
+
+def split_item(item: str, style: Style) -> tuple[str, str, str]:
+    """Return a tuple of (name, type, description)."""
+    lines = [line.strip() for line in item.split("\n")]
+    if style == "google":
+        return _split_item_google(lines)
+    return _split_item_numpy(lines)
+
+
+def iter_items(section: str, style: Style) -> Iterator[Item]:
+    """Yiled a tuple of (name, type, description) of item."""
+    for item in _iter_items(section):
+        yield Item(*split_item(item, style))
+
+
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
     "google": re.compile(r"\n\n\S"),
     "numpy": re.compile(r"\n\n\n|\n\n.+?\n-+\n"),
@@ -95,54 +152,6 @@ def iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
         yield "", prev_desc
 
 
-SPLIT_ITEM_PATTERN = re.compile(r"\n\S")
-
-
-def _iter_items(section: str) -> Iterator[str]:
-    """Yield items for Parameters, Attributes, and Raises sections."""
-    start = 0
-    for m in SPLIT_ITEM_PATTERN.finditer(section):
-        yield section[start : m.start()].strip()
-        start = m.start()
-    yield section[start:].strip()
-
-
-SPLIT_NAME_TYPE_DESC_PATTEN = re.compile(r"^\s*(\S+?)\s*\((.+?)\)\s*:\s*(.*)$")
-
-
-def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
-    if m := re.match(SPLIT_NAME_TYPE_DESC_PATTEN, lines[0]):
-        name, type_, desc = m.groups()
-    elif ":" in lines[0]:
-        name, desc = lines[0].split(":", maxsplit=1)
-        type_ = ""
-    else:
-        name, type_, desc = lines[0], "", ""
-    return name, type_, "\n".join([desc.strip(), *lines[1:]])
-
-
-def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:
-    if ":" in lines[0]:
-        name, type_ = lines[0].split(":", maxsplit=1)
-    else:
-        name, type_ = lines[0], ""
-    return name.strip(), type_.strip(), "\n".join(lines[1:])
-
-
-def split_item(item: str, style: Style) -> tuple[str, str, str]:
-    """Return a tuple of (name, type, description)."""
-    lines = [line.strip() for line in item.split("\n")]
-    if style == "google":
-        return _split_item_google(lines)
-    return _split_item_numpy(lines)
-
-
-def iter_items(section: str, style: Style) -> Iterator[tuple[str, str, str]]:
-    """Yiled a tuple of (name, type, description) of item."""
-    for item in _iter_items(section):
-        yield split_item(item, style)
-
-
 def parse_return(section: str, style: Style) -> tuple[str, str]:
     """Return a tuple of (type, description) for Returns and Yields section."""
     lines = section.split("\n")
@@ -154,9 +163,37 @@ def parse_return(section: str, style: Style) -> tuple[str, str]:
     return "", section
 
 
+# for mkapi.ast.Attribute.docstring
 def parse_attribute(docstring: str) -> tuple[str, str]:
     """Return a tuple of (type, description) for Attribute docstring."""
     return parse_return(docstring, "google")
+
+
+@dataclass
+class Section(Item):  # noqa: D101
+    items: list[Item]
+
+
+@dataclass
+class Docstring(Item):  # noqa: D101
+    sections: list[Section]
+
+
+def get_docstring(doc: str, style: Style) -> Docstring:
+    """Return a docstring instance."""
+    doc = add_fence(doc)
+    sections: list[Section] = []
+    for name, desc in iter_sections(doc, style):
+        type_ = desc_ = ""
+        items: list[Item] = []
+        if name in ["Parameters", "Attributes", "Raises"]:
+            items = list(iter_items(desc, style))
+        elif name in ["Returns", "Yields"]:
+            type_, desc_ = parse_return(desc, style)
+        elif name in ["Note", "Notes", "Warning", "Warnings"]:
+            desc_ = add_admonition(name, desc)
+        sections.append(Section(name, type_, desc_, items))
+    return Docstring("", "", "", sections)
 
 
 # @dataclass
@@ -221,7 +258,3 @@ def parse_attribute(docstring: str) -> tuple[str, str]:
 #                 continue
 #             section.name = ""
 #             section.markdown = markdown
-def parse_docstring(doc: str):
-    doc = add_fence(doc)
-    # if section.name in ["Note", "Notes", "Warning", "Warnings"]:
-    #     secton = add_admonition(section.name, section.markdown)

@@ -94,14 +94,20 @@ def test_iter_items_class(numpy):
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "numpy"))[1][1]
     x = list(iter_items(section, "numpy"))
-    assert x[0] == ("attr1", "str", "Description of `attr1`.")
-    assert x[1] == ("attr2", ":obj:`int`, optional", "Description of `attr2`.")
+    assert x[0].name == "attr1"
+    assert x[0].type == "str"
+    assert x[0].description == "Description of `attr1`."
+    assert x[1].name == "attr2"
+    assert x[1].type == ":obj:`int`, optional"
+    assert x[1].description == "Description of `attr2`."
     doc = numpy.get("ExampleClass").get("__init__").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "numpy"))[2][1]
     x = list(iter_items(section, "numpy"))
-    assert x[0] == ("param1", "str", "Description of `param1`.")
-    assert x[1][2] == "Description of `param2`. Multiple\nlines are supported."
+    assert x[0].name == "param1"
+    assert x[0].type == "str"
+    assert x[0].description == "Description of `param1`."
+    assert x[1].description == "Description of `param2`. Multiple\nlines are supported."
 
 
 def test_get_return(numpy):
