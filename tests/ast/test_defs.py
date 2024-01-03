@@ -1,10 +1,10 @@
 import ast
 
-from mkapi.ast import get_module
+from mkapi.ast import get_module_from_node
 
 
 def _get(src: str):
-    return get_module(ast.parse(src))
+    return get_module_from_node(ast.parse(src))
 
 
 def test_deco():

@@ -3,6 +3,7 @@ from ast import Module
 
 import pytest
 
+import mkapi.ast
 from mkapi.ast import (
     get_module,
     get_module_node,
@@ -21,6 +22,9 @@ def test_module_cache():
     node1 = get_module_node("mkdocs")
     node2 = get_module_node("mkdocs")
     assert node1 is node2
+    module1 = get_module("mkapi")
+    module2 = get_module("mkapi")
+    assert module1 is module2
 
 
 @pytest.fixture(scope="module")
@@ -57,3 +61,13 @@ def def_nodes(module: Module):
 def test_iter_definition_nodes(def_nodes):
     assert any(node.name == "get_files" for node in def_nodes)
     assert any(node.name == "Files" for node in def_nodes)
+
+
+def test_not_found():
+    assert get_module_node("xxx") is None
+    assert get_module("xxx") is None
+    assert mkapi.ast.cache_module["xxx"] is None
+    assert "xxx" not in mkapi.ast.cache_module_node
+    assert get_module("markdown") is not None
+    assert "markdown" in mkapi.ast.cache_module
+    assert "markdown" in mkapi.ast.cache_module_node

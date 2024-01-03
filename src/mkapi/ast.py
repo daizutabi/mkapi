@@ -13,7 +13,6 @@ from ast import (
     ImportFrom,
     Name,
     NodeTransformer,
-    Raise,
     TypeAlias,
 )
 from dataclasses import dataclass
@@ -32,26 +31,6 @@ type Import_ = ast.Import | ImportFrom
 type FunctionDef_ = AsyncFunctionDef | FunctionDef
 type Def = FunctionDef_ | ClassDef
 type Assign_ = Assign | AnnAssign | TypeAlias
-
-module_cache: dict[str, tuple[float, ast.Module]] = {}
-
-
-def get_module_node(name: str) -> ast.Module:
-    """Return a [ast.Module] node by name."""
-    spec = find_spec(name)
-    if not spec or not spec.origin:
-        raise ModuleNotFoundError
-    path = Path(spec.origin)
-    mtime = path.stat().st_mtime
-    if name in module_cache and mtime == module_cache[name][0]:
-        return module_cache[name][1]
-    if not path.exists():
-        raise ModuleNotFoundError
-    with path.open(encoding="utf-8") as f:
-        source = f.read()
-    node = ast.parse(source)
-    module_cache[name] = (mtime, node)
-    return node
 
 
 @dataclass
@@ -195,23 +174,48 @@ def iter_parameters(node: FunctionDef_) -> Iterator[Parameter]:
 
 
 @dataclass(repr=False)
+class Raise(Node):  # noqa: D101
+    _node: ast.Raise
+    type: ast.expr | None  #   # noqa: A003
+
+
+def iter_raises(node: FunctionDef_) -> Iterator[Raise]:
+    """Yield raise nodes."""
+    for child in ast.walk(node):
+        if isinstance(child, ast.Raise) and child.exc:
+            yield Raise(child, "", None, child.exc)
+
+
+@dataclass(repr=False)
+class Return(Node):  # noqa: D101
+    _node: ast.expr | None
+    type: ast.expr | None  #   # noqa: A003
+
+
+def get_return(node: FunctionDef_) -> Return:
+    """Yield raise nodes."""
+    ret = node.returns
+    return Return(ret, "", None, ret)
+
+
+@dataclass(repr=False)
 class Definition(Node):  # noqa: D101
     parameters: list[Parameter]
     decorators: list[ast.expr]
     type_params: list[ast.type_param]
-    raises: list[ast.expr]
+    raises: list[Raise]
 
 
 @dataclass(repr=False)
 class Function(Definition):  # noqa: D101
     _node: FunctionDef_
-    returns: ast.expr | None
+    returns: Return
 
 
 @dataclass(repr=False)
 class Class(Definition):  # noqa: D101
     _node: ClassDef
-    bases: list[ast.expr]
+    bases: list[Class]
     attributes: list[Attribute]
     classes: list[Class]
     functions: list[Function]
@@ -233,13 +237,6 @@ def iter_definition_nodes(node: ast.Module | ClassDef) -> Iterator[Def]:
             yield child
 
 
-def iter_raise_nodes(node: FunctionDef_) -> Iterator[Raise]:
-    """Yield raise nodes."""
-    for child in ast.walk(node):
-        if isinstance(child, Raise):
-            yield child
-
-
 def _get_def_args(
     node: Def,
 ) -> tuple[str, str | None, list[Parameter], list[ast.expr], list[ast.type_param]]:
@@ -258,10 +255,11 @@ def iter_definitions(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
         if isinstance(def_node, ClassDef):
             attrs = list(iter_attributes(def_node))
             classes, functions = get_definitions(def_node)
-            yield Class(def_node, *args, [], def_node.bases, attrs, classes, functions)
+            bases: list[Class] = []  # TODO: use def_node.bases
+            yield Class(def_node, *args, [], bases, attrs, classes, functions)
         else:
-            raises = [r.exc for r in iter_raise_nodes(def_node) if r.exc]
-            yield Function(def_node, *args, raises, def_node.returns)
+            raises = list(iter_raises(def_node))
+            yield Function(def_node, *args, raises, get_return(def_node))
 
 
 def get_definitions(node: ast.Module | ClassDef) -> tuple[list[Class], list[Function]]:
@@ -293,13 +291,45 @@ class Module(Node):  # noqa: D101
         raise NameError
 
 
-def get_module(node: ast.Module) -> Module:
-    """Return a [Module] instance."""
+cache_module_node: dict[str, tuple[float, ast.Module | None]] = {}
+cache_module: dict[str, Module | None] = {}
+
+
+def get_module(name: str) -> Module | None:
+    """Return a [Module] instance by name."""
+    if name in cache_module:
+        return cache_module[name]
+    node = get_module_node(name)
+    module = node and get_module_from_node(node)
+    cache_module[name] = module
+    return module
+
+
+def get_module_from_node(node: ast.Module) -> Module:
+    """Return a [Module] instance from [ast.Module] node."""
     docstring = ast.get_docstring(node)
     imports = list(iter_imports(node))
     attrs = list(iter_attributes(node))
     classes, functions = get_definitions(node)
     return Module(node, "", docstring, imports, attrs, classes, functions)
+
+
+def get_module_node(name: str) -> ast.Module | None:
+    """Return a [ast.Module] node by name."""
+    spec = find_spec(name)
+    if not spec or not spec.origin:
+        return None
+    path = Path(spec.origin)
+    mtime = path.stat().st_mtime
+    if name in cache_module_node and mtime == cache_module_node[name][0]:
+        return cache_module_node[name][1]
+    with path.open(encoding="utf-8") as f:
+        source = f.read()
+    node = ast.parse(source)
+    cache_module_node[name] = (mtime, node)
+    if name in cache_module:
+        del cache_module[name]
+    return node
 
 
 class Transformer(NodeTransformer):  # noqa: D101

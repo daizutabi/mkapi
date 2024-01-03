@@ -6,7 +6,6 @@ from mkapi.ast import (
     Module,
     StringTransformer,
     get_module,
-    get_module_node,
     iter_identifiers,
 )
 
@@ -38,8 +37,7 @@ def test_parse_expr_str():
 
 @pytest.fixture(scope="module")
 def module():
-    node = get_module_node("mkapi.ast")
-    return get_module(node)
+    return get_module("mkapi.ast")
 
 
 def test_iter_identifiers():

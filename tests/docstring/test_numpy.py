@@ -3,9 +3,9 @@ from mkapi.docstring import (
     _iter_items,
     iter_items,
     iter_sections,
-    parse_attribute,
-    parse_return,
+    split_attribute,
     split_item,
+    split_return,
     split_section,
 )
 
@@ -114,7 +114,7 @@ def test_get_return(numpy):
     doc = numpy.get("module_level_function").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "numpy"))[2][1]
-    x = parse_return(section, "numpy")
+    x = split_return(section, "numpy")
     assert x[0] == "bool"
     assert x[1].startswith("True if")
     assert x[1].endswith("    }")
@@ -123,12 +123,12 @@ def test_get_return(numpy):
 def test_parse_attribute(numpy):
     doc = numpy.get("ExampleClass").get("readonly_property").docstring
     assert isinstance(doc, str)
-    x = parse_attribute(doc)
+    x = split_attribute(doc)
     assert x[0] == "str"
     assert x[1] == "Properties should be documented in their getter method."
     doc = numpy.get("ExampleClass").get("readwrite_property").docstring
     assert isinstance(doc, str)
-    x = parse_attribute(doc)
+    x = split_attribute(doc)
     assert x[0] == "list(str)"
     assert x[1].startswith("Properties with both")
     assert x[1].endswith("mentioned here.")

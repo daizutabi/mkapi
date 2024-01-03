@@ -152,7 +152,7 @@ def iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
         yield "", prev_desc
 
 
-def parse_return(section: str, style: Style) -> tuple[str, str]:
+def split_return(section: str, style: Style) -> tuple[str, str]:
     """Return a tuple of (type, description) for Returns and Yields section."""
     lines = section.split("\n")
     if style == "google" and ":" in lines[0]:
@@ -164,9 +164,9 @@ def parse_return(section: str, style: Style) -> tuple[str, str]:
 
 
 # for mkapi.ast.Attribute.docstring
-def parse_attribute(docstring: str) -> tuple[str, str]:
+def split_attribute(docstring: str) -> tuple[str, str]:
     """Return a tuple of (type, description) for Attribute docstring."""
-    return parse_return(docstring, "google")
+    return split_return(docstring, "google")
 
 
 @dataclass
