@@ -15,7 +15,7 @@ from ast import (
 )
 from dataclasses import dataclass
 from importlib.util import find_spec
-from inspect import Parameter as P
+from inspect import Parameter as P  # noqa: N817
 from inspect import cleandoc
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -128,7 +128,7 @@ def get_docstring(node: Doc) -> str | None:
 
 @dataclass
 class Node:
-    """Base class."""
+    """Node class."""
 
     _node: AST
     name: str
@@ -149,11 +149,11 @@ class Nodes[T]:
     def __getitem__(self, index: int | str) -> T:
         if isinstance(index, int):
             return self.items[index]
-        return getattr(self, index)
+        names = [item.name for item in self.items]  # type: ignore  # noqa: PGH003
+        return self.items[names.index(index)]
 
     def __getattr__(self, name: str) -> T:
-        names = [item.name for item in self.items]  # type: ignore  # noqa: PGH003
-        return self.items[names.index(name)]
+        return self[name]
 
     def __iter__(self) -> Iterator[T]:
         return iter(self.items)
@@ -215,15 +215,15 @@ def _iter_defaults(node: FunctionDef_) -> Iterator[ast.expr | None]:
 
 
 @dataclass(repr=False)
-class XXXX(Node):
-    """XXXX class."""
+class Argument(Node):
+    """Argument class."""
 
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
 
 
 @dataclass(repr=False)
-class Parameter(XXXX):
+class Parameter(Argument):
     """Parameter class."""
 
     _node: ast.arg
@@ -251,7 +251,7 @@ def get_parameters(node: FunctionDef_ | ClassDef) -> Parameters:
 
 
 @dataclass(repr=False)
-class Attribute(XXXX):
+class Attribute(Argument):
     """Attribute class."""
 
     _node: Assign_

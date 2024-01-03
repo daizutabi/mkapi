@@ -46,25 +46,6 @@ def find_submodule_names(name: str) -> list[str]:
     return sorted(names, key=lambda name: not _is_package(name))
 
 
-def split_type(markdown: str) -> tuple[str, str]:
-    """Return a tuple of (type, markdown) splitted by a colon.
-
-    Examples:
-        >>> split_type("int : Integer value.")
-        ('int', 'Integer value.')
-        >>> split_type("abc")
-        ('', 'abc')
-        >>> split_type("")
-        ('', '')
-    """
-    line = markdown.split("\n", maxsplit=1)[0]
-    if (index := line.find(":")) != -1:
-        type_ = line[:index].strip()
-        markdown = markdown[index + 1 :].strip()
-        return type_, markdown
-    return "", markdown
-
-
 def delete_ptags(html: str) -> str:
     """Return HTML without <p> tag.
 
@@ -95,31 +76,31 @@ def get_indent(line: str) -> int:
     return -1
 
 
-def join_without_indent(
+def join_without_first_indent(
     lines: list[str] | str,
     start: int = 0,
     stop: int | None = None,
 ) -> str:
-    r"""Return a joint string without indent.
+    r"""Return a joint string without first indent.
 
     Examples:
-        >>> join_without_indent(["abc", "def"])
+        >>> join_without_first_indent(["abc", "def"])
         'abc\ndef'
-        >>> join_without_indent(["  abc", "  def"])
+        >>> join_without_first_indent(["  abc", "  def"])
         'abc\ndef'
-        >>> join_without_indent(["  abc", "    def  ", ""])
+        >>> join_without_first_indent(["  abc", "    def  ", ""])
         'abc\n  def'
-        >>> join_without_indent(["  abc", "    def", "    ghi"])
+        >>> join_without_first_indent(["  abc", "    def", "    ghi"])
         'abc\n  def\n  ghi'
-        >>> join_without_indent(["  abc", "    def", "    ghi"], stop=2)
+        >>> join_without_first_indent(["  abc", "    def", "    ghi"], stop=2)
         'abc\n  def'
-        >>> join_without_indent([])
+        >>> join_without_first_indent([])
         ''
     """
     if not lines:
         return ""
     if isinstance(lines, str):
-        return join_without_indent(lines.split("\n"))
+        return join_without_first_indent(lines.split("\n"))
     indent = get_indent(lines[start])
     return "\n".join(line[indent:] for line in lines[start:stop]).strip()
 
@@ -135,11 +116,11 @@ def _splitter(text: str) -> Iterator[str]:
             start = stop - 1
             in_code = True
         elif not line.strip() and in_code:
-            yield join_without_indent(lines, start, stop)
+            yield join_without_first_indent(lines, start, stop)
             start = stop
             in_code = False
     if start < len(lines):
-        yield join_without_indent(lines, start, len(lines))
+        yield join_without_first_indent(lines, start, len(lines))
 
 
 def add_fence(text: str) -> str:
