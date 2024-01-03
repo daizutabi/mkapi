@@ -66,9 +66,9 @@ def test_iter_identifiers():
 
 def test_functions(module: Module):
     func = module.functions._get_def_args  # noqa: SLF001
-    ann = func.arguments[0].annotation
-    assert isinstance(ann, ast.expr)
-    text = StringTransformer().unparse(ann)
+    type_ = func.parameters[0].type
+    assert isinstance(type_, ast.expr)
+    text = StringTransformer().unparse(type_)
     for s in iter_identifiers(text):
         print(s)
     print(module.imports)

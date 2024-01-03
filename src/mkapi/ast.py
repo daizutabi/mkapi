@@ -9,14 +9,14 @@ from ast import (
     Constant,
     Expr,
     FunctionDef,
-    Import,
     ImportFrom,
     Name,
     TypeAlias,
 )
 from dataclasses import dataclass
 from importlib.util import find_spec
-from inspect import Parameter, cleandoc
+from inspect import Parameter as P
+from inspect import cleandoc
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -51,23 +51,25 @@ def get_module_node(name: str) -> ast.Module:
     return node
 
 
-def iter_import_nodes(node: AST) -> Iterator[Import | ImportFrom]:
+def iter_import_nodes(node: AST) -> Iterator[ast.Import | ImportFrom]:
     """Yield import nodes."""
     for child in ast.iter_child_nodes(node):
-        if isinstance(child, Import | ImportFrom):
+        if isinstance(child, ast.Import | ImportFrom):
             yield child
         elif not isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
             yield from iter_import_nodes(child)
 
 
-def iter_import_names(node: ast.Module | Def) -> Iterator[tuple[str, str]]:
-    """Yield imported names."""
+def iter_import_node_names(
+    node: ast.Module | Def,
+) -> Iterator[tuple[ast.Import | ImportFrom, str, str]]:
+    """Yield import nodes and names."""
     for child in iter_import_nodes(node):
         from_module = f"{child.module}." if isinstance(child, ImportFrom) else ""
         for alias in child.names:
             name = alias.asname or alias.name
             fullname = f"{from_module}{alias.name}"
-            yield name, fullname
+            yield child, name, fullname
 
 
 def get_assign_name(node: Assign_) -> str | None:
@@ -125,15 +127,23 @@ def get_docstring(node: Doc) -> str | None:
 
 
 @dataclass
-class _Item:
+class Node:
+    """Base class."""
+
+    _node: AST
     name: str
+    """Name of item."""
+    docstring: str | None
+    """Docstring of item."""
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
 
 
 @dataclass
-class _Items[T]:
+class Nodes[T]:
+    """Collection of [Node] instance."""
+
     items: list[T]
 
     def __getitem__(self, index: int | str) -> T:
@@ -142,27 +152,54 @@ class _Items[T]:
         return getattr(self, index)
 
     def __getattr__(self, name: str) -> T:
-        names = [elem.name for elem in self.items]  # type: ignore  # noqa: PGH003
+        names = [item.name for item in self.items]  # type: ignore  # noqa: PGH003
         return self.items[names.index(name)]
 
     def __iter__(self) -> Iterator[T]:
         return iter(self.items)
 
+    def __contains__(self, name: str) -> bool:
+        return any(name == item.name for item in self.items)  # type: ignore  # noqa: PGH003
+
     def __repr__(self) -> str:
-        names = ", ".join(f"{elem.name!r}" for elem in self.items)  # type: ignore  # noqa: PGH003
+        names = ", ".join(f"{item.name!r}" for item in self.items)  # type: ignore  # noqa: PGH003
         return f"{self.__class__.__name__}({names})"
 
 
+@dataclass(repr=False)
+class Import(Node):
+    """Import class."""
+
+    _node: ast.Import | ImportFrom
+    fullanme: str
+
+
+@dataclass
+class Imports(Nodes[Import]):
+    """Imports class."""
+
+
+def iter_imports(node: ast.Module | ClassDef) -> Iterator[Import]:
+    """Yield import nodes."""
+    for child, name, fullname in iter_import_node_names(node):
+        yield Import(child, name, None, fullname)
+
+
+def get_imports(node: ast.Module | ClassDef) -> Imports:
+    """Return imports in module or class definition."""
+    return Imports(list(iter_imports(node)))
+
+
 ARGS_KIND: dict[_ParameterKind, str] = {
-    Parameter.POSITIONAL_ONLY: "posonlyargs",  # before '/', list
-    Parameter.POSITIONAL_OR_KEYWORD: "args",  # normal, list
-    Parameter.VAR_POSITIONAL: "vararg",  # *args, arg or None
-    Parameter.KEYWORD_ONLY: "kwonlyargs",  # after '*' or '*args', list
-    Parameter.VAR_KEYWORD: "kwarg",  # **kwargs, arg or None
+    P.POSITIONAL_ONLY: "posonlyargs",  # before '/', list
+    P.POSITIONAL_OR_KEYWORD: "args",  # normal, list
+    P.VAR_POSITIONAL: "vararg",  # *args, arg or None
+    P.KEYWORD_ONLY: "kwonlyargs",  # after '*' or '*args', list
+    P.VAR_KEYWORD: "kwarg",  # **kwargs, arg or None
 }
 
 
-def _iter_arguments(node: FunctionDef_) -> Iterator[tuple[ast.arg, _ParameterKind]]:
+def _iter_parameters(node: FunctionDef_) -> Iterator[tuple[ast.arg, _ParameterKind]]:
     for kind, attr in ARGS_KIND.items():
         if args := getattr(node.args, attr):
             it = args if isinstance(args, list) else [args]
@@ -178,51 +215,52 @@ def _iter_defaults(node: FunctionDef_) -> Iterator[ast.expr | None]:
 
 
 @dataclass(repr=False)
-class Argument(_Item):
-    """Argument class."""
+class XXXX(Node):
+    """XXXX class."""
 
-    annotation: ast.expr | None
+    type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
+
+
+@dataclass(repr=False)
+class Parameter(XXXX):
+    """Parameter class."""
+
+    _node: ast.arg
     kind: _ParameterKind
 
 
 @dataclass
-class Arguments(_Items[Argument]):
-    """Arguments class."""
+class Parameters(Nodes[Parameter]):
+    """Parameters class."""
 
 
-def iter_arguments(node: FunctionDef_) -> Iterator[Argument]:
-    """Yield arguments from the function node."""
+def iter_parameters(node: FunctionDef_) -> Iterator[Parameter]:
+    """Yield parameters from the function node."""
     it = _iter_defaults(node)
-    for arg, kind in _iter_arguments(node):
-        if kind in [Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD]:
-            default = None
-        else:
-            default = next(it)
-        yield Argument(arg.arg, arg.annotation, default, kind)
+    for arg, kind in _iter_parameters(node):
+        default = None if kind in [P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)
+        yield Parameter(arg, arg.arg, None, arg.annotation, default, kind)
 
 
-def get_arguments(node: FunctionDef_ | ClassDef) -> Arguments:
-    """Return the function arguments."""
+def get_parameters(node: FunctionDef_ | ClassDef) -> Parameters:
+    """Return the function parameters."""
     if isinstance(node, ClassDef):
-        return Arguments([])
-    return Arguments(list(iter_arguments(node)))
+        return Parameters([])
+    return Parameters(list(iter_parameters(node)))
 
 
 @dataclass(repr=False)
-class Attribute(_Item):
+class Attribute(XXXX):
     """Attribute class."""
 
-    annotation: ast.expr | None
-    value: ast.expr | None
-    docstring: str | None
-    kind: type[Assign_]
+    _node: Assign_
     type_params: list[ast.type_param] | None
 
 
 @dataclass(repr=False)
-class Attributes(_Items[Attribute]):
-    """Assigns class."""
+class Attributes(Nodes[Attribute]):
+    """Attributes class."""
 
 
 def get_annotation(node: Assign_) -> ast.expr | None:
@@ -239,11 +277,11 @@ def iter_attributes(node: ast.Module | ClassDef) -> Iterator[Attribute]:
     for assign in iter_assign_nodes(node):
         if not (name := get_assign_name(assign)):
             continue
-        annotation = get_annotation(assign)
+        ann = get_annotation(assign)
         value = None if isinstance(assign, TypeAlias) else assign.value
-        docstring = get_docstring(assign)
+        doc = get_docstring(assign)
         type_params = assign.type_params if isinstance(assign, TypeAlias) else None
-        yield Attribute(name, annotation, value, docstring, type(assign), type_params)
+        yield Attribute(assign, name, doc, ann, value, type_params)
 
 
 def get_attributes(node: ast.Module | ClassDef) -> Attributes:
@@ -252,67 +290,83 @@ def get_attributes(node: ast.Module | ClassDef) -> Attributes:
 
 
 @dataclass(repr=False)
-class _Def(_Item):
-    docstring: str | None
-    arguments: Arguments
+class Definition(Node):
+    """Definition class for function and class."""
+
+    parameters: Parameters
     decorators: list[ast.expr]
     type_params: list[ast.type_param]
+    # raises:
 
 
 @dataclass(repr=False)
-class Function(_Def):
+class Function(Definition):
     """Function class."""
 
+    _node: FunctionDef_
     returns: ast.expr | None
-    kind: type[FunctionDef_]
 
 
 @dataclass(repr=False)
-class Class(_Def):
+class Class(Definition):
     """Class class."""
 
+    _node: ClassDef
     bases: list[ast.expr]
     attributes: Attributes
+    functions: Functions
 
 
 @dataclass(repr=False)
-class Functions(_Items[Function]):
+class Functions(Nodes[Function]):
     """Functions class."""
 
 
 @dataclass(repr=False)
-class Classes(_Items[Class]):
+class Classes(Nodes[Class]):
     """Classes class."""
 
 
 def _get_def_args(
     node: ClassDef | FunctionDef_,
-) -> tuple[str, str | None, Arguments, list[ast.expr], list[ast.type_param]]:
+) -> tuple[str, str | None, Parameters, list[ast.expr], list[ast.type_param]]:
     name = node.name
     docstring = get_docstring(node)
-    arguments = get_arguments(node)
+    arguments = get_parameters(node)
     decorators = node.decorator_list
     type_params = node.type_params
     return name, docstring, arguments, decorators, type_params
 
 
-def iter_definitions(module: ast.Module) -> Iterator[Class | Function]:
+def iter_definitions(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
     """Yield classes or functions."""
-    for node in iter_definition_nodes(module):
-        args = _get_def_args(node)
-        if isinstance(node, ClassDef):
-            attrs = get_attributes(node)
-            yield Class(*args, node.bases, attrs)
+    for def_ in iter_definition_nodes(node):
+        args = _get_def_args(def_)
+        if isinstance(def_, ClassDef):
+            attrs = get_attributes(def_)
+            _, functions = get_definitions(def_)  # ignore internal classes.
+            yield Class(def_, *args, def_.bases, attrs, functions)
         else:
-            yield Function(*args, node.returns, type(node))
+            yield Function(def_, *args, def_.returns)
+
+
+def get_definitions(node: ast.Module | ClassDef) -> tuple[Classes, Functions]:
+    """Return a tuple of ([Classes], [Functions]) instances."""
+    classes: list[Class] = []
+    functions: list[Function] = []
+    for obj in iter_definitions(node):
+        if isinstance(obj, Class):
+            classes.append(obj)
+        else:
+            functions.append(obj)
+    return Classes(classes), Functions(functions)
 
 
 @dataclass
-class Module:
+class Module(Node):
     """Module class."""
 
-    docstring: str | None
-    imports: dict[str, str]
+    imports: Imports
     attributes: Attributes
     classes: Classes
     functions: Functions
@@ -321,16 +375,10 @@ class Module:
 def get_module(node: ast.Module) -> Module:
     """Return a [Module] instance."""
     docstring = get_docstring(node)
-    imports = dict(iter_import_names(node))
+    imports = get_imports(node)
     attrs = get_attributes(node)
-    classes: list[Class] = []
-    functions: list[Function] = []
-    for obj in iter_definitions(node):
-        if isinstance(obj, Class):
-            classes.append(obj)
-        else:
-            functions.append(obj)
-    return Module(docstring, imports, attrs, Classes(classes), Functions(functions))
+    classes, functions = get_definitions(node)
+    return Module(node, "", docstring, imports, attrs, classes, functions)
 
 
 class Transformer(ast.NodeTransformer):  # noqa: D101
@@ -352,7 +400,7 @@ class StringTransformer(Transformer):  # noqa: D101
 
 
 def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
-    """Yield identifiers as a tuple of (code, is_identifier)."""
+    """Yield identifiers as a tuple of (code, isidentifier)."""
     start = 0
     while start < len(source):
         index = source.find("__mkapi__.", start)

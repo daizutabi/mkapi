@@ -7,7 +7,7 @@ from mkapi.ast import (
     get_module,
     get_module_node,
     iter_definition_nodes,
-    iter_import_names,
+    iter_import_node_names,
     iter_import_nodes,
 )
 
@@ -39,7 +39,8 @@ def test_iter_import_nodes(module: Module):
 
 
 def test_get_import_names(module: Module):
-    names = dict(iter_import_names(module))
+    it = iter_import_node_names(module)
+    names = {name: fullname for (_, name, fullname) in it}
     assert "logging" in names
     assert names["logging"] == "logging"
     assert "PurePath" in names
