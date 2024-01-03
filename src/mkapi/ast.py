@@ -280,6 +280,7 @@ class Module(Node):  # noqa: D101
     attributes: list[Attribute]
     classes: list[Class]
     functions: list[Function]
+    source: str
 
     def get(self, name: str) -> Class | Function:  # noqa: D102
         names = [cls.name for cls in self.classes]
@@ -291,7 +292,7 @@ class Module(Node):  # noqa: D101
         raise NameError
 
 
-cache_module_node: dict[str, tuple[float, ast.Module | None]] = {}
+cache_module_node: dict[str, tuple[float, ast.Module | None, str]] = {}
 cache_module: dict[str, Module | None] = {}
 
 
@@ -299,10 +300,13 @@ def get_module(name: str) -> Module | None:
     """Return a [Module] instance by name."""
     if name in cache_module:
         return cache_module[name]
-    node = get_module_node(name)
-    module = node and get_module_from_node(node)
-    cache_module[name] = module
-    return module
+    if node := get_module_node(name):
+        module = get_module_from_node(node)
+        module.source = _get_source(name)
+        cache_module[name] = module
+        return module
+    cache_module[name] = None
+    return None
 
 
 def get_module_from_node(node: ast.Module) -> Module:
@@ -311,7 +315,7 @@ def get_module_from_node(node: ast.Module) -> Module:
     imports = list(iter_imports(node))
     attrs = list(iter_attributes(node))
     classes, functions = get_definitions(node)
-    return Module(node, "", docstring, imports, attrs, classes, functions)
+    return Module(node, "", docstring, imports, attrs, classes, functions, "")
 
 
 def get_module_node(name: str) -> ast.Module | None:
@@ -326,10 +330,16 @@ def get_module_node(name: str) -> ast.Module | None:
     with path.open(encoding="utf-8") as f:
         source = f.read()
     node = ast.parse(source)
-    cache_module_node[name] = (mtime, node)
+    cache_module_node[name] = (mtime, node, source)
     if name in cache_module:
         del cache_module[name]
     return node
+
+
+def _get_source(name: str) -> str:
+    if name in cache_module_node:
+        return cache_module_node[name][2]
+    return ""
 
 
 class Transformer(NodeTransformer):  # noqa: D101

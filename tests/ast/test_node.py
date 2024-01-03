@@ -71,3 +71,9 @@ def test_not_found():
     assert get_module("markdown") is not None
     assert "markdown" in mkapi.ast.cache_module
     assert "markdown" in mkapi.ast.cache_module_node
+
+
+def test_source():
+    module = get_module("mkdocs.structure.files")
+    assert module
+    assert "class File" in module.source
