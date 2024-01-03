@@ -9,5 +9,5 @@ def _get(src: str):
 
 def test_deco():
     module = _get("@f(x,a=1)\nclass A:\n pass")
-    deco = module.classes.A.decorators[0]
+    deco = module.get("A").decorators[0]
     assert isinstance(deco, ast.Call)

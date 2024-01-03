@@ -54,7 +54,7 @@ def test_iter_sections(numpy: Module):
 
 
 def test_iter_items(numpy: Module):
-    doc = numpy.functions.module_level_function.docstring
+    doc = numpy.get("module_level_function").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "numpy"))[1][1]
     items = list(_iter_items(section))
@@ -72,7 +72,7 @@ def test_iter_items(numpy: Module):
 
 
 def test_split_item(numpy):
-    doc = numpy.functions.module_level_function.docstring
+    doc = numpy.get("module_level_function").docstring
     assert isinstance(doc, str)
     sections = list(iter_sections(doc, "numpy"))
     items = list(_iter_items(sections[1][1]))
@@ -90,13 +90,13 @@ def test_split_item(numpy):
 
 
 def test_iter_items_class(numpy):
-    doc = numpy.classes.ExampleClass.docstring
+    doc = numpy.get("ExampleClass").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "numpy"))[1][1]
     x = list(iter_items(section, "numpy"))
     assert x[0] == ("attr1", "str", "Description of `attr1`.")
     assert x[1] == ("attr2", ":obj:`int`, optional", "Description of `attr2`.")
-    doc = numpy.classes.ExampleClass.functions["__init__"].docstring
+    doc = numpy.get("ExampleClass").get("__init__").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "numpy"))[2][1]
     x = list(iter_items(section, "numpy"))
@@ -105,7 +105,7 @@ def test_iter_items_class(numpy):
 
 
 def test_get_return(numpy):
-    doc = numpy.functions.module_level_function.docstring
+    doc = numpy.get("module_level_function").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "numpy"))[2][1]
     x = parse_return(section, "numpy")
@@ -115,12 +115,12 @@ def test_get_return(numpy):
 
 
 def test_parse_attribute(numpy):
-    doc = numpy.classes.ExampleClass.functions.readonly_property.docstring
+    doc = numpy.get("ExampleClass").get("readonly_property").docstring
     assert isinstance(doc, str)
     x = parse_attribute(doc)
     assert x[0] == "str"
     assert x[1] == "Properties should be documented in their getter method."
-    doc = numpy.classes.ExampleClass.functions.readwrite_property.docstring
+    doc = numpy.get("ExampleClass").get("readwrite_property").docstring
     assert isinstance(doc, str)
     x = parse_attribute(doc)
     assert x[0] == "list(str)"

@@ -65,7 +65,7 @@ def test_iter_identifiers():
 
 
 def test_functions(module: Module):
-    func = module.functions._get_def_args  # noqa: SLF001
+    func = module.get("_get_def_args")
     type_ = func.parameters[0].type
     assert isinstance(type_, ast.expr)
     text = StringTransformer().unparse(type_)

@@ -7,8 +7,8 @@ from mkapi.ast import (
     get_module,
     get_module_node,
     iter_definition_nodes,
-    iter_import_node_names,
     iter_import_nodes,
+    iter_imports,
 )
 
 
@@ -39,8 +39,8 @@ def test_iter_import_nodes(module: Module):
 
 
 def test_get_import_names(module: Module):
-    it = iter_import_node_names(module)
-    names = {name: fullname for (_, name, fullname) in it}
+    it = iter_imports(module)
+    names = {im.name: im.fullname for im in it}
     assert "logging" in names
     assert names["logging"] == "logging"
     assert "PurePath" in names
@@ -57,13 +57,3 @@ def def_nodes(module: Module):
 def test_iter_definition_nodes(def_nodes):
     assert any(node.name == "get_files" for node in def_nodes)
     assert any(node.name == "Files" for node in def_nodes)
-
-
-def test_get_module():
-    node = get_module_node("mkapi.ast")
-    module = get_module(node)
-    assert module.docstring
-    assert "_ParameterKind" in module.imports
-    assert module.attributes.Assign_
-    assert module.classes.Module
-    assert module.functions.get_module

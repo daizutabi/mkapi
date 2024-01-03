@@ -55,7 +55,7 @@ def test_iter_sections(google: Module):
 
 
 def test_iter_items(google: Module):
-    doc = google.functions.module_level_function.docstring
+    doc = google.get("module_level_function").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "google"))[1][1]
     items = list(_iter_items(section))
@@ -73,7 +73,7 @@ def test_iter_items(google: Module):
 
 
 def test_split_item(google):
-    doc = google.functions.module_level_function.docstring
+    doc = google.get("module_level_function").docstring
     assert isinstance(doc, str)
     sections = list(iter_sections(doc, "google"))
     section = sections[1][1]
@@ -93,13 +93,13 @@ def test_split_item(google):
 
 
 def test_iter_items_class(google):
-    doc = google.classes.ExampleClass.docstring
+    doc = google.get("ExampleClass").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "google"))[1][1]
     x = list(iter_items(section, "google"))
     assert x[0] == ("attr1", "str", "Description of `attr1`.")
     assert x[1] == ("attr2", ":obj:`int`, optional", "Description of `attr2`.")
-    doc = google.classes.ExampleClass.functions["__init__"].docstring
+    doc = google.get("ExampleClass").get("__init__").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "google"))[2][1]
     x = list(iter_items(section, "google"))
@@ -108,7 +108,7 @@ def test_iter_items_class(google):
 
 
 def test_get_return(google):
-    doc = google.functions.module_level_function.docstring
+    doc = google.get("module_level_function").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "google"))[2][1]
     x = parse_return(section, "google")
@@ -118,12 +118,12 @@ def test_get_return(google):
 
 
 def test_parse_attribute(google):
-    doc = google.classes.ExampleClass.functions.readonly_property.docstring
+    doc = google.get("ExampleClass").get("readonly_property").docstring
     assert isinstance(doc, str)
     x = parse_attribute(doc)
     assert x[0] == "str"
     assert x[1] == "Properties should be documented in their getter method."
-    doc = google.classes.ExampleClass.functions.readwrite_property.docstring
+    doc = google.get("ExampleClass").get("readwrite_property").docstring
     assert isinstance(doc, str)
     x = parse_attribute(doc)
     assert x[0] == "list(str)"

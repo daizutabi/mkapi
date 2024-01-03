@@ -221,3 +221,7 @@ def parse_attribute(docstring: str) -> tuple[str, str]:
 #                 continue
 #             section.name = ""
 #             section.markdown = markdown
+def parse_docstring(doc: str):
+    doc = add_fence(doc)
+    # if section.name in ["Note", "Notes", "Warning", "Warnings"]:
+    #     secton = add_admonition(section.name, section.markdown)
