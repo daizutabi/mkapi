@@ -45,7 +45,8 @@ class Object:  # noqa: D101
         self.__dict__["__module_name__"] = current_module_name[0]
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name})"
+        fullname = self.get_fullname()
+        return f"{self.__class__.__name__}({fullname})"
 
     def unparse(self) -> str:  # noqa: D102
         return ast.unparse(self._node)
@@ -60,12 +61,19 @@ class Object:  # noqa: D101
             return get_module(module_name)
         return None
 
-    def get_source(self) -> str:
+    def get_source(self, maxline: int | None = None) -> str:
         """Return the source code."""
         if (name := self.get_module_name()) and (source := _get_source(name)):
-            lines = source.split("\n")
-            return "\n".join(lines[self._node.lineno - 1 : self._node.end_lineno])
+            lines = source.split("\n")[self._node.lineno - 1 : self._node.end_lineno]
+            if maxline:
+                lines = lines[:maxline]
+            return "\n".join(lines)
         return ""
+
+    def get_fullname(self) -> str:  # noqa: D102
+        if module_name := self.get_module_name():
+            return f"{module_name}.{self.name}"
+        return self.name
 
 
 @dataclass
@@ -75,8 +83,8 @@ class Import(Object):  # noqa: D101
     fullname: str
     from_: str | None
 
-    # def __repr__(self) -> str:
-    #     return f"{self.__class__.__name__}({self.name}: {self.fullname})"
+    def get_fullname(self) -> str:  # noqa: D102
+        return self.fullname
 
 
 def iter_import_nodes(node: AST) -> Iterator[Import_]:
@@ -250,18 +258,16 @@ class Class(Callable):  # noqa: D101
     classes: list[Class]
     functions: list[Function]
 
-    def get(self, name: str) -> Class | Function:  # noqa: D102
-        names = [cls.name for cls in self.classes]
-        if name in names:
-            return self.classes[names.index(name)]
-        names = [func.name for func in self.functions]
-        if name in names:
-            return self.functions[names.index(name)]
+    def get(self, name: str) -> Class | Function | Attribute:  # noqa: D102
+        for attr in ["classes", "functions", "attributes"]:
+            for obj in getattr(self, attr):
+                if obj.name == name:
+                    return obj
         raise NameError
 
 
 def iter_callable_nodes(node: ast.Module | ClassDef) -> Iterator[Def]:
-    """Yield definition nodes."""
+    """Yield callable nodes."""
     for child in ast.iter_child_nodes(node):
         if isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
             yield child
@@ -296,11 +302,11 @@ def get_callables(node: ast.Module | ClassDef) -> tuple[list[Class], list[Functi
     """Return a tuple of (list[Class], list[Function])."""
     classes: list[Class] = []
     functions: list[Function] = []
-    for definition in iter_callables(node):
-        if isinstance(definition, Class):
-            classes.append(definition)
+    for callable_ in iter_callables(node):
+        if isinstance(callable_, Class):
+            classes.append(callable_)
         else:
-            functions.append(definition)
+            functions.append(callable_)
     return classes, functions
 
 
@@ -312,17 +318,15 @@ class Module(Object):  # noqa: D101
     functions: list[Function]
     source: str
 
-    def get(self, name: str) -> Class | Function | Import:  # noqa: D102
-        names = [cls.name for cls in self.classes]
-        if name in names:
-            return self.classes[names.index(name)]
-        names = [func.name for func in self.functions]
-        if name in names:
-            return self.functions[names.index(name)]
-        names = [imp.name for imp in self.imports]
-        if name in names:
-            return self.imports[names.index(name)]
+    def get(self, name: str) -> Class | Function | Attribute | Import:  # noqa: D102
+        for attr in ["classes", "functions", "attributes", "imports"]:
+            for obj in getattr(self, attr):
+                if obj.name == name:
+                    return obj
         raise NameError
+
+    def get_fullname(self) -> str:  # noqa: D102
+        return self.name
 
     def get_source(self) -> str:
         """Return the source code."""
@@ -367,6 +371,8 @@ def get_module_node(name: str) -> ast.Module | None:
     if not spec or not spec.origin:
         return None
     path = Path(spec.origin)
+    if not path.exists():  # for builtin, frozen
+        return None
     mtime = path.stat().st_mtime
     if name in cache_module_node and mtime == cache_module_node[name][0]:
         return cache_module_node[name][1]
@@ -385,13 +391,36 @@ def _get_source(name: str) -> str:
     return ""
 
 
-def get_module_from_import(import_: Import) -> Module | None:
-    """Return a [Module] instance from [Import]."""
-    if module := get_module(import_.fullname):
+# def get_module_from_import(import_: Import) -> Module | None:
+#     """Return a [Module] instance from [Import]."""
+#     if module := get_module(import_.fullname):
+#         return module
+#     if import_.from_ and (module := get_module(import_.from_)):
+#         return module
+#     return None
+
+
+def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
+    """Return a [Object] instance by name."""
+    if module := get_module(fullname):
         return module
-    if import_.from_ and (module := get_module(import_.from_)):
-        return module
-    return None
+    if "." not in fullname:
+        return None
+    module_name, name = fullname.rsplit(".", maxsplit=1)
+    if not (module := get_module(module_name)):
+        return None
+    return get_object_from_module(name, module)
+
+
+def get_object_from_module(
+    name: str,
+    module: Module,
+) -> Module | Class | Function | Attribute | None:
+    """Return a [Object] instance by name from [Module]."""
+    obj = module.get(name)
+    if isinstance(obj, Import):
+        return get_object(obj.fullname)
+    return obj
 
 
 class Transformer(NodeTransformer):  # noqa: D101

@@ -8,16 +8,15 @@ def test_():
     assert module
     # source = module.source
     # print(source)
-    cls = module.get("MkAPIConfig")
-    print(cls._node.lineno)
-    print(cls._node.end_lineno)
-    print(cls._node.__dict__)
-    print(cls.__module_name__)
+    # cls = module.get("MkAPIConfig")
+    # print(cls._node.lineno)
+    # print(cls._node.end_lineno)
+    # print(cls._node.__dict__)
+    # print(cls.__module_name__)
     # lines = source.split("\n")
     # print("v" * 10)
     # print("\n".join(lines[cls._node.lineno - 1 : cls._node.end_lineno - 1]))
     # print("^" * 10)
-    assert 0
     # cls = module.get("MkAPIConfig")
     # print(cls)
     # x = module.get("Config")

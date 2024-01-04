@@ -7,6 +7,8 @@ import mkapi.objects
 from mkapi.objects import (
     get_module,
     get_module_node,
+    get_object,
+    get_object_from_module,
     iter_callable_nodes,
     iter_import_nodes,
     iter_imports,
@@ -71,6 +73,17 @@ def test_not_found():
     assert get_module("markdown") is not None
     assert "markdown" in mkapi.objects.cache_module
     assert "markdown" in mkapi.objects.cache_module_node
+
+
+def test_repr():
+    module = get_module("mkapi")
+    assert repr(module) == "Module(mkapi)"
+    module = get_module("mkapi.objects")
+    assert repr(module) == "Module(mkapi.objects)"
+    obj = get_object("mkapi.objects.Object")
+    assert repr(obj) == "Class(mkapi.objects.Object)"
+    obj = get_object("mkapi.plugins.BasePlugin")
+    assert repr(obj) == "Class(mkdocs.plugins.BasePlugin)"
 
 
 def test_get_source():
