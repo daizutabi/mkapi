@@ -3,11 +3,11 @@ from ast import Module
 
 import pytest
 
-import mkapi.ast
-from mkapi.ast import (
+import mkapi.objects
+from mkapi.objects import (
     get_module,
     get_module_node,
-    iter_definition_nodes,
+    iter_callable_nodes,
     iter_import_nodes,
     iter_imports,
 )
@@ -55,7 +55,7 @@ def test_get_import_names(module: Module):
 
 @pytest.fixture(scope="module")
 def def_nodes(module: Module):
-    return list(iter_definition_nodes(module))
+    return list(iter_callable_nodes(module))
 
 
 def test_iter_definition_nodes(def_nodes):
@@ -66,14 +66,20 @@ def test_iter_definition_nodes(def_nodes):
 def test_not_found():
     assert get_module_node("xxx") is None
     assert get_module("xxx") is None
-    assert mkapi.ast.cache_module["xxx"] is None
-    assert "xxx" not in mkapi.ast.cache_module_node
+    assert mkapi.objects.cache_module["xxx"] is None
+    assert "xxx" not in mkapi.objects.cache_module_node
     assert get_module("markdown") is not None
-    assert "markdown" in mkapi.ast.cache_module
-    assert "markdown" in mkapi.ast.cache_module_node
+    assert "markdown" in mkapi.objects.cache_module
+    assert "markdown" in mkapi.objects.cache_module_node
 
 
-def test_source():
+def test_get_source():
     module = get_module("mkdocs.structure.files")
     assert module
     assert "class File" in module.source
+    module = get_module("mkapi.plugins")
+    assert module
+    cls = module.get("MkAPIConfig")
+    assert cls.get_module() is module
+    assert cls.get_source().startswith("class MkAPIConfig")
+    assert "MkAPIPlugin" in module.get_source()

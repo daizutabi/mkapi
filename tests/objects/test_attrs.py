@@ -1,6 +1,6 @@
 import ast
 
-from mkapi.ast import iter_attributes
+from mkapi.objects import iter_attributes
 
 
 def _get_attributes(source: str):

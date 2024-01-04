@@ -1,7 +1,7 @@
 import ast
 from inspect import Parameter
 
-from mkapi.ast import iter_parameters
+from mkapi.objects import iter_parameters
 
 
 def _get_args(source: str):

@@ -1,4 +1,3 @@
-from mkapi.ast import Module
 from mkapi.docstring import (
     _iter_items,
     iter_items,
@@ -8,6 +7,7 @@ from mkapi.docstring import (
     split_return,
     split_section,
 )
+from mkapi.objects import Module
 
 
 def test_split_section():

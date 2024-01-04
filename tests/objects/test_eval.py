@@ -2,11 +2,12 @@ import ast
 
 import pytest
 
-from mkapi.ast import (
+from mkapi.objects import (
+    Function,
     Module,
     StringTransformer,
+    _iter_identifiers,
     get_module,
-    iter_identifiers,
 )
 
 
@@ -37,39 +38,40 @@ def test_parse_expr_str():
 
 @pytest.fixture(scope="module")
 def module():
-    return get_module("mkapi.ast")
+    return get_module("mkapi.objects")
 
 
 def test_iter_identifiers():
-    x = list(iter_identifiers("x, __mkapi__.a.b0[__mkapi__.c], y"))
+    x = list(_iter_identifiers("x, __mkapi__.a.b0[__mkapi__.c], y"))
     assert len(x) == 5
     assert x[0] == ("x, ", False)
     assert x[1] == ("a.b0", True)
     assert x[2] == ("[", False)
     assert x[3] == ("c", True)
     assert x[4] == ("], y", False)
-    x = list(iter_identifiers("__mkapi__.a.b()"))
+    x = list(_iter_identifiers("__mkapi__.a.b()"))
     assert len(x) == 2
     assert x[0] == ("a.b", True)
     assert x[1] == ("()", False)
-    x = list(iter_identifiers("'ab'\n __mkapi__.a"))
+    x = list(_iter_identifiers("'ab'\n __mkapi__.a"))
     assert len(x) == 2
     assert x[0] == ("'ab'\n ", False)
     assert x[1] == ("a", True)
-    x = list(iter_identifiers("'ab'\n __mkapi__.α.β.γ"))  # noqa: RUF001
+    x = list(_iter_identifiers("'ab'\n __mkapi__.α.β.γ"))  # noqa: RUF001
     assert len(x) == 2
     assert x[0] == ("'ab'\n ", False)
     assert x[1] == ("α.β.γ", True)  # noqa: RUF001
 
 
 def test_functions(module: Module):
-    func = module.get("_get_def_args")
+    func = module.get("_get_callable_args")
+    assert isinstance(func, Function)
     type_ = func.parameters[0].type
     assert isinstance(type_, ast.expr)
-    text = StringTransformer().unparse(type_)
-    for s in iter_identifiers(text):
-        print(s)
-    print(module.imports)
-    print(module.classes)
-    print(module.attributes)
-    print(module.functions)
+    # text = StringTransformer().unparse(type_)
+    # for s in _iter_identifiers(text):
+    #     print(s)
+    # print(module.imports)
+    # print(module.classes)
+    # print(module.attributes)
+    # print(module.functions)

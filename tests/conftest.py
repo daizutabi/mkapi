@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from mkapi.ast import get_module
+from mkapi.objects import get_module
 
 
 @pytest.fixture(scope="module")

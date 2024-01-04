@@ -15,7 +15,7 @@ from ast import (
     NodeTransformer,
     TypeAlias,
 )
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib.util import find_spec
 from inspect import Parameter as P  # noqa: N817
 from inspect import cleandoc
@@ -32,21 +32,51 @@ type FunctionDef_ = AsyncFunctionDef | FunctionDef
 type Def = FunctionDef_ | ClassDef
 type Assign_ = Assign | AnnAssign | TypeAlias
 
+current_module_name: list[str | None] = [None]
+
 
 @dataclass
-class Node:  # noqa: D101
+class Object:  # noqa: D101
     _node: AST
     name: str
     docstring: str | None
 
+    def __post_init__(self) -> None:
+        self.__dict__["__module_name__"] = current_module_name[0]
+
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r})"
+        return f"{self.__class__.__name__}({self.name})"
+
+    def unparse(self) -> str:  # noqa: D102
+        return ast.unparse(self._node)
+
+    def get_module_name(self) -> str | None:
+        """Return the module name if exist."""
+        return self.__dict__["__module_name__"]
+
+    def get_module(self) -> Module | None:
+        """Return a [Module] instance if exist."""
+        if module_name := self.get_module_name():
+            return get_module(module_name)
+        return None
+
+    def get_source(self) -> str:
+        """Return the source code."""
+        if (name := self.get_module_name()) and (source := _get_source(name)):
+            lines = source.split("\n")
+            return "\n".join(lines[self._node.lineno - 1 : self._node.end_lineno])
+        return ""
 
 
-@dataclass(repr=False)
-class Import(Node):  # noqa: D101
-    _node: ast.Import | ImportFrom
+@dataclass
+class Import(Object):  # noqa: D101
+    _node: ast.Import | ImportFrom = field(repr=False)
+    docstring: str | None = field(repr=False)
     fullname: str
+    from_: str | None
+
+    # def __repr__(self) -> str:
+    #     return f"{self.__class__.__name__}({self.name}: {self.fullname})"
 
 
 def iter_import_nodes(node: AST) -> Iterator[Import_]:
@@ -61,15 +91,15 @@ def iter_import_nodes(node: AST) -> Iterator[Import_]:
 def iter_imports(node: ast.Module) -> Iterator[Import]:
     """Yield import nodes and names."""
     for child in iter_import_nodes(node):
-        from_module = f"{child.module}." if isinstance(child, ImportFrom) else ""
+        from_ = f"{child.module}" if isinstance(child, ImportFrom) else None
         for alias in child.names:
             name = alias.asname or alias.name
-            fullname = f"{from_module}{alias.name}"
-            yield Import(child, name, None, fullname)
+            fullname = f"{from_}.{alias.name}" if from_ else name
+            yield Import(child, name, None, fullname, from_)
 
 
 @dataclass(repr=False)
-class Attribute(Node):  # noqa: D101
+class Attribute(Object):  # noqa: D101
     _node: Assign_
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
@@ -134,7 +164,7 @@ def iter_attributes(node: ast.Module | ClassDef) -> Iterator[Attribute]:
 
 
 @dataclass(repr=False)
-class Parameter(Node):  # noqa: D101
+class Parameter(Object):  # noqa: D101
     _node: ast.arg
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
@@ -174,7 +204,7 @@ def iter_parameters(node: FunctionDef_) -> Iterator[Parameter]:
 
 
 @dataclass(repr=False)
-class Raise(Node):  # noqa: D101
+class Raise(Object):  # noqa: D101
     _node: ast.Raise
     type: ast.expr | None  #   # noqa: A003
 
@@ -187,7 +217,7 @@ def iter_raises(node: FunctionDef_) -> Iterator[Raise]:
 
 
 @dataclass(repr=False)
-class Return(Node):  # noqa: D101
+class Return(Object):  # noqa: D101
     _node: ast.expr | None
     type: ast.expr | None  #   # noqa: A003
 
@@ -199,7 +229,7 @@ def get_return(node: FunctionDef_) -> Return:
 
 
 @dataclass(repr=False)
-class Definition(Node):  # noqa: D101
+class Callable(Object):  # noqa: D101
     parameters: list[Parameter]
     decorators: list[ast.expr]
     type_params: list[ast.type_param]
@@ -207,13 +237,13 @@ class Definition(Node):  # noqa: D101
 
 
 @dataclass(repr=False)
-class Function(Definition):  # noqa: D101
+class Function(Callable):  # noqa: D101
     _node: FunctionDef_
     returns: Return
 
 
 @dataclass(repr=False)
-class Class(Definition):  # noqa: D101
+class Class(Callable):  # noqa: D101
     _node: ClassDef
     bases: list[Class]
     attributes: list[Attribute]
@@ -230,14 +260,14 @@ class Class(Definition):  # noqa: D101
         raise NameError
 
 
-def iter_definition_nodes(node: ast.Module | ClassDef) -> Iterator[Def]:
+def iter_callable_nodes(node: ast.Module | ClassDef) -> Iterator[Def]:
     """Yield definition nodes."""
     for child in ast.iter_child_nodes(node):
         if isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
             yield child
 
 
-def _get_def_args(
+def _get_callable_args(
     node: Def,
 ) -> tuple[str, str | None, list[Parameter], list[ast.expr], list[ast.type_param]]:
     name = node.name
@@ -248,13 +278,13 @@ def _get_def_args(
     return name, docstring, parameters, decorators, type_params
 
 
-def iter_definitions(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
+def iter_callables(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
     """Yield classes or functions."""
-    for def_node in iter_definition_nodes(node):
-        args = _get_def_args(def_node)
+    for def_node in iter_callable_nodes(node):
+        args = _get_callable_args(def_node)
         if isinstance(def_node, ClassDef):
             attrs = list(iter_attributes(def_node))
-            classes, functions = get_definitions(def_node)
+            classes, functions = get_callables(def_node)
             bases: list[Class] = []  # TODO: use def_node.bases
             yield Class(def_node, *args, [], bases, attrs, classes, functions)
         else:
@@ -262,11 +292,11 @@ def iter_definitions(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
             yield Function(def_node, *args, raises, get_return(def_node))
 
 
-def get_definitions(node: ast.Module | ClassDef) -> tuple[list[Class], list[Function]]:
+def get_callables(node: ast.Module | ClassDef) -> tuple[list[Class], list[Function]]:
     """Return a tuple of (list[Class], list[Function])."""
     classes: list[Class] = []
     functions: list[Function] = []
-    for definition in iter_definitions(node):
+    for definition in iter_callables(node):
         if isinstance(definition, Class):
             classes.append(definition)
         else:
@@ -274,22 +304,29 @@ def get_definitions(node: ast.Module | ClassDef) -> tuple[list[Class], list[Func
     return classes, functions
 
 
-@dataclass
-class Module(Node):  # noqa: D101
+@dataclass(repr=False)
+class Module(Object):  # noqa: D101
     imports: list[Import]
     attributes: list[Attribute]
     classes: list[Class]
     functions: list[Function]
     source: str
 
-    def get(self, name: str) -> Class | Function:  # noqa: D102
+    def get(self, name: str) -> Class | Function | Import:  # noqa: D102
         names = [cls.name for cls in self.classes]
         if name in names:
             return self.classes[names.index(name)]
         names = [func.name for func in self.functions]
         if name in names:
             return self.functions[names.index(name)]
+        names = [imp.name for imp in self.imports]
+        if name in names:
+            return self.imports[names.index(name)]
         raise NameError
+
+    def get_source(self) -> str:
+        """Return the source code."""
+        return _get_source(self.name) if self.name else ""
 
 
 cache_module_node: dict[str, tuple[float, ast.Module | None, str]] = {}
@@ -301,7 +338,10 @@ def get_module(name: str) -> Module | None:
     if name in cache_module:
         return cache_module[name]
     if node := get_module_node(name):
+        current_module_name[0] = name
         module = get_module_from_node(node)
+        current_module_name[0] = None
+        module.name = name
         module.source = _get_source(name)
         cache_module[name] = module
         return module
@@ -314,13 +354,16 @@ def get_module_from_node(node: ast.Module) -> Module:
     docstring = ast.get_docstring(node)
     imports = list(iter_imports(node))
     attrs = list(iter_attributes(node))
-    classes, functions = get_definitions(node)
+    classes, functions = get_callables(node)
     return Module(node, "", docstring, imports, attrs, classes, functions, "")
 
 
 def get_module_node(name: str) -> ast.Module | None:
     """Return a [ast.Module] node by name."""
-    spec = find_spec(name)
+    try:
+        spec = find_spec(name)
+    except ModuleNotFoundError:
+        return None
     if not spec or not spec.origin:
         return None
     path = Path(spec.origin)
@@ -342,6 +385,15 @@ def _get_source(name: str) -> str:
     return ""
 
 
+def get_module_from_import(import_: Import) -> Module | None:
+    """Return a [Module] instance from [Import]."""
+    if module := get_module(import_.fullname):
+        return module
+    if import_.from_ and (module := get_module(import_.from_)):
+        return module
+    return None
+
+
 class Transformer(NodeTransformer):  # noqa: D101
     def _rename(self, name: str) -> Name:
         return Name(id=f"__mkapi__.{name}")
@@ -360,7 +412,7 @@ class StringTransformer(Transformer):  # noqa: D101
         return node
 
 
-def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
+def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
     """Yield identifiers as a tuple of (code, isidentifier)."""
     start = 0
     while start < len(source):
