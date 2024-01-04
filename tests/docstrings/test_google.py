@@ -1,9 +1,8 @@
-from mkapi.docstring import (
+from mkapi.docstrings import (
     _iter_items,
+    _iter_sections,
     iter_items,
-    iter_sections,
     parse_docstring,
-    split_attribute,
     split_item,
     split_return,
     split_section,
@@ -23,20 +22,20 @@ def test_split_section():
 
 
 def test_iter_sections_short():
-    sections = list(iter_sections("", "google"))
+    sections = list(_iter_sections("", "google"))
     assert sections == []
-    sections = list(iter_sections("x", "google"))
+    sections = list(_iter_sections("x", "google"))
     assert sections == [("", "x")]
-    sections = list(iter_sections("x\n", "google"))
+    sections = list(_iter_sections("x\n", "google"))
     assert sections == [("", "x")]
-    sections = list(iter_sections("x\n\n", "google"))
+    sections = list(_iter_sections("x\n\n", "google"))
     assert sections == [("", "x")]
 
 
 def test_iter_sections(google: Module):
     doc = google.docstring
     assert isinstance(doc, str)
-    sections = list(iter_sections(doc, "google"))
+    sections = list(_iter_sections(doc, "google"))
     assert len(sections) == 6
     assert sections[0][1].startswith("Example Google")
     assert sections[0][1].endswith("indented text.")
@@ -58,7 +57,7 @@ def test_iter_sections(google: Module):
 def test_iter_items(google: Module):
     doc = google.get("module_level_function").docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "google"))[1][1]
+    section = list(_iter_sections(doc, "google"))[1][1]
     items = list(_iter_items(section))
     assert len(items) == 4
     assert items[0].startswith("param1")
@@ -67,7 +66,7 @@ def test_iter_items(google: Module):
     assert items[3].startswith("**kwargs")
     doc = google.docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "google"))[3][1]
+    section = list(_iter_sections(doc, "google"))[3][1]
     items = list(_iter_items(section))
     assert len(items) == 1
     assert items[0].startswith("module_")
@@ -76,7 +75,7 @@ def test_iter_items(google: Module):
 def test_split_item(google):
     doc = google.get("module_level_function").docstring
     assert isinstance(doc, str)
-    sections = list(iter_sections(doc, "google"))
+    sections = list(_iter_sections(doc, "google"))
     section = sections[1][1]
     items = list(_iter_items(section))
     x = split_item(items[0], "google")
@@ -96,7 +95,7 @@ def test_split_item(google):
 def test_iter_items_class(google):
     doc = google.get("ExampleClass").docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "google"))[1][1]
+    section = list(_iter_sections(doc, "google"))[1][1]
     x = list(iter_items(section, "google"))
     assert x[0].name == "attr1"
     assert x[0].type == "str"
@@ -106,7 +105,7 @@ def test_iter_items_class(google):
     assert x[1].description == "Description of `attr2`."
     doc = google.get("ExampleClass").get("__init__").docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "google"))[2][1]
+    section = list(_iter_sections(doc, "google"))[2][1]
     x = list(iter_items(section, "google"))
     assert x[0].name == "param1"
     assert x[0].type == "str"
@@ -117,25 +116,11 @@ def test_iter_items_class(google):
 def test_split_return(google):
     doc = google.get("module_level_function").docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "google"))[2][1]
+    section = list(_iter_sections(doc, "google"))[2][1]
     x = split_return(section, "google")
     assert x[0] == "bool"
     assert x[1].startswith("True if")
     assert x[1].endswith("    }")
-
-
-def test_split_attribute(google):
-    doc = google.get("ExampleClass").get("readonly_property").docstring
-    assert isinstance(doc, str)
-    x = split_attribute(doc)
-    assert x[0] == "str"
-    assert x[1] == "Properties should be documented in their getter method."
-    doc = google.get("ExampleClass").get("readwrite_property").docstring
-    assert isinstance(doc, str)
-    x = split_attribute(doc)
-    assert x[0] == "list(str)"
-    assert x[1].startswith("Properties with both")
-    assert x[1].endswith("mentioned here.")
 
 
 def test_repr(google):

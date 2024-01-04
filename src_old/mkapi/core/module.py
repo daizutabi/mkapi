@@ -66,7 +66,7 @@ class Module(Tree):
 def get_members(obj: object) -> list[Module]:
     """Return members."""
     try:
-        sourcefile = inspect.getsourcefile(obj)  # type: ignore  # noqa: PGH003
+        sourcefile = inspect.getsourcefile(obj)  # type: ignore
     except TypeError:
         return []
     if not sourcefile:

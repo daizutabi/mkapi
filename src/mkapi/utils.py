@@ -144,3 +144,10 @@ def add_admonition(name: str, markdown: str) -> str:
     lines = ["    " + line if line else "" for line in markdown.split("\n")]
     lines.insert(0, f'!!! {kind} "{name}"')
     return "\n".join(lines)
+
+
+def get_by_name[T](items: list[T], name: str) -> T | None:  # noqa: D103
+    for item in items:
+        if getattr(item, "name", None) == name:
+            return item
+    return None

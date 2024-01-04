@@ -1,4 +1,4 @@
-from mkapi.utils import add_admonition, add_fence, find_submodule_names
+from mkapi.utils import add_admonition, add_fence, find_submodule_names, get_by_name
 
 
 def test_find_submodule_names():
@@ -48,3 +48,14 @@ def test_add_admonition():
     assert markdown == '!!! note "Note"\n    abc\n\n    def'
     markdown = add_admonition("Tips", "abc\n\ndef")
     assert markdown == '!!! tips "Tips"\n    abc\n\n    def'
+
+
+class A:
+    def __init__(self, name):
+        self.name = name
+
+
+def test_get_by_name():
+    items = [A("a"), A("b"), A("c")]
+    assert get_by_name(items, "b").name == "b"  # type: ignore
+    assert get_by_name(items, "x") is None

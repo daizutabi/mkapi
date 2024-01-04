@@ -147,7 +147,7 @@ def get_sourcefiles(obj: object) -> list[str]:
     sourfiles = []
     for obj in objs:
         try:
-            sourcefile = inspect.getsourcefile(obj) or ""  # type: ignore  # noqa: PGH003
+            sourcefile = inspect.getsourcefile(obj) or ""  # type: ignore
         except TypeError:
             pass
         else:

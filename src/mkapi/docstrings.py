@@ -1,4 +1,4 @@
-"""Parse docstring."""
+"""Parse docstrings."""
 from __future__ import annotations
 
 import re
@@ -69,13 +69,27 @@ def iter_items(section: str, style: Style) -> Iterator[Item]:
         yield Item(*split_item(item, style))
 
 
+@dataclass
+class Section(Item):  # noqa: D101
+    items: list[Item]
+
+    def __iter__(self) -> Iterator[Item]:
+        return iter(self.items)
+
+    def get(self, name: str) -> Item | None:  # noqa: D102
+        for item in self.items:
+            if item.name == name:
+                return item
+        return None
+
+
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
     "google": re.compile(r"\n\n\S"),
     "numpy": re.compile(r"\n\n\n|\n\n.+?\n-+\n"),
 }
 
 
-def _iter_sections(doc: str, style: Style) -> Iterator[str]:
+def _split_sections(doc: str, style: Style) -> Iterator[str]:
     pattern = SPLIT_SECTION_PATTERNS[style]
     if not (m := re.search("\n\n", doc)):
         yield doc.strip()
@@ -131,10 +145,10 @@ def split_section(section: str, style: Style) -> tuple[str, str]:
     return "", section
 
 
-def iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
+def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
     """Yield (section name, description) pairs by splitting the whole docstring."""
     prev_name, prev_desc = "", ""
-    for section in _iter_sections(doc, style):
+    for section in _split_sections(doc, style):
         if not section:
             continue
         name, desc = split_section(section, style)
@@ -152,6 +166,22 @@ def iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
         yield "", prev_desc
 
 
+def iter_sections(doc: str, style: Style) -> Iterator[Section]:
+    """Yield [Section] instance by splitting the whole docstring."""
+    for name, desc in _iter_sections(doc, style):
+        type_ = desc_ = ""
+        items: list[Item] = []
+        if name in ["Parameters", "Attributes", "Raises"]:
+            items = list(iter_items(desc, style))
+        elif name in ["Returns", "Yields"]:
+            type_, desc_ = split_return(desc, style)
+        elif name in ["Note", "Notes", "Warning", "Warnings"]:
+            desc_ = add_admonition(name, desc)
+        else:
+            desc_ = desc
+        yield Section(name, type_, desc_, items)
+
+
 def split_return(section: str, style: Style) -> tuple[str, str]:
     """Return a tuple of (type, description) for Returns and Yields section."""
     lines = section.split("\n")
@@ -163,24 +193,10 @@ def split_return(section: str, style: Style) -> tuple[str, str]:
     return "", section
 
 
-# for mkapi.ast.Attribute.docstring
+# for mkapi.objects.Attribute.docstring
 def split_attribute(docstring: str) -> tuple[str, str]:
     """Return a tuple of (type, description) for Attribute docstring."""
     return split_return(docstring, "google")
-
-
-@dataclass
-class Section(Item):  # noqa: D101
-    items: list[Item]
-
-    def __iter__(self) -> Iterator[Item]:
-        return iter(self.items)
-
-    def get(self, name: str) -> Item | None:  # noqa: D102
-        for item in self.items:
-            if item.name == name:
-                return item
-        return None
 
 
 @dataclass(repr=False)
@@ -201,83 +217,7 @@ class Docstring(Item):  # noqa: D101
 
 
 def parse_docstring(doc: str, style: Style) -> Docstring:
-    """Return a docstring instance."""
+    """Return a [Docstring] instance."""
     doc = add_fence(doc)
-    sections: list[Section] = []
-    for name, desc in iter_sections(doc, style):
-        type_ = desc_ = ""
-        items: list[Item] = []
-        if name in ["Parameters", "Attributes", "Raises"]:
-            items = list(iter_items(desc, style))
-        elif name in ["Returns", "Yields"]:
-            type_, desc_ = split_return(desc, style)
-        elif name in ["Note", "Notes", "Warning", "Warnings"]:
-            desc_ = add_admonition(name, desc)
-        else:
-            desc_ = desc
-        sections.append(Section(name, type_, desc_, items))
+    sections = list(iter_sections(doc, style))
     return Docstring("", "", "", sections)
-
-
-# @dataclass
-# class Base:
-#     """Base class."""
-
-#     name: str
-#     """Name of item."""
-#     docstring: str | None
-#     """Docstring of item."""
-
-#     def __repr__(self) -> str:
-#         return f"{self.__class__.__name__}({self.name!r})"
-
-
-# @dataclass
-# class Nodes[T]:
-#     """Collection of [Node] instance."""
-
-#     items: list[T]
-
-#     def __getitem__(self, index: int | str) -> T:
-#         if isinstance(index, int):
-#             return self.items[index]
-#         names = [item.name for item in self.items]  # type: ignore  # noqa: PGH003
-#         return self.items[names.index(index)]
-
-#     def __getattr__(self, name: str) -> T:
-#         return self[name]
-
-#     def __iter__(self) -> Iterator[T]:
-#         return iter(self.items)
-
-#     def __contains__(self, name: str) -> bool:
-#         return any(name == item.name for item in self.items)  # type: ignore  # noqa: PGH003
-
-#     def __repr__(self) -> str:
-#         names = ", ".join(f"{item.name!r}" for item in self.items)  # type: ignore  # noqa: PGH003
-#         return f"{self.__class__.__name__}({names})"
-
-
-# @dataclass(repr=False)
-# class Import(Node):
-#     """Import class."""
-
-#     _node: ast.Import | ImportFrom
-#     fullanme: str
-
-
-# @dataclass
-# class Imports(Nodes[Import]):
-#     """Imports class."""
-
-
-#             self.markdown = add_fence(self.markdown)
-# def postprocess_sections(sections: list[Section]) -> None:
-#     for section in sections:
-#         if section.name in ["Note", "Notes", "Warning", "Warnings"]:
-#             markdown = add_admonition(section.name, section.markdown)
-#             if sections and sections[-1].name == "":
-#                 sections[-1].markdown += "\n\n" + markdown
-#                 continue
-#             section.name = ""
-#             section.markdown = markdown

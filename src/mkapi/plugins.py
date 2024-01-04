@@ -123,7 +123,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     #     ) -> str:
     #         """Merge HTML and MkAPI's node structure."""
     #         if page.title:
-    #             page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore  # noqa: PGH003
+    #             page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore
     #         abs_src_path = page.file.abs_src_path
     #         mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
     #         return mkapi_page.content(html)
@@ -311,7 +311,7 @@ def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig
 #     """Clean page title."""
 #     title = str(page.title)
 #     if title.startswith("![mkapi]("):
-#         page.title = title[9:-1].split("|")[0]  # type: ignore  # noqa: PGH003
+#         page.title = title[9:-1].split("|")[0]  # type: ignore
 
 
 # def _rmtree(path: Path) -> None:

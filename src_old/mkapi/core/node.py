@@ -127,7 +127,7 @@ def is_abstract(obj: object) -> bool:
     """Return true if `obj` is abstract."""
     if inspect.isabstract(obj):
         return True
-    if hasattr(obj, "__isabstractmethod__") and obj.__isabstractmethod__:  # type: ignore  # noqa: PGH003
+    if hasattr(obj, "__isabstractmethod__") and obj.__isabstractmethod__:  # type: ignore
         return True
     return False
 
@@ -142,7 +142,7 @@ def has_self(obj: object) -> bool:
 
 def get_kind_self(obj: object) -> str:  # noqa: D103
     try:
-        self = obj.__self__  # type: ignore  # noqa: PGH003
+        self = obj.__self__  # type: ignore
     except KeyError:
         return ""
     if isinstance(self, type) or type(type(self)):  # Issue#18
@@ -204,7 +204,7 @@ def is_member(obj: object, name: str = "", sourcefiles: list[str] | None = None)
     if not get_kind(obj):
         return -1
     try:
-        sourcefile = inspect.getsourcefile(obj)  # type: ignore  # noqa: PGH003
+        sourcefile = inspect.getsourcefile(obj)  # type: ignore
     except TypeError:
         return -1
     if not sourcefile:
@@ -248,4 +248,4 @@ def get_node_from_module(name: str | object) -> None:
     from mkapi.core.module import modules
 
     obj = get_object(name) if isinstance(name, str) else name
-    return modules[obj.__module__].node[obj.__qualname__]  # type: ignore  # noqa: PGH003
+    return modules[obj.__module__].node[obj.__qualname__]  # type: ignore

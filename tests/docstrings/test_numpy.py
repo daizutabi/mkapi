@@ -1,8 +1,7 @@
-from mkapi.docstring import (
+from mkapi.docstrings import (
     _iter_items,
+    _iter_sections,
     iter_items,
-    iter_sections,
-    split_attribute,
     split_item,
     split_return,
     split_section,
@@ -19,20 +18,20 @@ def test_split_section():
 
 
 def test_iter_sections_short():
-    sections = list(iter_sections("", "numpy"))
+    sections = list(_iter_sections("", "numpy"))
     assert sections == []
-    sections = list(iter_sections("x", "numpy"))
+    sections = list(_iter_sections("x", "numpy"))
     assert sections == [("", "x")]
-    sections = list(iter_sections("x\n", "numpy"))
+    sections = list(_iter_sections("x\n", "numpy"))
     assert sections == [("", "x")]
-    sections = list(iter_sections("x\n\n", "numpy"))
+    sections = list(_iter_sections("x\n\n", "numpy"))
     assert sections == [("", "x")]
 
 
 def test_iter_sections(numpy: Module):
     doc = numpy.docstring
     assert isinstance(doc, str)
-    sections = list(iter_sections(doc, "numpy"))
+    sections = list(_iter_sections(doc, "numpy"))
     assert len(sections) == 7
     assert sections[0][1].startswith("Example NumPy")
     assert sections[0][1].endswith("equal length.")
@@ -56,7 +55,7 @@ def test_iter_sections(numpy: Module):
 def test_iter_items(numpy: Module):
     doc = numpy.get("module_level_function").docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "numpy"))[1][1]
+    section = list(_iter_sections(doc, "numpy"))[1][1]
     items = list(_iter_items(section))
     assert len(items) == 4
     assert items[0].startswith("param1")
@@ -65,7 +64,7 @@ def test_iter_items(numpy: Module):
     assert items[3].startswith("**kwargs")
     doc = numpy.docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "numpy"))[5][1]
+    section = list(_iter_sections(doc, "numpy"))[5][1]
     items = list(_iter_items(section))
     assert len(items) == 1
     assert items[0].startswith("module_")
@@ -74,7 +73,7 @@ def test_iter_items(numpy: Module):
 def test_split_item(numpy):
     doc = numpy.get("module_level_function").docstring
     assert isinstance(doc, str)
-    sections = list(iter_sections(doc, "numpy"))
+    sections = list(_iter_sections(doc, "numpy"))
     items = list(_iter_items(sections[1][1]))
     x = split_item(items[0], "numpy")
     assert x == ("param1", "int", "The first parameter.")
@@ -92,7 +91,7 @@ def test_split_item(numpy):
 def test_iter_items_class(numpy):
     doc = numpy.get("ExampleClass").docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "numpy"))[1][1]
+    section = list(_iter_sections(doc, "numpy"))[1][1]
     x = list(iter_items(section, "numpy"))
     assert x[0].name == "attr1"
     assert x[0].type == "str"
@@ -102,7 +101,7 @@ def test_iter_items_class(numpy):
     assert x[1].description == "Description of `attr2`."
     doc = numpy.get("ExampleClass").get("__init__").docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "numpy"))[2][1]
+    section = list(_iter_sections(doc, "numpy"))[2][1]
     x = list(iter_items(section, "numpy"))
     assert x[0].name == "param1"
     assert x[0].type == "str"
@@ -113,22 +112,8 @@ def test_iter_items_class(numpy):
 def test_get_return(numpy):
     doc = numpy.get("module_level_function").docstring
     assert isinstance(doc, str)
-    section = list(iter_sections(doc, "numpy"))[2][1]
+    section = list(_iter_sections(doc, "numpy"))[2][1]
     x = split_return(section, "numpy")
     assert x[0] == "bool"
     assert x[1].startswith("True if")
     assert x[1].endswith("    }")
-
-
-def test_parse_attribute(numpy):
-    doc = numpy.get("ExampleClass").get("readonly_property").docstring
-    assert isinstance(doc, str)
-    x = split_attribute(doc)
-    assert x[0] == "str"
-    assert x[1] == "Properties should be documented in their getter method."
-    doc = numpy.get("ExampleClass").get("readwrite_property").docstring
-    assert isinstance(doc, str)
-    x = split_attribute(doc)
-    assert x[0] == "list(str)"
-    assert x[1].startswith("Properties with both")
-    assert x[1].endswith("mentioned here.")

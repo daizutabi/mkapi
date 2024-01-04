@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Self
 
-from mkapi.docstring import Base, Docstring, Type, parse_docstring
+from mkapi.docstrings import Base, Docstring, Type, parse_docstring
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

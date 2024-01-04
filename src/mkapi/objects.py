@@ -22,12 +22,15 @@ from inspect import cleandoc
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mkapi.docstring import Style, parse_docstring, split_attribute, split_return
+from mkapi.docstrings import SECTION_NAMES, parse_docstring, split_attribute
+from mkapi.utils import get_by_name
 
 if TYPE_CHECKING:
     from ast import AST
     from collections.abc import Iterator
     from inspect import _ParameterKind
+
+    from mkapi.docstrings import Docstring, Item, Section, Style
 
 type Import_ = ast.Import | ImportFrom
 type FunctionDef_ = AsyncFunctionDef | FunctionDef
@@ -35,6 +38,7 @@ type Def = FunctionDef_ | ClassDef
 type Assign_ = Assign | AnnAssign | TypeAlias
 
 current_module_name: list[str | None] = [None]
+current_docstring_style: list[Style] = ["google"]
 
 
 @dataclass
@@ -44,11 +48,15 @@ class Object:  # noqa: D101
     docstring: str | None
 
     def __post_init__(self) -> None:
+        # Set parent module.
         self.__dict__["__module_name__"] = current_module_name[0]
 
     def __repr__(self) -> str:
         # fullname = self.get_fullname()
         return f"{self.__class__.__name__}({self.name})"
+
+    def get_node(self) -> AST:  # noqa: D102
+        return self._node
 
     def unparse(self) -> str:  # noqa: D102
         return ast.unparse(self._node)
@@ -110,7 +118,7 @@ def iter_imports(node: ast.Module) -> Iterator[Import]:
 
 @dataclass(repr=False)
 class Attribute(Object):  # noqa: D101
-    _node: Assign_
+    _node: Assign_ | FunctionDef_
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
     type_params: list[ast.type_param] | None
@@ -251,6 +259,7 @@ def get_return(node: FunctionDef_) -> Return:
 
 @dataclass(repr=False)
 class Callable(Object):  # noqa: D101
+    docstring: str | Docstring | None
     parameters: list[Parameter]
     decorators: list[ast.expr]
     type_params: list[ast.type_param]
@@ -262,6 +271,9 @@ class Function(Callable):  # noqa: D101
     _node: FunctionDef_
     returns: Return
 
+    def get_node(self) -> FunctionDef_:  # noqa: D102
+        return self._node
+
 
 @dataclass(repr=False)
 class Class(Callable):  # noqa: D101
@@ -271,8 +283,8 @@ class Class(Callable):  # noqa: D101
     classes: list[Class]
     functions: list[Function]
 
-    def get(self, name: str) -> Class | Function | Attribute | None:  # noqa: D102
-        for attr in ["classes", "functions", "attributes"]:
+    def get(self, name: str) -> Attribute | Class | Function | None:  # noqa: D102
+        for attr in ["attributes", "classes", "functions"]:
             for obj in getattr(self, attr):
                 if obj.name == name:
                     return obj
@@ -304,14 +316,13 @@ def iter_callables(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
         if isinstance(def_node, ClassDef):
             attrs = list(iter_attributes(def_node))
             classes, functions = get_callables(def_node)
-            bases: list[Class] = []  # TODO: use def_node.bases
-            yield Class(def_node, *args, [], bases, attrs, classes, functions)
+            bases: list[Class] = []
+            cls = Class(def_node, *args, [], bases, attrs, classes, functions)
+            _move_property(cls)
+            yield cls
         else:
             raises = list(iter_raises(def_node))
-            func = Function(def_node, *args, raises, get_return(def_node))
-            #  TODO: for property
-            # _merge_docstring_attribute
-            yield func
+            yield Function(def_node, *args, raises, get_return(def_node))
 
 
 def get_callables(node: ast.Module | ClassDef) -> tuple[list[Class], list[Function]]:
@@ -328,14 +339,15 @@ def get_callables(node: ast.Module | ClassDef) -> tuple[list[Class], list[Functi
 
 @dataclass(repr=False)
 class Module(Object):  # noqa: D101
+    docstring: str | Docstring | None
     imports: list[Import]
     attributes: list[Attribute]
     classes: list[Class]
     functions: list[Function]
     source: str
 
-    def get(self, name: str) -> Class | Function | Attribute | Import | None:  # noqa: D102
-        for attr in ["classes", "functions", "attributes", "imports"]:
+    def get(self, name: str) -> Import | Attribute | Class | Function | None:  # noqa: D102
+        for attr in ["imports", "attributes", "classes", "functions"]:
             for obj in getattr(self, attr):
                 if obj.name == name:
                     return obj
@@ -407,15 +419,6 @@ def _get_source(name: str) -> str:
     return ""
 
 
-# def get_module_from_import(import_: Import) -> Module | None:
-#     """Return a [Module] instance from [Import]."""
-#     if module := get_module(import_.fullname):
-#         return module
-#     if import_.from_ and (module := get_module(import_.from_)):
-#         return module
-#     return None
-
-
 def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     """Return a [Object] instance by name."""
     if module := get_module(fullname):
@@ -439,11 +442,11 @@ def get_object_from_module(
     return obj
 
 
-SPLIT_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
+SPLIT_IDENTIFIER_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
 
 
 def _split_name(name: str) -> list[str]:
-    return [x for x in re.split(SPLIT_PATTERN, name) if x]
+    return [x for x in re.split(SPLIT_IDENTIFIER_PATTERN, name) if x]
 
 
 def _is_identifier(name: str) -> bool:
@@ -452,7 +455,7 @@ def _is_identifier(name: str) -> bool:
 
 def _to_expr(name: str) -> ast.expr:
     if _is_identifier(name):
-        name = name.replace("(", "[").replace(")", "]")
+        name = name.replace("(", "[").replace(")", "]")  # ex. list(str) -> list[str]
         expr = ast.parse(name).body[0]
         if isinstance(expr, ast.Expr):
             return expr.value
@@ -465,6 +468,100 @@ def _merge_docstring_attribute(obj: Attribute) -> None:
         if not obj.type and type_:
             obj.type = _to_expr(type_)
         obj.docstring = desc
+
+
+def _is_property(obj: Function) -> bool:
+    return any(ast.unparse(deco).startswith("property") for deco in obj.decorators)
+
+
+def _move_property(obj: Class) -> None:
+    funcs: list[Function] = []
+    for func in obj.functions:
+        if not _is_property(func):
+            funcs.append(func)
+            continue
+        node = func.get_node()
+        doc = func.docstring if isinstance(func.docstring, str) else ""
+        type_ = func.returns.type
+        type_params = func.type_params
+        attr = Attribute(node, func.name, doc, type_, None, type_params)
+        _merge_docstring_attribute(attr)
+        obj.attributes.append(attr)
+    obj.functions = funcs
+
+
+def _get_style(doc: str) -> Style:
+    for names in SECTION_NAMES:
+        for name in names:
+            if f"\n\n{name}\n----" in doc:
+                current_docstring_style[0] = "numpy"
+                return "numpy"
+    current_docstring_style[0] = "google"
+    return "google"
+
+
+def _merge_docstring_attributes(obj: Module | Class, section: Section) -> None:
+    print("----------------Attributes----------------")
+    names = set([x.name for x in section.items] + [x.name for x in obj.attributes])
+    print(names)
+    attrs: list[Attribute] = []
+    for name in names:
+        if not (attr := get_by_name(obj.attributes, name)):
+            attr = Attribute(None, name, None, None, None, [])  # type: ignore
+        attrs.append(attr)
+        if not (item := get_by_name(section.items, name)):
+            continue
+        item  # TODO
+    obj.attributes = attrs
+
+
+def _merge_docstring_parameters(obj: Class | Function, section: Section) -> None:
+    print("----------------Parameters----------------")
+    names = set([x.name for x in section.items] + [x.name for x in obj.parameters])
+    print(names)
+    for item in section:
+        print(item)
+    for attr in obj.parameters:
+        print(attr)
+
+
+def _merge_docstring_raises(obj: Class | Function, section: Section) -> None:
+    print("----------------Raises----------------")
+    # Fix raises.name
+    names = set([x.name for x in section.items] + [x.name for x in obj.raises])
+    print(names)
+
+
+def _merge_docstring_returns(obj: Function, section: Section) -> None:
+    print("----------------Returns----------------")
+    print(section.description)
+    print(obj.returns)
+
+
+def merge_docstring(obj: Module | Class | Function) -> None:
+    """Merge [Object] and [Docstring]."""
+    sections: list[Section] = []
+    if not (doc := obj.docstring) or not isinstance(doc, str):
+        return
+    style = _get_style(doc)
+    docstring = parse_docstring(doc, style)
+    for section in docstring:
+        if section.name == "Attributes" and isinstance(obj, Module | Class):
+            _merge_docstring_attributes(obj, section)
+        elif section.name == "Parameters" and isinstance(obj, Class | Function):
+            _merge_docstring_parameters(obj, section)
+        elif section.name == "Raises" and isinstance(obj, Class | Function):
+            _merge_docstring_raises(obj, section)
+        elif section.name in ["Returns", "Yields"] and isinstance(obj, Function):
+            _merge_docstring_returns(obj, section)
+        else:
+            sections.append(section)
+    docstring.sections = sections
+    obj.docstring = docstring
+
+
+# def _resolve_bases(obj: Class) -> None:
+#     obj.bases = [obj.get_module_name()]
 
 
 # def merge_docstring(obj: Object, style: Style) -> None:
