@@ -2,12 +2,13 @@ from mkapi.docstring import (
     _iter_items,
     iter_items,
     iter_sections,
+    parse_docstring,
     split_attribute,
     split_item,
     split_return,
     split_section,
 )
-from mkapi.objects import Module
+from mkapi.objects import Module, get_object_from_module
 
 
 def test_split_section():
@@ -113,7 +114,7 @@ def test_iter_items_class(google):
     assert x[1].description == "Description of `param2`. Multiple\nlines are supported."
 
 
-def test_get_return(google):
+def test_split_return(google):
     doc = google.get("module_level_function").docstring
     assert isinstance(doc, str)
     section = list(iter_sections(doc, "google"))[2][1]
@@ -123,7 +124,7 @@ def test_get_return(google):
     assert x[1].endswith("    }")
 
 
-def test_parse_attribute(google):
+def test_split_attribute(google):
     doc = google.get("ExampleClass").get("readonly_property").docstring
     assert isinstance(doc, str)
     x = split_attribute(doc)
@@ -135,3 +136,8 @@ def test_parse_attribute(google):
     assert x[0] == "list(str)"
     assert x[1].startswith("Properties with both")
     assert x[1].endswith("mentioned here.")
+
+
+def test_repr(google):
+    r = repr(parse_docstring(google.docstring, "google"))
+    assert r == "Docstring(num_sections=6)"

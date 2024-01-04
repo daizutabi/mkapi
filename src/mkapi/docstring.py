@@ -20,7 +20,7 @@ class Item:  # noqa: D101
     description: str
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r})"
+        return f"{self.__class__.__name__}({self.name})"
 
 
 SPLIT_ITEM_PATTERN = re.compile(r"\n\S")
@@ -173,13 +173,34 @@ def split_attribute(docstring: str) -> tuple[str, str]:
 class Section(Item):  # noqa: D101
     items: list[Item]
 
+    def __iter__(self) -> Iterator[Item]:
+        return iter(self.items)
 
-@dataclass
+    def get(self, name: str) -> Item | None:  # noqa: D102
+        for item in self.items:
+            if item.name == name:
+                return item
+        return None
+
+
+@dataclass(repr=False)
 class Docstring(Item):  # noqa: D101
     sections: list[Section]
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(num_sections={len(self.sections)})"
 
-def get_docstring(doc: str, style: Style) -> Docstring:
+    def __iter__(self) -> Iterator[Section]:
+        return iter(self.sections)
+
+    def get(self, name: str) -> Section | None:  # noqa: D102
+        for section in self.sections:
+            if section.name == name:
+                return section
+        return None
+
+
+def parse_docstring(doc: str, style: Style) -> Docstring:
     """Return a docstring instance."""
     doc = add_fence(doc)
     sections: list[Section] = []
@@ -189,9 +210,11 @@ def get_docstring(doc: str, style: Style) -> Docstring:
         if name in ["Parameters", "Attributes", "Raises"]:
             items = list(iter_items(desc, style))
         elif name in ["Returns", "Yields"]:
-            type_, desc_ = parse_return(desc, style)
+            type_, desc_ = split_return(desc, style)
         elif name in ["Note", "Notes", "Warning", "Warnings"]:
             desc_ = add_admonition(name, desc)
+        else:
+            desc_ = desc
         sections.append(Section(name, type_, desc_, items))
     return Docstring("", "", "", sections)
 

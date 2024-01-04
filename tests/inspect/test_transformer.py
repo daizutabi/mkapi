@@ -2,11 +2,10 @@ import ast
 
 import pytest
 
+from mkapi.inspect import StringTransformer, _iter_identifiers
 from mkapi.objects import (
     Function,
     Module,
-    StringTransformer,
-    _iter_identifiers,
     get_module,
 )
 
@@ -68,10 +67,3 @@ def test_functions(module: Module):
     assert isinstance(func, Function)
     type_ = func.parameters[0].type
     assert isinstance(type_, ast.expr)
-    # text = StringTransformer().unparse(type_)
-    # for s in _iter_identifiers(text):
-    #     print(s)
-    # print(module.imports)
-    # print(module.classes)
-    # print(module.attributes)
-    # print(module.functions)

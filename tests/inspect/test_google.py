@@ -1,14 +1,16 @@
 import ast
 
-from mkapi.objects import get_module
+# from mkapi.docstring import get_docstring
+# from mkapi.objects import get_module
 
 
-def test_():
-    module = get_module("mkapi.plugins")
-    assert module
-    # source = module.source
-    # print(source)
-    # cls = module.get("MkAPIConfig")
+def test_google(google):
+    print(google)
+    print(google.docstring)
+    print(google.attributes)
+    # print(google.functions)
+    # print(google.attributes)
+    # assert 0
     # print(cls._node.lineno)
     # print(cls._node.end_lineno)
     # print(cls._node.__dict__)

@@ -5,10 +5,9 @@ import pytest
 
 import mkapi.objects
 from mkapi.objects import (
+    _get_module_node,
     get_module,
-    get_module_node,
     get_object,
-    get_object_from_module,
     iter_callable_nodes,
     iter_import_nodes,
     iter_imports,
@@ -16,13 +15,13 @@ from mkapi.objects import (
 
 
 def test_get_module_node():
-    node = get_module_node("mkdocs")
+    node = _get_module_node("mkdocs")
     assert isinstance(node, Module)
 
 
 def test_module_cache():
-    node1 = get_module_node("mkdocs")
-    node2 = get_module_node("mkdocs")
+    node1 = _get_module_node("mkdocs")
+    node2 = _get_module_node("mkdocs")
     assert node1 is node2
     module1 = get_module("mkapi")
     module2 = get_module("mkapi")
@@ -31,7 +30,7 @@ def test_module_cache():
 
 @pytest.fixture(scope="module")
 def module():
-    return get_module_node("mkdocs.structure.files")
+    return _get_module_node("mkdocs.structure.files")
 
 
 def test_iter_import_nodes(module: Module):
@@ -66,7 +65,7 @@ def test_iter_definition_nodes(def_nodes):
 
 
 def test_not_found():
-    assert get_module_node("xxx") is None
+    assert _get_module_node("xxx") is None
     assert get_module("xxx") is None
     assert mkapi.objects.cache_module["xxx"] is None
     assert "xxx" not in mkapi.objects.cache_module_node
@@ -81,9 +80,9 @@ def test_repr():
     module = get_module("mkapi.objects")
     assert repr(module) == "Module(mkapi.objects)"
     obj = get_object("mkapi.objects.Object")
-    assert repr(obj) == "Class(mkapi.objects.Object)"
+    assert repr(obj) == "Class(Object)"
     obj = get_object("mkapi.plugins.BasePlugin")
-    assert repr(obj) == "Class(mkdocs.plugins.BasePlugin)"
+    assert repr(obj) == "Class(BasePlugin)"
 
 
 def test_get_source():

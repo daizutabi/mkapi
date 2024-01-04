@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from ast import (
     AnnAssign,
     Assign,
@@ -12,7 +13,6 @@ from ast import (
     FunctionDef,
     ImportFrom,
     Name,
-    NodeTransformer,
     TypeAlias,
 )
 from dataclasses import dataclass, field
@@ -21,6 +21,8 @@ from inspect import Parameter as P  # noqa: N817
 from inspect import cleandoc
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from mkapi.docstring import Style, parse_docstring, split_attribute, split_return
 
 if TYPE_CHECKING:
     from ast import AST
@@ -45,8 +47,8 @@ class Object:  # noqa: D101
         self.__dict__["__module_name__"] = current_module_name[0]
 
     def __repr__(self) -> str:
-        fullname = self.get_fullname()
-        return f"{self.__class__.__name__}({fullname})"
+        # fullname = self.get_fullname()
+        return f"{self.__class__.__name__}({self.name})"
 
     def unparse(self) -> str:  # noqa: D102
         return ast.unparse(self._node)
@@ -168,7 +170,9 @@ def iter_attributes(node: ast.Module | ClassDef) -> Iterator[Attribute]:
         type_ = get_type(assign)
         value = None if isinstance(assign, TypeAlias) else assign.value
         type_params = assign.type_params if isinstance(assign, TypeAlias) else None
-        yield Attribute(assign, name, assign.__doc__, type_, value, type_params)
+        attr = Attribute(assign, name, assign.__doc__, type_, value, type_params)
+        _merge_docstring_attribute(attr)
+        yield attr
 
 
 @dataclass(repr=False)
@@ -208,13 +212,22 @@ def iter_parameters(node: FunctionDef_) -> Iterator[Parameter]:
     it = _iter_defaults(node)
     for arg, kind in _iter_parameters(node):
         default = None if kind in [P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)
-        yield Parameter(arg, arg.arg, None, arg.annotation, default, kind)
+        name = arg.arg
+        if kind is P.VAR_POSITIONAL:
+            name = f"*{name}"
+        if kind is P.VAR_KEYWORD:
+            name = f"**{name}"
+        yield Parameter(arg, name, None, arg.annotation, default, kind)
 
 
 @dataclass(repr=False)
 class Raise(Object):  # noqa: D101
     _node: ast.Raise
     type: ast.expr | None  #   # noqa: A003
+
+    def __repr__(self) -> str:
+        exc = ast.unparse(self.type) if self.type else ""
+        return f"{self.__class__.__name__}({exc})"
 
 
 def iter_raises(node: FunctionDef_) -> Iterator[Raise]:
@@ -258,12 +271,12 @@ class Class(Callable):  # noqa: D101
     classes: list[Class]
     functions: list[Function]
 
-    def get(self, name: str) -> Class | Function | Attribute:  # noqa: D102
+    def get(self, name: str) -> Class | Function | Attribute | None:  # noqa: D102
         for attr in ["classes", "functions", "attributes"]:
             for obj in getattr(self, attr):
                 if obj.name == name:
                     return obj
-        raise NameError
+        return None
 
 
 def iter_callable_nodes(node: ast.Module | ClassDef) -> Iterator[Def]:
@@ -295,7 +308,10 @@ def iter_callables(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
             yield Class(def_node, *args, [], bases, attrs, classes, functions)
         else:
             raises = list(iter_raises(def_node))
-            yield Function(def_node, *args, raises, get_return(def_node))
+            func = Function(def_node, *args, raises, get_return(def_node))
+            #  TODO: for property
+            # _merge_docstring_attribute
+            yield func
 
 
 def get_callables(node: ast.Module | ClassDef) -> tuple[list[Class], list[Function]]:
@@ -318,12 +334,12 @@ class Module(Object):  # noqa: D101
     functions: list[Function]
     source: str
 
-    def get(self, name: str) -> Class | Function | Attribute | Import:  # noqa: D102
+    def get(self, name: str) -> Class | Function | Attribute | Import | None:  # noqa: D102
         for attr in ["classes", "functions", "attributes", "imports"]:
             for obj in getattr(self, attr):
                 if obj.name == name:
                     return obj
-        raise NameError
+        return None
 
     def get_fullname(self) -> str:  # noqa: D102
         return self.name
@@ -341,9 +357,9 @@ def get_module(name: str) -> Module | None:
     """Return a [Module] instance by name."""
     if name in cache_module:
         return cache_module[name]
-    if node := get_module_node(name):
+    if node := _get_module_node(name):
         current_module_name[0] = name
-        module = get_module_from_node(node)
+        module = _get_module_from_node(node)
         current_module_name[0] = None
         module.name = name
         module.source = _get_source(name)
@@ -353,7 +369,7 @@ def get_module(name: str) -> Module | None:
     return None
 
 
-def get_module_from_node(node: ast.Module) -> Module:
+def _get_module_from_node(node: ast.Module) -> Module:
     """Return a [Module] instance from [ast.Module] node."""
     docstring = ast.get_docstring(node)
     imports = list(iter_imports(node))
@@ -362,7 +378,7 @@ def get_module_from_node(node: ast.Module) -> Module:
     return Module(node, "", docstring, imports, attrs, classes, functions, "")
 
 
-def get_module_node(name: str) -> ast.Module | None:
+def _get_module_node(name: str) -> ast.Module | None:
     """Return a [ast.Module] node by name."""
     try:
         spec = find_spec(name)
@@ -423,41 +439,35 @@ def get_object_from_module(
     return obj
 
 
-class Transformer(NodeTransformer):  # noqa: D101
-    def _rename(self, name: str) -> Name:
-        return Name(id=f"__mkapi__.{name}")
-
-    def visit_Name(self, node: Name) -> Name:  # noqa: N802, D102
-        return self._rename(node.id)
-
-    def unparse(self, node: ast.expr | ast.type_param) -> str:  # noqa: D102
-        return ast.unparse(self.visit(node))
+SPLIT_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
 
 
-class StringTransformer(Transformer):  # noqa: D101
-    def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802, D102
-        if isinstance(node.value, str):
-            return self._rename(node.value)
-        return node
+def _split_name(name: str) -> list[str]:
+    return [x for x in re.split(SPLIT_PATTERN, name) if x]
 
 
-def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
-    """Yield identifiers as a tuple of (code, isidentifier)."""
-    start = 0
-    while start < len(source):
-        index = source.find("__mkapi__.", start)
-        if index == -1:
-            yield source[start:], False
-            return
-        else:
-            if index != 0:
-                yield source[start:index], False
-            start = end = index + 10  # 10 == len("__mkapi__.")
-            while end < len(source):
-                s = source[end]
-                if s == "." or s.isdigit() or s.isidentifier():
-                    end += 1
-                else:
-                    break
-            yield source[start:end], True
-            start = end
+def _is_identifier(name: str) -> bool:
+    return name != "" and all(x.isidentifier() for x in _split_name(name))
+
+
+def _to_expr(name: str) -> ast.expr:
+    if _is_identifier(name):
+        name = name.replace("(", "[").replace(")", "]")
+        expr = ast.parse(name).body[0]
+        if isinstance(expr, ast.Expr):
+            return expr.value
+    return Constant(value=name)
+
+
+def _merge_docstring_attribute(obj: Attribute) -> None:
+    if doc := obj.docstring:
+        type_, desc = split_attribute(doc)
+        if not obj.type and type_:
+            obj.type = _to_expr(type_)
+        obj.docstring = desc
+
+
+# def merge_docstring(obj: Object, style: Style) -> None:
+#     if isinstance(obj, Attribute):
+#         return _merge_docstring_attribute(obj)
+#     if isinstance(obj,
