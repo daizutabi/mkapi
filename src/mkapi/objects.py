@@ -482,7 +482,7 @@ def _to_expr(name: str) -> ast.expr:
 
 def _merge_attribute_docstring(obj: Attribute) -> None:
     if doc := obj.docstring:
-        type_, desc = docstrings.split_attribute(doc)
+        type_, desc = docstrings.split_without_name(doc, "google")
         if not obj.type and type_:
             obj.type = _to_expr(type_)
         obj.docstring = desc

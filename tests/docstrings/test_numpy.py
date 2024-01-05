@@ -3,8 +3,8 @@ from mkapi.docstrings import (
     _iter_sections,
     iter_items,
     split_item,
-    split_return,
     split_section,
+    split_without_name,
 )
 from mkapi.objects import Module
 
@@ -113,7 +113,7 @@ def test_get_return(numpy: Module):
     doc = numpy.get("module_level_function").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[2][1]
-    x = split_return(section, "numpy")
+    x = split_without_name(section, "numpy")
     assert x[0] == "bool"
     assert x[1].startswith("True if")
     assert x[1].endswith("    }")

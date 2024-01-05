@@ -40,7 +40,7 @@ exclude = ["/.github", "/docs"]
 packages = ["src/mkapi"]
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python = ["3.12"]
 
 [tool.hatch.envs.default]
 dependencies = ["pytest-cov", "pymdown-extensions"]
@@ -74,7 +74,7 @@ serve = "mkdocs serve --dev-addr localhost:8000 {args}"
 deploy = "mkdocs gh-deploy --force"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 88
 select = ["ALL"]
 ignore = [
@@ -91,21 +91,11 @@ ignore = [
   "TRY003",
   "EM102",
 ]
+exclude = ["examples"]
+
 
 [tool.ruff.extend-per-file-ignores]
 "tests/*.py" = ["ANN", "D", "S101", "INP001", "T201", "PLR2004", "PGH003"]
-"examples/*.py" = [
-  "ANN",
-  "ARG001",
-  "D",
-  "E741",
-  "ERA001",
-  "INP001",
-  "PLR0913",
-  "PLR2004",
-  "S101",
-  "T201",
-]
 
 [tool.ruff.lint]
 unfixable = [

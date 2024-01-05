@@ -147,6 +147,18 @@ def _rename_section(section_name: str) -> str:
     return section_name
 
 
+def split_section(section: str, style: Style) -> tuple[str, str]:
+    """Return section name and its description."""
+    lines = section.split("\n")
+    if len(lines) < 2:  # noqa: PLR2004
+        return "", section
+    if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
+        return lines[0][:-1], join_without_first_indent(lines[1:])
+    if style == "numpy" and re.match(r"^-+?$", lines[1]):
+        return lines[0], join_without_first_indent(lines[2:])
+    return "", section
+
+
 def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
     """Yield (section name, description) pairs by splitting the whole docstring."""
     prev_name, prev_desc = "", ""
@@ -168,16 +180,15 @@ def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
         yield "", prev_desc
 
 
-def split_section(section: str, style: Style) -> tuple[str, str]:
-    """Return section name and its description."""
-    lines = section.split("\n")
-    if len(lines) < 2:  # noqa: PLR2004
-        return "", section
-    if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
-        return lines[0][:-1], join_without_first_indent(lines[1:])
-    if style == "numpy" and re.match(r"^-+?$", lines[1]):
-        return lines[0], join_without_first_indent(lines[2:])
-    return "", section
+def split_without_name(desc: str, style: Style) -> tuple[str, str]:
+    """Return a tuple of (type, description) for Returns or Yields section."""
+    lines = desc.split("\n")
+    if style == "google" and ":" in lines[0]:
+        type_, desc_ = lines[0].split(":", maxsplit=1)
+        return type_.strip(), "\n".join([desc_.strip(), *lines[1:]])
+    if style == "numpy" and len(lines) > 1 and lines[1].startswith(" "):
+        return lines[0], join_without_first_indent(lines[1:])
+    return "", desc
 
 
 def iter_sections(doc: str, style: Style) -> Iterator[Section]:
@@ -188,29 +199,12 @@ def iter_sections(doc: str, style: Style) -> Iterator[Section]:
         if name in ["Parameters", "Attributes", "Raises"]:
             items = list(iter_items(desc, style, name))
         elif name in ["Returns", "Yields"]:
-            type_, desc_ = split_return(desc, style)
+            type_, desc_ = split_without_name(desc, style)
         elif name in ["Note", "Notes", "Warning", "Warnings"]:
             desc_ = add_admonition(name, desc)
         else:
             desc_ = desc
         yield Section(name, type_, desc_, items)
-
-
-def split_return(section: str, style: Style) -> tuple[str, str]:
-    """Return a tuple of (type, description) for Returns and Yields section."""
-    lines = section.split("\n")
-    if style == "google" and ":" in lines[0]:
-        type_, desc = lines[0].split(":", maxsplit=1)
-        return type_.strip(), "\n".join([desc.strip(), *lines[1:]])
-    if style == "numpy" and len(lines) > 1 and lines[1].startswith(" "):
-        return lines[0], join_without_first_indent(lines[1:])
-    return "", section
-
-
-# for mkapi.objects.Attribute.docstring / property
-def split_attribute(docstring: str) -> tuple[str, str]:
-    """Return a tuple of (type, description) for the Attribute docstring."""
-    return split_return(docstring, "google")
 
 
 @dataclass(repr=False)
@@ -234,21 +228,19 @@ def parse(doc: str, style: Style) -> Docstring:
     return Docstring("", "", "", sections)
 
 
-def merge_items(a: list[Item], b: list[Item]) -> list[Item]:
-    """Merge two lists of [Item] and return a newly created [Docstring] list."""
-    items: list[Item] = []
+def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
+    """Yield merged [Item] instances from two list of [Item]."""
     for name in unique_names(a, b):
         ai, bi = get_by_name(a, name), get_by_name(b, name)
-        if not ai:
-            items.append(bi)  # type: ignore
-        elif not bi:
-            items.append(ai)  # type: ignore
-        else:
+        if ai and not bi:
+            yield ai
+        elif not ai and bi:
+            yield bi
+        elif ai and bi:
             name_ = ai.name if ai.name else bi.name
             type_ = ai.type if ai.type else bi.type
             desc = ai.description if ai.description else bi.description
-            items.append(Item(name_, type_, desc))
-    return items
+            yield Item(name_, type_, desc)
 
 
 def merge_sections(a: Section, b: Section) -> Section:
@@ -257,41 +249,41 @@ def merge_sections(a: Section, b: Section) -> Section:
         raise ValueError
     type_ = a.type if a.type else b.type
     desc = f"{a.description}\n\n{b.description}".strip()
-    items = merge_items(a.items, b.items)
-    return Section(a.name, type_, desc, items)
+    return Section(a.name, type_, desc, list(iter_merged_items(a.items, b.items)))
 
 
-def merge(a: Docstring | None, b: Docstring | None) -> Docstring:  # noqa: PLR0912, C901
+def iter_merge_sections(a: list[Section], b: list[Section]) -> Iterator[Section]:
+    """Yield merged [Section] instances from two lists of [Section]."""
+    for name in unique_names(a, b):
+        if name:
+            ai, bi = get_by_name(a, name), get_by_name(b, name)
+            if ai and not bi:
+                yield ai
+            elif not ai and bi:
+                yield bi
+            elif ai and bi:
+                yield merge_sections(ai, bi)
+
+
+def merge(a: Docstring | None, b: Docstring | None) -> Docstring | None:
     """Merge two [Docstring] instances into one [Docstring] instance."""
-    a = a or Docstring("", "", "", [])
-    b = b or Docstring("", "", "", [])
-    if not a.sections:
+    if not a or not a.sections:
         return b
-    if not b.sections:
+    if not b or not b.sections:
         return a
-    names = [name for name in unique_names(a.sections, b.sections) if name]
     sections: list[Section] = []
     for ai in a.sections:
         if ai.name:
             break
         sections.append(ai)
-    for name in names:
-        ai, bi = get_by_name(a.sections, name), get_by_name(b.sections, name)
-        if not ai:
-            sections.append(bi)  # type: ignore
-        elif not bi:
-            sections.append(ai)  # type: ignore
-        else:
-            sections.append(merge_sections(ai, bi))
+    sections.extend(iter_merge_sections(a.sections, b.sections))
     is_named_section = False
     for section in a.sections:
-        if section.name:
+        if section.name:  # already collected then skip.
             is_named_section = True
         elif is_named_section:
             sections.append(section)
-    for section in b.sections:
-        if not section.name:
-            sections.append(section)  # noqa: PERF401
+    sections.extend(s for s in b.sections if not s.name)
     name_ = a.name if a.name else b.name
     type_ = a.type if a.type else b.type
     desc = a.description if a.description else b.description

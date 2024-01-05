@@ -4,8 +4,8 @@ from mkapi.docstrings import (
     iter_items,
     parse,
     split_item,
-    split_return,
     split_section,
+    split_without_name,
 )
 from mkapi.objects import Module
 
@@ -113,11 +113,11 @@ def test_iter_items_class(google: Module):
     assert x[1].description == "Description of `param2`. Multiple\nlines are supported."
 
 
-def test_split_return(google: Module):
+def test_split_without_name(google: Module):
     doc = google.get("module_level_function").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
-    x = split_return(section, "google")
+    x = split_without_name(section, "google")
     assert x[0] == "bool"
     assert x[1].startswith("True if")
     assert x[1].endswith("    }")
