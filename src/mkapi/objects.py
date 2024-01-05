@@ -249,18 +249,22 @@ class Callable(Object):  # noqa: D101
     decorators: list[ast.expr]
     type_params: list[ast.type_param]
     raises: list[Raise]
+    parent: Class | None
 
     def get_parameter(self, name: str) -> Parameter | None:  # noqa: D102
         return get_by_name(self.parameters, name)
+
+    def get_fullname(self) -> str:  # noqa: D102
+        if self.parent:
+            return f"{self.parent.get_fullname()}.{self.name}"
+        module_name = self.get_module_name() or ""
+        return f"{module_name}.{self.name}"
 
 
 @dataclass(repr=False)
 class Function(Callable):  # noqa: D101
     _node: FunctionDef_
     returns: Return
-
-    def get_node(self) -> FunctionDef_:  # noqa: D102
-        return self._node
 
 
 type ClassMember = Parameter | Attribute | Class | Function
@@ -304,13 +308,29 @@ def iter_callable_nodes(node: ast.Module | ClassDef) -> Iterator[Def]:
 
 def _get_callable_args(
     node: Def,
-) -> tuple[str, str | None, list[Parameter], list[ast.expr], list[ast.type_param]]:
+) -> tuple[
+    str,
+    str | None,
+    list[Parameter],
+    list[ast.expr],
+    list[ast.type_param],
+    list[Raise],
+]:
     name = node.name
     docstring = ast.get_docstring(node)
     parameters = [] if isinstance(node, ClassDef) else list(iter_parameters(node))
     decorators = node.decorator_list
+
     type_params = node.type_params
-    return name, docstring, parameters, decorators, type_params
+    raises = [] if isinstance(node, ClassDef) else list(iter_raises(node))
+    return name, docstring, parameters, decorators, type_params, raises
+
+
+def _set_parent(obj: Class) -> None:
+    for cls in obj.classes:
+        cls.parent = obj
+    for func in obj.functions:
+        func.parent = obj
 
 
 def iter_callables(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
@@ -321,12 +341,12 @@ def iter_callables(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
             attrs = list(iter_attributes(def_node))
             classes, functions = get_callables(def_node)
             bases: list[Class] = []
-            cls = Class(def_node, *args, [], bases, attrs, classes, functions)
+            cls = Class(def_node, *args, None, bases, attrs, classes, functions)
+            _set_parent(cls)
             _move_property(cls)
             yield cls
         else:
-            raises = list(iter_raises(def_node))
-            yield Function(def_node, *args, raises, get_return(def_node))
+            yield Function(def_node, *args, None, get_return(def_node))
 
 
 def get_callables(node: ast.Module | ClassDef) -> tuple[list[Class], list[Function]]:
@@ -498,11 +518,10 @@ def _move_property(obj: Class) -> None:
         if not _is_property(func):
             funcs.append(func)
             continue
-        node = func.get_node()
         doc = func.docstring if isinstance(func.docstring, str) else ""
         type_ = func.returns.type
         type_params = func.type_params
-        attr = Attribute(node, func.name, doc, type_, None, type_params)
+        attr = Attribute(func._node, func.name, doc, type_, None, type_params)  # noqa: SLF001
         _merge_attribute_docstring(attr)
         obj.attributes.append(attr)
     obj.functions = funcs

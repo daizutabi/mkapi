@@ -237,9 +237,9 @@ def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
         elif not ai and bi:
             yield bi
         elif ai and bi:
-            name_ = ai.name if ai.name else bi.name
-            type_ = ai.type if ai.type else bi.type
-            desc = ai.description if ai.description else bi.description
+            name_ = ai.name or bi.name
+            type_ = ai.type or bi.type
+            desc = ai.description or bi.description
             yield Item(name_, type_, desc)
 
 
@@ -284,7 +284,7 @@ def merge(a: Docstring | None, b: Docstring | None) -> Docstring | None:
         elif is_named_section:
             sections.append(section)
     sections.extend(s for s in b.sections if not s.name)
-    name_ = a.name if a.name else b.name
-    type_ = a.type if a.type else b.type
-    desc = a.description if a.description else b.description
+    name_ = a.name or b.name
+    type_ = a.type or b.type
+    desc = a.description or b.description
     return Docstring(name_, type_, desc, sections)
