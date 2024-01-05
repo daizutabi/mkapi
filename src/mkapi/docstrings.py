@@ -5,7 +5,13 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
-from mkapi.utils import add_admonition, add_fence, join_without_first_indent
+from mkapi.utils import (
+    add_admonition,
+    add_fence,
+    get_by_name,
+    join_without_first_indent,
+    unique_names,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -20,7 +26,7 @@ class Item:  # noqa: D101
     description: str
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name})"
+        return f"{self.__class__.__name__}({self.name}:{self.type})"
 
 
 SPLIT_ITEM_PATTERN = re.compile(r"\n\S")
@@ -63,10 +69,21 @@ def split_item(item: str, style: Style) -> tuple[str, str, str]:
     return _split_item_numpy(lines)
 
 
-def iter_items(section: str, style: Style) -> Iterator[Item]:
-    """Yiled a tuple of (name, type, description) of item."""
+def iter_items(
+    section: str,
+    style: Style,
+    section_name: str = "Parameters",
+) -> Iterator[Item]:
+    """Yiled a tuple of (name, type, description) of item.
+
+    If name is 'Raises', the type of [Item] is set by its name.
+    """
     for item in _iter_items(section):
-        yield Item(*split_item(item, style))
+        name, type_, desc = split_item(item, style)
+        if section_name != "Raises":
+            yield Item(name, type_, desc)
+        else:
+            yield Item(name, name, desc)
 
 
 @dataclass
@@ -77,10 +94,7 @@ class Section(Item):  # noqa: D101
         return iter(self.items)
 
     def get(self, name: str) -> Item | None:  # noqa: D102
-        for item in self.items:
-            if item.name == name:
-                return item
-        return None
+        return get_by_name(self.items, name)
 
 
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
@@ -133,18 +147,6 @@ def _rename_section(section_name: str) -> str:
     return section_name
 
 
-def split_section(section: str, style: Style) -> tuple[str, str]:
-    """Return section name and its description."""
-    lines = section.split("\n")
-    if len(lines) < 2:  # noqa: PLR2004
-        return "", section
-    if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
-        return lines[0][:-1], join_without_first_indent(lines[1:])
-    if style == "numpy" and re.match(r"^-+?$", lines[1]):
-        return lines[0], join_without_first_indent(lines[2:])
-    return "", section
-
-
 def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
     """Yield (section name, description) pairs by splitting the whole docstring."""
     prev_name, prev_desc = "", ""
@@ -166,13 +168,25 @@ def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
         yield "", prev_desc
 
 
+def split_section(section: str, style: Style) -> tuple[str, str]:
+    """Return section name and its description."""
+    lines = section.split("\n")
+    if len(lines) < 2:  # noqa: PLR2004
+        return "", section
+    if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
+        return lines[0][:-1], join_without_first_indent(lines[1:])
+    if style == "numpy" and re.match(r"^-+?$", lines[1]):
+        return lines[0], join_without_first_indent(lines[2:])
+    return "", section
+
+
 def iter_sections(doc: str, style: Style) -> Iterator[Section]:
     """Yield [Section] instance by splitting the whole docstring."""
     for name, desc in _iter_sections(doc, style):
         type_ = desc_ = ""
         items: list[Item] = []
         if name in ["Parameters", "Attributes", "Raises"]:
-            items = list(iter_items(desc, style))
+            items = list(iter_items(desc, style, name))
         elif name in ["Returns", "Yields"]:
             type_, desc_ = split_return(desc, style)
         elif name in ["Note", "Notes", "Warning", "Warnings"]:
@@ -193,9 +207,9 @@ def split_return(section: str, style: Style) -> tuple[str, str]:
     return "", section
 
 
-# for mkapi.objects.Attribute.docstring
+# for mkapi.objects.Attribute.docstring / property
 def split_attribute(docstring: str) -> tuple[str, str]:
-    """Return a tuple of (type, description) for Attribute docstring."""
+    """Return a tuple of (type, description) for the Attribute docstring."""
     return split_return(docstring, "google")
 
 
@@ -210,14 +224,73 @@ class Docstring(Item):  # noqa: D101
         return iter(self.sections)
 
     def get(self, name: str) -> Section | None:  # noqa: D102
-        for section in self.sections:
-            if section.name == name:
-                return section
-        return None
+        return get_by_name(self.sections, name)
 
 
-def parse_docstring(doc: str, style: Style) -> Docstring:
+def parse(doc: str, style: Style) -> Docstring:
     """Return a [Docstring] instance."""
     doc = add_fence(doc)
     sections = list(iter_sections(doc, style))
     return Docstring("", "", "", sections)
+
+
+def merge_items(a: list[Item], b: list[Item]) -> list[Item]:
+    """Merge two lists of [Item] and return a newly created [Docstring] list."""
+    items: list[Item] = []
+    for name in unique_names(a, b):
+        ai, bi = get_by_name(a, name), get_by_name(b, name)
+        if not ai:
+            items.append(bi)  # type: ignore
+        elif not bi:
+            items.append(ai)  # type: ignore
+        else:
+            name_ = ai.name if ai.name else bi.name
+            type_ = ai.type if ai.type else bi.type
+            desc = ai.description if ai.description else bi.description
+            items.append(Item(name_, type_, desc))
+    return items
+
+
+def merge_sections(a: Section, b: Section) -> Section:
+    """Merge two [Section] instances into one [Section] instance."""
+    if a.name != b.name:
+        raise ValueError
+    type_ = a.type if a.type else b.type
+    desc = f"{a.description}\n\n{b.description}".strip()
+    items = merge_items(a.items, b.items)
+    return Section(a.name, type_, desc, items)
+
+
+def merge(a: Docstring, b: Docstring) -> Docstring:  # noqa: PLR0912, C901
+    """Merge two [Docstring] instances into one [Docstring] instance."""
+    if not a.sections:
+        return b
+    if not b.sections:
+        return a
+    names = [name for name in unique_names(a.sections, b.sections) if name]
+    sections: list[Section] = []
+    for ai in a.sections:
+        if ai.name:
+            break
+        sections.append(ai)
+    for name in names:
+        ai, bi = get_by_name(a.sections, name), get_by_name(b.sections, name)
+        if not ai:
+            sections.append(bi)  # type: ignore
+        elif not bi:
+            sections.append(ai)  # type: ignore
+        else:
+            sections.append(merge_sections(ai, bi))
+    is_named_section = False
+    for section in a.sections:
+        if section.name:
+            is_named_section = True
+        elif is_named_section:
+            sections.append(section)
+    for section in b.sections:
+        if not section.name:
+            sections.append(section)  # noqa: PERF401
+    name_ = a.name if a.name else b.name
+    type_ = a.type if a.type else b.type
+    desc = a.description if a.description else b.description
+    return Docstring(name_, type_, desc, sections)

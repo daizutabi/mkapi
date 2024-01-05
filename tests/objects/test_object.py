@@ -67,11 +67,11 @@ def test_iter_definition_nodes(def_nodes):
 def test_not_found():
     assert _get_module_node("xxx") is None
     assert get_module("xxx") is None
-    assert mkapi.objects.cache_module["xxx"] is None
-    assert "xxx" not in mkapi.objects.cache_module_node
+    assert mkapi.objects.CACHE_MODULE["xxx"] is None
+    assert "xxx" not in mkapi.objects.CACHE_MODULE_NODE
     assert get_module("markdown") is not None
-    assert "markdown" in mkapi.objects.cache_module
-    assert "markdown" in mkapi.objects.cache_module_node
+    assert "markdown" in mkapi.objects.CACHE_MODULE
+    assert "markdown" in mkapi.objects.CACHE_MODULE_NODE
 
 
 def test_repr():
@@ -85,7 +85,7 @@ def test_repr():
     assert repr(obj) == "Class(BasePlugin)"
 
 
-def test_get_source():
+def test_get_module_source():
     module = get_module("mkdocs.structure.files")
     assert module
     assert "class File" in module.source

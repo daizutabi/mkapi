@@ -19,7 +19,7 @@ def test_get_origin():
     assert org is Node
 
 
-def test_get_sourcefile_and_lineno():
+def test_get_module_sourcefile_and_lineno():
     sourcefile, _ = get_sourcefile_and_lineno(Node)
     assert sourcefile.endswith("node.py")
 

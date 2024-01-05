@@ -53,7 +53,7 @@ def test_iter_sections(numpy: Module):
 
 
 def test_iter_items(numpy: Module):
-    doc = numpy.get("module_level_function").docstring
+    doc = numpy.get("module_level_function").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[1][1]
     items = list(_iter_items(section))
@@ -70,8 +70,8 @@ def test_iter_items(numpy: Module):
     assert items[0].startswith("module_")
 
 
-def test_split_item(numpy):
-    doc = numpy.get("module_level_function").docstring
+def test_split_item(numpy: Module):
+    doc = numpy.get("module_level_function").docstring  # type: ignore
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "numpy"))
     items = list(_iter_items(sections[1][1]))
@@ -88,8 +88,8 @@ def test_split_item(numpy):
     assert x[2].endswith("the interface.")
 
 
-def test_iter_items_class(numpy):
-    doc = numpy.get("ExampleClass").docstring
+def test_iter_items_class(numpy: Module):
+    doc = numpy.get("ExampleClass").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[1][1]
     x = list(iter_items(section, "numpy"))
@@ -99,7 +99,7 @@ def test_iter_items_class(numpy):
     assert x[1].name == "attr2"
     assert x[1].type == ":obj:`int`, optional"
     assert x[1].description == "Description of `attr2`."
-    doc = numpy.get("ExampleClass").get("__init__").docstring
+    doc = numpy.get("ExampleClass").get("__init__").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[2][1]
     x = list(iter_items(section, "numpy"))
@@ -109,11 +109,22 @@ def test_iter_items_class(numpy):
     assert x[1].description == "Description of `param2`. Multiple\nlines are supported."
 
 
-def test_get_return(numpy):
-    doc = numpy.get("module_level_function").docstring
+def test_get_return(numpy: Module):
+    doc = numpy.get("module_level_function").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[2][1]
     x = split_return(section, "numpy")
     assert x[0] == "bool"
     assert x[1].startswith("True if")
     assert x[1].endswith("    }")
+
+
+def test_iter_items_raises(numpy: Module):
+    doc = numpy.get("module_level_function").docstring  # type: ignore
+    assert isinstance(doc, str)
+    name, section = list(_iter_sections(doc, "numpy"))[3]
+    assert name == "Raises"
+    items = list(iter_items(section, "numpy", name))
+    assert len(items) == 2
+    assert items[0].type == items[0].name == "AttributeError"
+    assert items[1].type == items[1].name == "ValueError"

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import fields
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -146,8 +147,16 @@ def add_admonition(name: str, markdown: str) -> str:
     return "\n".join(lines)
 
 
-def get_by_name[T](items: list[T], name: str) -> T | None:  # noqa: D103
+def get_by_name[T](items: list[T], name: str, attr: str = "name") -> T | None:  # noqa: D103
     for item in items:
-        if getattr(item, "name", None) == name:
+        if getattr(item, attr, None) == name:
             return item
     return None
+
+
+def unique_names(a: list, b: list, attr: str = "name") -> list[str]:  # noqa: D103
+    names = [getattr(x, attr) for x in a]
+    for x in b:
+        if (name := getattr(x, attr)) not in names:
+            names.append(name)
+    return names

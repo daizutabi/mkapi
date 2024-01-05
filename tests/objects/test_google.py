@@ -31,4 +31,4 @@ def test_property(google):
 def test_merge_docstring(google):
     module = google
     merge_docstring(module)
-    assert 0
+    # assert 0

@@ -2,12 +2,12 @@ from mkapi.docstrings import (
     _iter_items,
     _iter_sections,
     iter_items,
-    parse_docstring,
+    parse,
     split_item,
     split_return,
     split_section,
 )
-from mkapi.objects import Module, get_object_from_module
+from mkapi.objects import Module
 
 
 def test_split_section():
@@ -55,7 +55,7 @@ def test_iter_sections(google: Module):
 
 
 def test_iter_items(google: Module):
-    doc = google.get("module_level_function").docstring
+    doc = google.get("module_level_function").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
     items = list(_iter_items(section))
@@ -72,8 +72,8 @@ def test_iter_items(google: Module):
     assert items[0].startswith("module_")
 
 
-def test_split_item(google):
-    doc = google.get("module_level_function").docstring
+def test_split_item(google: Module):
+    doc = google.get("module_level_function").docstring  # type: ignore
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "google"))
     section = sections[1][1]
@@ -92,8 +92,8 @@ def test_split_item(google):
     assert x[2].endswith("the interface.")
 
 
-def test_iter_items_class(google):
-    doc = google.get("ExampleClass").docstring
+def test_iter_items_class(google: Module):
+    doc = google.get("ExampleClass").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
     x = list(iter_items(section, "google"))
@@ -103,7 +103,7 @@ def test_iter_items_class(google):
     assert x[1].name == "attr2"
     assert x[1].type == ":obj:`int`, optional"
     assert x[1].description == "Description of `attr2`."
-    doc = google.get("ExampleClass").get("__init__").docstring
+    doc = google.get("ExampleClass").get("__init__").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
     x = list(iter_items(section, "google"))
@@ -113,8 +113,8 @@ def test_iter_items_class(google):
     assert x[1].description == "Description of `param2`. Multiple\nlines are supported."
 
 
-def test_split_return(google):
-    doc = google.get("module_level_function").docstring
+def test_split_return(google: Module):
+    doc = google.get("module_level_function").docstring  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
     x = split_return(section, "google")
@@ -123,6 +123,17 @@ def test_split_return(google):
     assert x[1].endswith("    }")
 
 
-def test_repr(google):
-    r = repr(parse_docstring(google.docstring, "google"))
+def test_repr(google: Module):
+    r = repr(parse(google.docstring, "google"))  # type: ignore
     assert r == "Docstring(num_sections=6)"
+
+
+def test_iter_items_raises(google: Module):
+    doc = google.get("module_level_function").docstring  # type: ignore
+    assert isinstance(doc, str)
+    name, section = list(_iter_sections(doc, "google"))[3]
+    assert name == "Raises"
+    items = list(iter_items(section, "google", name))
+    assert len(items) == 2
+    assert items[0].type == items[0].name == "AttributeError"
+    assert items[1].type == items[1].name == "ValueError"
