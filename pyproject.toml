@@ -88,6 +88,8 @@ ignore = [
   "ERA001",
   "N812",
   "PGH003",
+  "TRY003",
+  "EM102",
 ]
 
 [tool.ruff.extend-per-file-ignores]

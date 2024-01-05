@@ -261,8 +261,10 @@ def merge_sections(a: Section, b: Section) -> Section:
     return Section(a.name, type_, desc, items)
 
 
-def merge(a: Docstring, b: Docstring) -> Docstring:  # noqa: PLR0912, C901
+def merge(a: Docstring | None, b: Docstring | None) -> Docstring:  # noqa: PLR0912, C901
     """Merge two [Docstring] instances into one [Docstring] instance."""
+    a = a or Docstring("", "", "", [])
+    b = b or Docstring("", "", "", [])
     if not a.sections:
         return b
     if not b.sections:

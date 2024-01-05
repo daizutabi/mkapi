@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import re
-from dataclasses import fields
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -152,6 +151,13 @@ def get_by_name[T](items: list[T], name: str, attr: str = "name") -> T | None:  
         if getattr(item, attr, None) == name:
             return item
     return None
+
+
+def del_by_name[T](items: list[T], name: str, attr: str = "name") -> None:  # noqa: D103
+    for k, item in enumerate(items):
+        if getattr(item, attr, None) == name:
+            del items[k]
+            return
 
 
 def unique_names(a: list, b: list, attr: str = "name") -> list[str]:  # noqa: D103

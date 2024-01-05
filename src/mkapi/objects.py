@@ -23,14 +23,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from mkapi import docstrings
-from mkapi.utils import get_by_name
+from mkapi.utils import del_by_name, get_by_name, unique_names
 
 if TYPE_CHECKING:
     from ast import AST
     from collections.abc import Iterator
     from inspect import _ParameterKind
 
-    from mkapi.docstrings import Docstring, Section, Style
+    from mkapi.docstrings import Docstring, Item, Section, Style
 
 type Import_ = ast.Import | ImportFrom
 type FunctionDef_ = AsyncFunctionDef | FunctionDef
@@ -52,11 +52,6 @@ class Object:  # noqa: D101
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
-
-    def get_fullname(self) -> str:  # noqa: D102
-        if module_name := self.get_module_name():
-            return f"{module_name}.{self.name}"
-        return self.name
 
     def get_module_name(self) -> str | None:
         """Return the module name."""
@@ -86,9 +81,6 @@ class Import(Object):  # noqa: D101
     docstring: str | None = field(repr=False)
     fullname: str
     from_: str | None
-
-    def get_fullname(self) -> str:  # noqa: D102
-        return self.fullname
 
 
 def iter_import_nodes(node: AST) -> Iterator[Import_]:
@@ -172,18 +164,17 @@ def iter_attributes(node: ast.Module | ClassDef) -> Iterator[Attribute]:
         type_ = get_type(assign)
         value = None if isinstance(assign, TypeAlias) else assign.value
         type_params = assign.type_params if isinstance(assign, TypeAlias) else None
-        # TODO: process in docstings module.
         attr = Attribute(assign, name, assign.__doc__, type_, value, type_params)
-        _merge_docstring_attribute(attr)
+        _merge_attribute_docstring(attr)
         yield attr
 
 
 @dataclass(repr=False)
 class Parameter(Object):  # noqa: D101
-    _node: ast.arg
+    _node: ast.arg | None
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
-    kind: _ParameterKind
+    kind: _ParameterKind | None
 
 
 PARAMETER_KIND_DICT: dict[_ParameterKind, str] = {
@@ -247,7 +238,7 @@ class Return(Object):  # noqa: D101
 
 
 def get_return(node: FunctionDef_) -> Return:
-    """Yield [Return] instances."""
+    """Return a [Return] instance."""
     return Return(node.returns, "", None, node.returns)
 
 
@@ -385,10 +376,6 @@ class Module(Object):  # noqa: D101
             return obj
         return None
 
-    def get_fullname(self) -> str:
-        """Return the fullname."""
-        return self.name
-
     def get_source(self) -> str:
         """Return the source code."""
         return _get_module_source(self.name) if self.name else ""
@@ -412,7 +399,7 @@ def _get_module_node(name: str) -> ast.Module | None:
     mtime = path.stat().st_mtime
     if name in CACHE_MODULE_NODE and mtime == CACHE_MODULE_NODE[name][0]:
         return CACHE_MODULE_NODE[name][1]
-    with path.open(encoding="utf-8") as f:
+    with path.open("r", encoding="utf-8") as f:
         source = f.read()
     node = ast.parse(source)
     CACHE_MODULE_NODE[name] = (mtime, node, source)
@@ -446,6 +433,7 @@ def get_module(name: str) -> Module | None:
         CURRENT_MODULE_NAME[0] = None  # Remove the module name from a global cache.
         module.name = name
         module.source = _get_module_source(name)  # Set from a global cache.
+        _postprocess(module)
         CACHE_MODULE[name] = module
         return module
     CACHE_MODULE[name] = None
@@ -492,7 +480,7 @@ def _to_expr(name: str) -> ast.expr:
     return Constant(value=name)
 
 
-def _merge_docstring_attribute(obj: Attribute) -> None:
+def _merge_attribute_docstring(obj: Attribute) -> None:
     if doc := obj.docstring:
         type_, desc = docstrings.split_attribute(doc)
         if not obj.type and type_:
@@ -515,7 +503,7 @@ def _move_property(obj: Class) -> None:
         type_ = func.returns.type
         type_params = func.type_params
         attr = Attribute(node, func.name, doc, type_, None, type_params)
-        _merge_docstring_attribute(attr)
+        _merge_attribute_docstring(attr)
         obj.attributes.append(attr)
     obj.functions = funcs
 
@@ -530,45 +518,39 @@ def _get_style(doc: str) -> Style:
     return "google"
 
 
-def _merge_docstring_attributes(obj: Module | Class, section: Section) -> None:
-    print("----------------Attributes----------------")
-    names = set([x.name for x in section.items] + [x.name for x in obj.attributes])
-    print(names)
-    attrs: list[Attribute] = []
+def _merge_item(obj: Attribute | Parameter | Return | Raise, item: Item) -> None:
+    if not obj.type and item.type:
+        obj.type = _to_expr(item.type)
+    obj.docstring = item.description  # Does item.description win?
+
+
+def _new(
+    cls: type[Attribute | Parameter | Raise],
+    name: str,
+) -> Attribute | Parameter | Raise:
+    if cls is Attribute:
+        return Attribute(None, name, None, None, None, [])
+    if cls is Parameter:
+        return Parameter(None, name, None, None, None, None)
+    if cls is Raise:
+        return Raise(None, name, None, None)
+    raise NotImplementedError
+
+
+def _merge_items(cls: type, attrs: list, items: list[Item]) -> list:
+    names = unique_names(attrs, items)
+    attrs_ = []
     for name in names:
-        if not (attr := get_by_name(obj.attributes, name)):
-            attr = Attribute(None, name, None, None, None, [])  # type: ignore
-        attrs.append(attr)
-        if not (item := get_by_name(section.items, name)):
+        if not (attr := get_by_name(attrs, name)):
+            attr = _new(cls, name)
+        attrs_.append(attr)
+        if not (item := get_by_name(items, name)):
             continue
-        item  # TODO
-    obj.attributes = attrs
+        _merge_item(attr, item)  # type: ignore
+    return attrs_
 
 
-def _merge_docstring_parameters(obj: Class | Function, section: Section) -> None:
-    print("----------------Parameters----------------")
-    names = set([x.name for x in section.items] + [x.name for x in obj.parameters])
-    print(names)
-    for item in section:
-        print(item)
-    for attr in obj.parameters:
-        print(attr)
-
-
-def _merge_docstring_raises(obj: Class | Function, section: Section) -> None:
-    print("----------------Raises----------------")
-    # Fix raises.name
-    names = set([x.name for x in section.items] + [x.name for x in obj.raises])
-    print(names)
-
-
-def _merge_docstring_returns(obj: Function, section: Section) -> None:
-    print("----------------Returns----------------")
-    print(section.description)
-    print(obj.returns)
-
-
-def merge_docstring(obj: Module | Class | Function) -> None:
+def _merge_docstring(obj: Module | Class | Function) -> None:
     """Merge [Object] and [Docstring]."""
     sections: list[Section] = []
     if not (doc := obj.docstring) or not isinstance(doc, str):
@@ -577,24 +559,54 @@ def merge_docstring(obj: Module | Class | Function) -> None:
     docstring = docstrings.parse(doc, style)
     for section in docstring:
         if section.name == "Attributes" and isinstance(obj, Module | Class):
-            _merge_docstring_attributes(obj, section)
+            obj.attributes = _merge_items(Attribute, obj.attributes, section.items)
         elif section.name == "Parameters" and isinstance(obj, Class | Function):
-            _merge_docstring_parameters(obj, section)
+            obj.parameters = _merge_items(Parameter, obj.parameters, section.items)
         elif section.name == "Raises" and isinstance(obj, Class | Function):
-            _merge_docstring_raises(obj, section)
+            obj.raises = _merge_items(Raise, obj.raises, section.items)
         elif section.name in ["Returns", "Yields"] and isinstance(obj, Function):
-            _merge_docstring_returns(obj, section)
+            _merge_item(obj.returns, section)
+            obj.returns.name = section.name
         else:
             sections.append(section)
     docstring.sections = sections
     obj.docstring = docstring
 
 
-# def _resolve_bases(obj: Class) -> None:
-#     obj.bases = [obj.get_module_name()]
+DEBUG_FOR_PYTEST = False  # for pytest.
 
 
-# def merge_docstring(obj: Object, style: Style) -> None:
-#     if isinstance(obj, Attribute):
-#         return _merge_docstring_attribute(obj)
-#     if isinstance(obj,
+def _postprocess(obj: Module | Class) -> None:
+    if DEBUG_FOR_PYTEST:
+        return
+    for function in obj.functions:
+        _merge_docstring(function)
+        if isinstance(obj, Class):
+            del function.parameters[0]  # Delete 'self' TODO: static method.
+    for cls in obj.classes:
+        _postprocess(cls)
+        _postprocess_class(cls)
+    _merge_docstring(obj)
+
+
+_ATTRIBUTE_ORDER_DICT = {
+    type(None): 0,
+    AnnAssign: 1,
+    Assign: 2,
+    FunctionDef: 3,
+    AsyncFunctionDef: 4,
+}
+
+
+def _attribute_order(attr: Attribute) -> int:
+    return _ATTRIBUTE_ORDER_DICT.get(type(attr._node), 10)  # type: ignore  # noqa: SLF001
+
+
+def _postprocess_class(cls: Class) -> None:
+    if init := cls.get_function("__init__"):
+        cls.parameters = init.parameters
+        cls.raises = init.raises
+        cls.docstring = docstrings.merge(cls.docstring, init.docstring)  # type: ignore
+        cls.attributes.sort(key=_attribute_order)
+        del_by_name(cls.functions, "__init__")
+    # TODO: dataclass, bases
