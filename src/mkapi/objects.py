@@ -404,14 +404,6 @@ class Module(Object):  # noqa: D101
         """Return the source code."""
         return _get_module_source(self.name) if self.name else ""
 
-    @property
-    def id(self) -> str:  # noqa: D102, A003
-        return self.name
-
-    @property
-    def members(self) -> list[Class | Function]:  # noqa: D102
-        return self.classes + self.functions
-
 
 CACHE_MODULE_NODE: dict[str, tuple[float, ast.Module | None, str]] = {}
 CACHE_MODULE: dict[str, Module | None] = {}
@@ -493,6 +485,7 @@ def get_object(fullname: str) -> Module | ModuleMember | None:
     return get_object_from_module(name, module)
 
 
+# a1.b_2(c[d]) -> a1, b_2, c, d
 SPLIT_IDENTIFIER_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
 
 

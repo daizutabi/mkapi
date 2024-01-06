@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from mkapi.objects import get_module
-from mkapi.renderer import renderer
+
+# from mkapi.renderer import renderer
 
 
 def convert_module(name: str, filters: list[str]) -> str:
     """Convert the [Module] instance to markdown text."""
-    if module := get_module(name):
-        return renderer.render_module(module)
+    # if module := get_module(name):
+    #     return renderer.render_module(module)
     return f"{name} not found"
 
 

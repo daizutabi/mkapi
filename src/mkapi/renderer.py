@@ -169,4 +169,4 @@ class Renderer:
 
 
 #: Renderer instance that is used globally.
-renderer: Renderer = Renderer()
+# renderer: Renderer = Renderer()

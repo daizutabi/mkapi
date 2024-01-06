@@ -19,11 +19,9 @@ from mkdocs.config.base import Config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin
 from mkdocs.structure.files import Files, get_files
-from mkdocs.structure.nav import Navigation
-from mkdocs.structure.pages import Page as MkDocsPage
-from mkdocs.structure.toc import AnchorLink, TableOfContents
-from mkdocs.utils.templates import TemplateContext
 
+# from mkdocs.structure.nav import Navigation
+# from mkdocs.utils.templates import TemplateContext
 import mkapi
 from mkapi import converter
 from mkapi.filter import split_filters, update_filters
@@ -32,10 +30,9 @@ from mkapi.utils import find_submodule_names, is_package
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-# from mkapi.modules import Module, get_module
+    from mkdocs.structure.pages import Page as MkDocsPage
+    from mkdocs.structure.toc import AnchorLink, TableOfContents
 
-# from mkapi.core.module import Module, get_module
-# from mkapi.core.object import get_object
 from mkapi.pages import Page as MkAPIPage
 
 logger = logging.getLogger("mkdocs")
@@ -115,23 +112,23 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
         return mkapi_page.convert_html(html)
 
-    #     def on_page_context(
-    #         self,
-    #         context: TemplateContext,
-    #         page: MkDocsPage,
-    #         config: MkDocsConfig,  # noqa: ARG002
-    #         nav: Navigation,  # noqa: ARG002
-    #         **kwargs,  # noqa: ARG002
-    #     ) -> TemplateContext:
-    #         """Clear prefix in toc."""
-    #         abs_src_path = page.file.abs_src_path
-    #         if abs_src_path in self.config.abs_api_paths:
-    #             clear_prefix(page.toc, 2)
-    #         else:
-    #             mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
-    #             for level, id_ in mkapi_page.headings:
-    #                 clear_prefix(page.toc, level, id_)
-    #         return context
+        # def on_page_context(
+        #     self,
+        #     context: TemplateContext,
+        #     page: MkDocsPage,
+        #     config: MkDocsConfig,
+        #     nav: Navigation,
+        #     **kwargs,
+        # ) -> TemplateContext:
+        #     """Clear prefix in toc."""
+        #     abs_src_path = page.file.abs_src_path
+        #     if abs_src_path in self.config.abs_api_paths:
+        #         clear_prefix(page.toc, 2)
+        #     else:
+        #         mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
+        #         for level, id_ in mkapi_page.headings:
+        #             clear_prefix(page.toc, level, id_)
+        #     return context
 
     def on_serve(self, server, config: MkDocsConfig, builder, **kwargs):
         for path in ["themes", "templates"]:

@@ -1,12 +1,12 @@
-from mkapi.objects import get_module
-from mkapi.renderer import renderer
+# from mkapi.objects import get_module
+# from mkapi.renderer import renderer
 
 
-def test_render_module(google):
-    markdown = renderer.render_module(google)
-    assert "# ![mkapi](examples.styles.example_google" in markdown
-    assert "## ![mkapi](examples.styles.example_google.ExampleClass" in markdown
-    assert "## ![mkapi](examples.styles.example_google.example_generator" in markdown
+# def test_render_module(google):
+#     markdown = renderer.render_module(google)
+#     assert "# ![mkapi](examples.styles.example_google" in markdown
+#     assert "## ![mkapi](examples.styles.example_google.ExampleClass" in markdown
+#     assert "## ![mkapi](examples.styles.example_google.example_generator" in markdown
 
 
 # def test_module_empty_filters():
