@@ -38,7 +38,6 @@ type Def = FunctionDef_ | ClassDef
 type Assign_ = Assign | AnnAssign | TypeAlias
 
 CURRENT_MODULE_NAME: list[str | None] = [None]
-current_docstring_style: list[Style] = ["google"]
 
 
 @dataclass
@@ -254,11 +253,11 @@ class Callable(Object):  # noqa: D101
     def get_parameter(self, name: str) -> Parameter | None:  # noqa: D102
         return get_by_name(self.parameters, name)
 
-    def get_fullname(self) -> str:  # noqa: D102
+    def get_fullname(self, sep: str = ".") -> str:  # noqa: D102
         if self.parent:
             return f"{self.parent.get_fullname()}.{self.name}"
         module_name = self.get_module_name() or ""
-        return f"{module_name}.{self.name}"
+        return f"{module_name}{sep}{self.name}"
 
 
 @dataclass(repr=False)
@@ -527,13 +526,16 @@ def _move_property(obj: Class) -> None:
     obj.functions = funcs
 
 
+CURRENT_DOCSTRING_STYLE: list[Style] = ["google"]
+
+
 def _get_style(doc: str) -> Style:
     for names in docstrings.SECTION_NAMES:
         for name in names:
             if f"\n\n{name}\n----" in doc:
-                current_docstring_style[0] = "numpy"
+                CURRENT_DOCSTRING_STYLE[0] = "numpy"
                 return "numpy"
-    current_docstring_style[0] = "google"
+    CURRENT_DOCSTRING_STYLE[0] = "google"
     return "google"
 
 

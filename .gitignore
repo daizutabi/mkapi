@@ -68,6 +68,7 @@ ENV/
 
 # MkDocs documentation
 site*/
-docs/api
+examples/docs/api
+examples/docs/api2
 
 lcov.info

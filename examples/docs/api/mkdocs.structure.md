@@ -1,3 +1,0 @@
-# mkdocs.structure
-
-## mkdocs.structure

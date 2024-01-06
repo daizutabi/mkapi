@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
+    from typing import Literal
 
 
 def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
@@ -23,7 +24,8 @@ def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
     return False
 
 
-def _is_package(name: str) -> bool:
+def is_package(name: str) -> bool:
+    """Return True if the name is a package."""
     if (spec := find_spec(name)) and spec.origin:
         return Path(spec.origin).stem == "__init__"
     return False
@@ -40,10 +42,16 @@ def iter_submodule_names(name: str) -> Iterator[str]:
                 yield f"{name}.{path.stem}"
 
 
-def find_submodule_names(name: str) -> list[str]:
-    """Return a list of submodules."""
-    names = iter_submodule_names(name)
-    return sorted(names, key=lambda name: not _is_package(name))
+def find_submodule_names(
+    name: str,
+    predicate: Callable[[str], bool] | None = None,
+) -> list[str]:
+    """Return a list of submodule names.
+
+    Optionally, only return submodules that satisfy a given predicate.
+    """
+    predicate = predicate or (lambda _: True)
+    return [name for name in iter_submodule_names(name) if predicate(name)]
 
 
 def delete_ptags(html: str) -> str:

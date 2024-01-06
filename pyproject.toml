@@ -96,6 +96,7 @@ exclude = ["examples"]
 
 [tool.ruff.extend-per-file-ignores]
 "tests/*.py" = ["ANN", "D", "S101", "INP001", "T201", "PLR2004", "PGH003"]
+"plugins.py" = ["ANN", "D", "ARG002"]
 
 [tool.ruff.lint]
 unfixable = [

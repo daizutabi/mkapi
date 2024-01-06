@@ -35,3 +35,4 @@ def test_get_fullname(google):
     assert c.get_fullname() == "examples.styles.example_google.ExampleClass"
     name = "examples.styles.example_google.ExampleClass.example_method"
     assert f.get_fullname() == name
+    assert c.get_fullname("#") == "examples.styles.example_google#ExampleClass"

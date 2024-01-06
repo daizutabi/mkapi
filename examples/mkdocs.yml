@@ -13,12 +13,16 @@ plugins:
   - mkapi:
       src_dirs: [.]
       on_config: custom.on_config
+      filters: [plugin_filter]
+      exclude: [.tests]
 nav:
   - index.md
-  - <api>/mkdocs.structure
-  - example.md
-  # - D: example.md
-  # - E: example.md
+  - <api>/mkapi.objects|nav_filter1|nav_filter2
+  - Section:
+    - 1.md
+    - <api2>/mkapi|nav_filter3
+    - 2.md
+  - API: <api>/mkdocs|nav_filter4
 
 
 extra_css:
