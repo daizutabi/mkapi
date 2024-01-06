@@ -13,7 +13,6 @@ import mkapi
 from mkapi.plugins import (
     MkAPIConfig,
     MkAPIPlugin,
-    _collect,
     _create_nav,
     _get_path_module_name_filters,
     _insert_sys_path,
@@ -142,10 +141,10 @@ def test_get_path_module_name_filters():
 
 
 def test_create_nav():
-    def callback(name):
+    def callback(name, depth, ispackage):  # noqa: ARG001
         return {name.upper(): f"test/{name}.md"}
 
-    def section(name):
+    def section(name, depth):  # noqa: ARG001
         return name.replace(".", "-")
 
     f = _create_nav
@@ -159,17 +158,6 @@ def test_create_nav():
     nav = f("mkdocs", callback, section, lambda x: "tests" not in x)
     assert len(nav[1]) == 1
     assert "mkdocs-commands" in nav[1]
-
-
-def test_collect(mkdocs_config: MkDocsConfig):
-    def create_page(name: str, path: Path, filters: list[str]) -> None:
-        assert "mkapi" in name
-        assert "examples" in path.as_posix()
-        assert filters == ["A", "F", "G"]
-
-    docs_dir = mkdocs_config.docs_dir
-    nav, paths = _collect("<a/b/c>/mkapi|F|G", docs_dir, ["A"], create_page)
-    assert nav[0] == {"mkapi": "a/b/c/mkapi.md"}
 
 
 # def test_walk_module_tree():
@@ -195,3 +183,14 @@ def test_collect(mkdocs_config: MkDocsConfig):
 #         build(config, dirty=False)
 #     finally:
 #         config.plugins.on_shutdown()
+def on_config(config, mkapi):
+    print("Called with config and mkapi.")
+    return config
+
+
+def module_title(module_name: str) -> str:
+    return module_name.rsplit(".")[-1]
+
+
+def section_title(package_name: str) -> str:
+    return package_name.upper()

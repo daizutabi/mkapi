@@ -15,6 +15,9 @@ plugins:
       on_config: custom.on_config
       filters: [plugin_filter]
       exclude: [.tests]
+      page_title: custom.page_title
+      section_title: custom.section_title
+
 nav:
   - index.md
   - <api>/mkapi.objects|nav_filter1|nav_filter2

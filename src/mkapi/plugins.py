@@ -51,7 +51,8 @@ class MkAPIConfig(Config):
     src_dirs = config_options.Type(list, default=[])
     filters = config_options.Type(list, default=[])
     exclude = config_options.Type(list, default=[])
-    callback = config_options.Type(str, default="")
+    page_title = config_options.Type(str, default="")
+    section_title = config_options.Type(str, default="")
     on_config = config_options.Type(str, default="")
     abs_api_paths = config_options.Type(list, default=[])
     pages = config_options.Type(dict, default={})
@@ -181,18 +182,6 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         config.nav = CACHE_CONFIG["nav"]
 
 
-def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[Path]:
-    def create_pages(item: str) -> list:
-        nav, paths = _collect(item, config.docs_dir, filters, _create_page)
-        abs_api_paths.extend(paths)
-        return nav
-
-    filters = plugin.config.filters
-    abs_api_paths: list[Path] = []
-    config.nav = _walk_nav(config.nav, create_pages)  # type: ignore
-    return list(set(abs_api_paths))
-
-
 def _walk_nav(nav: list, create_pages: Callable[[str], list]) -> list:
     nav_ = []
     for item in nav:
@@ -211,6 +200,17 @@ def _walk_nav(nav: list, create_pages: Callable[[str], list]) -> list:
         else:
             nav_.append(item)
     return nav_
+
+
+def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[Path]:
+    def create_pages(item: str) -> list:
+        nav, paths = _collect(item, config, plugin)
+        abs_api_paths.extend(paths)
+        return nav
+
+    abs_api_paths: list[Path] = []
+    config.nav = _walk_nav(config.nav, create_pages)  # type: ignore
+    return list(set(abs_api_paths))
 
 
 API_URL_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
@@ -236,47 +236,65 @@ def _get_path_module_name_filters(
 
 def _create_nav(
     name: str,
-    callback: Callable[[str], str | dict[str, str]],
-    section: Callable[[str], str | None] | None = None,
+    callback: Callable[[str, int, bool], str | dict[str, str]],
+    section: Callable[[str, int], str | None] | None = None,
     predicate: Callable[[str], bool] | None = None,
+    depth: int = 0,
 ) -> list:
     names = find_submodule_names(name, predicate)
-    names.sort(key=lambda x: not find_submodule_names(x, predicate))
-    tree: list = [callback(name)]
+    tree: list = [callback(name, depth, is_package(name))]
     for sub in names:
         if not is_package(sub):
-            tree.append(callback(sub))
+            tree.append(callback(sub, depth, False))  # noqa: FBT003
             continue
-        subtree = _create_nav(sub, callback, section, predicate)
-        if (n := len(subtree)) == 1:
-            tree.extend(subtree)
-        elif n > 1:
-            title = section(sub) if section else sub
+        subtree = _create_nav(sub, callback, section, predicate, depth + 1)
+        # if (n := len(subtree)) == 1:
+        #     tree.extend(subtree)
+        # elif n > 1:
+        if len(subtree):
+            title = section(sub, depth) if section else sub
             tree.append({title: subtree})
     return tree
 
 
+def _get_function(plugin: MkAPIPlugin, name: str) -> Callable | None:
+    if fullname := plugin.config.get(name, None):
+        module_name, func_name = fullname.rsplit(".", maxsplit=1)
+        module = importlib.import_module(module_name)
+        return getattr(module, func_name)
+    return None
+
+
 def _collect(
     item: str,
-    docs_dir: str,
-    filters: list[str],
-    create_page: Callable[[str, Path, list[str]], None],
+    config: MkDocsConfig,
+    plugin: MkAPIPlugin,
 ) -> tuple[list, list[Path]]:
     """Collect modules."""
-    api_path, name, filters = _get_path_module_name_filters(item, filters)
-    abs_api_path = Path(docs_dir) / api_path
+    api_path, name, filters = _get_path_module_name_filters(item, plugin.config.filters)
+    abs_api_path = Path(config.docs_dir) / api_path
     Path.mkdir(abs_api_path, parents=True, exist_ok=True)
 
-    def callback(name: str) -> dict[str, str]:
+    page_title = _get_function(plugin, "page_title")
+    section_title = _get_function(plugin, "section_title")
+    if plugin.config.exclude:
+
+        def predicate(name: str) -> bool:
+            return all(e not in name for e in plugin.config.exclude)
+    else:
+        predicate = None  # type: ignore
+
+    def callback(name: str, depth: int, ispackage) -> dict[str, str]:
         module_path = name + ".md"
         abs_module_path = abs_api_path / module_path
         abs_api_paths.append(abs_module_path)
-        create_page(name, abs_module_path, filters)
+        _create_page(name, abs_module_path, filters)
         nav_path = (Path(api_path) / module_path).as_posix()
-        return {name: nav_path}  # TODO: page tile
+        title = page_title(name, depth, ispackage) if page_title else name
+        return {title: nav_path}
 
     abs_api_paths: list[Path] = []
-    nav = _create_nav(name, callback)  # TODO: exclude
+    nav = _create_nav(name, callback, section_title, predicate)
     return nav, abs_api_paths
 
 
@@ -287,11 +305,9 @@ def _create_page(name: str, path: Path, filters: list[str]) -> None:
 
 
 def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
-    if plugin.config.on_config:
-        module_name, func_name = plugin.config.on_config.rsplit(".", maxsplit=1)
-        module = importlib.import_module(module_name)
-        func = getattr(module, func_name)
-        logger.info("[MkAPI] Calling user 'on_config' with")
+    if func := _get_function(plugin, "on_config"):
+        msg = f"[MkAPI] Calling user 'on_config': {plugin.config.on_config}"
+        logger.info(msg)
         config_ = func(config, plugin)
         if isinstance(config_, MkDocsConfig):
             return config_
