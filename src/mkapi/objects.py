@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from mkapi import docstrings
-from mkapi.utils import del_by_name, get_by_name, unique_names
+from mkapi.utils import del_by_name, get_by_name, is_package, unique_names
 
 if TYPE_CHECKING:
     from ast import AST
@@ -259,6 +259,10 @@ class Callable(Object):  # noqa: D101
         module_name = self.get_module_name() or ""
         return f"{module_name}{sep}{self.name}"
 
+    @property
+    def id(self) -> str:  # noqa: D102, A003
+        return self.get_fullname()
+
 
 @dataclass(repr=False)
 class Function(Callable):  # noqa: D101
@@ -371,6 +375,7 @@ class Module(Object):  # noqa: D101
     classes: list[Class]
     functions: list[Function]
     source: str
+    kind: str
 
     def get_import(self, name: str) -> Import | None:  # noqa: D102
         return get_by_name(self.imports, name)
@@ -398,6 +403,14 @@ class Module(Object):  # noqa: D101
     def get_source(self) -> str:
         """Return the source code."""
         return _get_module_source(self.name) if self.name else ""
+
+    @property
+    def id(self) -> str:  # noqa: D102, A003
+        return self.name
+
+    @property
+    def members(self) -> list[Class | Function]:  # noqa: D102
+        return self.classes + self.functions
 
 
 CACHE_MODULE_NODE: dict[str, tuple[float, ast.Module | None, str]] = {}
@@ -439,12 +452,12 @@ def _get_module_from_node(node: ast.Module) -> Module:
     imports = list(iter_imports(node))
     attrs = list(iter_attributes(node))
     classes, functions = get_callables(node)
-    return Module(node, "", docstring, imports, attrs, classes, functions, "")
+    return Module(node, "", docstring, imports, attrs, classes, functions, "", "")
 
 
 def get_module(name: str) -> Module | None:
     """Return a [Module] instance by the name."""
-    if name in CACHE_MODULE:
+    if name in CACHE_MODULE:  # TODO: reload
         return CACHE_MODULE[name]
     if node := _get_module_node(name):
         CURRENT_MODULE_NAME[0] = name  # Set the module name in a global cache.
@@ -452,6 +465,7 @@ def get_module(name: str) -> Module | None:
         CURRENT_MODULE_NAME[0] = None  # Remove the module name from a global cache.
         module.name = name
         module.source = _get_module_source(name)  # Set from a global cache.
+        module.kind = "package" if is_package(name) else "module"
         _postprocess(module)
         CACHE_MODULE[name] = module
         return module

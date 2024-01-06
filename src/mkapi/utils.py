@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
-    from typing import Literal
 
 
 def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:

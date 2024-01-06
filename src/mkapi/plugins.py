@@ -5,13 +5,10 @@ from Docstring.
 """
 from __future__ import annotations
 
-import atexit
 import importlib
-import inspect
 import logging
 import os
 import re
-import shutil
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeGuard
@@ -20,7 +17,6 @@ import yaml
 from mkdocs.config import config_options
 from mkdocs.config.base import Config
 from mkdocs.config.defaults import MkDocsConfig
-from mkdocs.livereload import LiveReloadServer
 from mkdocs.plugins import BasePlugin
 from mkdocs.structure.files import Files, get_files
 from mkdocs.structure.nav import Navigation
@@ -28,9 +24,9 @@ from mkdocs.structure.pages import Page as MkDocsPage
 from mkdocs.structure.toc import AnchorLink, TableOfContents
 from mkdocs.utils.templates import TemplateContext
 
-import mkapi.config
+import mkapi
+from mkapi import converter
 from mkapi.filter import split_filters, update_filters
-from mkapi.objects import Module, get_module
 from mkapi.utils import find_submodule_names, is_package
 
 if TYPE_CHECKING:
@@ -40,7 +36,7 @@ if TYPE_CHECKING:
 
 # from mkapi.core.module import Module, get_module
 # from mkapi.core.object import get_object
-# from mkapi.core.page import Page as MkAPIPage
+from mkapi.pages import Page as MkAPIPage
 
 logger = logging.getLogger("mkdocs")
 
@@ -70,69 +66,54 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             config.markdown_extensions.append("admonition")
         return _on_config_plugin(config, self)
 
-    #     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:  # noqa: ARG002
-    #         """Collect plugin CSS/JavaScript and appends them to `files`."""
-    #         root = Path(mkapi.__file__).parent / "theme"
-    #         docs_dir = config.docs_dir
-    #         config.docs_dir = root.as_posix()
-    #         theme_files = get_files(config)
-    #         config.docs_dir = docs_dir
-    #         theme_name = config.theme.name or "mkdocs"
+    def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
+        """Collect plugin CSS/JavaScript and appends them to `files`."""
+        root = Path(mkapi.__file__).parent / "themes"
+        docs_dir = config.docs_dir
+        config.docs_dir = root.as_posix()
+        theme_files = get_files(config)
+        config.docs_dir = docs_dir
+        theme_name = config.theme.name or "mkdocs"
 
-    #         css = []
-    #         js = []
-    #         for file in theme_files:
-    #             path = Path(file.src_path).as_posix()
-    #             if path.endswith(".css"):
-    #                 if "common" in path or theme_name in path:
-    #                     files.append(file)
-    #                     css.append(path)
-    #             elif path.endswith(".js"):
-    #                 files.append(file)
-    #                 js.append(path)
-    #             elif path.endswith(".yml"):
-    #                 with (root / path).open() as f:
-    #                     data = yaml.safe_load(f)
-    #                 css = data.get("extra_css", []) + css
-    #                 js = data.get("extra_javascript", []) + js
-    #         css = [x for x in css if x not in config.extra_css]
-    #         js = [x for x in js if x not in config.extra_javascript]
-    #         config.extra_css.extend(css)
-    #         config.extra_javascript.extend(js)
+        css = []
+        js = []
+        for file in theme_files:
+            path = Path(file.src_path).as_posix()
+            if path.endswith(".css"):
+                if "common" in path or theme_name in path:
+                    files.append(file)
+                    css.append(path)
+            elif path.endswith(".js"):
+                files.append(file)
+                js.append(path)
+            elif path.endswith(".yml"):
+                with (root / path).open() as f:
+                    data = yaml.safe_load(f)
+                css = data.get("extra_css", []) + css
+                js = data.get("extra_javascript", []) + js
+        css = [x for x in css if x not in config.extra_css]
+        js = [x for x in js if x not in config.extra_javascript]
+        config.extra_css.extend(css)
+        config.extra_javascript.extend(js)
 
-    #         return files
+        return files
 
-    #     def on_page_markdown(
-    #         self,
-    #         markdown: str,
-    #         page: MkDocsPage,
-    #         config: MkDocsConfig,  # noqa: ARG002
-    #         files: Files,  # noqa: ARG002
-    #         **kwargs,  # noqa: ARG002
-    #     ) -> str:
-    #         """Convert Markdown source to intermidiate version."""
-    #         abs_src_path = page.file.abs_src_path
-    #         clean_page_title(page)
-    #         abs_api_paths = self.config.abs_api_paths
-    #         filters = self.config.filters
-    #         mkapi_page = MkAPIPage(markdown, abs_src_path, abs_api_paths, filters)
-    #         self.config.pages[abs_src_path] = mkapi_page
-    #         return mkapi_page.markdown
+    def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
+        """Convert Markdown source to intermidiate version."""
+        # clean_page_title(page)
+        abs_src_path = page.file.abs_src_path
+        abs_api_paths = self.config.abs_api_paths
+        filters = self.config.filters
+        mkapi_page = MkAPIPage(markdown, abs_src_path, abs_api_paths, filters)
+        self.config.pages[abs_src_path] = mkapi_page
+        return mkapi_page.convert_markdown()
 
-    #     def on_page_content(
-    #         self,
-    #         html: str,
-    #         page: MkDocsPage,
-    #         config: MkDocsConfig,  # noqa: ARG002
-    #         files: Files,  # noqa: ARG002
-    #         **kwargs,  # noqa: ARG002
-    #     ) -> str:
-    #         """Merge HTML and MkAPI's node structure."""
-    #         if page.title:
-    #             page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore
-    #         abs_src_path = page.file.abs_src_path
-    #         mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
-    #         return mkapi_page.content(html)
+    def on_page_content(self, html: str, page: MkDocsPage, **kwargs) -> str:
+        """Merge HTML and MkAPI's object structure."""
+        # if page.title:
+        #     page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore
+        mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
+        return mkapi_page.convert_html(html)
 
     #     def on_page_context(
     #         self,
@@ -248,9 +229,6 @@ def _create_nav(
             tree.append(callback(sub, depth, False))  # noqa: FBT003
             continue
         subtree = _create_nav(sub, callback, section, predicate, depth + 1)
-        # if (n := len(subtree)) == 1:
-        #     tree.extend(subtree)
-        # elif n > 1:
         if len(subtree):
             title = section(sub, depth) if section else sub
             tree.append({title: subtree})
@@ -288,7 +266,8 @@ def _collect(
         module_path = name + ".md"
         abs_module_path = abs_api_path / module_path
         abs_api_paths.append(abs_module_path)
-        _create_page(name, abs_module_path, filters)
+        with abs_module_path.open("w") as f:
+            f.write(converter.convert_module(name, filters))
         nav_path = (Path(api_path) / module_path).as_posix()
         title = page_title(name, depth, ispackage) if page_title else name
         return {title: nav_path}
@@ -296,12 +275,6 @@ def _collect(
     abs_api_paths: list[Path] = []
     nav = _create_nav(name, callback, section_title, predicate)
     return nav, abs_api_paths
-
-
-def _create_page(name: str, path: Path, filters: list[str]) -> None:
-    """Create a page."""
-    with path.open("w") as f:
-        f.write(f"# {name}")
 
 
 def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
@@ -314,30 +287,23 @@ def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig
     return config
 
 
-# def create_source_page(path: Path, module: Module, filters: list[str]) -> None:
-#     """Create a page for source."""
-#     filters_str = "|".join(filters)
-#     with path.open("w") as f:
-#         f.write(f"# ![mkapi]({module.object.id}|code|{filters_str})")
+def _clear_prefix(
+    toc: TableOfContents | list[AnchorLink],
+    name: str,
+    level: int,
+) -> None:
+    """Clear prefix."""
+    for toc_item in toc:
+        if toc_item.level >= level and (not name or toc_item.title == name):
+            toc_item.title = toc_item.title.split(".")[-1]
+        _clear_prefix(toc_item.children, "", level)
 
 
-# def clear_prefix(
-#     toc: TableOfContents | list[AnchorLink],
-#     level: int,
-#     id_: str = "",
-# ) -> None:
-#     """Clear prefix."""
-#     for toc_item in toc:
-#         if toc_item.level >= level and (not id_ or toc_item.title == id_):
-#             toc_item.title = toc_item.title.split(".")[-1]
-#         clear_prefix(toc_item.children, level)
-
-
-# def clean_page_title(page: MkDocsPage) -> None:
-#     """Clean page title."""
-#     title = str(page.title)
-#     if title.startswith("![mkapi]("):
-#         page.title = title[9:-1].split("|")[0]  # type: ignore
+def _clean_page_title(page: MkDocsPage) -> None:
+    """Clean page title."""
+    title = str(page.title)
+    if title.startswith("![mkapi]("):
+        page.title = title[9:-1].split("|")[0]  # type: ignore
 
 
 # def _rmtree(path: Path) -> None:
@@ -349,3 +315,9 @@ def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig
 #     except PermissionError:
 #         msg = f"[MkAPI] Couldn't delete directory: {path}"
 #         logger.warning(msg)
+
+# def create_source_page(path: Path, module: Module, filters: list[str]) -> None:
+#     """Create a page for source."""
+#     filters_str = "|".join(filters)
+#     with path.open("w") as f:
+#         f.write(f"# ![mkapi]({module.object.id}|code|{filters_str})")

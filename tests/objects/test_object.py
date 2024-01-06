@@ -92,6 +92,27 @@ def test_get_module_source():
     module = get_module("mkapi.plugins")
     assert module
     cls = module.get("MkAPIConfig")
+    assert cls
     assert cls.get_module() is module
-    assert cls.get_source().startswith("class MkAPIConfig")
+    src = cls.get_source()
+    assert src
+    assert src.startswith("class MkAPIConfig")
     assert "MkAPIPlugin" in module.get_source()
+
+
+def test_module_kind():
+    module = get_module("mkdocs")
+    assert module
+    assert module.kind == "package"
+    module = get_module("mkdocs.plugins")
+    assert module
+    assert module.kind == "module"
+
+
+def test_property():
+    module = get_module("mkapi.objects")
+    assert module
+    assert module.id == "mkapi.objects"
+    f = module.get_function("get_object")
+    assert f
+    assert f.id == "mkapi.objects.get_object"
