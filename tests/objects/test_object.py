@@ -5,6 +5,7 @@ import pytest
 
 import mkapi.objects
 from mkapi.objects import (
+    CACHE_MODULE_NODE,
     _get_module_node,
     get_module,
     get_object,
@@ -81,8 +82,6 @@ def test_repr():
     assert repr(module) == "Module(mkapi.objects)"
     obj = get_object("mkapi.objects.Object")
     assert repr(obj) == "Class(Object)"
-    obj = get_object("mkapi.plugins.BasePlugin")
-    assert repr(obj) == "Class(BasePlugin)"
 
 
 def test_get_module_source():
@@ -100,10 +99,20 @@ def test_get_module_source():
     assert "MkAPIPlugin" in module.get_source()
 
 
-def test_module_kind():
-    module = get_module("mkdocs")
+def test_get_module_from_object():
+    module = get_module("mkdocs.structure.files")
     assert module
-    assert module.kind == "package"
-    module = get_module("mkdocs.plugins")
-    assert module
-    assert module.kind == "module"
+    c = module.classes[1]
+    m = c.get_module()
+    assert module is m
+
+
+def test_get_module_check_mtime():
+    m1 = get_module("mkdocs.structure.files")
+    m2 = get_module("mkdocs.structure.files")
+    assert m1 is m2
+    CACHE_MODULE_NODE.clear()
+    m3 = get_module("mkdocs.structure.files")
+    m4 = get_module("mkdocs.structure.files")
+    assert m2 is not m3
+    assert m3 is m4

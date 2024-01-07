@@ -8,14 +8,15 @@ from mkapi.objects import get_module
 
 def convert_module(name: str, filters: list[str]) -> str:
     """Convert the [Module] instance to markdown text."""
-    # if module := get_module(name):
-    #     return renderer.render_module(module)
+    if module := get_module(name):
+        #     return renderer.render_module(module)
+        return f"{module}: {id(module)}"
     return f"{name} not found"
 
 
 def convert_object(name: str, level: int) -> str:
-    return "xxxx"
+    return "# ac"
 
 
 def convert_html(name: str, html: str, filters: list[str]) -> str:
-    return "xxxx"
+    return f"xxxx  {html}"

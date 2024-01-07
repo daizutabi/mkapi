@@ -162,6 +162,10 @@ def get_by_name[T](items: list[T], name: str, attr: str = "name") -> T | None:  
     return None
 
 
+def get_by_kind[T](items: list[T], kind: str) -> T | None:  # noqa: D103
+    return get_by_name(items, kind, attr="kind")
+
+
 def del_by_name[T](items: list[T], name: str, attr: str = "name") -> None:  # noqa: D103
     for k, item in enumerate(items):
         if getattr(item, attr, None) == name:

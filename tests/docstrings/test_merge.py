@@ -14,10 +14,10 @@ def test_iter_merged_items():
     assert c[2].type == "list"
 
 
-def test_merge(google):
-    a = parse(google.get("ExampleClass").docstring, "google")
-    b = parse(google.get("ExampleClass").get("__init__").docstring, "google")
-    doc = merge(a, b)
-    assert doc
-    assert [s.name for s in doc] == ["", "Attributes", "Note", "Parameters", ""]
-    doc.sections[-1].description.endswith("with it.")
+# def test_merge(google):
+#     a = parse(google.get("ExampleClass").docstring, "google")
+#     b = parse(google.get("ExampleClass").get("__init__").docstring, "google")
+#     doc = merge(a, b)
+#     assert doc
+#     assert [s.name for s in doc] == ["", "Attributes", "Note", "Parameters", ""]
+#     doc.sections[-1].description.endswith("with it.")

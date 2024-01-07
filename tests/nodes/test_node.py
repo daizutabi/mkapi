@@ -1,3 +1,11 @@
+from mkapi.nodes import get_node
+
+
+def test_node():
+    node = get_node("mkdocs.plugins")
+    for m in node.walk():
+        print(m)
+
 
 # def test_property():
 #     module = get_module("mkapi.objects")

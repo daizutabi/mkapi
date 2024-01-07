@@ -263,8 +263,7 @@ def _collect(
         module_path = name + ".md"
         abs_module_path = abs_api_path / module_path
         abs_api_paths.append(abs_module_path)
-        with abs_module_path.open("w") as f:
-            f.write(converter.convert_module(name, filters))
+        _create_page(name, abs_module_path, filters)
         nav_path = (Path(api_path) / module_path).as_posix()
         title = page_title(name, depth, ispackage) if page_title else name
         return {title: nav_path}
@@ -272,6 +271,11 @@ def _collect(
     abs_api_paths: list[Path] = []
     nav = _create_nav(name, callback, section_title, predicate)
     return nav, abs_api_paths
+
+
+def _create_page(name: str, path: Path, filters: list[str] | None = None) -> None:
+    with path.open("w") as f:
+        f.write(converter.convert_module(name, filters or []))
 
 
 def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
