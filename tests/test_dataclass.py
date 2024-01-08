@@ -1,6 +1,11 @@
-import ast
+import importlib
+import inspect
+import sys
+import tempfile
+from pathlib import Path
 
-import mkapi.ast
+import pytest
+
 from mkapi.dataclasses import (
     _get_dataclass_decorator,
     _iter_decorator_args,
@@ -40,3 +45,29 @@ def test_decorator_arg():
     deco_dict = dict(_iter_decorator_args(deco))
     assert deco_dict["init"]
     assert not deco_dict["repr"]
+
+
+@pytest.fixture()
+def path():
+    path = Path(tempfile.NamedTemporaryFile(suffix=".py", delete=False).name)
+    sys.path.insert(0, str(path.parent))
+    yield path
+    del sys.path[0]
+    path.unlink()
+
+
+@pytest.fixture()
+def load(path: Path):
+    def load(source: str):
+        with path.open("w") as f:
+            f.write(source)
+        module = importlib.import_module(path.stem)
+        cls = dict(inspect.getmembers(module))["C"]
+        params = inspect.signature(cls).parameters
+        module = get_module(path.stem)
+        assert module
+        cls = module.get_class("C")
+        assert cls
+        return cls.parameters, params
+
+    return load

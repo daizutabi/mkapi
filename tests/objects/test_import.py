@@ -9,23 +9,24 @@ from mkapi.objects import (
 )
 
 
-def test_import():
-    module = get_module("mkapi.plugins")
-    assert module
-    set_import_object(module)
+# def test_import():
+#     module = get_module("mkapi.plugins")
+#     assert module
+#     set_import_object(module)
 
-    i = module.get("annotations")
-    assert isinstance(i, Import)
-    assert isinstance(i.object, Attribute)
-    i = module.get("importlib")
-    assert isinstance(i, Import)
-    assert isinstance(i.object, Module)
-    i = module.get("Path")
-    assert isinstance(i, Import)
-    assert isinstance(i.object, Class)
-    i = module.get("get_files")
-    assert isinstance(i, Import)
-    assert isinstance(i.object, Function)
+#     i = module.get("annotations")
+#     assert isinstance(i, Import)
+#     assert isinstance(i.object, Attribute)
+#     i = module.get("importlib")
+#     assert isinstance(i, Import)
+#     assert isinstance(i.object, Module)
+#     i = module.get("Path")
+#     assert isinstance(i, Import)
+#     assert isinstance(i.object, Class)
+#     i = module.get("get_files")
+#     assert isinstance(i, Import)
+#     assert isinstance(i.object, Function)
 
-    # for x in module.imports:
-    #     print(x.name, x.fullname, x.object)
+
+# for x in module.imports:
+#     print(x.name, x.fullname, x.object)

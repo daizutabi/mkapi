@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import ast
+import importlib
 import importlib.util
+import inspect
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import mkapi.ast
 from mkapi import docstrings
@@ -14,7 +16,7 @@ from mkapi.utils import del_by_name, get_by_name, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from inspect import _ParameterKind
+    from inspect import _IntrospectableCallable, _ParameterKind
 
     from mkapi.docstrings import Docstring, Item, Section, Style
 
@@ -405,6 +407,7 @@ def get_module(name: str) -> Module | None:
     module.name = name
     module.source = source
     module.kind = "package" if path.stem == "__init__" else "module"
+    _postprocess_module(module)
     _postprocess(module)
     return module
 
@@ -588,17 +591,16 @@ def _postprocess(obj: Module | Class) -> None:
     _set_parent(obj)
     _register_object(obj)
     _merge_docstring(obj)
-    if isinstance(obj, Class):
-        _move_property(obj)
-    for cls in obj.classes:
-        _postprocess(cls)
-        _postprocess_class(cls)
     for attr in obj.attributes:
         _register_object(attr)
         _merge_attribute_docstring(attr)
     for func in obj.functions:
         _register_object(func)
         _merge_docstring(func)
+    for cls in obj.classes:
+        _move_property(cls)
+        _postprocess(cls)
+        _postprocess_class(cls)
 
 
 ATTRIBUTE_ORDER_DICT = {
@@ -624,3 +626,43 @@ def _postprocess_class(cls: Class) -> None:
         cls.attributes.sort(key=_attribute_order)
         del_by_name(cls.functions, "__init__")
     # TODO: dataclass, bases
+
+
+def _stringize_signature(signature: inspect.Signature) -> str:
+    print(signature)
+    return str(signature).replace("'", "")
+
+
+def _get_function_from_object(obj: _IntrospectableCallable) -> Function | None:
+    print("AA", obj)
+    try:
+        signature = inspect.signature(obj)
+    except:
+        return None
+    sig_str = _stringize_signature(signature)
+    source = f"def f{sig_str}:\n pass"
+    node = ast.parse(source)
+    func = next(iter_callables(node))
+    if not isinstance(func, Function):
+        return None
+    return func
+
+
+def _set_parameters_from_object(obj: Module | Class, members: dict[str, Any]) -> None:
+    for cls in obj.classes:
+        print("BB", cls)
+        cls_obj = members[cls.name]
+        if f := _get_function_from_object(cls_obj):
+            cls.parameters = f.parameters
+        # _set_parameters_from_object(cls, dict(inspect.getmembers(cls_obj)))
+    # if isinstance(obj, Class):
+    #     for func in obj.functions:
+    #         f = _get_function_from_object(members[func.name])
+    #         func.parameters = f.parameters
+
+
+def _postprocess_module(obj: Module) -> None:
+    return
+    module_obj = importlib.import_module(obj.name)
+    members = dict(inspect.getmembers(module_obj))
+    _set_parameters_from_object(obj, members)
