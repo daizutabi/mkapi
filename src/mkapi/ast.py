@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import ast
-import importlib.util
 from ast import (
     AnnAssign,
     Assign,
@@ -15,15 +14,15 @@ from ast import (
     ImportFrom,
     Module,
     Name,
+    NodeTransformer,
     TypeAlias,
 )
 from inspect import Parameter, cleandoc
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ast import AST
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
     from inspect import _ParameterKind
 
 
@@ -85,11 +84,11 @@ def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:
 
 
 PARAMETER_KIND_DICT: dict[_ParameterKind, str] = {
-    Parameter.POSITIONAL_ONLY: "posonlyargs",  # before '/', list
-    Parameter.POSITIONAL_OR_KEYWORD: "args",  # normal, list
-    Parameter.VAR_POSITIONAL: "vararg",  # *args, arg or None
-    Parameter.KEYWORD_ONLY: "kwonlyargs",  # after '*' or '*args', list
-    Parameter.VAR_KEYWORD: "kwarg",  # **kwargs, arg or None
+    Parameter.POSITIONAL_ONLY: "posonlyargs",
+    Parameter.POSITIONAL_OR_KEYWORD: "args",
+    Parameter.VAR_POSITIONAL: "vararg",
+    Parameter.KEYWORD_ONLY: "kwonlyargs",
+    Parameter.VAR_KEYWORD: "kwarg",
 }
 
 
@@ -132,3 +131,65 @@ def iter_callable_nodes(
     for child in ast.iter_child_nodes(node):
         if isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
             yield child
+
+
+class Transformer(NodeTransformer):  # noqa: D101
+    def _rename(self, name: str) -> Name:
+        return Name(id=f"__mkapi__.{name}")
+
+    def visit_Name(self, node: Name) -> Name:  # noqa: N802, D102
+        return self._rename(node.id)
+
+    def unparse(self, node: ast.AST) -> str:  # noqa: D102
+        node_ = ast.parse(ast.unparse(node))  # copy node for avoiding in-place rename.
+        return ast.unparse(self.visit(node_))
+
+
+class StringTransformer(Transformer):  # noqa: D101
+    def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802, D102
+        if isinstance(node.value, str):
+            return self._rename(node.value)
+        return node
+
+
+def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
+    """Yield identifiers as a tuple of (code, isidentifier)."""
+    start = 0
+    while start < len(source):
+        index = source.find("__mkapi__.", start)
+        if index == -1:
+            yield source[start:], False
+            return
+        if index != 0:
+            yield source[start:index], False
+        start = stop = index + 10  # 10 == len("__mkapi__.")
+        while stop < len(source):
+            c = source[stop]
+            if c == "." or c.isdigit() or c.isidentifier():
+                stop += 1
+            else:
+                break
+        yield source[start:stop], True
+        start = stop
+
+
+def iter_identifiers(node: ast.AST) -> Iterator[str]:
+    """Yield identifiers."""
+    source = StringTransformer().unparse(node)
+    for code, isidentifier in _iter_identifiers(source):
+        if isidentifier:
+            yield code
+
+
+def _unparse(node: ast.AST, callback: Callable[[str], str]) -> Iterator[str]:
+    source = StringTransformer().unparse(node)
+    for code, isidentifier in _iter_identifiers(source):
+        if isidentifier:
+            yield callback(code)
+        else:
+            yield code
+
+
+def unparse(node: ast.AST, callback: Callable[[str], str]) -> str:
+    """Unparse the AST node with a callback function."""
+    return "".join(_unparse(node, callback))

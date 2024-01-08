@@ -4,7 +4,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -28,14 +28,22 @@ class Object:  # noqa: D101
     name: str
     docstring: str | None
 
-    def __init_subclass__(cls, **kwargs) -> None:
-        super().__init_subclass__(**kwargs)
-
     def __post_init__(self) -> None:  # Set parent module name.
         self.__dict__["__module_name__"] = CURRENT_MODULE_NAME[0]
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
+
+    def __iter__(self) -> Iterator:
+        yield from []
+
+    def iter_exprs(self) -> Iterator[ast.expr | ast.type_param]:
+        """Yield AST expressions."""
+        for obj in self:
+            if isinstance(obj, Object):
+                yield from obj.iter_exprs()
+            else:
+                yield obj
 
     def get_module_name(self) -> str | None:
         """Return the module name."""
@@ -59,13 +67,15 @@ class Object:  # noqa: D101
         return ast.unparse(self._node)
 
 
-@dataclass
-class Import(Object):  # noqa: D101
-    _node: ast.Import | ast.ImportFrom = field(repr=False)
-    docstring: str | None = field(repr=False)
+@dataclass(repr=False)
+class Import(Object):
+    """Import class for [Module]."""
+
+    _node: ast.Import | ast.ImportFrom
+    docstring: str | None
     fullname: str
     from_: str | None
-    object: Module | Class | Function | Attribute | None  # noqa: A003
+    object: Module | Class | Function | Attribute | Import | None  # noqa: A003
 
     def get_fullname(self) -> str:  # noqa: D102
         return self.fullname
@@ -82,11 +92,26 @@ def iter_imports(node: ast.Module) -> Iterator[Import]:
 
 
 @dataclass(repr=False)
-class Attribute(Object):  # noqa: D101
+class Attribute(Object):
+    """Atrribute class for [Module] and [Class]."""
+
     _node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
     type_params: list[ast.type_param] | None
+    parent: Class | Module | None
+
+    def __iter__(self) -> Iterator[ast.expr | ast.type_param]:
+        for expr in [self.type, self.default]:
+            if expr:
+                yield expr
+        if self.type_params:
+            yield from self.type_params
+
+    def get_fullname(self) -> str:  # noqa: D102
+        if self.parent:
+            return f"{self.parent.get_fullname()}.{self.name}"
+        return f"...{self.name}"
 
 
 def iter_attributes(node: ast.Module | ast.ClassDef) -> Iterator[Attribute]:
@@ -97,15 +122,22 @@ def iter_attributes(node: ast.Module | ast.ClassDef) -> Iterator[Attribute]:
         type_ = mkapi.ast.get_assign_type(assign)
         value = None if isinstance(assign, ast.TypeAlias) else assign.value
         type_params = assign.type_params if isinstance(assign, ast.TypeAlias) else None
-        yield Attribute(assign, name, assign.__doc__, type_, value, type_params)
+        yield Attribute(assign, name, assign.__doc__, type_, value, type_params, None)
 
 
 @dataclass(repr=False)
-class Parameter(Object):  # noqa: D101
+class Parameter(Object):
+    """Parameter class for [Class] and [Function]."""
+
     _node: ast.arg | None
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
     kind: _ParameterKind | None
+
+    def __iter__(self) -> Iterator[ast.expr]:
+        for expr in [self.type, self.default]:
+            if expr:
+                yield expr
 
 
 def iter_parameters(
@@ -117,13 +149,19 @@ def iter_parameters(
 
 
 @dataclass(repr=False)
-class Raise(Object):  # noqa: D101
+class Raise(Object):
+    """Raise class for [Class] and [Function]."""
+
     _node: ast.Raise | None
     type: ast.expr | None  #   # noqa: A003
 
     def __repr__(self) -> str:
         exc = ast.unparse(self.type) if self.type else ""
         return f"{self.__class__.__name__}({exc})"
+
+    def __iter__(self) -> Iterator[ast.expr]:
+        if self.type:
+            yield self.type
 
 
 def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
@@ -134,9 +172,15 @@ def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]
 
 
 @dataclass(repr=False)
-class Return(Object):  # noqa: D101
+class Return(Object):
+    """Return class for [Class] and [Function]."""
+
     _node: ast.expr | None
     type: ast.expr | None  #   # noqa: A003
+
+    def __iter__(self) -> Iterator[ast.expr]:
+        if self.type:
+            yield self.type
 
 
 def get_return(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Return:
@@ -187,6 +231,11 @@ class Function(Callable):
 
     _node: ast.FunctionDef | ast.AsyncFunctionDef
     returns: Return
+
+    def __iter__(self) -> Iterator[Parameter | Raise | Return]:
+        """Yield member instances."""
+        yield from super().__iter__()
+        yield self.returns
 
 
 @dataclass(repr=False)
@@ -264,10 +313,23 @@ class Module(Object):
     classes: list[Class]
     functions: list[Function]
     source: str | None
-    kind: str
+    kind: str | None
 
-    def get_fullname(self) -> str:  # noqa: D102
-        return self.name
+    def get_fullname(self, name: str | None = None) -> str | None:
+        """Return the fullname of the module.
+
+        If the name is given, the fullname of member is returned,
+        possibly with an attribute.
+        """
+        if not name:
+            return self.name
+        if obj := self.get(name):
+            return obj.get_fullname()
+        if "." in name:
+            name, attr = name.rsplit(".", maxsplit=1)
+            if obj := self.get(name):
+                return f"{obj.get_fullname()}.{attr}"
+        return None
 
     def get_source(self, maxline: int | None = None) -> str | None:
         """Return the source of the module."""
@@ -336,15 +398,20 @@ def get_module(name: str) -> Module | None:
         return CACHE_MODULE[name][0]
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
-    node = ast.parse(source)
-    CURRENT_MODULE_NAME[0] = name  # Set the module name in a global cache.
-    module = _get_module_from_node(node)
-    CURRENT_MODULE_NAME[0] = None  # Remove the module name from a global cache.
+    CURRENT_MODULE_NAME[0] = name  # Set the module name in the global cache.
+    module = _get_module_from_source(source)
+    CURRENT_MODULE_NAME[0] = None  # Reset the module name in the global cache.
+    CACHE_MODULE[name] = (module, mtime)
     module.name = name
     module.source = source
+    module.kind = "package" if path.stem == "__init__" else "module"
     _postprocess(module)
-    CACHE_MODULE[name] = (module, mtime)
     return module
+
+
+def _get_module_from_source(source: str) -> Module:
+    node = ast.parse(source)
+    return _get_module_from_node(node)
 
 
 def _get_module_from_node(node: ast.Module) -> Module:
@@ -352,17 +419,17 @@ def _get_module_from_node(node: ast.Module) -> Module:
     imports = list(iter_imports(node))
     attrs = list(iter_attributes(node))
     classes, functions = get_callables(node)
-    return Module(node, "", None, imports, attrs, classes, functions, "", "")
+    return Module(node, "", None, imports, attrs, classes, functions, None, None)
 
 
-CACHE_OBJECT: dict[str, Module | Class | Function] = {}
+CACHE_OBJECT: dict[str, Module | Class | Function | Attribute] = {}
 
 
-def _register_object(obj: Module | Class | Function) -> None:
-    CACHE_OBJECT[obj.get_fullname()] = obj
+def _register_object(obj: Module | Class | Function | Attribute) -> None:
+    CACHE_OBJECT[obj.get_fullname()] = obj  # type: ignore
 
 
-def get_object(fullname: str) -> Module | Class | Function | None:
+def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     """Return a [Object] instance by the fullname."""
     if fullname in CACHE_OBJECT:
         return CACHE_OBJECT[fullname]
@@ -371,6 +438,23 @@ def get_object(fullname: str) -> Module | Class | Function | None:
         if get_module(module_name) and fullname in CACHE_OBJECT:
             return CACHE_OBJECT[fullname]
     return None
+
+
+def set_import_object(module: Module) -> None:
+    """Set import object."""
+    for import_ in module.imports:
+        _set_import_object(import_)
+
+
+def _set_import_object(import_: Import) -> None:
+    if obj := get_module(import_.fullname):
+        import_.object = obj
+        return
+    if "." not in import_.fullname:
+        return
+    module_name, name = import_.fullname.rsplit(".", maxsplit=1)
+    if module := get_module(module_name):
+        import_.object = module.get(name)
 
 
 # a1.b_2(c[d]) -> a1, b_2, c, d
@@ -416,7 +500,7 @@ def _move_property(obj: Class) -> None:
         doc = func.get_node_docstring()
         type_ = func.returns.type
         type_params = func.type_params
-        attr = Attribute(node, func.name, doc, type_, None, type_params)
+        attr = Attribute(node, func.name, doc, type_, None, type_params, func.parent)
         _merge_attribute_docstring(attr)
         obj.attributes.append(attr)
     obj.functions = funcs
@@ -446,7 +530,7 @@ def _new(
     name: str,
 ) -> Attribute | Parameter | Raise:
     if cls is Attribute:
-        return Attribute(None, name, None, None, None, [])
+        return Attribute(None, name, None, None, None, [], None)
     if cls is Parameter:
         return Parameter(None, name, None, None, None, None)
     if cls is Raise:
@@ -473,8 +557,6 @@ def _merge_docstring(obj: Module | Class | Function) -> None:
         return
 
     sections: list[Section] = []
-    # if not (doc := obj.docstring) or not isinstance(doc, str):
-    #     return
     style = _get_style(doc)
     docstring = docstrings.parse(doc, style)
     for section in docstring:
@@ -494,6 +576,8 @@ def _merge_docstring(obj: Module | Class | Function) -> None:
 
 
 def _set_parent(obj: Module | Class) -> None:
+    for attr in obj.attributes:
+        attr.parent = obj
     for cls in obj.classes:
         cls.parent = obj
     for func in obj.functions:
@@ -506,11 +590,12 @@ def _postprocess(obj: Module | Class) -> None:
     _merge_docstring(obj)
     if isinstance(obj, Class):
         _move_property(obj)
-    for attr in obj.attributes:
-        _merge_attribute_docstring(attr)
     for cls in obj.classes:
         _postprocess(cls)
         _postprocess_class(cls)
+    for attr in obj.attributes:
+        _register_object(attr)
+        _merge_attribute_docstring(attr)
     for func in obj.functions:
         _register_object(func)
         _merge_docstring(func)
@@ -539,21 +624,3 @@ def _postprocess_class(cls: Class) -> None:
         cls.attributes.sort(key=_attribute_order)
         del_by_name(cls.functions, "__init__")
     # TODO: dataclass, bases
-
-
-def set_import_object(module: Module) -> None:
-    """Set import object."""
-    for import_ in module.imports:
-        _set_import_object(import_)
-
-
-def _set_import_object(import_: Import) -> None:
-    if obj := get_module(import_.fullname):
-        import_.object = obj
-        return
-    if "." not in import_.fullname:
-        return
-    module_name, name = import_.fullname.rsplit(".", maxsplit=1)
-    module = get_module(module_name)
-    if module and isinstance(obj := module.get(name), Class | Function | Attribute):
-        import_.object = obj

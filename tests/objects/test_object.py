@@ -112,9 +112,13 @@ def test_cache():
     c = get_object("mkapi.objects.Object")
     f = get_object("mkapi.objects.Module.get_class")
     assert c
-    assert f
     assert c.get_module() is module
+    assert f
     assert f.get_module() is module
+    CACHE_OBJECT.clear()
+    assert not get_object("mkapi.objects.Module.get_class")
+    CACHE_MODULE.clear()
+    assert get_object("mkapi.objects.Module.get_class")
 
 
 def test_get_module_check_mtime():
@@ -126,3 +130,19 @@ def test_get_module_check_mtime():
     m4 = get_module("mkdocs.structure.files")
     assert m2 is not m3
     assert m3 is m4
+
+
+def test_module_kind():
+    module = get_module("mkapi")
+    assert module
+    assert module.kind == "package"
+    module = get_module("mkapi.objects")
+    assert module
+    assert module.kind == "module"
+
+
+def test_get_fullname_with_attr():
+    module = get_module("mkapi.plugins")
+    assert module
+    name = module.get_fullname("config_options.Type")
+    assert name == "mkdocs.config.config_options.Type"

@@ -1,10 +1,31 @@
-from mkapi.objects import CACHE_MODULE, get_module, set_import_object
+from mkapi.objects import (
+    Attribute,
+    Class,
+    Function,
+    Import,
+    Module,
+    get_module,
+    set_import_object,
+)
 
 
 def test_import():
     module = get_module("mkapi.plugins")
+    assert module
     set_import_object(module)
 
-    for x in module.imports:
-        print(x.name, x.fullname, x.object)
-    # assert 0
+    i = module.get("annotations")
+    assert isinstance(i, Import)
+    assert isinstance(i.object, Attribute)
+    i = module.get("importlib")
+    assert isinstance(i, Import)
+    assert isinstance(i.object, Module)
+    i = module.get("Path")
+    assert isinstance(i, Import)
+    assert isinstance(i.object, Class)
+    i = module.get("get_files")
+    assert isinstance(i, Import)
+    assert isinstance(i.object, Function)
+
+    # for x in module.imports:
+    #     print(x.name, x.fullname, x.object)

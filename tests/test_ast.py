@@ -1,43 +1,35 @@
 import ast
 
-import pytest
+from mkapi.ast import StringTransformer, _iter_identifiers, unparse
 
-from mkapi.inspect import StringTransformer, _iter_identifiers
-from mkapi.objects import (
-    Function,
-    Module,
-    get_module,
-)
+
+def _ast(src: str) -> ast.expr:
+    expr = ast.parse(src).body[0]
+    assert isinstance(expr, ast.Expr)
+    return expr.value
 
 
 def _unparse(src: str) -> str:
-    expr = ast.parse(src).body[0]
-    assert isinstance(expr, ast.Expr)
-    return StringTransformer().unparse(expr.value)
+    return StringTransformer().unparse(_ast(src))
 
 
-def test_parse_expr_name():
+def test_expr_name():
     assert _unparse("a") == "__mkapi__.a"
 
 
-def test_parse_expr_subscript():
+def test_expr_subscript():
     assert _unparse("a[b]") == "__mkapi__.a[__mkapi__.b]"
 
 
-def test_parse_expr_attribute():
+def test_expr_attribute():
     assert _unparse("a.b") == "__mkapi__.a.b"
     assert _unparse("a.b.c") == "__mkapi__.a.b.c"
     assert _unparse("a().b[0].c()") == "__mkapi__.a().b[0].c()"
     assert _unparse("a(b.c[d])") == "__mkapi__.a(__mkapi__.b.c[__mkapi__.d])"
 
 
-def test_parse_expr_str():
+def test_expr_str():
     assert _unparse("list['X.Y']") == "__mkapi__.list[__mkapi__.X.Y]"
-
-
-@pytest.fixture(scope="module")
-def module():
-    return get_module("mkapi.objects")
 
 
 def test_iter_identifiers():
@@ -62,8 +54,16 @@ def test_iter_identifiers():
     assert x[1] == ("α.β.γ", True)  # noqa: RUF001
 
 
-def test_functions(module: Module):
-    func = module.get("_get_callable_args")
-    assert isinstance(func, Function)
-    type_ = func.parameters[0].type
-    assert isinstance(type_, ast.expr)
+def test_unparse():
+    def callback(s: str) -> str:
+        return f"<{s}>"
+
+    def f(s: str) -> str:
+        return unparse(_ast(s), callback)
+
+    assert f("a") == "<a>"
+    assert f("a.b.c") == "<a.b.c>"
+    assert f("a.b[c].d(e)") == "<a.b>[<c>].d(<e>)"
+    assert f("a | b.c | d") == "<a> | <b.c> | <d>"
+    assert f("list[A]") == "<list>[<A>]"
+    assert f("list['A']") == "<list>[<A>]"
