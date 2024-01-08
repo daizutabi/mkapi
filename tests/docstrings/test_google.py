@@ -33,7 +33,7 @@ def test_iter_sections_short():
 
 
 def test_iter_sections(google: Module):
-    doc = google.docstring
+    doc = google.get_node_docstring()
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "google"))
     assert len(sections) == 6
@@ -55,7 +55,7 @@ def test_iter_sections(google: Module):
 
 
 def test_iter_items(google: Module):
-    doc = google.get("module_level_function").docstring  # type: ignore
+    doc = google.get("module_level_function").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
     items = list(_iter_items(section))
@@ -64,7 +64,7 @@ def test_iter_items(google: Module):
     assert items[1].startswith("param2")
     assert items[2].startswith("*args")
     assert items[3].startswith("**kwargs")
-    doc = google.docstring
+    doc = google.get_node_docstring()
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[3][1]
     items = list(_iter_items(section))
@@ -73,7 +73,7 @@ def test_iter_items(google: Module):
 
 
 def test_split_item(google: Module):
-    doc = google.get("module_level_function").docstring  # type: ignore
+    doc = google.get("module_level_function").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "google"))
     section = sections[1][1]
@@ -93,7 +93,7 @@ def test_split_item(google: Module):
 
 
 def test_iter_items_class(google: Module):
-    doc = google.get("ExampleClass").docstring  # type: ignore
+    doc = google.get("ExampleClass").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
     x = list(iter_items(section, "google"))
@@ -103,7 +103,7 @@ def test_iter_items_class(google: Module):
     assert x[1].name == "attr2"
     assert x[1].type == ":obj:`int`, optional"
     assert x[1].text == "Description of `attr2`."
-    doc = google.get("ExampleClass").get("__init__").docstring  # type: ignore
+    doc = google.get("ExampleClass").get("__init__").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
     x = list(iter_items(section, "google"))
@@ -114,7 +114,7 @@ def test_iter_items_class(google: Module):
 
 
 def test_split_without_name(google: Module):
-    doc = google.get("module_level_function").docstring  # type: ignore
+    doc = google.get("module_level_function").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
     x = split_without_name(section, "google")
@@ -124,12 +124,12 @@ def test_split_without_name(google: Module):
 
 
 def test_repr(google: Module):
-    r = repr(parse(google.docstring, "google"))  # type: ignore
+    r = repr(parse(google.get_node_docstring(), "google"))  # type: ignore
     assert r == "Docstring(num_sections=6)"
 
 
 def test_iter_items_raises(google: Module):
-    doc = google.get("module_level_function").docstring  # type: ignore
+    doc = google.get("module_level_function").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     name, section = list(_iter_sections(doc, "google"))[3]
     assert name == "Raises"

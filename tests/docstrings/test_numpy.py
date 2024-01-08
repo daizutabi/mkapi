@@ -29,7 +29,7 @@ def test_iter_sections_short():
 
 
 def test_iter_sections(numpy: Module):
-    doc = numpy.docstring
+    doc = numpy.get_node_docstring()
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "numpy"))
     assert len(sections) == 7
@@ -53,7 +53,7 @@ def test_iter_sections(numpy: Module):
 
 
 def test_iter_items(numpy: Module):
-    doc = numpy.get("module_level_function").docstring  # type: ignore
+    doc = numpy.get("module_level_function").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[1][1]
     items = list(_iter_items(section))
@@ -62,7 +62,7 @@ def test_iter_items(numpy: Module):
     assert items[1].startswith("param2")
     assert items[2].startswith("*args")
     assert items[3].startswith("**kwargs")
-    doc = numpy.docstring
+    doc = numpy.get_node_docstring()
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[5][1]
     items = list(_iter_items(section))
@@ -71,7 +71,7 @@ def test_iter_items(numpy: Module):
 
 
 def test_split_item(numpy: Module):
-    doc = numpy.get("module_level_function").docstring  # type: ignore
+    doc = numpy.get("module_level_function").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "numpy"))
     items = list(_iter_items(sections[1][1]))
@@ -89,7 +89,7 @@ def test_split_item(numpy: Module):
 
 
 def test_iter_items_class(numpy: Module):
-    doc = numpy.get("ExampleClass").docstring  # type: ignore
+    doc = numpy.get("ExampleClass").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[1][1]
     x = list(iter_items(section, "numpy"))
@@ -99,7 +99,7 @@ def test_iter_items_class(numpy: Module):
     assert x[1].name == "attr2"
     assert x[1].type == ":obj:`int`, optional"
     assert x[1].text == "Description of `attr2`."
-    doc = numpy.get("ExampleClass").get("__init__").docstring  # type: ignore
+    doc = numpy.get("ExampleClass").get("__init__").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[2][1]
     x = list(iter_items(section, "numpy"))
@@ -110,7 +110,7 @@ def test_iter_items_class(numpy: Module):
 
 
 def test_get_return(numpy: Module):
-    doc = numpy.get("module_level_function").docstring  # type: ignore
+    doc = numpy.get("module_level_function").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[2][1]
     x = split_without_name(section, "numpy")
@@ -120,7 +120,7 @@ def test_get_return(numpy: Module):
 
 
 def test_iter_items_raises(numpy: Module):
-    doc = numpy.get("module_level_function").docstring  # type: ignore
+    doc = numpy.get("module_level_function").get_node_docstring()  # type: ignore
     assert isinstance(doc, str)
     name, section = list(_iter_sections(doc, "numpy"))[3]
     assert name == "Raises"

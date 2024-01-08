@@ -15,8 +15,8 @@ def test_iter_merged_items():
 
 
 def test_merge(google):
-    a = parse(google.get("ExampleClass").docstring, "google")
-    b = parse(google.get("ExampleClass").get("__init__").docstring, "google")
+    a = parse(google.get("ExampleClass").get_node_docstring(), "google")
+    b = parse(google.get("ExampleClass").get("__init__").get_node_docstring(), "google")
     doc = merge(a, b)
     assert doc
     assert [s.name for s in doc] == ["", "Attributes", "Note", "Parameters", ""]

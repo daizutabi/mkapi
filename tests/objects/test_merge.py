@@ -97,17 +97,18 @@ def test_merge_generator(module: Module):
 def test_postprocess_class(module: Module):
     c = module.get_class("ExampleError")
     assert isinstance(c, Class)
-    assert len(c.parameters) == 2
+    assert len(c.parameters) == 3  # with `self` at this state.
     assert len(c.docstring.sections) == 2  # type: ignore
     assert not c.functions
     c = module.get_class("ExampleClass")
     assert isinstance(c, Class)
-    assert len(c.parameters) == 3
+    assert len(c.parameters) == 4  # with `self` at this state.
     assert len(c.docstring.sections) == 3  # type: ignore
-    assert ast.unparse(c.parameters[2].type) == "list[str]"  # type: ignore
+    assert ast.unparse(c.parameters[3].type) == "list[str]"  # type: ignore
     assert c.attributes[0].name == "attr1"
     f = c.get_function("example_method")
-    assert len(f.parameters) == 2  # type: ignore
+    assert f
+    assert len(f.parameters) == 3  # with `self` at this state.
 
 
 def test_postprocess_class_pep526(module: Module):
