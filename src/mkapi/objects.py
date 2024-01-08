@@ -2,47 +2,29 @@
 from __future__ import annotations
 
 import ast
+import importlib.util
 import re
-from ast import (
-    AnnAssign,
-    Assign,
-    AsyncFunctionDef,
-    ClassDef,
-    Constant,
-    Expr,
-    FunctionDef,
-    ImportFrom,
-    Name,
-    TypeAlias,
-)
 from dataclasses import dataclass, field
-from importlib.util import find_spec
-from inspect import Parameter as P  # noqa: N817
-from inspect import cleandoc
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import mkapi.ast
 from mkapi import docstrings
 from mkapi.utils import del_by_name, get_by_name, unique_names
 
 if TYPE_CHECKING:
-    from ast import AST
     from collections.abc import Iterator
     from inspect import _ParameterKind
 
     from mkapi.docstrings import Docstring, Item, Section, Style
 
-type Import_ = ast.Import | ImportFrom
-type FunctionDef_ = AsyncFunctionDef | FunctionDef
-type Def = FunctionDef_ | ClassDef
-type Assign_ = Assign | AnnAssign | TypeAlias
 
 CURRENT_MODULE_NAME: list[str | None] = [None]
 
 
 @dataclass
 class Object:  # noqa: D101
-    _node: AST
+    _node: ast.AST
     name: str
     docstring: str | None
 
@@ -67,10 +49,10 @@ class Object:  # noqa: D101
 
     def get_source(self, maxline: int | None = None) -> str | None:
         """Return the source code segment."""
-        if (name := self.get_module_name()) and (source := _get_module_source(name)):
-            start, stop = self._node.lineno - 1, self._node.end_lineno
-            return "\n".join(source.split("\n")[start:stop][:maxline])
-        return None
+        if not (module := self.get_module()) or not (source := module.source):
+            return None
+        start, stop = self._node.lineno - 1, self._node.end_lineno
+        return "\n".join(source.split("\n")[start:stop][:maxline])
 
     def unparse(self) -> str:
         """Unparse the AST node and return a string expression."""
@@ -79,96 +61,42 @@ class Object:  # noqa: D101
 
 @dataclass
 class Import(Object):  # noqa: D101
-    _node: ast.Import | ImportFrom = field(repr=False)
+    _node: ast.Import | ast.ImportFrom = field(repr=False)
     docstring: str | None = field(repr=False)
     fullname: str
     from_: str | None
+    object: Module | Class | Function | Attribute | None  # noqa: A003
 
     def get_fullname(self) -> str:  # noqa: D102
         return self.fullname
 
 
-def iter_import_nodes(node: AST) -> Iterator[Import_]:
-    """Yield import nodes."""
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, ast.Import | ImportFrom):
-            yield child
-        elif not isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
-            yield from iter_import_nodes(child)
-
-
 def iter_imports(node: ast.Module) -> Iterator[Import]:
     """Yield import nodes and names."""
-    for child in iter_import_nodes(node):
-        from_ = f"{child.module}" if isinstance(child, ImportFrom) else None
+    for child in mkapi.ast.iter_import_nodes(node):
+        from_ = f"{child.module}" if isinstance(child, ast.ImportFrom) else None
         for alias in child.names:
             name = alias.asname or alias.name
             fullname = f"{from_}.{alias.name}" if from_ else name
-            yield Import(child, name, None, fullname, from_)
+            yield Import(child, name, None, fullname, from_, None)
 
 
 @dataclass(repr=False)
 class Attribute(Object):  # noqa: D101
-    _node: Assign_ | FunctionDef_ | None  # Needs FunctionDef_ for property.
+    _node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
     type_params: list[ast.type_param] | None
 
 
-def _get_pseudo_docstring(node: AST) -> str | None:
-    if not isinstance(node, Expr) or not isinstance(node.value, Constant):
-        return None
-    doc = node.value.value
-    return cleandoc(doc) if isinstance(doc, str) else None
-
-
-def iter_assign_nodes(node: ast.Module | ClassDef) -> Iterator[Assign_]:
-    """Yield assign nodes."""
-    assign_node: Assign_ | None = None
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, AnnAssign | Assign | TypeAlias):
-            if assign_node:
-                yield assign_node
-            child.__doc__ = None
-            assign_node = child
-        else:
-            if assign_node:
-                assign_node.__doc__ = _get_pseudo_docstring(child)
-                yield assign_node
-            assign_node = None
-    if assign_node:
-        assign_node.__doc__ = None
-        yield assign_node
-
-
-def get_assign_name(node: Assign_) -> str | None:
-    """Return the name of the assign node."""
-    if isinstance(node, AnnAssign) and isinstance(node.target, Name):
-        return node.target.id
-    if isinstance(node, Assign) and isinstance(node.targets[0], Name):
-        return node.targets[0].id
-    if isinstance(node, TypeAlias) and isinstance(node.name, Name):
-        return node.name.id
-    return None
-
-
-def get_type(node: Assign_) -> ast.expr | None:
-    """Return a type annotation of the Assign or TypeAlias AST node."""
-    if isinstance(node, AnnAssign):
-        return node.annotation
-    if isinstance(node, TypeAlias):
-        return node.value
-    return None
-
-
-def iter_attributes(node: ast.Module | ClassDef) -> Iterator[Attribute]:
+def iter_attributes(node: ast.Module | ast.ClassDef) -> Iterator[Attribute]:
     """Yield assign nodes from the Module or Class AST node."""
-    for assign in iter_assign_nodes(node):
-        if not (name := get_assign_name(assign)):
+    for assign in mkapi.ast.iter_assign_nodes(node):
+        if not (name := mkapi.ast.get_assign_name(assign)):
             continue
-        type_ = get_type(assign)
-        value = None if isinstance(assign, TypeAlias) else assign.value
-        type_params = assign.type_params if isinstance(assign, TypeAlias) else None
+        type_ = mkapi.ast.get_assign_type(assign)
+        value = None if isinstance(assign, ast.TypeAlias) else assign.value
+        type_params = assign.type_params if isinstance(assign, ast.TypeAlias) else None
         attr = Attribute(assign, name, assign.__doc__, type_, value, type_params)
         _merge_attribute_docstring(attr)
         yield attr
@@ -182,41 +110,12 @@ class Parameter(Object):  # noqa: D101
     kind: _ParameterKind | None
 
 
-PARAMETER_KIND_DICT: dict[_ParameterKind, str] = {
-    P.POSITIONAL_ONLY: "posonlyargs",  # before '/', list
-    P.POSITIONAL_OR_KEYWORD: "args",  # normal, list
-    P.VAR_POSITIONAL: "vararg",  # *args, arg or None
-    P.KEYWORD_ONLY: "kwonlyargs",  # after '*' or '*args', list
-    P.VAR_KEYWORD: "kwarg",  # **kwargs, arg or None
-}
-
-
-def _iter_parameters(node: FunctionDef_) -> Iterator[tuple[ast.arg, _ParameterKind]]:
-    for kind, attr in PARAMETER_KIND_DICT.items():
-        if args := getattr(node.args, attr):
-            it = args if isinstance(args, list) else [args]
-            yield from ((arg, kind) for arg in it)
-
-
-def _iter_defaults(node: FunctionDef_) -> Iterator[ast.expr | None]:
-    args = node.args
-    num_positional = len(args.posonlyargs) + len(args.args)
-    nones = [None] * num_positional
-    yield from [*nones, *args.defaults][-num_positional:]
-    yield from args.kw_defaults
-
-
-def iter_parameters(node: FunctionDef_) -> Iterator[Parameter]:
+def iter_parameters(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> Iterator[Parameter]:
     """Yield parameters from the function node."""
-    it = _iter_defaults(node)
-    for arg, kind in _iter_parameters(node):
-        default = None if kind in [P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)
-        name = arg.arg
-        if kind is P.VAR_POSITIONAL:
-            name = f"*{name}"
-        if kind is P.VAR_KEYWORD:
-            name = f"**{name}"
-        yield Parameter(arg, name, None, arg.annotation, default, kind)
+    for arg, kind, default in mkapi.ast.iter_parameters(node):
+        yield Parameter(arg, arg.arg, None, arg.annotation, default, kind)
 
 
 @dataclass(repr=False)
@@ -229,7 +128,7 @@ class Raise(Object):  # noqa: D101
         return f"{self.__class__.__name__}({exc})"
 
 
-def iter_raises(node: FunctionDef_) -> Iterator[Raise]:
+def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
     """Yield [Raise] instances."""
     for child in ast.walk(node):
         if isinstance(child, ast.Raise) and child.exc:
@@ -242,7 +141,7 @@ class Return(Object):  # noqa: D101
     type: ast.expr | None  #   # noqa: A003
 
 
-def get_return(node: FunctionDef_) -> Return:
+def get_return(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Return:
     """Return a [Return] instance."""
     return Return(node.returns, "", None, node.returns)
 
@@ -267,14 +166,14 @@ class Callable(Object):  # noqa: D101
 
 @dataclass(repr=False)
 class Function(Callable):  # noqa: D101
-    _node: FunctionDef_
+    _node: ast.FunctionDef | ast.AsyncFunctionDef
     returns: Return
 
     def get(self, name: str) -> Parameter | None:  # noqa: D102
         return self.get_parameter(name)
 
 
-def _set_parent(obj: Class | Module) -> None:
+def _set_parent(obj: Module | Class) -> None:
     for cls in obj.classes:
         cls.parent = obj
     for func in obj.functions:
@@ -283,7 +182,7 @@ def _set_parent(obj: Class | Module) -> None:
 
 @dataclass(repr=False)
 class Class(Callable):  # noqa: D101
-    _node: ClassDef
+    _node: ast.ClassDef
     bases: list[Class]
     attributes: list[Attribute]
     classes: list[Class]
@@ -315,15 +214,8 @@ class Class(Callable):  # noqa: D101
         return None
 
 
-def iter_callable_nodes(node: ast.Module | ClassDef) -> Iterator[Def]:
-    """Yield callable nodes."""
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
-            yield child
-
-
 def _get_callable_args(
-    node: Def,
+    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
 ) -> tuple[
     str,
     str | None,
@@ -334,47 +226,50 @@ def _get_callable_args(
 ]:
     name = node.name
     docstring = ast.get_docstring(node)
-    parameters = [] if isinstance(node, ClassDef) else list(iter_parameters(node))
+    parameters = [] if isinstance(node, ast.ClassDef) else list(iter_parameters(node))
     decorators = node.decorator_list
 
     type_params = node.type_params
-    raises = [] if isinstance(node, ClassDef) else list(iter_raises(node))
+    raises = [] if isinstance(node, ast.ClassDef) else list(iter_raises(node))
     return name, docstring, parameters, decorators, type_params, raises
 
 
-def iter_callables(node: ast.Module | ClassDef) -> Iterator[Class | Function]:
+def iter_callables(node: ast.Module | ast.ClassDef) -> Iterator[Class | Function]:
     """Yield classes or functions."""
-    for def_node in iter_callable_nodes(node):
-        args = _get_callable_args(def_node)
-        if isinstance(def_node, ClassDef):
-            attrs = list(iter_attributes(def_node))
-            classes, functions = get_callables(def_node)
+    for callable_node in mkapi.ast.iter_callable_nodes(node):
+        args = _get_callable_args(callable_node)
+        if isinstance(callable_node, ast.ClassDef):
+            attrs = list(iter_attributes(callable_node))
+            classes, functions = get_callables(callable_node)
             bases: list[Class] = []
-            yield Class(def_node, *args, None, bases, attrs, classes, functions)
+            yield Class(callable_node, *args, None, bases, attrs, classes, functions)
         else:
-            yield Function(def_node, *args, None, get_return(def_node))
+            yield Function(callable_node, *args, None, get_return(callable_node))
 
 
-def get_callables(node: ast.Module | ClassDef) -> tuple[list[Class], list[Function]]:
+def get_callables(
+    node: ast.Module | ast.ClassDef,
+) -> tuple[list[Class], list[Function]]:
     """Return a tuple of (list[Class], list[Function])."""
     classes: list[Class] = []
     functions: list[Function] = []
-    for callable_ in iter_callables(node):
-        if isinstance(callable_, Class):
-            classes.append(callable_)
+    for callable_node in iter_callables(node):
+        if isinstance(callable_node, Class):
+            classes.append(callable_node)
         else:
-            functions.append(callable_)
+            functions.append(callable_node)
     return classes, functions
 
 
 @dataclass(repr=False)
 class Module(Object):  # noqa: D101
+    _node: ast.Module
     docstring: str | Docstring | None
     imports: list[Import]
     attributes: list[Attribute]
     classes: list[Class]
     functions: list[Function]
-    source: str
+    source: str | None
     kind: str
 
     def __post_init__(self) -> None:
@@ -383,6 +278,12 @@ class Module(Object):  # noqa: D101
 
     def get_fullname(self) -> str:  # noqa: D102
         return self.name
+
+    def get_source(self, maxline: int | None = None) -> str | None:
+        """Return the source of the module."""
+        if not self.source:
+            return None
+        return "\n".join(self.source.split("\n")[:maxline])
 
     def get_import(self, name: str) -> Import | None:  # noqa: D102
         return get_by_name(self.imports, name)
@@ -407,42 +308,46 @@ class Module(Object):  # noqa: D101
             return obj
         return None
 
-    def get_source(self) -> str:
-        """Return the source code."""
-        return _get_module_source(self.name) if self.name else ""
 
-
-CACHE_MODULE_NODE: dict[str, tuple[float, ast.Module, str]] = {}
-CACHE_MODULE: dict[str, Module | None] = {}
-
-
-def _get_module_node(name: str) -> ast.Module | None:
-    """Return a [ast.Module] node by the name."""
+def get_module_path(name: str) -> Path | None:
+    """Return the source path of the module name."""
     try:
-        spec = find_spec(name)
+        spec = importlib.util.find_spec(name)
     except ModuleNotFoundError:
         return None
-    if not spec or not spec.origin:
+    if not spec or not hasattr(spec, "origin") or not spec.origin:
         return None
     path = Path(spec.origin)
     if not path.exists():  # for builtin, frozen
         return None
+    return path
+
+
+CACHE_MODULE: dict[str, tuple[Module | None, float]] = {}
+
+
+def get_module(name: str, *, postprocess: bool = True) -> Module | None:
+    """Return a [Module] instance by the name."""
+    if name in CACHE_MODULE and not CACHE_MODULE[name][0]:
+        return None
+    if not (path := get_module_path(name)):
+        CACHE_MODULE[name] = (None, 0)
+        return None
     mtime = path.stat().st_mtime
-    if name in CACHE_MODULE_NODE and mtime == CACHE_MODULE_NODE[name][0]:
-        return CACHE_MODULE_NODE[name][1]
+    if name in CACHE_MODULE and mtime == CACHE_MODULE[name][1]:
+        return CACHE_MODULE[name][0]
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
     node = ast.parse(source)
-    CACHE_MODULE_NODE[name] = (mtime, node, source)
-    if name in CACHE_MODULE:
-        del CACHE_MODULE[name]
-    return node
-
-
-def _get_module_source(name: str) -> str:
-    if name in CACHE_MODULE_NODE:
-        return CACHE_MODULE_NODE[name][2]
-    return ""
+    CURRENT_MODULE_NAME[0] = name  # Set the module name in a global cache.
+    module = _get_module_from_node(node)
+    CURRENT_MODULE_NAME[0] = None  # Remove the module name from a global cache.
+    CACHE_MODULE[name] = (module, mtime)
+    module.name = name
+    module.source = source
+    if postprocess:
+        _postprocess(module)
+    return module
 
 
 def _get_module_from_node(node: ast.Module) -> Module:
@@ -454,22 +359,22 @@ def _get_module_from_node(node: ast.Module) -> Module:
     return Module(node, "", docstring, imports, attrs, classes, functions, "", "")
 
 
-def get_module(name: str) -> Module | None:
-    """Return a [Module] instance by the name."""
-    if not (node := _get_module_node(name)):
-        CACHE_MODULE[name] = None
-        return None
-    # `_get_module_node` deletes `name` key in CACHE_MODULE if source was old.
-    if name in CACHE_MODULE:
-        return CACHE_MODULE[name]
-    CURRENT_MODULE_NAME[0] = name  # Set the module name in a global cache.
-    module = _get_module_from_node(node)
-    CURRENT_MODULE_NAME[0] = None  # Remove the module name from a global cache.
-    module.name = name
-    module.source = _get_module_source(name)  # Set from a global cache.
-    _postprocess(module)
-    CACHE_MODULE[name] = module
-    return module
+def set_import_object(module: Module) -> None:
+    """Set import object."""
+    for import_ in module.imports:
+        _set_import_object(import_)
+
+
+def _set_import_object(import_: Import) -> None:
+    if obj := get_module(import_.fullname):
+        import_.object = obj
+        return
+    if "." not in import_.fullname:
+        return
+    module_name, name = import_.fullname.rsplit(".", maxsplit=1)
+    module = get_module(module_name)
+    if module and isinstance(obj := module.get(name), Class | Function | Attribute):
+        import_.object = obj
 
 
 CACHE_OBJECT: dict[str, Module | Class | Function] = {}
@@ -517,7 +422,7 @@ def _to_expr(name: str) -> ast.expr:
         expr = ast.parse(name).body[0]
         if isinstance(expr, ast.Expr):
             return expr.value
-    return Constant(value=name)
+    return ast.Constant(value=name)
 
 
 def _merge_attribute_docstring(obj: Attribute) -> None:
@@ -535,13 +440,14 @@ def _is_property(obj: Function) -> bool:
 def _move_property(obj: Class) -> None:
     funcs: list[Function] = []
     for func in obj.functions:
-        if not _is_property(func):
+        node = func._node  # noqa: SLF001
+        if isinstance(node, ast.AsyncFunctionDef) or not _is_property(func):
             funcs.append(func)
             continue
         doc = func.docstring if isinstance(func.docstring, str) else ""
         type_ = func.returns.type
         type_params = func.type_params
-        attr = Attribute(func._node, func.name, doc, type_, None, type_params)  # noqa: SLF001
+        attr = Attribute(node, func.name, doc, type_, None, type_params)
         _merge_attribute_docstring(attr)
         obj.attributes.append(attr)
     obj.functions = funcs
@@ -563,7 +469,7 @@ def _get_style(doc: str) -> Style:
 def _merge_item(obj: Attribute | Parameter | Return | Raise, item: Item) -> None:
     if not obj.type and item.type:
         obj.type = _to_expr(item.type)
-    obj.docstring = item.description  # Does item.description win?
+    obj.docstring = item.text  # Does item.text win?
 
 
 def _new(
@@ -620,7 +526,7 @@ def _postprocess(obj: Module | Class) -> None:
         _register_object(function)
         _merge_docstring(function)
         if isinstance(obj, Class):
-            del function.parameters[0]  # Delete 'self' TODO: static method.
+            del function.parameters[0]  # TODO: Delete 'self', static method.
     for cls in obj.classes:
         _postprocess(cls)
         _postprocess_class(cls)
@@ -630,10 +536,10 @@ def _postprocess(obj: Module | Class) -> None:
 
 _ATTRIBUTE_ORDER_DICT = {
     type(None): 0,
-    AnnAssign: 1,
-    Assign: 2,
-    FunctionDef: 3,
-    AsyncFunctionDef: 4,
+    ast.AnnAssign: 1,
+    ast.Assign: 2,
+    ast.FunctionDef: 3,
+    ast.AsyncFunctionDef: 4,
 }
 
 

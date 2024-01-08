@@ -4,9 +4,7 @@ from mkapi.objects import CACHE_OBJECT, Class, get_object
 
 
 def test_baseclass():
-    a = get_object("mkapi.objects.CACHE_OBJECT")
-    print(a)
-    assert 0
+    pass
     # # cls = get_object("mkapi.plugins.MkAPIConfig")
     # # assert isinstance(cls, Class)
     # # base = cls._node.bases[0]

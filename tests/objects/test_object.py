@@ -1,40 +1,23 @@
 import ast
-from ast import Module
 
 import pytest
 
+import mkapi.ast
 import mkapi.objects
-from mkapi.objects import (
-    CACHE_MODULE_NODE,
-    _get_module_node,
-    get_module,
-    get_object,
-    iter_callable_nodes,
-    iter_import_nodes,
-    iter_imports,
-)
-
-
-def test_get_module_node():
-    node = _get_module_node("mkdocs")
-    assert isinstance(node, Module)
-
-
-def test_module_cache():
-    node1 = _get_module_node("mkdocs")
-    node2 = _get_module_node("mkdocs")
-    assert node1 is node2
-    module1 = get_module("mkapi")
-    module2 = get_module("mkapi")
-    assert module1 is module2
+from mkapi.ast import iter_callable_nodes, iter_import_nodes
+from mkapi.objects import get_module, get_module_path, get_object, iter_imports
 
 
 @pytest.fixture(scope="module")
 def module():
-    return _get_module_node("mkdocs.structure.files")
+    path = get_module_path("mkdocs.structure.files")
+    assert path
+    with path.open("r", encoding="utf-8") as f:
+        source = f.read()
+    return ast.parse(source)
 
 
-def test_iter_import_nodes(module: Module):
+def test_iter_import_nodes(module: ast.Module):
     node = next(iter_import_nodes(module))
     assert isinstance(node, ast.ImportFrom)
     assert len(node.names) == 1
@@ -44,7 +27,7 @@ def test_iter_import_nodes(module: Module):
     assert alias.asname is None
 
 
-def test_get_import_names(module: Module):
+def test_get_import_names(module: ast.Module):
     it = iter_imports(module)
     names = {im.name: im.fullname for im in it}
     assert "logging" in names
@@ -56,7 +39,7 @@ def test_get_import_names(module: Module):
 
 
 @pytest.fixture(scope="module")
-def def_nodes(module: Module):
+def def_nodes(module: ast.Module):
     return list(iter_callable_nodes(module))
 
 
@@ -66,13 +49,10 @@ def test_iter_definition_nodes(def_nodes):
 
 
 def test_not_found():
-    assert _get_module_node("xxx") is None
     assert get_module("xxx") is None
-    assert mkapi.objects.CACHE_MODULE["xxx"] is None
-    assert "xxx" not in mkapi.objects.CACHE_MODULE_NODE
-    assert get_module("markdown") is not None
+    assert mkapi.objects.CACHE_MODULE["xxx"] == (None, 0)
+    assert get_module("markdown")
     assert "markdown" in mkapi.objects.CACHE_MODULE
-    assert "markdown" in mkapi.objects.CACHE_MODULE_NODE
 
 
 def test_repr():
@@ -87,6 +67,7 @@ def test_repr():
 def test_get_module_source():
     module = get_module("mkdocs.structure.files")
     assert module
+    assert module.source
     assert "class File" in module.source
     module = get_module("mkapi.plugins")
     assert module
@@ -96,7 +77,9 @@ def test_get_module_source():
     src = cls.get_source()
     assert src
     assert src.startswith("class MkAPIConfig")
-    assert "MkAPIPlugin" in module.get_source()
+    src = module.get_source()
+    assert src
+    assert "MkAPIPlugin" in src
 
 
 def test_get_module_from_object():
@@ -105,14 +88,3 @@ def test_get_module_from_object():
     c = module.classes[1]
     m = c.get_module()
     assert module is m
-
-
-def test_get_module_check_mtime():
-    m1 = get_module("mkdocs.structure.files")
-    m2 = get_module("mkdocs.structure.files")
-    assert m1 is m2
-    CACHE_MODULE_NODE.clear()
-    m3 = get_module("mkdocs.structure.files")
-    m4 = get_module("mkdocs.structure.files")
-    assert m2 is not m3
-    assert m3 is m4

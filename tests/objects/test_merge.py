@@ -2,11 +2,9 @@ import ast
 
 import pytest
 
-import mkapi.objects
 from mkapi.docstrings import Docstring
 from mkapi.objects import (
     CACHE_MODULE,
-    CACHE_MODULE_NODE,
     Attribute,
     Class,
     Function,
@@ -45,13 +43,9 @@ def test_move_property_to_attributes(google):
 @pytest.fixture()
 def module():
     name = "examples.styles.example_google"
-    if name in CACHE_MODULE_NODE:
-        del CACHE_MODULE_NODE[name]
     if name in CACHE_MODULE:
         del CACHE_MODULE[name]
-    mkapi.objects.DEBUG_FOR_PYTEST = False
-    yield get_module(name)
-    mkapi.objects.DEBUG_FOR_PYTEST = True
+    return get_module(name)
 
 
 def test_merge_module_attrs(module: Module):
