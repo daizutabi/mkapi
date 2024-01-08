@@ -149,13 +149,27 @@ class Callable(Object):  # noqa: D101
     _node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
     docstring: Docstring | None
     parameters: list[Parameter]
+    raises: list[Raise]
     decorators: list[ast.expr]
     type_params: list[ast.type_param]
-    raises: list[Raise]
     parent: Class | Module | None
 
-    def get_parameter(self, name: str) -> Parameter | None:  # noqa: D102
+    def __iter__(self) -> Iterator[Parameter | Raise]:
+        """Yield member instances."""
+        yield from self.parameters
+        yield from self.raises
+
+    def get(self, name: str) -> Parameter | Raise | None:
+        """Return a member instance by the name."""
+        return get_by_name(self, name)
+
+    def get_parameter(self, name: str) -> Parameter | None:
+        """Return a [Parameter] instance by the name."""
         return get_by_name(self.parameters, name)
+
+    def get_raise(self, name: str) -> Raise | None:
+        """Return a [Riase] instance by the name."""
+        return get_by_name(self.raises, name)
 
     def get_fullname(self) -> str:  # noqa: D102
         if self.parent:
@@ -168,56 +182,49 @@ class Callable(Object):  # noqa: D101
 
 
 @dataclass(repr=False)
-class Function(Callable):  # noqa: D101
+class Function(Callable):
+    """Function class."""
+
     _node: ast.FunctionDef | ast.AsyncFunctionDef
     returns: Return
 
-    def get(self, name: str) -> Parameter | None:  # noqa: D102
-        return self.get_parameter(name)
-
 
 @dataclass(repr=False)
-class Class(Callable):  # noqa: D101
+class Class(Callable):
+    """Class class."""
+
     _node: ast.ClassDef
-    bases: list[Class]
     attributes: list[Attribute]
     classes: list[Class]
     functions: list[Function]
+    bases: list[Class]
 
-    def get_attribute(self, name: str) -> Attribute | None:  # noqa: D102
+    def __iter__(self) -> Iterator[Parameter | Attribute | Class | Function | Raise]:
+        """Yield member instances."""
+        yield from super().__iter__()
+        yield from self.attributes
+        yield from self.classes
+        yield from self.functions
+
+    def get_attribute(self, name: str) -> Attribute | None:
+        """Return an [Attribute] instance by the name."""
         return get_by_name(self.attributes, name)
 
-    def get_class(self, name: str) -> Class | None:  # noqa: D102
+    def get_class(self, name: str) -> Class | None:
+        """Return a [Class] instance by the name."""
         return get_by_name(self.classes, name)
 
-    def get_function(self, name: str) -> Function | None:  # noqa: D102
+    def get_function(self, name: str) -> Function | None:
+        """Return a [Function] instance by the name."""
         return get_by_name(self.functions, name)
-
-    def get(self, name: str) -> Parameter | Attribute | Class | Function | None:  # noqa: D102
-        if obj := self.get_parameter(name):
-            return obj
-        if obj := self.get_attribute(name):
-            return obj
-        if obj := self.get_class(name):
-            return obj
-        if obj := self.get_function(name):
-            return obj
-        return None
 
 
 def _get_callable_args(
     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
-) -> tuple[
-    list[Parameter],
-    list[ast.expr],
-    list[ast.type_param],
-    list[Raise],
-]:
+) -> tuple[list[Parameter], list[Raise], list[ast.expr], list[ast.type_param]]:
     parameters = [] if isinstance(node, ast.ClassDef) else list(iter_parameters(node))
-    decorators = node.decorator_list
-    type_params = node.type_params
     raises = [] if isinstance(node, ast.ClassDef) else list(iter_raises(node))
-    return parameters, decorators, type_params, raises
+    return parameters, raises, node.decorator_list, node.type_params
 
 
 def iter_callables(node: ast.Module | ast.ClassDef) -> Iterator[Class | Function]:
@@ -225,10 +232,10 @@ def iter_callables(node: ast.Module | ast.ClassDef) -> Iterator[Class | Function
     for child in mkapi.ast.iter_callable_nodes(node):
         args = (child.name, None, *_get_callable_args(child), None)
         if isinstance(child, ast.ClassDef):
-            bases: list[Class] = []
             attrs = list(iter_attributes(child))
             classes, functions = get_callables(child)
-            yield Class(child, *args, bases, attrs, classes, functions)
+            bases: list[Class] = []
+            yield Class(child, *args, attrs, classes, functions, bases)
         else:
             yield Function(child, *args, get_return(child))
 
@@ -237,8 +244,7 @@ def get_callables(
     node: ast.Module | ast.ClassDef,
 ) -> tuple[list[Class], list[Function]]:
     """Return a tuple of (list[Class], list[Function])."""
-    classes: list[Class] = []
-    functions: list[Function] = []
+    classes, functions = [], []
     for callable_node in iter_callables(node):
         if isinstance(callable_node, Class):
             classes.append(callable_node)
@@ -248,7 +254,9 @@ def get_callables(
 
 
 @dataclass(repr=False)
-class Module(Object):  # noqa: D101
+class Module(Object):
+    """Module class."""
+
     _node: ast.Module
     docstring: Docstring | None
     imports: list[Import]
@@ -271,28 +279,32 @@ class Module(Object):  # noqa: D101
         """Return the docstring of the node."""
         return ast.get_docstring(self._node)
 
-    def get_import(self, name: str) -> Import | None:  # noqa: D102
+    def __iter__(self) -> Iterator[Import | Attribute | Class | Function]:
+        """Yield member instances."""
+        yield from self.imports
+        yield from self.attributes
+        yield from self.classes
+        yield from self.functions
+
+    def get(self, name: str) -> Import | Attribute | Class | Function | None:
+        """Return a member instance by the name."""
+        return get_by_name(self, name)
+
+    def get_import(self, name: str) -> Import | None:
+        """Return an [Import] instance by the name."""
         return get_by_name(self.imports, name)
 
-    def get_attribute(self, name: str) -> Attribute | None:  # noqa: D102
+    def get_attribute(self, name: str) -> Attribute | None:
+        """Return an [Attribute] instance by the name."""
         return get_by_name(self.attributes, name)
 
-    def get_class(self, name: str) -> Class | None:  # noqa: D102
+    def get_class(self, name: str) -> Class | None:
+        """Return an [Class] instance by the name."""
         return get_by_name(self.classes, name)
 
-    def get_function(self, name: str) -> Function | None:  # noqa: D102
+    def get_function(self, name: str) -> Function | None:
+        """Return an [Function] instance by the name."""
         return get_by_name(self.functions, name)
-
-    def get(self, name: str) -> Import | Attribute | Class | Function | None:  # noqa: D102
-        if obj := self.get_import(name):
-            return obj
-        if obj := self.get_attribute(name):
-            return obj
-        if obj := self.get_class(name):
-            return obj
-        if obj := self.get_function(name):
-            return obj
-        return None
 
 
 def get_module_path(name: str) -> Path | None:
@@ -343,24 +355,6 @@ def _get_module_from_node(node: ast.Module) -> Module:
     return Module(node, "", None, imports, attrs, classes, functions, "", "")
 
 
-def set_import_object(module: Module) -> None:
-    """Set import object."""
-    for import_ in module.imports:
-        _set_import_object(import_)
-
-
-def _set_import_object(import_: Import) -> None:
-    if obj := get_module(import_.fullname):
-        import_.object = obj
-        return
-    if "." not in import_.fullname:
-        return
-    module_name, name = import_.fullname.rsplit(".", maxsplit=1)
-    module = get_module(module_name)
-    if module and isinstance(obj := module.get(name), Class | Function | Attribute):
-        import_.object = obj
-
-
 CACHE_OBJECT: dict[str, Module | Class | Function] = {}
 
 
@@ -370,23 +364,14 @@ def _register_object(obj: Module | Class | Function) -> None:
 
 def get_object(fullname: str) -> Module | Class | Function | None:
     """Return a [Object] instance by the fullname."""
-    if module := get_module(fullname):
-        return module
     if fullname in CACHE_OBJECT:
         return CACHE_OBJECT[fullname]
-    if "." not in fullname:
-        return None
-    n = len(fullname.split("."))
-    for maxsplit in range(1, n):
-        module_name, *_ = fullname.rsplit(".", maxsplit)
-        if module := get_module(module_name) and fullname in CACHE_OBJECT:
+    for maxsplit in range(fullname.count(".") + 1):
+        module_name = fullname.rsplit(".", maxsplit)[0]
+        if get_module(module_name) and fullname in CACHE_OBJECT:
             return CACHE_OBJECT[fullname]
     return None
 
-
-# ---------------------------------------------------------------------------------
-# Docsting -> Object
-# ---------------------------------------------------------------------------------
 
 # a1.b_2(c[d]) -> a1, b_2, c, d
 SPLIT_IDENTIFIER_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
@@ -554,3 +539,21 @@ def _postprocess_class(cls: Class) -> None:
         cls.attributes.sort(key=_attribute_order)
         del_by_name(cls.functions, "__init__")
     # TODO: dataclass, bases
+
+
+def set_import_object(module: Module) -> None:
+    """Set import object."""
+    for import_ in module.imports:
+        _set_import_object(import_)
+
+
+def _set_import_object(import_: Import) -> None:
+    if obj := get_module(import_.fullname):
+        import_.object = obj
+        return
+    if "." not in import_.fullname:
+        return
+    module_name, name = import_.fullname.rsplit(".", maxsplit=1)
+    module = get_module(module_name)
+    if module and isinstance(obj := module.get(name), Class | Function | Attribute):
+        import_.object = obj
