@@ -15,7 +15,7 @@ from mkapi.objects import (
 from mkapi.utils import get_by_name
 
 
-def test_merge_attribute_docstring(google):
+def test_split_attribute_docstring(google):
     name = "module_level_variable2"
     node = google.get(name)
     assert isinstance(node, Attribute)

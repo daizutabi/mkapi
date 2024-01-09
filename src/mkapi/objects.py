@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any
 
 import mkapi.ast
 from mkapi import docstrings
-from mkapi.inspect import get_node_from_callable
 from mkapi.utils import del_by_name, get_by_name, unique_names
 
 if TYPE_CHECKING:
@@ -269,6 +268,12 @@ class Class(Callable):
         """Return a [Function] instance by the name."""
         return get_by_name(self.functions, name)
 
+    def iter_bases(self) -> Iterator[Class]:
+        """Yield base classes including self."""
+        for base in self.bases:
+            yield from base.iter_bases()
+        yield self
+
 
 def _get_callable_args(
     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
@@ -320,6 +325,7 @@ class Module(Object):
     """Module class."""
 
     _node: ast.Module
+    name: str | None
     docstring: Docstring | None
     imports: list[Import]
     attributes: list[Attribute]
@@ -412,7 +418,7 @@ def get_module(name: str) -> Module | None:
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
     CURRENT_MODULE_NAME[0] = name  # Set the module name in the global cache.
-    module = _get_module_from_source(source)
+    module = get_module_from_source(source)
     CURRENT_MODULE_NAME[0] = None  # Reset the module name in the global cache.
     CACHE_MODULE[name] = (module, mtime)
     module.name = name
@@ -423,17 +429,18 @@ def get_module(name: str) -> Module | None:
     return module
 
 
-def _get_module_from_source(source: str) -> Module:
+def get_module_from_source(source: str) -> Module:
+    """Return a [Module] instance from source string."""
     node = ast.parse(source)
-    return _get_module_from_node(node)
+    return get_module_from_node(node)
 
 
-def _get_module_from_node(node: ast.Module) -> Module:
+def get_module_from_node(node: ast.Module) -> Module:
     """Return a [Module] instance from the [ast.Module] node."""
     imports = list(iter_imports(node))
     attrs = list(iter_attributes(node))
     classes, functions = get_callables(node)
-    return Module(node, "", None, imports, attrs, classes, functions, None, None)
+    return Module(node, None, None, imports, attrs, classes, functions, None, None)
 
 
 CACHE_OBJECT: dict[str, Module | Class | Function | Attribute] = {}
@@ -474,7 +481,7 @@ def _set_import_object(import_: Import) -> None:
         import_.object = module.get(name)
 
 
-def _merge_attribute_docstring(obj: Attribute) -> None:
+def _split_attribute_docstring(obj: Attribute) -> None:
     if doc := obj.docstring:
         type_, desc = docstrings.split_without_name(doc, "google")
         if not obj.type and type_:
@@ -499,7 +506,7 @@ def _move_property(obj: Class) -> None:
         type_ = func.returns.type
         type_params = func.type_params
         attr = Attribute(node, func.name, doc, type_, None, type_params, func.parent)
-        _merge_attribute_docstring(attr)
+        _split_attribute_docstring(attr)
         obj.attributes.append(attr)
     obj.functions = funcs
 
@@ -575,7 +582,7 @@ def _postprocess(obj: Module | Class) -> None:
     _merge_docstring(obj)
     for attr in obj.attributes:
         _register_object(attr)
-        _merge_attribute_docstring(attr)
+        _split_attribute_docstring(attr)
     for func in obj.functions:
         _register_object(func)
         _merge_docstring(func)
@@ -600,6 +607,10 @@ def _attribute_order(attr: Attribute) -> int:
 
 
 def _iter_base_classes(cls: Class) -> Iterator[Class]:
+    """Yield base classes.
+
+    This function is called in postprocess for setting base classes.
+    """
     if not (module := cls.get_module()):
         return
     for node in cls._node.bases:
@@ -617,15 +628,16 @@ def _postprocess_class(cls: Class) -> None:
     if init := cls.get_function("__init__"):
         cls.parameters = init.parameters
         cls.raises = init.raises
-        cls.docstring = docstrings.merge(cls.docstring, init.docstring)  # type: ignore
+        cls.docstring = docstrings.merge(cls.docstring, init.docstring)
         cls.attributes.sort(key=_attribute_order)
         del_by_name(cls.functions, "__init__")
-    # TODO: dataclass, bases
+    # TODO: dataclass
 
 
 def _get_function_from_callable(obj: _IntrospectableCallable) -> Function:
-    node = get_node_from_callable(obj)
-    return get_function(node)
+    pass
+    # node = mkapi.ast.get_node_from_callable(obj)
+    # return get_function(node)
 
 
 def _set_parameters_from_object(obj: Module | Class, members: dict[str, Any]) -> None:

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from mkapi.objects import _get_module_from_node, get_module_path
+from mkapi.objects import get_module_from_node, get_module_path
 
 
 def get_module(name):
@@ -16,7 +16,7 @@ def get_module(name):
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
     node = ast.parse(source)
-    return _get_module_from_node(node)
+    return get_module_from_node(node)
 
 
 @pytest.fixture(scope="module")
