@@ -25,7 +25,7 @@ from mkdocs.structure.files import Files, get_files
 import mkapi
 from mkapi import converter
 from mkapi.filter import split_filters, update_filters
-from mkapi.utils import find_submodule_names, is_package
+from mkapi.utils import find_submodulenames, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -200,16 +200,16 @@ def _is_api_entry(item: str | list | dict) -> TypeGuard[str]:
     return re.match(API_URL_PATTERN, item) is not None
 
 
-def _get_path_module_name_filters(
+def _get_path_modulename_filters(
     item: str,
     filters: list[str],
 ) -> tuple[str, str, list[str]]:
     if not (m := re.match(API_URL_PATTERN, item)):
         raise NotImplementedError
-    path, module_name_filter = m.groups()
-    module_name, filters_ = split_filters(module_name_filter)
+    path, modulename_filter = m.groups()
+    modulename, filters_ = split_filters(modulename_filter)
     filters = update_filters(filters, filters_)
-    return path, module_name, filters
+    return path, modulename, filters
 
 
 def _create_nav(
@@ -219,7 +219,7 @@ def _create_nav(
     predicate: Callable[[str], bool] | None = None,
     depth: int = 0,
 ) -> list:
-    names = find_submodule_names(name, predicate)
+    names = find_submodulenames(name, predicate)
     tree: list = [callback(name, depth, is_package(name))]
     for sub in names:
         if not is_package(sub):
@@ -234,8 +234,8 @@ def _create_nav(
 
 def _get_function(plugin: MkAPIPlugin, name: str) -> Callable | None:
     if fullname := plugin.config.get(name, None):
-        module_name, func_name = fullname.rsplit(".", maxsplit=1)
-        module = importlib.import_module(module_name)
+        modulename, func_name = fullname.rsplit(".", maxsplit=1)
+        module = importlib.import_module(modulename)
         return getattr(module, func_name)
     return None
 
@@ -246,7 +246,7 @@ def _collect(
     plugin: MkAPIPlugin,
 ) -> tuple[list, list[Path]]:
     """Collect modules."""
-    api_path, name, filters = _get_path_module_name_filters(item, plugin.config.filters)
+    api_path, name, filters = _get_path_modulename_filters(item, plugin.config.filters)
     abs_api_path = Path(config.docs_dir) / api_path
     Path.mkdir(abs_api_path, parents=True, exist_ok=True)
 

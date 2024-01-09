@@ -38,9 +38,9 @@ def iter_parameters(cls: Class) -> Iterator[tuple[Attribute, _ParameterKind]]:
         for attr in base.attributes:
             attrs[attr.name] = attr  # updated by subclasses.
 
-    if not (module_name := cls.get_module_name()):
+    if not (modulename := cls.get_modulename()):
         raise NotImplementedError
-    module = importlib.import_module(module_name)
+    module = importlib.import_module(modulename)
     members = dict(inspect.getmembers(module, inspect.isclass))
     obj = members[cls.name]
 

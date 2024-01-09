@@ -28,9 +28,9 @@ def get_object(name: str) -> Any:  # noqa: ANN401
     """
     names = name.split(".")
     for k in range(len(names), 0, -1):
-        module_name = ".".join(names[:k])
+        modulename = ".".join(names[:k])
         try:
-            obj = importlib.import_module(module_name)
+            obj = importlib.import_module(modulename)
         except ModuleNotFoundError:
             continue
         for attr in names[k:]:

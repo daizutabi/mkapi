@@ -3,8 +3,8 @@ def on_config(config, mkapi):
     return config
 
 
-def page_title(module_name: str, depth: int, ispackage: bool) -> str:
-    return ".".join(module_name.split(".")[depth:])
+def page_title(modulename: str, depth: int, ispackage: bool) -> str:
+    return ".".join(modulename.split(".")[depth:])
 
 
 def section_title(package_name: str, depth: int) -> str:

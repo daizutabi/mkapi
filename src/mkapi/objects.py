@@ -5,7 +5,7 @@ import ast
 import importlib
 import importlib.util
 import inspect
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -20,17 +20,32 @@ if TYPE_CHECKING:
     from mkapi.docstrings import Docstring, Item, Section
 
 
-CURRENT_MODULE_NAME: list[str | None] = [None]
+MODULENAMES: list[str | None] = [None]
+
+
+def _push_modulename(modulename: str | None) -> None:
+    MODULENAMES.append(modulename)
+
+
+def _pop_modulename() -> str | None:
+    return MODULENAMES.pop()
+
+
+def _get_current_modulename() -> str | None:
+    return MODULENAMES[-1]
 
 
 @dataclass
 class Object:  # noqa: D101
     _node: ast.AST
     name: str
+    modulename: str | None = field(default_factory=_get_current_modulename, init=False)
+    # qualname: str | None = field(init=False)
+    # fullname: str | None = field(init=False)
     docstring: str | None
 
-    def __post_init__(self) -> None:  # Set parent module name.
-        self.__dict__["__module_name__"] = CURRENT_MODULE_NAME[0]
+    # def __post_init__(self) -> None:  # Set parent module name.
+    #     self.__dict__["__modulename__"] = CURRENT_MODULE_NAME[0]
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
@@ -46,14 +61,15 @@ class Object:  # noqa: D101
             else:
                 yield obj
 
-    def get_module_name(self) -> str | None:
+    def get_modulename(self) -> str | None:
         """Return the module name."""
-        return self.__dict__["__module_name__"]
+        return self.modulename
+        # return self.__dict__["__modulename__"]
 
     def get_module(self) -> Module | None:
         """Return a [Module] instance."""
-        if module_name := self.get_module_name():
-            return get_module(module_name)
+        if modulename := self.get_modulename():
+            return get_module(modulename)
         return None
 
     def get_source(self, maxline: int | None = None) -> str | None:
@@ -417,22 +433,23 @@ def get_module(name: str) -> Module | None:
         return CACHE_MODULE[name][0]
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
-    CURRENT_MODULE_NAME[0] = name  # Set the module name in the global cache.
+    _push_modulename(name)
     module = get_module_from_source(source)
-    CURRENT_MODULE_NAME[0] = None  # Reset the module name in the global cache.
     CACHE_MODULE[name] = (module, mtime)
     module.name = name
-    module.source = source
     module.kind = "package" if path.stem == "__init__" else "module"
     _postprocess_module(module)
     _postprocess(module)
+    _pop_modulename()
     return module
 
 
 def get_module_from_source(source: str) -> Module:
     """Return a [Module] instance from source string."""
     node = ast.parse(source)
-    return get_module_from_node(node)
+    module = get_module_from_node(node)
+    module.source = source
+    return module
 
 
 def get_module_from_node(node: ast.Module) -> Module:
@@ -456,8 +473,8 @@ def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
         return CACHE_OBJECT[fullname]
     names = fullname.split(".")
     for k in range(1, len(names) + 1):
-        module_name = ".".join(names[:k])
-        if not get_module(module_name):
+        modulename = ".".join(names[:k])
+        if not get_module(modulename):
             return None
         if fullname in CACHE_OBJECT:
             return CACHE_OBJECT[fullname]
@@ -476,8 +493,8 @@ def _set_import_object(import_: Import) -> None:
         return
     if "." not in import_.fullname:
         return
-    module_name, name = import_.fullname.rsplit(".", maxsplit=1)
-    if module := get_module(module_name):
+    modulename, name = import_.fullname.rsplit(".", maxsplit=1)
+    if module := get_module(modulename):
         import_.object = module.get(name)
 
 

@@ -14,7 +14,7 @@ from mkapi.plugins import (
     MkAPIConfig,
     MkAPIPlugin,
     _create_nav,
-    _get_path_module_name_filters,
+    _get_path_modulename_filters,
     _insert_sys_path,
     _on_config_plugin,
     _walk_nav,
@@ -129,12 +129,12 @@ def test_walk_nav(nav):
     assert nav[4] == {"API": "a"}
 
 
-def test_get_path_module_name_filters():
-    p, m, f = _get_path_module_name_filters("<api>/a.b|f1|f2", ["f"])
+def test_get_path_modulename_filters():
+    p, m, f = _get_path_modulename_filters("<api>/a.b|f1|f2", ["f"])
     assert p == "api"
     assert m == "a.b"
     assert f == ["f", "f1", "f2"]
-    p, m, f = _get_path_module_name_filters("<api>/a", ["f"])
+    p, m, f = _get_path_modulename_filters("<api>/a", ["f"])
     assert p == "api"
     assert m == "a"
     assert f == ["f"]
@@ -188,8 +188,8 @@ def on_config(config, mkapi):
     return config
 
 
-def module_title(module_name: str) -> str:
-    return module_name.rsplit(".")[-1]
+def module_title(modulename: str) -> str:
+    return modulename.rsplit(".")[-1]
 
 
 def section_title(package_name: str) -> str:
