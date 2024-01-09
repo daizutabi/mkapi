@@ -14,16 +14,9 @@ def module():
 
 def test_iter(module: Module):
     names = [o.name for o in module]
-    assert "Style" in names
     assert "CACHE_MODULE" in names
     assert "Class" in names
     assert "get_object" in names
-
-
-def test_empty(module: Module):
-    obj = module.get("Style")
-    assert obj
-    assert list(obj) == []
 
 
 def test_func(module: Module):

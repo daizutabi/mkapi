@@ -31,4 +31,4 @@ def _iter_decorator_args(deco: ast.expr) -> Iterator[tuple[str, Any]]:
 
 
 def _get_decorator_args(deco: ast.expr) -> dict[str, Any]:
-    return dict(_get_decorator_args(deco))
+    return dict(_iter_decorator_args(deco))

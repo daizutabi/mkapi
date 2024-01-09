@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from ast import (
     AnnAssign,
     Assign,
@@ -131,6 +132,27 @@ def iter_callable_nodes(
     for child in ast.iter_child_nodes(node):
         if isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
             yield child
+
+
+# a1.b_2(c[d]) -> a1, b_2, c, d
+SPLIT_IDENTIFIER_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
+
+
+def _split_name(name: str) -> list[str]:
+    return [x for x in re.split(SPLIT_IDENTIFIER_PATTERN, name) if x]
+
+
+def _is_identifier(name: str) -> bool:
+    return name != "" and all(x.isidentifier() for x in _split_name(name))
+
+
+def get_expr(name: str) -> ast.expr:
+    """Return an [ast.expr] instance of a name."""
+    if _is_identifier(name):
+        expr = ast.parse(name).body[0]
+        if isinstance(expr, ast.Expr):
+            return expr.value
+    return ast.Constant(value=name)
 
 
 class Transformer(NodeTransformer):  # noqa: D101

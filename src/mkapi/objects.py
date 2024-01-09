@@ -5,20 +5,20 @@ import ast
 import importlib
 import importlib.util
 import inspect
-import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import mkapi.ast
 from mkapi import docstrings
+from mkapi.inspect import get_node_from_callable
 from mkapi.utils import del_by_name, get_by_name, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from inspect import _IntrospectableCallable, _ParameterKind
 
-    from mkapi.docstrings import Docstring, Item, Section, Style
+    from mkapi.docstrings import Docstring, Item, Section
 
 
 CURRENT_MODULE_NAME: list[str | None] = [None]
@@ -278,17 +278,28 @@ def _get_callable_args(
     return parameters, raises, node.decorator_list, node.type_params
 
 
+def get_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Function:
+    """Return a [Class] or [Function] instancd."""
+    args = (node.name, None, *_get_callable_args(node), None)
+    return Function(node, *args, get_return(node))
+
+
+def get_class(node: ast.ClassDef) -> Class:
+    """Return a [Class] instance."""
+    args = (node.name, None, *_get_callable_args(node), None)
+    attrs = list(iter_attributes(node))
+    classes, functions = get_callables(node)
+    bases: list[Class] = []
+    return Class(node, *args, attrs, classes, functions, bases)
+
+
 def iter_callables(node: ast.Module | ast.ClassDef) -> Iterator[Class | Function]:
     """Yield classes or functions."""
     for child in mkapi.ast.iter_callable_nodes(node):
-        args = (child.name, None, *_get_callable_args(child), None)
         if isinstance(child, ast.ClassDef):
-            attrs = list(iter_attributes(child))
-            classes, functions = get_callables(child)
-            bases: list[Class] = []
-            yield Class(child, *args, attrs, classes, functions, bases)
+            yield get_class(child)
         else:
-            yield Function(child, *args, get_return(child))
+            yield get_function(child)
 
 
 def get_callables(
@@ -436,9 +447,12 @@ def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     """Return a [Object] instance by the fullname."""
     if fullname in CACHE_OBJECT:
         return CACHE_OBJECT[fullname]
-    for maxsplit in range(fullname.count(".") + 1):
-        module_name = fullname.rsplit(".", maxsplit)[0]
-        if get_module(module_name) and fullname in CACHE_OBJECT:
+    names = fullname.split(".")
+    for k in range(1, len(names) + 1):
+        module_name = ".".join(names[:k])
+        if not get_module(module_name):
+            return None
+        if fullname in CACHE_OBJECT:
             return CACHE_OBJECT[fullname]
     return None
 
@@ -460,32 +474,13 @@ def _set_import_object(import_: Import) -> None:
         import_.object = module.get(name)
 
 
-# a1.b_2(c[d]) -> a1, b_2, c, d
-SPLIT_IDENTIFIER_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
-
-
-def _split_name(name: str) -> list[str]:
-    return [x for x in re.split(SPLIT_IDENTIFIER_PATTERN, name) if x]
-
-
-def _is_identifier(name: str) -> bool:
-    return name != "" and all(x.isidentifier() for x in _split_name(name))
-
-
-def _to_expr(name: str) -> ast.expr:
-    if _is_identifier(name):
-        name = name.replace("(", "[").replace(")", "]")  # ex. list(str) -> list[str]
-        expr = ast.parse(name).body[0]
-        if isinstance(expr, ast.Expr):
-            return expr.value
-    return ast.Constant(value=name)
-
-
 def _merge_attribute_docstring(obj: Attribute) -> None:
     if doc := obj.docstring:
         type_, desc = docstrings.split_without_name(doc, "google")
         if not obj.type and type_:
-            obj.type = _to_expr(type_)
+            # ex. list(str) -> list[str]
+            type_ = type_.replace("(", "[").replace(")", "]")
+            obj.type = mkapi.ast.get_expr(type_)
         obj.docstring = desc
 
 
@@ -509,22 +504,11 @@ def _move_property(obj: Class) -> None:
     obj.functions = funcs
 
 
-CURRENT_DOCSTRING_STYLE: list[Style] = ["google"]
-
-
-def _get_style(doc: str) -> Style:
-    for names in docstrings.SECTION_NAMES:
-        for name in names:
-            if f"\n\n{name}\n----" in doc:
-                CURRENT_DOCSTRING_STYLE[0] = "numpy"
-                return "numpy"
-    CURRENT_DOCSTRING_STYLE[0] = "google"
-    return "google"
-
-
 def _merge_item(obj: Attribute | Parameter | Return | Raise, item: Item) -> None:
     if not obj.type and item.type:
-        obj.type = _to_expr(item.type)
+        # ex. list(str) -> list[str]
+        type_ = item.type.replace("(", "[").replace(")", "]")
+        obj.type = mkapi.ast.get_expr(type_)
     obj.docstring = item.text  # Does item.text win?
 
 
@@ -558,10 +542,8 @@ def _merge_docstring(obj: Module | Class | Function) -> None:
     """Merge [Object] and [Docstring]."""
     if not (doc := obj.get_node_docstring()):
         return
-
     sections: list[Section] = []
-    style = _get_style(doc)
-    docstring = docstrings.parse(doc, style)
+    docstring = docstrings.parse(doc)
     for section in docstring:
         if section.name == "Attributes" and isinstance(obj, Module | Class):
             obj.attributes = _merge_items(Attribute, obj.attributes, section.items)
@@ -578,7 +560,7 @@ def _merge_docstring(obj: Module | Class | Function) -> None:
     obj.docstring = docstring
 
 
-def _set_parent(obj: Module | Class) -> None:
+def _set_parent_of_members(obj: Module | Class) -> None:
     for attr in obj.attributes:
         attr.parent = obj
     for cls in obj.classes:
@@ -588,7 +570,7 @@ def _set_parent(obj: Module | Class) -> None:
 
 
 def _postprocess(obj: Module | Class) -> None:
-    _set_parent(obj)
+    _set_parent_of_members(obj)
     _register_object(obj)
     _merge_docstring(obj)
     for attr in obj.attributes:
@@ -612,13 +594,26 @@ ATTRIBUTE_ORDER_DICT = {
 
 
 def _attribute_order(attr: Attribute) -> int:
-    node = attr._node  # noqa: SLF001
-    if node is None:
+    if not (node := attr._node):  # noqa: SLF001
         return 0
     return ATTRIBUTE_ORDER_DICT.get(type(node), 10)
 
 
+def _iter_base_classes(cls: Class) -> Iterator[Class]:
+    if not (module := cls.get_module()):
+        return
+    for node in cls._node.bases:
+        base_name = next(mkapi.ast.iter_identifiers(node))
+        base_fullname = module.get_fullname(base_name)
+        if not base_fullname:
+            continue
+        base = get_object(base_fullname)
+        if base and isinstance(base, Class):
+            yield base
+
+
 def _postprocess_class(cls: Class) -> None:
+    cls.bases = list(_iter_base_classes(cls))
     if init := cls.get_function("__init__"):
         cls.parameters = init.parameters
         cls.raises = init.raises
@@ -628,32 +623,17 @@ def _postprocess_class(cls: Class) -> None:
     # TODO: dataclass, bases
 
 
-def _stringize_signature(signature: inspect.Signature) -> str:
-    print(signature)
-    return str(signature).replace("'", "")
-
-
-def _get_function_from_object(obj: _IntrospectableCallable) -> Function | None:
-    print("AA", obj)
-    try:
-        signature = inspect.signature(obj)
-    except:
-        return None
-    sig_str = _stringize_signature(signature)
-    source = f"def f{sig_str}:\n pass"
-    node = ast.parse(source)
-    func = next(iter_callables(node))
-    if not isinstance(func, Function):
-        return None
-    return func
+def _get_function_from_callable(obj: _IntrospectableCallable) -> Function:
+    node = get_node_from_callable(obj)
+    return get_function(node)
 
 
 def _set_parameters_from_object(obj: Module | Class, members: dict[str, Any]) -> None:
     for cls in obj.classes:
-        print("BB", cls)
         cls_obj = members[cls.name]
-        if f := _get_function_from_object(cls_obj):
-            cls.parameters = f.parameters
+        if callable(cls_obj):
+            func = _get_function_from_callable(cls_obj)
+            cls.parameters = func.parameters
         # _set_parameters_from_object(cls, dict(inspect.getmembers(cls_obj)))
     # if isinstance(obj, Class):
     #     for func in obj.functions:
@@ -661,7 +641,7 @@ def _set_parameters_from_object(obj: Module | Class, members: dict[str, Any]) ->
     #         func.parameters = f.parameters
 
 
-def _postprocess_module(obj: Module) -> None:
+def _postprocess_module(module: Module) -> None:
     return
     module_obj = importlib.import_module(obj.name)
     members = dict(inspect.getmembers(module_obj))

@@ -139,6 +139,22 @@ SECTION_NAMES: list[tuple[str, ...]] = [
     ("Notes",),
 ]
 
+CURRENT_DOCSTRING_STYLE: list[Style] = ["google"]
+
+
+def get_style(doc: str) -> Style:
+    """Return the docstring style of doc.
+
+    If the style can't be determined, the current style returned.
+    """
+    for names in SECTION_NAMES:
+        for name in names:
+            if f"\n\n{name}\n----" in doc:
+                CURRENT_DOCSTRING_STYLE[0] = "numpy"
+                return "numpy"
+    CURRENT_DOCSTRING_STYLE[0] = "google"
+    return "google"
+
 
 def _rename_section(section_name: str) -> str:
     for section_names in SECTION_NAMES:
@@ -221,8 +237,9 @@ class Docstring(Item):  # noqa: D101
         return get_by_name(self.sections, name)
 
 
-def parse(doc: str, style: Style) -> Docstring:
+def parse(doc: str, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
+    style = style or get_style(doc)
     doc = add_fence(doc)
     sections = list(iter_sections(doc, style))
     return Docstring("", "", "", sections)
