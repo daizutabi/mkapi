@@ -20,7 +20,7 @@ def test_iter(module: Module):
 
 
 def test_func(module: Module):
-    func = module.get("_get_callable_args")
+    func = module.get("_callable_args")
     assert func
     objs = list(func)
     assert isinstance(objs[0], Parameter)

@@ -6,7 +6,6 @@ import mkapi.ast
 import mkapi.objects
 from mkapi.ast import iter_callable_nodes, iter_import_nodes
 from mkapi.objects import (
-    CACHE_OBJECT,
     Class,
     Function,
     Module,
@@ -15,6 +14,7 @@ from mkapi.objects import (
     get_object,
     iter_imports,
     modules,
+    objects,
 )
 
 
@@ -112,7 +112,7 @@ def test_fullname(google: Module):
 
 def test_cache():
     modules.clear()
-    CACHE_OBJECT.clear()
+    objects.clear()
     module = get_module("mkapi.objects")
     c = get_object("mkapi.objects.Object")
     f = get_object("mkapi.objects.Module.get_class")

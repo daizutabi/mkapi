@@ -5,9 +5,10 @@ import ast
 import importlib
 import importlib.util
 import inspect
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import mkapi.ast
 from mkapi import docstrings
@@ -21,35 +22,6 @@ if TYPE_CHECKING:
     from mkapi.docstrings import Docstring, Item, Section
 
 
-STACK_MODULENAMES: list[str] = []
-STACK_QUALNAMES: list[str | None] = [None]
-
-
-def _push_modulename(modulename: str) -> None:
-    STACK_MODULENAMES.append(modulename)
-
-
-def _pop_modulename() -> str | None:
-    return STACK_MODULENAMES.pop()
-
-
-def _get_current_modulename() -> str | None:
-    return STACK_MODULENAMES[-1] if STACK_MODULENAMES else None
-
-
-def _push_classname(name: str | None) -> None:
-    qualname = f"{STACK_QUALNAMES[-1]}.{name}" if STACK_QUALNAMES[-1] else name
-    STACK_QUALNAMES.append(qualname)
-
-
-def _pop_classname() -> str | None:
-    return STACK_QUALNAMES.pop()
-
-
-def _get_current_qualname() -> str | None:
-    return STACK_QUALNAMES[-1]
-
-
 @dataclass
 class Object:
     """Object base class."""
@@ -60,7 +32,7 @@ class Object:
     docstring: str | None
 
     def __post_init__(self) -> None:
-        modulename = _get_current_modulename()
+        modulename = Module.get_modulename()
         self.modulename = modulename
 
     def __repr__(self) -> str:
@@ -181,7 +153,7 @@ def get_return(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Return:
     return Return(node.returns, "", None, node.returns)
 
 
-CACHE_OBJECT: dict[str, Attribute | Class | Function | Module | None] = {}
+objects: dict[str, Attribute | Class | Function | Module | None] = {}
 
 
 @dataclass(repr=False)
@@ -193,11 +165,11 @@ class Member(Object):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        qualname = _get_current_qualname()
+        qualname = Class.get_qualclassname()
         self.qualname = f"{qualname}.{self.name}" if qualname else self.name
         m_name = self.modulename
         self.fullname = f"{m_name}.{self.qualname}" if m_name else self.qualname
-        CACHE_OBJECT[self.fullname] = self  # type:ignore
+        objects[self.fullname] = self  # type:ignore
 
 
 @dataclass(repr=False)
@@ -283,6 +255,7 @@ class Class(Callable):
     classes: list[Class]
     functions: list[Function]
     bases: list[Class]
+    classnames: ClassVar[list[str | None]] = [None]
 
     def __iter__(self) -> Iterator[Parameter | Attribute | Class | Function | Raise]:
         """Yield member instances."""
@@ -309,8 +282,20 @@ class Class(Callable):
             yield from base.iter_bases()
         yield self
 
+    @classmethod
+    @contextmanager
+    def set_qualclassname(cls, name: str) -> Iterator[None]:  # noqa: D102
+        qualname = f"{cls.classnames[-1]}.{name}" if cls.classnames[-1] else name
+        cls.classnames.append(qualname)
+        yield
+        cls.classnames.pop()
 
-def _get_callable_args(
+    @classmethod
+    def get_qualclassname(cls) -> str | None:  # noqa: D102
+        return cls.classnames[-1]
+
+
+def _callable_args(
     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
 ) -> tuple[list[Parameter], list[Raise], list[ast.expr], list[ast.type_param]]:
     parameters = [] if isinstance(node, ast.ClassDef) else list(iter_parameters(node))
@@ -320,18 +305,17 @@ def _get_callable_args(
 
 def get_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Function:
     """Return a [Class] or [Function] instancd."""
-    args = (node.name, None, *_get_callable_args(node))
+    args = (node.name, None, *_callable_args(node))
     return Function(node, *args, get_return(node))
 
 
 def get_class(node: ast.ClassDef) -> Class:
     """Return a [Class] instance."""
-    _push_classname(node.name)
-    args = (node.name, None, *_get_callable_args(node))
-    attrs = list(iter_attributes(node))
-    classes, functions = get_callables(node)
-    bases: list[Class] = []
-    _pop_classname()
+    with Class.set_qualclassname(node.name):
+        args = (node.name, None, *_callable_args(node))
+        attrs = list(iter_attributes(node))
+        classes, functions = get_callables(node)
+        bases: list[Class] = []
     return Class(node, *args, attrs, classes, functions, bases)
 
 
@@ -369,6 +353,7 @@ class Module(Member):
     functions: list[Function]
     source: str | None
     kind: str | None
+    modulenames: ClassVar[list[str | None]] = [None]
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -428,6 +413,17 @@ class Module(Member):
         """Return an [Function] instance by the name."""
         return get_by_name(self.functions, name)
 
+    @classmethod
+    @contextmanager
+    def set_modulename(cls, name: str) -> Iterator[None]:  # noqa: D102
+        cls.modulenames.append(name)
+        yield
+        cls.modulenames.pop()
+
+    @classmethod
+    def get_modulename(cls) -> str | None:  # noqa: D102
+        return cls.modulenames[-1]
+
 
 def get_module_path(name: str) -> Path | None:
     """Return the source path of the module name."""
@@ -470,14 +466,14 @@ def get_module_from_source(source: str, name: str = "__mkapi__") -> Module:
 
 def get_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from the [ast.Module] node."""
-    _push_modulename(name)
-    imports = list(iter_imports(node))
-    attrs = list(iter_attributes(node))
-    classes, functions = get_callables(node)
-    module = Module(node, name, None, imports, attrs, classes, functions, None, None)
-    _postprocess_module(module)
-    _postprocess(module)
-    _pop_modulename()
+    with Module.set_modulename(name):
+        imports = list(iter_imports(node))
+        attrs = list(iter_attributes(node))
+        classes, functions = get_callables(node)
+        args = (imports, attrs, classes, functions)
+        module = Module(node, name, None, *args, None, None)
+        _postprocess_module(module)
+        _postprocess(module)
     return module
 
 
@@ -485,14 +481,14 @@ def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     """Return a [Object] instance by the fullname."""
     if fullname in modules:
         return modules[fullname]
-    if fullname in CACHE_OBJECT:
-        return CACHE_OBJECT[fullname]
+    if fullname in objects:
+        return objects[fullname]
     names = fullname.split(".")
     for k in range(1, len(names) + 1):
         modulename = ".".join(names[:k])
-        if get_module(modulename) and fullname in CACHE_OBJECT:
-            return CACHE_OBJECT[fullname]
-    CACHE_OBJECT[fullname] = None
+        if get_module(modulename) and fullname in objects:
+            return objects[fullname]
+    objects[fullname] = None
     return None
 
 
