@@ -17,7 +17,7 @@ from mkapi.utils import del_by_name, get_by_name, unique_names
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from inspect import _IntrospectableCallable, _ParameterKind
-    from typing import Any
+    from typing import Any, Self
 
     from mkapi.docstrings import Docstring, Item, Section
 
@@ -73,14 +73,13 @@ class Import(Object):
     from_: str | None
 
 
-def iter_imports(node: ast.Module) -> Iterator[Import]:
-    """Yield [Import] instances in an [ast.Module] node."""
-    for child in mkapi.ast.iter_import_nodes(node):
-        from_ = f"{child.module}" if isinstance(child, ast.ImportFrom) else None
-        for alias in child.names:
-            name = alias.asname or alias.name
-            fullname = f"{from_}.{alias.name}" if from_ else name
-            yield Import(child, name, None, fullname, from_)
+def iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
+    """Yield [Import] instances."""
+    from_ = f"{node.module}" if isinstance(node, ast.ImportFrom) else None
+    for alias in node.names:
+        name = alias.asname or alias.name
+        fullname = f"{from_}.{alias.name}" if from_ else name
+        yield Import(node, name, None, fullname, from_)
 
 
 @dataclass(repr=False)
@@ -182,15 +181,13 @@ class Attribute(Member):
             yield from self.type_params
 
 
-def iter_attributes(node: ast.Module | ast.ClassDef) -> Iterator[Attribute]:
-    """Yield assign nodes from the Module or Class AST node."""
-    for assign in mkapi.ast.iter_assign_nodes(node):
-        if not (name := mkapi.ast.get_assign_name(assign)):
-            continue
-        type_ = mkapi.ast.get_assign_type(assign)
-        value = None if isinstance(assign, ast.TypeAlias) else assign.value
-        type_params = assign.type_params if isinstance(assign, ast.TypeAlias) else None
-        yield Attribute(assign, name, assign.__doc__, type_, value, type_params)
+def get_attribute(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Attribute:
+    """Return an [Attribute] instance."""
+    name = mkapi.ast.get_assign_name(node) or ""
+    type_ = mkapi.ast.get_assign_type(node)
+    value = None if isinstance(node, ast.TypeAlias) else node.value
+    type_params = node.type_params if isinstance(node, ast.TypeAlias) else None
+    return Attribute(node, name, node.__doc__, type_, value, type_params)
 
 
 @dataclass(repr=False)
@@ -257,6 +254,14 @@ class Class(Callable):
         yield from self.classes
         yield from self.functions
 
+    def add_member(self, member: Attribute | Class | Function | Import):
+        if isinstance(member, Attribute):
+            self.attributes.append(member)
+        elif isinstance(member, Class):
+            self.classes.append(member)
+        elif isinstance(member, Function):
+            self.functions.append(member)
+
     def get_attribute(self, name: str) -> Attribute | None:
         """Return an [Attribute] instance by the name."""
         return get_by_name(self.attributes, name)
@@ -277,10 +282,13 @@ class Class(Callable):
 
     @classmethod
     @contextmanager
-    def set_qualclassname(cls, name: str) -> Iterator[None]:  # noqa: D102
+    def create(cls, node: ast.ClassDef) -> Iterator[Self]:  # noqa: D102
+        name = node.name
+        args = (name, None, *_callable_args(node))
+        klass = cls(node, *args, [], [], [], [])
         qualname = f"{cls.classnames[-1]}.{name}" if cls.classnames[-1] else name
         cls.classnames.append(qualname)
-        yield
+        yield klass
         cls.classnames.pop()
 
     @classmethod
@@ -302,36 +310,28 @@ def get_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Function:
     return Function(node, *args, get_return(node))
 
 
+def iter_members(
+    node: ast.ClassDef | ast.Module,
+) -> Iterator[Attribute | Class | Function | Import]:
+    for child in mkapi.ast.iter_child_nodes(node):
+        if isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
+            yield get_function(child)
+        elif isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):
+            attr = get_attribute(child)
+            if attr.name:
+                yield attr
+        elif isinstance(child, ast.ClassDef):
+            yield get_class(child)
+        elif isinstance(child, ast.Import | ast.ImportFrom):
+            yield from iter_imports(child)
+
+
 def get_class(node: ast.ClassDef) -> Class:
     """Return a [Class] instance."""
-    with Class.set_qualclassname(node.name):
-        args = (node.name, None, *_callable_args(node))
-        attrs = list(iter_attributes(node))
-        classes, functions = get_callables(node)
-        bases: list[Class] = []
-    return Class(node, *args, attrs, classes, functions, bases)
-
-
-def iter_callables(node: ast.Module | ast.ClassDef) -> Iterator[Class | Function]:
-    """Yield classes or functions."""
-    for child in mkapi.ast.iter_callable_nodes(node):
-        if isinstance(child, ast.ClassDef):
-            yield get_class(child)
-        else:
-            yield get_function(child)
-
-
-def get_callables(
-    node: ast.Module | ast.ClassDef,
-) -> tuple[list[Class], list[Function]]:
-    """Return a tuple of (list[Class], list[Function])."""
-    classes, functions = [], []
-    for callable_node in iter_callables(node):
-        if isinstance(callable_node, Class):
-            classes.append(callable_node)
-        else:
-            functions.append(callable_node)
-    return classes, functions
+    with Class.create(node) as cls:
+        for member in iter_members(node):
+            cls.add_member(member)
+    return cls
 
 
 @dataclass(repr=False)
@@ -386,6 +386,17 @@ class Module(Member):
         yield from self.classes
         yield from self.functions
 
+    def add_member(self, member: Import | Attribute | Class | Function) -> None:
+        """Add member instance."""
+        if isinstance(member, Import):
+            self.imports.append(member)
+        elif isinstance(member, Attribute):
+            self.attributes.append(member)
+        elif isinstance(member, Class):
+            self.classes.append(member)
+        elif isinstance(member, Function):
+            self.functions.append(member)
+
     def get(self, name: str) -> Import | Attribute | Class | Function | None:
         """Return a member instance by the name."""
         return get_by_name(self, name)
@@ -408,9 +419,9 @@ class Module(Member):
 
     @classmethod
     @contextmanager
-    def set_modulename(cls, name: str) -> Iterator[None]:  # noqa: D102
+    def create(cls, node: ast.Module, name: str) -> Iterator[Self]:  # noqa: D102
         cls.modulenames.append(name)
-        yield
+        yield cls(node, name, None, [], [], [], [], None, None)
         cls.modulenames.pop()
 
     @classmethod
@@ -453,18 +464,18 @@ def get_module_from_source(source: str, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from source string."""
     node = ast.parse(source)
     module = get_module_from_node(node, name)
+    print(module)
+    for c in module.classes:
+        print(c, c.name, c.fullname)
     module.source = source
     return module
 
 
 def get_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from the [ast.Module] node."""
-    with Module.set_modulename(name):
-        imports = list(iter_imports(node))
-        attrs = list(iter_attributes(node))
-        classes, functions = get_callables(node)
-        args = (imports, attrs, classes, functions)
-        module = Module(node, name, None, *args, None, None)
+    with Module.create(node, name) as module:
+        for member in iter_members(node):
+            module.add_member(member)
         _postprocess_module(module)
         _postprocess(module)
     return module

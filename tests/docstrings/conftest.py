@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from mkapi.ast import iter_callable_nodes
+from mkapi.ast import iter_child_nodes
 from mkapi.objects import get_module_path
 
 
@@ -32,7 +32,9 @@ def numpy():
 @pytest.fixture(scope="module")
 def get_node():
     def get_node(node, name):
-        for child in iter_callable_nodes(node):
+        for child in iter_child_nodes(node):
+            if not isinstance(child, ast.FunctionDef | ast.ClassDef):
+                continue
             if child.name == name:
                 return child
         raise NameError

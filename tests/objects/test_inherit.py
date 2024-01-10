@@ -8,14 +8,4 @@ def test_inherit():
     print(cls.bases)
     print(cls.attributes)
     print(cls.functions)
-
-
-def test_it():
-    def f(it):
-        next(it)
-
-    it = iter(range(11))
-    for x in it:
-        f(it)
-        print(x)
     assert 0

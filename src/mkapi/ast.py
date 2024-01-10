@@ -13,7 +13,6 @@ from ast import (
     FunctionDef,
     Import,
     ImportFrom,
-    Module,
     Name,
     NodeTransformer,
     TypeAlias,
@@ -26,26 +25,22 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from inspect import _ParameterKind
 
-
-# def iter_child_nodes(node: AST):
-#     for child in (it := ast.iter_child_nodes(node)):
-#         if isinstance(child, ast.Import | ImportFrom):
-#             yield child
-#         elif isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
-#             yield child
-#         elif isinstance(child, AnnAssign | Assign | TypeAlias):
-#             yield from iter_assign_nodes(child, it)
-#         elif not isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
-#             yield from iter_import_nodes(child)
+type Import_ = Import | ImportFrom
+type Def = AsyncFunctionDef | FunctionDef | ClassDef
+type Assign_ = AnnAssign | Assign | TypeAlias
+type Node = Import_ | Def | Assign_
 
 
-def iter_import_nodes(node: AST) -> Iterator[Import | ImportFrom]:
-    """Yield import nodes."""
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, ast.Import | ImportFrom):
+def iter_child_nodes(node: AST) -> Iterator[Node]:  # noqa: D103
+    for child in (it := ast.iter_child_nodes(node)):
+        if isinstance(child, Import | ImportFrom):  # noqa: SIM114
             yield child
-        elif not isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
-            yield from iter_import_nodes(child)
+        elif isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
+            yield child
+        elif isinstance(child, AnnAssign | Assign | TypeAlias):
+            yield from _iter_assign_nodes(child, it)
+        else:
+            yield from iter_child_nodes(child)
 
 
 def _get_pseudo_docstring(node: AST) -> str | None:
@@ -55,25 +50,26 @@ def _get_pseudo_docstring(node: AST) -> str | None:
     return cleandoc(doc) if isinstance(doc, str) else None
 
 
-def iter_assign_nodes(
-    node: Module | ClassDef,
-) -> Iterator[AnnAssign | Assign | TypeAlias]:
+def _iter_assign_nodes(
+    node: AnnAssign | Assign | TypeAlias,
+    it: Iterator[AST],
+) -> Iterator[Node]:
     """Yield assign nodes."""
-    assign_node: AnnAssign | Assign | TypeAlias | None = None
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, AnnAssign | Assign | TypeAlias):
-            if assign_node:
-                yield assign_node
-            child.__doc__ = None
-            assign_node = child
-        else:
-            if assign_node:
-                assign_node.__doc__ = _get_pseudo_docstring(child)
-                yield assign_node
-            assign_node = None
-    if assign_node:
-        assign_node.__doc__ = None
-        yield assign_node
+    node.__doc__ = None
+    try:
+        next_node = next(it)
+    except StopIteration:
+        yield node
+        return
+    if isinstance(next_node, AnnAssign | Assign | TypeAlias):
+        yield node
+        yield from _iter_assign_nodes(next_node, it)
+    elif isinstance(next_node, AsyncFunctionDef | FunctionDef | ClassDef):
+        yield node
+        yield next_node
+    else:
+        node.__doc__ = _get_pseudo_docstring(next_node)
+        yield node
 
 
 def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:
@@ -135,15 +131,6 @@ def iter_parameters(
         else:
             default = next(it)
         yield arg, kind, default
-
-
-def iter_callable_nodes(
-    node: Module | ClassDef,
-) -> Iterator[FunctionDef | AsyncFunctionDef | ClassDef]:
-    """Yield callable nodes."""
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
-            yield child
 
 
 def is_property(decorators: list[ast.expr]) -> bool:
