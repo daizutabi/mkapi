@@ -184,10 +184,37 @@ class Attribute(Member):
 def get_attribute(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Attribute:
     """Return an [Attribute] instance."""
     name = mkapi.ast.get_assign_name(node) or ""
+    doc = node.__doc__
     type_ = mkapi.ast.get_assign_type(node)
-    value = None if isinstance(node, ast.TypeAlias) else node.value
+    doc, type_ = _get_attribute_doc_type(doc, type_)
+    default = None if isinstance(node, ast.TypeAlias) else node.value
     type_params = node.type_params if isinstance(node, ast.TypeAlias) else None
-    return Attribute(node, name, node.__doc__, type_, value, type_params)
+    return Attribute(node, name, doc, type_, default, type_params)
+
+
+def get_attribute_from_property(node: ast.FunctionDef) -> Attribute:
+    """Return an [Attribute] instance from a property."""
+    name = node.name
+    doc = ast.get_docstring(node)
+    type_ = node.returns
+    doc, type_ = _get_attribute_doc_type(doc, type_)
+    default = None
+    type_params = node.type_params
+    return Attribute(node, name, doc, type_, default, type_params)
+
+
+def _get_attribute_doc_type(
+    doc: str | None,
+    type_: ast.expr | None,
+) -> tuple[str | None, ast.expr | None]:
+    if not doc:
+        return doc, type_
+    type_doc, doc = docstrings.split_without_name(doc, "google")
+    if not type_ and type_doc:
+        # ex. list(str) -> list[str]
+        type_doc = type_doc.replace("(", "[").replace(")", "]")
+        type_ = mkapi.ast.get_expr(type_doc)
+    return doc, type_
 
 
 @dataclass(repr=False)
@@ -254,7 +281,8 @@ class Class(Callable):
         yield from self.classes
         yield from self.functions
 
-    def add_member(self, member: Attribute | Class | Function | Import):
+    def add_member(self, member: Attribute | Class | Function | Import) -> None:
+        """Add a member."""
         if isinstance(member, Attribute):
             self.attributes.append(member)
         elif isinstance(member, Class):
@@ -310,28 +338,33 @@ def get_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Function:
     return Function(node, *args, get_return(node))
 
 
-def iter_members(
-    node: ast.ClassDef | ast.Module,
-) -> Iterator[Attribute | Class | Function | Import]:
-    for child in mkapi.ast.iter_child_nodes(node):
-        if isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-            yield get_function(child)
-        elif isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):
-            attr = get_attribute(child)
-            if attr.name:
-                yield attr
-        elif isinstance(child, ast.ClassDef):
-            yield get_class(child)
-        elif isinstance(child, ast.Import | ast.ImportFrom):
-            yield from iter_imports(child)
-
-
 def get_class(node: ast.ClassDef) -> Class:
     """Return a [Class] instance."""
     with Class.create(node) as cls:
         for member in iter_members(node):
             cls.add_member(member)
     return cls
+
+
+def iter_members(
+    node: ast.ClassDef | ast.Module,
+) -> Iterator[Import | Attribute | Class | Function]:
+    """Yield members."""
+    for child in mkapi.ast.iter_child_nodes(node):
+        if isinstance(child, ast.FunctionDef):  # noqa: SIM102
+            if mkapi.ast.is_property(child.decorator_list):
+                yield get_attribute_from_property(child)
+                continue
+        if isinstance(child, ast.Import | ast.ImportFrom):
+            yield from iter_imports(child)
+        elif isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):
+            attr = get_attribute(child)
+            if attr.name:
+                yield attr
+        elif isinstance(child, ast.ClassDef):
+            yield get_class(child)
+        elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
+            yield get_function(child)
 
 
 @dataclass(repr=False)
@@ -420,8 +453,9 @@ class Module(Member):
     @classmethod
     @contextmanager
     def create(cls, node: ast.Module, name: str) -> Iterator[Self]:  # noqa: D102
+        module = cls(node, name, None, [], [], [], [], None, None)
         cls.modulenames.append(name)
-        yield cls(node, name, None, [], [], [], [], None, None)
+        yield module
         cls.modulenames.pop()
 
     @classmethod
@@ -464,9 +498,6 @@ def get_module_from_source(source: str, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from source string."""
     node = ast.parse(source)
     module = get_module_from_node(node, name)
-    print(module)
-    for c in module.classes:
-        print(c, c.name, c.fullname)
     module.source = source
     return module
 
@@ -494,34 +525,6 @@ def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
             return objects[fullname]
     objects[fullname] = None
     return None
-
-
-def _split_attribute_docstring(obj: Attribute) -> None:
-    if doc := obj.docstring:
-        type_, desc = docstrings.split_without_name(doc, "google")
-        if not obj.type and type_:
-            # ex. list(str) -> list[str]
-            type_ = type_.replace("(", "[").replace(")", "]")
-            obj.type = mkapi.ast.get_expr(type_)
-        obj.docstring = desc
-
-
-def _move_property(obj: Class) -> None:
-    funcs: list[Function] = []
-    for func in obj.functions:
-        node = func._node  # noqa: SLF001
-        if isinstance(node, ast.AsyncFunctionDef) or not mkapi.ast.is_property(
-            func.decorators,
-        ):
-            funcs.append(func)
-            continue
-        doc = func.get_node_docstring()
-        type_ = func.returns.type
-        type_params = func.type_params
-        attr = Attribute(node, func.name, doc, type_, None, type_params)
-        _split_attribute_docstring(attr)
-        obj.attributes.append(attr)
-    obj.functions = funcs
 
 
 def _merge_item(obj: Attribute | Parameter | Return | Raise, item: Item) -> None:
@@ -582,12 +585,9 @@ def _merge_docstring(obj: Module | Class | Function) -> None:
 
 def _postprocess(obj: Module | Class) -> None:
     _merge_docstring(obj)
-    for attr in obj.attributes:
-        _split_attribute_docstring(attr)
     for func in obj.functions:
         _merge_docstring(func)
     for cls in obj.classes:
-        _move_property(cls)
         _postprocess(cls)
         _postprocess_class(cls)
 
