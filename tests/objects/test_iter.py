@@ -43,3 +43,6 @@ def test_iter_bases(module: Module):
     assert next(bases).name == "Object"
     assert next(bases).name == "Callable"
     assert next(bases).name == "Class"
+    print(module.modulename)
+    print(module.fullname)
+    # assert 0

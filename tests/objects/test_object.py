@@ -57,7 +57,7 @@ def test_iter_definition_nodes(def_nodes):
 
 def test_not_found():
     assert get_module("xxx") is None
-    assert mkapi.objects.CACHE_MODULE["xxx"] == (None, 0)
+    assert mkapi.objects.CACHE_MODULE["xxx"] is None
     assert get_module("markdown")
     assert "markdown" in mkapi.objects.CACHE_MODULE
 
@@ -115,13 +115,11 @@ def test_cache():
     assert c.get_module() is module
     assert f
     assert f.get_module() is module
-    CACHE_OBJECT.clear()
-    assert not get_object("mkapi.objects.Module.get_class")
-    CACHE_MODULE.clear()
-    assert get_object("mkapi.objects.Module.get_class")
+    c2 = get_object("mkapi.objects.Object")
+    f2 = get_object("mkapi.objects.Module.get_class")
+    assert c is c2
+    assert f is f2
 
-
-def test_get_module_check_mtime():
     m1 = get_module("mkdocs.structure.files")
     m2 = get_module("mkdocs.structure.files")
     assert m1 is m2
