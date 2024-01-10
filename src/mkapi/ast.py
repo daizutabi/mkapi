@@ -27,6 +27,18 @@ if TYPE_CHECKING:
     from inspect import _ParameterKind
 
 
+# def iter_child_nodes(node: AST):
+#     for child in (it := ast.iter_child_nodes(node)):
+#         if isinstance(child, ast.Import | ImportFrom):
+#             yield child
+#         elif isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
+#             yield child
+#         elif isinstance(child, AnnAssign | Assign | TypeAlias):
+#             yield from iter_assign_nodes(child, it)
+#         elif not isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
+#             yield from iter_import_nodes(child)
+
+
 def iter_import_nodes(node: AST) -> Iterator[Import | ImportFrom]:
     """Yield import nodes."""
     for child in ast.iter_child_nodes(node):

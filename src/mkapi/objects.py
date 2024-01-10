@@ -32,8 +32,7 @@ class Object:
     docstring: str | None
 
     def __post_init__(self) -> None:
-        modulename = Module.get_modulename()
-        self.modulename = modulename
+        self.modulename = Module.get_modulename()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
@@ -49,22 +48,16 @@ class Object:
             else:
                 yield obj
 
-    def get_modulename(self) -> str | None:
-        """Return the module name."""
-        return self.modulename
-
     def get_module(self) -> Module | None:
         """Return a [Module] instance."""
-        if modulename := self.get_modulename():
-            return get_module(modulename)
-        return None
+        return get_module(self.modulename) if self.modulename else None
 
     def get_source(self, maxline: int | None = None) -> str | None:
         """Return the source code segment."""
-        if not (module := self.get_module()) or not (source := module.source):
-            return None
-        start, stop = self._node.lineno - 1, self._node.end_lineno
-        return "\n".join(source.split("\n")[start:stop][:maxline])
+        if (module := self.get_module()) and (source := module.source):
+            start, stop = self._node.lineno - 1, self._node.end_lineno
+            return "\n".join(source.split("\n")[start:stop][:maxline])
+        return None
 
     def unparse(self) -> str:
         """Unparse the AST node and return a string expression."""
@@ -81,7 +74,7 @@ class Import(Object):
 
 
 def iter_imports(node: ast.Module) -> Iterator[Import]:
-    """Yield import nodes and names."""
+    """Yield [Import] instances in an [ast.Module] node."""
     for child in mkapi.ast.iter_import_nodes(node):
         from_ = f"{child.module}" if isinstance(child, ast.ImportFrom) else None
         for alias in child.names:

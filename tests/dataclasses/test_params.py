@@ -10,7 +10,7 @@ def test_parameters():
     cls = get_object("mkapi.objects.Class")
     assert isinstance(cls, Class)
     assert is_dataclass(cls)
-    modulename = cls.get_modulename()
+    modulename = cls.modulename
     assert modulename
     module_obj = importlib.import_module(modulename)
     members = dict(inspect.getmembers(module_obj, inspect.isclass))
