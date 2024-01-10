@@ -55,6 +55,18 @@ def find_submodulenames(
     return names
 
 
+def iter_parent_modulenames(fullname: str) -> Iterator[str]:
+    """Yield parent module names.
+
+    Examples:
+        >>> list(iter_parent_modulenames("a.b.c.d"))
+        ['a', 'a.b', 'a.b.c', 'a.b.c.d']
+    """
+    names = fullname.split(".")
+    for k in range(1, len(names) + 1):
+        yield ".".join(names[:k])
+
+
 def delete_ptags(html: str) -> str:
     """Return HTML without <p> tag.
 

@@ -4,20 +4,20 @@ from __future__ import annotations
 import ast
 import importlib
 import importlib.util
-import inspect
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 import mkapi.ast
+import mkapi.dataclasses
 from mkapi import docstrings
-from mkapi.utils import del_by_name, get_by_name, unique_names
+from mkapi.utils import del_by_name, get_by_name, iter_parent_modulenames, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from inspect import _IntrospectableCallable, _ParameterKind
-    from typing import Any, Self
+    from inspect import _ParameterKind
+    from typing import Self
 
     from mkapi.docstrings import Docstring, Item, Section
 
@@ -71,6 +71,7 @@ class Import(Object):
     _node: ast.Import | ast.ImportFrom
     fullname: str
     from_: str | None
+    level: int
 
 
 def iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
@@ -79,7 +80,11 @@ def iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
     for alias in node.names:
         name = alias.asname or alias.name
         fullname = f"{from_}.{alias.name}" if from_ else name
-        yield Import(node, name, None, fullname, from_)
+        if isinstance(node, ast.Import):
+            for parent in iter_parent_modulenames(fullname):
+                yield Import(node, parent, None, parent, None, 0)
+        else:
+            yield Import(node, name, None, fullname, from_, node.level)
 
 
 @dataclass(repr=False)
@@ -422,6 +427,9 @@ class Module(Member):
     def add_member(self, member: Import | Attribute | Class | Function) -> None:
         """Add member instance."""
         if isinstance(member, Import):
+            if member.level:
+                prefix = ".".join(self.name.split(".")[: member.level])
+                member.fullname = f"{prefix}.{member.fullname}"
             self.imports.append(member)
         elif isinstance(member, Attribute):
             self.attributes.append(member)
@@ -507,7 +515,6 @@ def get_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
     with Module.create(node, name) as module:
         for member in iter_members(node):
             module.add_member(member)
-        _postprocess_module(module)
         _postprocess(module)
     return module
 
@@ -623,38 +630,29 @@ def _iter_base_classes(cls: Class) -> Iterator[Class]:
             yield base
 
 
+def _inherit(cls: Class, name: str) -> None:
+    members = {}
+    for base in cls.bases:
+        for member in getattr(base, name):
+            members[member.name] = member
+    for member in getattr(cls, name):
+        members[member.name] = member
+    setattr(cls, name, list(members.values()))
+
+
 def _postprocess_class(cls: Class) -> None:
     cls.bases = list(_iter_base_classes(cls))
+    for name in ["attributes", "functions", "classes"]:
+        _inherit(cls, name)
     if init := cls.get_function("__init__"):
         cls.parameters = init.parameters
         cls.raises = init.raises
         cls.docstring = docstrings.merge(cls.docstring, init.docstring)
         cls.attributes.sort(key=_attribute_order)
         del_by_name(cls.functions, "__init__")
-    # TODO: dataclass
-
-
-def _get_function_from_callable(obj: _IntrospectableCallable) -> Function:
-    pass
-    # node = mkapi.ast.get_node_from_callable(obj)
-    # return get_function(node)
-
-
-def _set_parameters_from_object(obj: Module | Class, members: dict[str, Any]) -> None:
-    for cls in obj.classes:
-        cls_obj = members[cls.name]
-        if callable(cls_obj):
-            func = _get_function_from_callable(cls_obj)
-            cls.parameters = func.parameters
-        # _set_parameters_from_object(cls, dict(inspect.getmembers(cls_obj)))
-    # if isinstance(obj, Class):
-    #     for func in obj.functions:
-    #         f = _get_function_from_object(members[func.name])
-    #         func.parameters = f.parameters
-
-
-def _postprocess_module(module: Module) -> None:
-    return
-    module_obj = importlib.import_module(obj.name)
-    members = dict(inspect.getmembers(module_obj))
-    _set_parameters_from_object(obj, members)
+    if mkapi.dataclasses.is_dataclass(cls):
+        for attr, kind in mkapi.dataclasses.iter_parameters(cls):
+            args = (None, attr.name, attr.docstring, attr.type, attr.default, kind)
+            parameter = Parameter(*args)
+            parameter.modulename = attr.modulename
+            cls.parameters.append(parameter)

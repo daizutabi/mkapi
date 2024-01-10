@@ -31,23 +31,18 @@ def is_dataclass(cls: Class, module: Module | None = None) -> bool:
 
 def iter_parameters(cls: Class) -> Iterator[tuple[Attribute, _ParameterKind]]:
     """Yield tuples of ([Attribute], [_ParameterKind]) for dataclass signature."""
-    attrs: dict[str, Attribute] = {}
-    for base in cls.iter_bases():
-        if not is_dataclass(base):
-            raise NotImplementedError
-        for attr in base.attributes:
-            attrs[attr.name] = attr  # updated by subclasses.
-
     if not (modulename := cls.modulename):
         raise NotImplementedError
-    module = importlib.import_module(modulename)
+    try:
+        module = importlib.import_module(modulename)
+    except ModuleNotFoundError:
+        return
     members = dict(inspect.getmembers(module, inspect.isclass))
     obj = members[cls.name]
 
     for param in inspect.signature(obj).parameters.values():
-        if param.name not in attrs:
-            raise NotImplementedError
-        yield attrs[param.name], param.kind
+        if attr := cls.get_attribute(param.name):
+            yield attr, param.kind
 
 
 # --------------------------------------------------------------
