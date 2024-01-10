@@ -134,6 +134,11 @@ def iter_callable_nodes(
             yield child
 
 
+def is_property(decorators: list[ast.expr]) -> bool:
+    """Return True if one of decorators is property."""
+    return any(ast.unparse(deco).startswith("property") for deco in decorators)
+
+
 # a1.b_2(c[d]) -> a1, b_2, c, d
 SPLIT_IDENTIFIER_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
 

@@ -4,13 +4,13 @@ import pytest
 
 from mkapi.docstrings import Docstring
 from mkapi.objects import (
-    CACHE_MODULE,
     Attribute,
     Class,
     Function,
     Module,
     Parameter,
     get_module,
+    modules,
 )
 from mkapi.utils import get_by_name
 
@@ -43,8 +43,8 @@ def test_move_property_to_attributes(google):
 @pytest.fixture()
 def module():
     name = "examples.styles.example_google"
-    if name in CACHE_MODULE:
-        del CACHE_MODULE[name]
+    if name in modules:
+        del modules[name]
     return get_module(name)
 
 

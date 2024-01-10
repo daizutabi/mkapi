@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from mkapi.objects import get_module_from_node, get_module_path
+from mkapi.ast import iter_callable_nodes
+from mkapi.objects import get_module_path
 
 
 def get_module(name):
@@ -15,8 +16,7 @@ def get_module(name):
     assert path
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
-    node = ast.parse(source)
-    return get_module_from_node(node)
+    return ast.parse(source)
 
 
 @pytest.fixture(scope="module")
@@ -27,3 +27,22 @@ def google():
 @pytest.fixture(scope="module")
 def numpy():
     return get_module("examples.styles.example_numpy")
+
+
+@pytest.fixture(scope="module")
+def get_node():
+    def get_node(node, name):
+        for child in iter_callable_nodes(node):
+            if child.name == name:
+                return child
+        raise NameError
+
+    return get_node
+
+
+@pytest.fixture(scope="module")
+def get(get_node):
+    def get(node, name):
+        return ast.get_docstring(get_node(node, name))
+
+    return get

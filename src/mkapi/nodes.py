@@ -65,6 +65,7 @@ class Node:
 def get_node(name: str) -> Node:
     """Return a [Node] instance from the object name."""
     obj = get_object(name)
+    print(obj)
     if not obj or not isinstance(obj, Module | Class | Function):
         raise NotImplementedError
     return _get_node(obj)

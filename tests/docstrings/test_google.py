@@ -1,3 +1,5 @@
+import ast
+
 from mkapi.docstrings import (
     _iter_items,
     _iter_sections,
@@ -7,7 +9,6 @@ from mkapi.docstrings import (
     split_section,
     split_without_name,
 )
-from mkapi.objects import Module
 
 
 def test_split_section():
@@ -32,8 +33,8 @@ def test_iter_sections_short():
     assert sections == [("", "x")]
 
 
-def test_iter_sections(google: Module):
-    doc = google.get_node_docstring()
+def test_iter_sections(google):
+    doc = ast.get_docstring(google)
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "google"))
     assert len(sections) == 6
@@ -54,8 +55,14 @@ def test_iter_sections(google: Module):
     assert sections[5][1].endswith(".html")
 
 
-def test_iter_items(google: Module):
-    doc = google.get("module_level_function").get_node_docstring()  # type: ignore
+def test_iter_items(google, get):
+    doc = ast.get_docstring(google)
+    assert isinstance(doc, str)
+    section = list(_iter_sections(doc, "google"))[3][1]
+    items = list(_iter_items(section))
+    assert len(items) == 1
+    assert items[0].startswith("module_")
+    doc = get(google, "module_level_function")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
     items = list(_iter_items(section))
@@ -64,16 +71,10 @@ def test_iter_items(google: Module):
     assert items[1].startswith("param2")
     assert items[2].startswith("*args")
     assert items[3].startswith("**kwargs")
-    doc = google.get_node_docstring()
-    assert isinstance(doc, str)
-    section = list(_iter_sections(doc, "google"))[3][1]
-    items = list(_iter_items(section))
-    assert len(items) == 1
-    assert items[0].startswith("module_")
 
 
-def test_split_item(google: Module):
-    doc = google.get("module_level_function").get_node_docstring()  # type: ignore
+def test_split_item(google, get):
+    doc = get(google, "module_level_function")
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "google"))
     section = sections[1][1]
@@ -92,8 +93,8 @@ def test_split_item(google: Module):
     assert x[2].endswith("the interface.")
 
 
-def test_iter_items_class(google: Module):
-    doc = google.get("ExampleClass").get_node_docstring()  # type: ignore
+def test_iter_items_class(google, get, get_node):
+    doc = get(google, "ExampleClass")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
     x = list(iter_items(section, "google"))
@@ -103,7 +104,7 @@ def test_iter_items_class(google: Module):
     assert x[1].name == "attr2"
     assert x[1].type == ":obj:`int`, optional"
     assert x[1].text == "Description of `attr2`."
-    doc = google.get("ExampleClass").get("__init__").get_node_docstring()  # type: ignore
+    doc = get(get_node(google, "ExampleClass"), "__init__")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
     x = list(iter_items(section, "google"))
@@ -113,8 +114,8 @@ def test_iter_items_class(google: Module):
     assert x[1].text == "Description of `param2`. Multiple\nlines are supported."
 
 
-def test_split_without_name(google: Module):
-    doc = google.get("module_level_function").get_node_docstring()  # type: ignore
+def test_split_without_name(google, get):
+    doc = get(google, "module_level_function")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
     x = split_without_name(section, "google")
@@ -123,13 +124,13 @@ def test_split_without_name(google: Module):
     assert x[1].endswith("    }")
 
 
-def test_repr(google: Module):
-    r = repr(parse(google.get_node_docstring(), "google"))  # type: ignore
+def test_repr(google):
+    r = repr(parse(ast.get_docstring(google), "google"))  # type: ignore
     assert r == "Docstring(num_sections=6)"
 
 
-def test_iter_items_raises(google: Module):
-    doc = google.get("module_level_function").get_node_docstring()  # type: ignore
+def test_iter_items_raises(google, get):
+    doc = get(google, "module_level_function")
     assert isinstance(doc, str)
     name, section = list(_iter_sections(doc, "google"))[3]
     assert name == "Raises"

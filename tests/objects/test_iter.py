@@ -14,7 +14,7 @@ def module():
 
 def test_iter(module: Module):
     names = [o.name for o in module]
-    assert "CACHE_MODULE" in names
+    assert "modules" in names
     assert "Class" in names
     assert "get_object" in names
 
@@ -31,9 +31,11 @@ def test_iter_exprs(module: Module):
     func = module.get("get_module_from_node")
     assert func
     exprs = list(func.iter_exprs())
-    assert len(exprs) == 2
+    assert len(exprs) == 4
     assert ast.unparse(exprs[0]) == "ast.Module"
-    assert ast.unparse(exprs[1]) == "Module"
+    assert ast.unparse(exprs[1]) == "str"
+    assert ast.unparse(exprs[2]) == "'__mkapi__'"
+    assert ast.unparse(exprs[3]) == "Module"
 
 
 def test_iter_bases(module: Module):
@@ -41,8 +43,6 @@ def test_iter_bases(module: Module):
     assert cls
     bases = cls.iter_bases()
     assert next(bases).name == "Object"
+    assert next(bases).name == "Member"
     assert next(bases).name == "Callable"
     assert next(bases).name == "Class"
-    print(module.modulename)
-    print(module.fullname)
-    # assert 0

@@ -6,12 +6,15 @@ import mkapi.ast
 import mkapi.objects
 from mkapi.ast import iter_callable_nodes, iter_import_nodes
 from mkapi.objects import (
-    CACHE_MODULE,
     CACHE_OBJECT,
+    Class,
+    Function,
+    Module,
     get_module,
     get_module_path,
     get_object,
     iter_imports,
+    modules,
 )
 
 
@@ -57,9 +60,9 @@ def test_iter_definition_nodes(def_nodes):
 
 def test_not_found():
     assert get_module("xxx") is None
-    assert mkapi.objects.CACHE_MODULE["xxx"] is None
+    assert mkapi.objects.modules["xxx"] is None
     assert get_module("markdown")
-    assert "markdown" in mkapi.objects.CACHE_MODULE
+    assert "markdown" in mkapi.objects.modules
 
 
 def test_repr():
@@ -97,16 +100,18 @@ def test_get_module_from_object():
     assert module is m
 
 
-def test_get_fullname(google):
+def test_fullname(google: Module):
     c = google.get_class("ExampleClass")
+    assert isinstance(c, Class)
     f = c.get_function("example_method")
-    assert c.get_fullname() == "examples.styles.example_google.ExampleClass"
+    assert isinstance(f, Function)
+    assert c.fullname == "examples.styles.example_google.ExampleClass"
     name = "examples.styles.example_google.ExampleClass.example_method"
-    assert f.get_fullname() == name
+    assert f.fullname == name
 
 
 def test_cache():
-    CACHE_MODULE.clear()
+    modules.clear()
     CACHE_OBJECT.clear()
     module = get_module("mkapi.objects")
     c = get_object("mkapi.objects.Object")
@@ -123,7 +128,7 @@ def test_cache():
     m1 = get_module("mkdocs.structure.files")
     m2 = get_module("mkdocs.structure.files")
     assert m1 is m2
-    CACHE_MODULE.clear()
+    modules.clear()
     m3 = get_module("mkdocs.structure.files")
     m4 = get_module("mkdocs.structure.files")
     assert m2 is not m3
