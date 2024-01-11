@@ -1,8 +1,9 @@
 # import mkapi.ast
-# from mkapi.objects import Module, Object, load_module
+# from mkapi.objects import Module, Object, load_module,Parameter
 # import ast
 
 # def convert(obj:Object):
+#     mkapi.ast._iter_identifiers
 
 
 #         expr:ast.expr|ast.type_param):

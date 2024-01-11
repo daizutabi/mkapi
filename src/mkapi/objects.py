@@ -33,22 +33,22 @@ class Object:
 
     _node: ast.AST
     name: str
-    modulename: str | None = field(init=False)
+    module: Module | None = field(init=False)
     docstring: str | None
 
     def __post_init__(self) -> None:
-        self.modulename = Module.get_modulename()
+        self.module = Module.current_module()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
 
-    def get_module(self) -> Module | None:
-        """Return a [Module] instance."""
-        return load_module(self.modulename) if self.modulename else None
+    # def get_module(self) -> Module | None:
+    #     """Return a [Module] instance."""
+    #     return load_module(self.modulename) if self.modulename else None
 
     def get_source(self, maxline: int | None = None) -> str | None:
         """Return the source code segment."""
-        if (module := self.get_module()) and (source := module.source):
+        if (module := self.module) and (source := module.source):
             start, stop = self._node.lineno - 1, self._node.end_lineno
             return "\n".join(source.split("\n")[start:stop][:maxline])
         return None
@@ -82,11 +82,18 @@ def iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
 
 
 @dataclass(repr=False)
-class Parameter(Object):
+class Type(Object):
+    """Type class."""
+
+    type: ast.expr | None  #   # noqa: A003
+    markdown: str = field(init=False)
+
+
+@dataclass(repr=False)
+class Parameter(Type):
     """Parameter class for [Class] and [Function]."""
 
     _node: ast.arg | None
-    type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
     kind: _ParameterKind | None
 
@@ -100,11 +107,10 @@ def iter_parameters(
 
 
 @dataclass(repr=False)
-class Raise(Object):
+class Raise(Type):
     """Raise class for [Class] and [Function]."""
 
     _node: ast.Raise | None
-    type: ast.expr | None  #   # noqa: A003
 
     def __repr__(self) -> str:
         exc = ast.unparse(self.type) if self.type else ""
@@ -119,11 +125,10 @@ def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]
 
 
 @dataclass(repr=False)
-class Return(Object):
+class Return(Type):
     """Return class for [Class] and [Function]."""
 
     _node: ast.expr | None
-    type: ast.expr | None  #   # noqa: A003
 
 
 def get_return(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Return:
@@ -145,17 +150,16 @@ class Member(Object):
         super().__post_init__()
         qualname = Class.get_qualclassname()
         self.qualname = f"{qualname}.{self.name}" if qualname else self.name
-        m_name = self.modulename
+        m_name = self.module.name if self.module else "__"
         self.fullname = f"{m_name}.{self.qualname}" if m_name else self.qualname
         objects[self.fullname] = self  # type:ignore
 
 
 @dataclass(repr=False)
-class Attribute(Member):
+class Attribute(Type, Member):
     """Atrribute class for [Module] and [Class]."""
 
     _node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
-    type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
     type_params: list[ast.type_param] | None
 
@@ -356,7 +360,7 @@ class Module(Member):
     functions: list[Function]
     source: str | None
     kind: str | None
-    modulenames: ClassVar[list[str | None]] = [None]
+    modules: ClassVar[list[Self | None]] = [None]
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -427,13 +431,14 @@ class Module(Member):
     @contextmanager
     def create(cls, node: ast.Module, name: str) -> Iterator[Self]:  # noqa: D102
         module = cls(node, name, None, [], [], [], [], None, None)
-        cls.modulenames.append(name)
+        cls.modules.append(module)
         yield module
-        cls.modulenames.pop()
+        cls.modules.pop()
 
     @classmethod
-    def get_modulename(cls) -> str | None:  # noqa: D102
-        return cls.modulenames[-1]
+    def current_module(cls) -> Self | None:
+        """Return the current [Module] instance."""
+        return cls.modules[-1]
 
 
 def get_module_path(name: str) -> Path | None:
@@ -579,11 +584,11 @@ def _iter_base_classes(cls: Class) -> Iterator[Class]:
 
     This function is called in postprocess for setting base classes.
     """
-    if not (module := cls.get_module()):
+    if not cls.module:
         return
     for node in cls._node.bases:
         base_name = next(mkapi.ast.iter_identifiers(node))
-        base_fullname = module.get_fullname(base_name)
+        base_fullname = cls.module.get_fullname(base_name)
         if not base_fullname:
             continue
         base = get_object(base_fullname)
@@ -615,5 +620,5 @@ def _postprocess_class(cls: Class) -> None:
         for attr, kind in mkapi.dataclasses.iter_parameters(cls):
             args = (None, attr.name, attr.docstring, attr.type, attr.default, kind)
             parameter = Parameter(*args)
-            parameter.modulename = attr.modulename
+            parameter.module = attr.module
             cls.parameters.append(parameter)

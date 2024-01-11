@@ -25,14 +25,14 @@ def _get_dataclass_decorator(cls: Class, module: Module) -> ast.expr | None:
 
 def is_dataclass(cls: Class, module: Module | None = None) -> bool:
     """Return True if the class is a dataclass."""
-    if module := module or cls.get_module():
+    if module := module or cls.module:
         return _get_dataclass_decorator(cls, module) is not None
     return False
 
 
 def iter_parameters(cls: Class) -> Iterator[tuple[Attribute, _ParameterKind]]:
     """Yield tuples of ([Attribute], [_ParameterKind]) for dataclass signature."""
-    if not (modulename := cls.modulename):
+    if not cls.module or not (modulename := cls.module.name):
         raise NotImplementedError
     try:
         module = importlib.import_module(modulename)

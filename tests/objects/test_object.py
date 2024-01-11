@@ -61,7 +61,7 @@ def test_load_module_source():
     assert module
     cls = module.get("MkAPIConfig")
     assert cls
-    assert cls.get_module() is module
+    assert cls.module is module
     src = cls.get_source()
     assert src
     assert src.startswith("class MkAPIConfig")
@@ -74,7 +74,7 @@ def test_load_module_from_object():
     module = load_module("mkdocs.structure.files")
     assert module
     c = module.classes[1]
-    m = c.get_module()
+    m = c.module
     assert module is m
 
 
@@ -95,9 +95,9 @@ def test_cache():
     c = get_object("mkapi.objects.Object")
     f = get_object("mkapi.objects.Module.get_class")
     assert c
-    assert c.get_module() is module
+    assert c.module is module
     assert f
-    assert f.get_module() is module
+    assert f.module is module
     c2 = get_object("mkapi.objects.Object")
     f2 = get_object("mkapi.objects.Module.get_class")
     assert c is c2

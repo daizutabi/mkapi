@@ -13,14 +13,14 @@ def test_inherit():
     assert get_by_name(a, "_node")
     assert get_by_name(a, "qualname")
     assert get_by_name(a, "fullname")
-    assert get_by_name(a, "modulename")
+    assert get_by_name(a, "module")
     assert get_by_name(a, "classnames")
     p = cls.parameters
     assert len(p) == 11
     assert get_by_name(p, "_node")
     assert not get_by_name(p, "qualname")
     assert not get_by_name(p, "fullname")
-    assert not get_by_name(p, "modulename")
+    assert not get_by_name(p, "module")
     assert not get_by_name(p, "classnames")
 
 
@@ -42,7 +42,7 @@ def test_inherit_other_module2():
     assert x
     p = x.parameters[1]
     assert p.unparse() == "template: jinja2.Template"
-    m = p.get_module()
+    m = p.module
     assert m
     assert m.name == "mkdocs.plugins"
     assert m.get("get_plugin_logger")
