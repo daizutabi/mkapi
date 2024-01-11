@@ -20,7 +20,9 @@ type Style = Literal["google", "numpy"]
 
 
 @dataclass
-class Item:  # noqa: D101
+class Item:
+    """Item class for section items."""
+
     name: str
     type: str  # noqa: A003
     text: str
@@ -34,7 +36,7 @@ SPLIT_NAME_TYPE_TEXT_PATTERN = re.compile(r"^\s*(\S+?)\s*\((.+?)\)\s*:\s*(.*)$")
 
 
 def _iter_items(section: str) -> Iterator[str]:
-    """Yield items for Parameters, Attributes, and Raises sections."""
+    """Yield items for Parameters, Attributes, Returns(?), and Raises sections."""
     start = 0
     for m in SPLIT_ITEM_PATTERN.finditer(section):
         yield section[start : m.start()].strip()
@@ -147,7 +149,7 @@ CURRENT_DOCSTRING_STYLE: list[Style] = ["google"]
 
 
 def get_style(doc: str) -> Style:
-    """Return the docstring style of a doc.
+    """Return the docstring style.
 
     If the style can't be determined, the current style is returned.
     """

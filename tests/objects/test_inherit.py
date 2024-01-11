@@ -1,4 +1,4 @@
-from mkapi.objects import Class, get_module, get_object
+from mkapi.objects import Class, get_object, load_module
 from mkapi.utils import get_by_name
 
 
@@ -49,14 +49,14 @@ def test_inherit_other_module2():
 
 
 def test_inherit_other_module3():
-    m1 = get_module("mkdocs.plugins")
+    m1 = load_module("mkdocs.plugins")
     assert m1
     a = "mkdocs.utils.templates.TemplateContext"
     assert m1.get_fullname("TemplateContext") == a
     assert m1.get_fullname("jinja2") == "jinja2"
     a = "jinja2.environment.Template"
     assert m1.get_fullname("jinja2.Template") == a
-    m2 = get_module("jinja2")
+    m2 = load_module("jinja2")
     assert m2
     x = m2.get("Template")
     assert x

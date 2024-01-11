@@ -1,4 +1,4 @@
-# from mkapi.objects import get_module
+# from mkapi.objects import load_module
 # from mkapi.renderer import renderer
 
 
@@ -10,7 +10,7 @@
 
 
 # def test_module_empty_filters():
-#     module = get_module("mkapi.core.base")
+#     module = load_module("mkapi.core.base")
 #     m = renderer.render_module(module).split("\n")
 #     assert m[0] == "# ![mkapi](mkapi.core.base|plain|link|sourcelink)"
 #     assert m[2] == "## ![mkapi](mkapi.core.base.Base||link|sourcelink)"

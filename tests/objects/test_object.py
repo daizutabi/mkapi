@@ -9,10 +9,9 @@ from mkapi.objects import (
     Class,
     Function,
     Module,
-    get_module,
     get_module_path,
     get_object,
-    iter_imports,
+    load_module,
     modules,
     objects,
 )
@@ -38,27 +37,27 @@ def test_iter_import_nodes(module: ast.Module):
 
 
 def test_not_found():
-    assert get_module("xxx") is None
+    assert load_module("xxx") is None
     assert mkapi.objects.modules["xxx"] is None
-    assert get_module("markdown")
+    assert load_module("markdown")
     assert "markdown" in mkapi.objects.modules
 
 
 def test_repr():
-    module = get_module("mkapi")
+    module = load_module("mkapi")
     assert repr(module) == "Module(mkapi)"
-    module = get_module("mkapi.objects")
+    module = load_module("mkapi.objects")
     assert repr(module) == "Module(mkapi.objects)"
     obj = get_object("mkapi.objects.Object")
     assert repr(obj) == "Class(Object)"
 
 
-def test_get_module_source():
-    module = get_module("mkdocs.structure.files")
+def test_load_module_source():
+    module = load_module("mkdocs.structure.files")
     assert module
     assert module.source
     assert "class File" in module.source
-    module = get_module("mkapi.plugins")
+    module = load_module("mkapi.plugins")
     assert module
     cls = module.get("MkAPIConfig")
     assert cls
@@ -71,8 +70,8 @@ def test_get_module_source():
     assert "MkAPIPlugin" in src
 
 
-def test_get_module_from_object():
-    module = get_module("mkdocs.structure.files")
+def test_load_module_from_object():
+    module = load_module("mkdocs.structure.files")
     assert module
     c = module.classes[1]
     m = c.get_module()
@@ -92,7 +91,7 @@ def test_fullname(google: Module):
 def test_cache():
     modules.clear()
     objects.clear()
-    module = get_module("mkapi.objects")
+    module = load_module("mkapi.objects")
     c = get_object("mkapi.objects.Object")
     f = get_object("mkapi.objects.Module.get_class")
     assert c
@@ -104,27 +103,28 @@ def test_cache():
     assert c is c2
     assert f is f2
 
-    m1 = get_module("mkdocs.structure.files")
-    m2 = get_module("mkdocs.structure.files")
+    m1 = load_module("mkdocs.structure.files")
+    m2 = load_module("mkdocs.structure.files")
     assert m1 is m2
     modules.clear()
-    m3 = get_module("mkdocs.structure.files")
-    m4 = get_module("mkdocs.structure.files")
+    m3 = load_module("mkdocs.structure.files")
+    m4 = load_module("mkdocs.structure.files")
     assert m2 is not m3
     assert m3 is m4
 
 
 def test_module_kind():
-    module = get_module("mkapi")
+    module = load_module("mkapi")
     assert module
     assert module.kind == "package"
-    module = get_module("mkapi.objects")
+    module = load_module("mkapi.objects")
     assert module
     assert module.kind == "module"
 
 
 def test_get_fullname_with_attr():
-    module = get_module("mkapi.plugins")
+    module = load_module("mkapi.plugins")
     assert module
     name = module.get_fullname("config_options.Type")
     assert name == "mkdocs.config.config_options.Type"
+    assert not module.get_fullname("config_options.A")

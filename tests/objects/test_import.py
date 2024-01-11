@@ -4,13 +4,13 @@
 #     Function,
 #     Import,
 #     Module,
-#     get_module,
+#     load_module,
 #     set_import_object,
 # )
 
 
 # def test_import():
-#     module = get_module("mkapi.plugins")
+#     module = load_module("mkapi.plugins")
 #     assert module
 #     set_import_object(module)
 

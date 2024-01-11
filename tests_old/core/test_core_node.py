@@ -1,4 +1,4 @@
-from mkapi.core.module import get_module
+from mkapi.core.module import load_module
 from mkapi.core.node import Node, get_kind, get_node, get_node_from_module, is_member
 from mkapi.inspect import attribute
 from mkapi.inspect.signature import Signature
@@ -125,7 +125,7 @@ def test_get_kind():
 
 
 def test_get_node_from_module():
-    _ = get_module("mkapi.core")
+    _ = load_module("mkapi.core")
     x = get_node("mkapi.core.base.Base.__iter__")
     y = get_node("mkapi.core.base.Base.__iter__")
     assert x is not y

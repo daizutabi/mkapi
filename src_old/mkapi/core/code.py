@@ -6,7 +6,7 @@ from typing import List
 
 import markdown
 
-from mkapi.core.module import Module, get_module
+from mkapi.core.module import Module, load_module
 
 
 @dataclass
@@ -20,7 +20,7 @@ class Code:
 
     def __post_init__(self):
         sourcefile = self.module.sourcefile
-        with io.open(sourcefile, "r", encoding="utf-8-sig", errors="strict") as f:
+        with open(sourcefile, encoding="utf-8-sig", errors="strict") as f:
             source = f.read()
         if not source:
             return
@@ -58,7 +58,7 @@ class Code:
     def set_html(self, html: str):
         pass
 
-    def get_html(self, filters: List[str] = None) -> str:
+    def get_html(self, filters: list[str] = None) -> str:
         """Renders and returns HTML."""
         from mkapi.core.renderer import renderer
 
@@ -85,5 +85,5 @@ def get_code(name: str) -> Code:
     Args:
         name: Module name.
     """
-    module = get_module(name)
+    module = load_module(name)
     return Code(module)

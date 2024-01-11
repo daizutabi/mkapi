@@ -12,7 +12,12 @@ from typing import TYPE_CHECKING, ClassVar
 import mkapi.ast
 import mkapi.dataclasses
 from mkapi import docstrings
-from mkapi.utils import del_by_name, get_by_name, iter_parent_modulenames, unique_names
+from mkapi.utils import (
+    del_by_name,
+    get_by_name,
+    iter_parent_modulenames,
+    unique_names,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -50,7 +55,7 @@ class Object:
 
     def get_module(self) -> Module | None:
         """Return a [Module] instance."""
-        return get_module(self.modulename) if self.modulename else None
+        return load_module(self.modulename) if self.modulename else None
 
     def get_source(self, maxline: int | None = None) -> str | None:
         """Return the source code segment."""
@@ -315,7 +320,8 @@ class Class(Callable):
 
     @classmethod
     @contextmanager
-    def create(cls, node: ast.ClassDef) -> Iterator[Self]:  # noqa: D102
+    def create(cls, node: ast.ClassDef) -> Iterator[Self]:
+        """Create a [Class] instance."""
         name = node.name
         args = (name, None, *_callable_args(node))
         klass = cls(node, *args, [], [], [], [])
@@ -325,7 +331,8 @@ class Class(Callable):
         cls.classnames.pop()
 
     @classmethod
-    def get_qualclassname(cls) -> str | None:  # noqa: D102
+    def get_qualclassname(cls) -> str | None:
+        """Return current qualified class name."""
         return cls.classnames[-1]
 
 
@@ -338,7 +345,7 @@ def _callable_args(
 
 
 def get_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Function:
-    """Return a [Class] or [Function] instancd."""
+    """Return a [Function] instance."""
     args = (node.name, None, *_callable_args(node))
     return Function(node, *args, get_return(node))
 
@@ -400,7 +407,7 @@ class Module(Member):
         if "." in name:
             name, attr = name.rsplit(".", maxsplit=1)
             if import_ := self.get_import(name):  # noqa: SIM102
-                if module := get_module(import_.fullname):
+                if module := load_module(import_.fullname):
                     return module.get_fullname(attr)
         return None
 
@@ -409,10 +416,6 @@ class Module(Member):
         if not self.source:
             return None
         return "\n".join(self.source.split("\n")[:maxline])
-
-    def get_node_docstring(self) -> str | None:
-        """Return the docstring of the node."""
-        return ast.get_docstring(self._node)
 
     def __iter__(self) -> Iterator[Import | Attribute | Class | Function]:
         """Yield member instances."""
@@ -485,7 +488,7 @@ def get_module_path(name: str) -> Path | None:
 modules: dict[str, Module | None] = {}
 
 
-def get_module(name: str) -> Module | None:
+def load_module(name: str) -> Module | None:
     """Return a [Module] instance by the name."""
     if name in modules:
         return modules[name]
@@ -494,20 +497,20 @@ def get_module(name: str) -> Module | None:
         return None
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
-    module = get_module_from_source(source, name)
+    module = load_module_from_source(source, name)
     module.kind = "package" if path.stem == "__init__" else "module"
     return module
 
 
-def get_module_from_source(source: str, name: str = "__mkapi__") -> Module:
+def load_module_from_source(source: str, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from source string."""
     node = ast.parse(source)
-    module = get_module_from_node(node, name)
+    module = load_module_from_node(node, name)
     module.source = source
     return module
 
 
-def get_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
+def load_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from the [ast.Module] node."""
     with Module.create(node, name) as module:
         for member in iter_members(node):
@@ -518,14 +521,10 @@ def get_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
 
 def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     """Return a [Object] instance by the fullname."""
-    if fullname in modules:
-        return modules[fullname]
     if fullname in objects:
         return objects[fullname]
-    names = fullname.split(".")
-    for k in range(1, len(names) + 1):
-        modulename = ".".join(names[:k])
-        if get_module(modulename) and fullname in objects:
+    for modulename in iter_parent_modulenames(fullname):
+        if load_module(modulename) and fullname in objects:
             return objects[fullname]
     objects[fullname] = None
     return None
@@ -567,7 +566,7 @@ def _merge_items(cls: type, attrs: list, items: list[Item]) -> list:
 
 def _merge_docstring(obj: Module | Class | Function) -> None:
     """Merge [Object] and [Docstring]."""
-    if not (doc := obj.get_node_docstring()):
+    if not (doc := ast.get_docstring(obj._node)):  # noqa: SLF001
         return
     sections: list[Section] = []
     docstring = docstrings.parse(doc)

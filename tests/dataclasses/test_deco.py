@@ -3,7 +3,7 @@ from mkapi.dataclasses import (
     _iter_decorator_args,
     is_dataclass,
 )
-from mkapi.objects import get_module_from_source
+from mkapi.objects import load_module_from_source
 
 source = """
 import dataclasses
@@ -22,7 +22,7 @@ class B:
 
 
 def test_decorator_arg():
-    module = get_module_from_source(source)
+    module = load_module_from_source(source)
     cls = module.get_class("A")
     assert cls
     assert is_dataclass(cls, module)

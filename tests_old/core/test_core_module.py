@@ -1,8 +1,8 @@
-from mkapi.core.module import get_module, modules
+from mkapi.core.module import load_module, modules
 
 
-def test_get_module():
-    module = get_module("mkapi")
+def test_load_module():
+    module = load_module("mkapi")
     assert module.parent is None
     assert module.object.markdown == "[mkapi](!mkapi)"
     assert "core" in module
@@ -19,15 +19,15 @@ def test_get_module():
 
 
 def test_repr():
-    module = get_module("mkapi.core.base")
+    module = load_module("mkapi.core.base")
     s = "Module('mkapi.core.base', num_sections=2, num_members=6)"
     assert repr(module) == s
 
 
-def test_get_module_from_object():
+def test_load_module_from_object():
     from mkapi.core import base
 
-    assert get_module(base).obj is base
+    assert load_module(base).obj is base
 
 
 def test_cache():

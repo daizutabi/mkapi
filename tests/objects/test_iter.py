@@ -2,12 +2,12 @@ import ast
 
 import pytest
 
-from mkapi.objects import Module, Parameter, Return, get_module
+from mkapi.objects import Module, Parameter, Return, load_module
 
 
 @pytest.fixture()
 def module():
-    module = get_module("mkapi.objects")
+    module = load_module("mkapi.objects")
     assert module
     return module
 
@@ -28,7 +28,7 @@ def test_func(module: Module):
 
 
 def test_iter_exprs(module: Module):
-    func = module.get("get_module_from_node")
+    func = module.get("load_module_from_node")
     assert func
     exprs = list(func.iter_exprs())
     assert len(exprs) == 4

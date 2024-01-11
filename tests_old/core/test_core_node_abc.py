@@ -48,7 +48,7 @@ class C(ABC):
         pass
 
 
-def test_get_module_sourcefiles():
+def test_load_module_sourcefiles():
     files = get_sourcefiles(C)
     assert len(files) == 1
 

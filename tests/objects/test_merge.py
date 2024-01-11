@@ -9,7 +9,7 @@ from mkapi.objects import (
     Function,
     Module,
     Parameter,
-    get_module,
+    load_module,
     modules,
 )
 from mkapi.utils import get_by_name
@@ -45,7 +45,7 @@ def module():
     name = "examples.styles.example_google"
     if name in modules:
         del modules[name]
-    return get_module(name)
+    return load_module(name)
 
 
 def test_merge_module_attrs(module: Module):

@@ -83,7 +83,7 @@ def get_members(obj: object) -> list[Module]:
             name = path[:-3]
         if name:
             name = f"{obj.__name__}.{name}"
-            module = get_module(name)
+            module = load_module(name)
             members.append(module)
     packages = []
     modules = []
@@ -98,7 +98,7 @@ def get_members(obj: object) -> list[Module]:
 modules: dict[str, Module] = {}
 
 
-def get_module(name: str) -> Module:
+def load_module(name: str) -> Module:
     """Return a Module instace by name or object.
 
     Args:

@@ -8,7 +8,7 @@ from mkapi.nodes import get_node
 
 
 # def test_property():
-#     module = get_module("mkapi.objects")
+#     module = load_module("mkapi.objects")
 #     assert module
 #     assert module.id == "mkapi.objects"
 #     f = module.get_function("get_object")
