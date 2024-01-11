@@ -42,17 +42,6 @@ class Object:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
 
-    def __iter__(self) -> Iterator:
-        yield from []
-
-    def iter_exprs(self) -> Iterator[ast.expr | ast.type_param]:
-        """Yield AST expressions."""
-        for obj in self:
-            if isinstance(obj, Object):
-                yield from obj.iter_exprs()
-            else:
-                yield obj
-
     def get_module(self) -> Module | None:
         """Return a [Module] instance."""
         return load_module(self.modulename) if self.modulename else None
@@ -101,11 +90,6 @@ class Parameter(Object):
     default: ast.expr | None
     kind: _ParameterKind | None
 
-    def __iter__(self) -> Iterator[ast.expr]:
-        for expr in [self.type, self.default]:
-            if expr:
-                yield expr
-
 
 def iter_parameters(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
@@ -126,10 +110,6 @@ class Raise(Object):
         exc = ast.unparse(self.type) if self.type else ""
         return f"{self.__class__.__name__}({exc})"
 
-    def __iter__(self) -> Iterator[ast.expr]:
-        if self.type:
-            yield self.type
-
 
 def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
     """Yield [Raise] instances."""
@@ -144,10 +124,6 @@ class Return(Object):
 
     _node: ast.expr | None
     type: ast.expr | None  #   # noqa: A003
-
-    def __iter__(self) -> Iterator[ast.expr]:
-        if self.type:
-            yield self.type
 
 
 def get_return(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Return:
@@ -182,13 +158,6 @@ class Attribute(Member):
     type: ast.expr | None  #   # noqa: A003
     default: ast.expr | None
     type_params: list[ast.type_param] | None
-
-    def __iter__(self) -> Iterator[ast.expr | ast.type_param]:
-        for expr in [self.type, self.default]:
-            if expr:
-                yield expr
-        if self.type_params:
-            yield from self.type_params
 
 
 def get_attribute(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Attribute:
@@ -254,10 +223,6 @@ class Callable(Member):
     def get_raise(self, name: str) -> Raise | None:
         """Return a [Riase] instance by the name."""
         return get_by_name(self.raises, name)
-
-    def get_node_docstring(self) -> str | None:
-        """Return the docstring of the node."""
-        return ast.get_docstring(self._node)
 
 
 @dataclass(repr=False)
@@ -398,25 +363,6 @@ class Module(Member):
         self.qualname = self.fullname = self.name
         modules[self.name] = self
 
-    def get_fullname(self, name: str | None = None) -> str | None:
-        """Return the fullname of the module."""
-        if not name:
-            return self.name
-        if obj := self.get(name):
-            return obj.fullname
-        if "." in name:
-            name, attr = name.rsplit(".", maxsplit=1)
-            if import_ := self.get_import(name):  # noqa: SIM102
-                if module := load_module(import_.fullname):
-                    return module.get_fullname(attr)
-        return None
-
-    def get_source(self, maxline: int | None = None) -> str | None:
-        """Return the source of the module."""
-        if not self.source:
-            return None
-        return "\n".join(self.source.split("\n")[:maxline])
-
     def __iter__(self) -> Iterator[Import | Attribute | Class | Function]:
         """Yield member instances."""
         yield from self.imports
@@ -457,6 +403,25 @@ class Module(Member):
     def get_function(self, name: str) -> Function | None:
         """Return an [Function] instance by the name."""
         return get_by_name(self.functions, name)
+
+    def get_fullname(self, name: str | None = None) -> str | None:
+        """Return the fullname of the module."""
+        if not name:
+            return self.name
+        if obj := self.get(name):
+            return obj.fullname
+        if "." in name:
+            name, attr = name.rsplit(".", maxsplit=1)
+            if import_ := self.get_import(name):  # noqa: SIM102
+                if module := load_module(import_.fullname):
+                    return module.get_fullname(attr)
+        return None
+
+    def get_source(self, maxline: int | None = None) -> str | None:
+        """Return the source of the module."""
+        if not self.source:
+            return None
+        return "\n".join(self.source.split("\n")[:maxline])
 
     @classmethod
     @contextmanager

@@ -128,3 +128,19 @@ def test_get_fullname_with_attr():
     name = module.get_fullname("config_options.Type")
     assert name == "mkdocs.config.config_options.Type"
     assert not module.get_fullname("config_options.A")
+
+
+def test_iter():
+    module = load_module("mkapi.objects")
+    assert module
+    names = [o.name for o in module]
+    assert "modules" in names
+    assert "Class" in names
+    assert "get_object" in names
+    cls = module.get_class("Class")
+    assert cls
+    bases = cls.iter_bases()
+    assert next(bases).name == "Object"
+    assert next(bases).name == "Member"
+    assert next(bases).name == "Callable"
+    assert next(bases).name == "Class"

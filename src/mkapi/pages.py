@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from mkapi.converter import convert_html, convert_object
-from mkapi.filter import split_filters, update_filters
 from mkapi.link import resolve_link
+from mkapi.utils import split_filters, update_filters
 
 # from mkapi.core import postprocess
 # from mkapi.core.base import Base, Section

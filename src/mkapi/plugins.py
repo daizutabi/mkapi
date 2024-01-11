@@ -24,8 +24,7 @@ from mkdocs.structure.files import Files, get_files
 # from mkdocs.utils.templates import TemplateContext
 import mkapi
 from mkapi import converter
-from mkapi.filter import split_filters, update_filters
-from mkapi.utils import find_submodulenames, is_package
+from mkapi.utils import find_submodulenames, is_package, split_filters, update_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
