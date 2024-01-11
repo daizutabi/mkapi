@@ -74,26 +74,29 @@ def iter_items(
     style: Style,
     section_name: str = "Parameters",
 ) -> Iterator[Item]:
-    """Yiled a tuple of (name, type, text) of item.
+    """Yiled a tuple of (name, type, text) of an item.
 
-    If name is 'Raises', the type of [Item] is set by its name.
+    If the section name is 'Raises', the type is set by its name.
     """
     for item in _iter_items(section):
         name, type_, text = split_item(item, style)
-        if section_name != "Raises":
-            yield Item(name, type_, text)
-        else:
-            yield Item(name, name, text)
+        name = name.replace("*", "")  # *args -> args, **kwargs -> kwargs
+        if section_name == "Raises":
+            type_ = name
+        yield Item(name, type_, text)
 
 
 @dataclass
-class Section(Item):  # noqa: D101
+class Section(Item):
+    """Section class of docstring."""
+
     items: list[Item]
 
     def __iter__(self) -> Iterator[Item]:
         return iter(self.items)
 
-    def get(self, name: str) -> Item | None:  # noqa: D102
+    def get(self, name: str) -> Item | None:
+        """Return an [Item] instance by name."""
         return get_by_name(self.items, name)
 
 
@@ -119,7 +122,7 @@ def _split_sections(doc: str, style: Style) -> Iterator[str]:
 # In Numpy style, if a section is indented, then a section break is
 # created by resuming unindented text.
 def _subsplit(doc: str, style: Style) -> list[str]:
-    if style == "google" or len(lines := doc.split("\n")) < 3:  # noqa: PLR2004
+    if style == "google" or len(lines := doc.split("\n")) < 3:
         return [doc]
     if not lines[2].startswith(" "):  # 2 == after '----' line.
         return [doc]
@@ -127,13 +130,14 @@ def _subsplit(doc: str, style: Style) -> list[str]:
 
 
 SECTION_NAMES: list[tuple[str, ...]] = [
-    ("Parameters", "Arguments", "Args"),
-    ("Attributes",),
+    ("Parameters", "Parameter", "Params", "Param"),
+    ("Parameters", "Arguments", "Argument", "Args", "Arg"),
+    ("Attributes", "Attribute", "Attrs", "Attr"),
     ("Examples", "Example"),
     ("Returns", "Return"),
     ("Raises", "Raise"),
     ("Yields", "Yield"),
-    ("Warnings", "Warns"),
+    ("Warning", "Warn"),
     ("Warnings", "Warns"),
     ("Note",),
     ("Notes",),
@@ -143,9 +147,9 @@ CURRENT_DOCSTRING_STYLE: list[Style] = ["google"]
 
 
 def get_style(doc: str) -> Style:
-    """Return the docstring style of doc.
+    """Return the docstring style of a doc.
 
-    If the style can't be determined, the current style returned.
+    If the style can't be determined, the current style is returned.
     """
     for names in SECTION_NAMES:
         for name in names:
@@ -164,9 +168,9 @@ def _rename_section(section_name: str) -> str:
 
 
 def split_section(section: str, style: Style) -> tuple[str, str]:
-    """Return section name and its text."""
+    """Return a section name and its text."""
     lines = section.split("\n")
-    if len(lines) < 2:  # noqa: PLR2004
+    if len(lines) < 2:
         return "", section
     if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
         return lines[0][:-1], join_without_first_indent(lines[1:])
@@ -176,7 +180,7 @@ def split_section(section: str, style: Style) -> tuple[str, str]:
 
 
 def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
-    """Yield (section name, text) pairs by splitting the whole docstring."""
+    """Yield (section name, text) pairs by splitting a docstring."""
     prev_name, prev_text = "", ""
     for section in _split_sections(doc, style):
         if not section:
@@ -208,10 +212,10 @@ def split_without_name(text: str, style: Style) -> tuple[str, str]:
 
 
 def iter_sections(doc: str, style: Style) -> Iterator[Section]:
-    """Yield [Section] instance by splitting the whole docstring."""
+    """Yield [Section] instances by splitting a docstring."""
     for name, text in _iter_sections(doc, style):
         type_ = text_ = ""
-        items: list[Item] = []
+        items = []
         if name in ["Parameters", "Attributes", "Raises"]:
             items = list(iter_items(text, style, name))
         elif name in ["Returns", "Yields"]:
@@ -224,7 +228,9 @@ def iter_sections(doc: str, style: Style) -> Iterator[Section]:
 
 
 @dataclass(repr=False)
-class Docstring(Item):  # noqa: D101
+class Docstring(Item):
+    """Docstring class."""
+
     sections: list[Section]
 
     def __repr__(self) -> str:
@@ -233,20 +239,21 @@ class Docstring(Item):  # noqa: D101
     def __iter__(self) -> Iterator[Section]:
         return iter(self.sections)
 
-    def get(self, name: str) -> Section | None:  # noqa: D102
+    def get(self, name: str) -> Section | None:
+        """Return a [Section] by name."""
         return get_by_name(self.sections, name)
 
 
 def parse(doc: str, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
-    style = style or get_style(doc)
     doc = add_fence(doc)
+    style = style or get_style(doc)
     sections = list(iter_sections(doc, style))
     return Docstring("", "", "", sections)
 
 
 def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
-    """Yield merged [Item] instances from two list of [Item]."""
+    """Yield merged [Item] instances from two lists of [Item]."""
     for name in unique_names(a, b):
         ai, bi = get_by_name(a, name), get_by_name(b, name)
         if ai and not bi:
@@ -296,7 +303,7 @@ def merge(a: Docstring | None, b: Docstring | None) -> Docstring | None:
     sections.extend(iter_merge_sections(a.sections, b.sections))
     is_named_section = False
     for section in a.sections:
-        if section.name:  # already collected then skip.
+        if section.name:  # already collected, so skip.
             is_named_section = True
         elif is_named_section:
             sections.append(section)

@@ -32,10 +32,9 @@ type Node = Import_ | Def | Assign_
 
 
 def iter_child_nodes(node: AST) -> Iterator[Node]:  # noqa: D103
+    yield_type = Import | ImportFrom | AsyncFunctionDef | FunctionDef | ClassDef
     for child in (it := ast.iter_child_nodes(node)):
-        if isinstance(child, Import | ImportFrom):  # noqa: SIM114
-            yield child
-        elif isinstance(child, AsyncFunctionDef | FunctionDef | ClassDef):
+        if isinstance(child, yield_type):
             yield child
         elif isinstance(child, AnnAssign | Assign | TypeAlias):
             yield from _iter_assign_nodes(child, it)
@@ -44,10 +43,10 @@ def iter_child_nodes(node: AST) -> Iterator[Node]:  # noqa: D103
 
 
 def _get_pseudo_docstring(node: AST) -> str | None:
-    if not isinstance(node, Expr) or not isinstance(node.value, Constant):
-        return None
-    doc = node.value.value
-    return cleandoc(doc) if isinstance(doc, str) else None
+    if isinstance(node, Expr) and isinstance(node.value, Constant):
+        doc = node.value.value
+        return cleandoc(doc) if isinstance(doc, str) else None
+    return None
 
 
 def _iter_assign_nodes(
@@ -92,7 +91,7 @@ def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:
     return None
 
 
-PARAMETER_KIND_DICT: dict[_ParameterKind, str] = {
+PARAMETER_KIND_ATTRIBUTE: dict[_ParameterKind, str] = {
     Parameter.POSITIONAL_ONLY: "posonlyargs",
     Parameter.POSITIONAL_OR_KEYWORD: "args",
     Parameter.VAR_POSITIONAL: "vararg",
@@ -102,15 +101,15 @@ PARAMETER_KIND_DICT: dict[_ParameterKind, str] = {
 
 
 def _iter_parameters(
-    node: FunctionDef | AsyncFunctionDef,
+    node: AsyncFunctionDef | FunctionDef,
 ) -> Iterator[tuple[ast.arg, _ParameterKind]]:
-    for kind, attr in PARAMETER_KIND_DICT.items():
+    for kind, attr in PARAMETER_KIND_ATTRIBUTE.items():
         if args := getattr(node.args, attr):
             it = args if isinstance(args, list) else [args]
             yield from ((arg, kind) for arg in it)
 
 
-def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | None]:
+def _iter_defaults(node: AsyncFunctionDef | FunctionDef) -> Iterator[ast.expr | None]:
     args = node.args
     num_positional = len(args.posonlyargs) + len(args.args)
     nones = [None] * num_positional
@@ -119,22 +118,26 @@ def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | 
 
 
 def iter_parameters(
-    node: FunctionDef | AsyncFunctionDef,
+    node: AsyncFunctionDef | FunctionDef,
 ) -> Iterator[tuple[ast.arg, _ParameterKind, ast.expr | None]]:
     """Yield parameters from the function node."""
     it = _iter_defaults(node)
     for arg, kind in _iter_parameters(node):
-        if kind is Parameter.VAR_POSITIONAL:
-            arg.arg, default = f"*{arg.arg}", None
-        elif kind is Parameter.VAR_KEYWORD:
-            arg.arg, default = f"**{arg.arg}", None
+        if kind in [Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD]:
+            default = None
         else:
             default = next(it)
         yield arg, kind, default
+        # if kind is Parameter.VAR_POSITIONAL:
+        #     arg.arg, default = f"*{arg.arg}", None
+        # elif kind is Parameter.VAR_KEYWORD:
+        #     arg.arg, default = f"**{arg.arg}", None
+        # else:
+        #     default = next(it)
 
 
 def is_property(decorators: list[ast.expr]) -> bool:
-    """Return True if one of decorators is property."""
+    """Return True if one of decorators is `property`."""
     return any(ast.unparse(deco).startswith("property") for deco in decorators)
 
 

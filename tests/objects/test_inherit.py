@@ -49,14 +49,15 @@ def test_inherit_other_module2():
 
 
 def test_inherit_other_module3():
-    m = get_module("mkdocs.plugins")
-    assert m
-    assert m.get_fullname("TemplateContext") == "mkdocs.utils.templates.TemplateContext"
-    assert m.get_fullname("jinja2") == "jinja2"
+    m1 = get_module("mkdocs.plugins")
+    assert m1
+    a = "mkdocs.utils.templates.TemplateContext"
+    assert m1.get_fullname("TemplateContext") == a
+    assert m1.get_fullname("jinja2") == "jinja2"
     a = "jinja2.environment.Template"
+    assert m1.get_fullname("jinja2.Template") == a
     m2 = get_module("jinja2")
     assert m2
-    t = m2.get("Template")
-    assert t
-    assert t.fullname == a  # broken
-    assert m.get_fullname("jinja2.Template") == a
+    x = m2.get("Template")
+    assert x
+    assert x.fullname == a

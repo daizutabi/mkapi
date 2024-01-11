@@ -392,19 +392,16 @@ class Module(Member):
         modules[self.name] = self
 
     def get_fullname(self, name: str | None = None) -> str | None:
-        """Return the fullname of the module.
-
-        If the name is given, the fullname of member is returned,
-        possibly with an attribute.
-        """
+        """Return the fullname of the module."""
         if not name:
             return self.name
         if obj := self.get(name):
             return obj.fullname
         if "." in name:
             name, attr = name.rsplit(".", maxsplit=1)
-            if obj := self.get(name):
-                return f"{obj.fullname}.{attr}"
+            if import_ := self.get_import(name):  # noqa: SIM102
+                if module := get_module(import_.fullname):
+                    return module.get_fullname(attr)
         return None
 
     def get_source(self, maxline: int | None = None) -> str | None:

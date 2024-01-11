@@ -55,15 +55,18 @@ def find_submodulenames(
     return names
 
 
-def iter_parent_modulenames(fullname: str) -> Iterator[str]:
+def iter_parent_modulenames(fullname: str, *, reverse: bool = False) -> Iterator[str]:
     """Yield parent module names.
 
     Examples:
         >>> list(iter_parent_modulenames("a.b.c.d"))
         ['a', 'a.b', 'a.b.c', 'a.b.c.d']
+        >>> list(iter_parent_modulenames("a.b.c.d", reverse=True))
+        ['a.b.c.d', 'a.b.c', 'a.b', 'a']
     """
     names = fullname.split(".")
-    for k in range(1, len(names) + 1):
+    it = range(len(names), 0, -1) if reverse else range(1, len(names) + 1)
+    for k in it:
         yield ".".join(names[:k])
 
 

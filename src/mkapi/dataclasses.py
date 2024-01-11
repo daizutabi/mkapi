@@ -10,8 +10,9 @@ from mkapi.ast import iter_identifiers
 
 if TYPE_CHECKING:
     from inspect import _ParameterKind
+    from typing import Any
 
-    from mkapi.objects import Any, Attribute, Class, Iterator, Module
+    from mkapi.objects import Attribute, Class, Iterator, Module
 
 
 def _get_dataclass_decorator(cls: Class, module: Module) -> ast.expr | None:
