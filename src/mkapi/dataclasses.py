@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def _get_dataclass_decorator(cls: Class, module: Module) -> ast.expr | None:
-    for deco in cls._node.decorator_list:
+    for deco in cls.node.decorator_list:
         name = next(iter_identifiers(deco))
         if module.get_fullname(name) == "dataclasses.dataclass":
             return deco

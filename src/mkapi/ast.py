@@ -153,7 +153,7 @@ def _is_identifier(name: str) -> bool:
     return name != "" and all(x.isidentifier() for x in _split_name(name))
 
 
-def get_expr(name: str) -> ast.expr:
+def create_expr(name: str) -> ast.expr:
     """Return an [ast.expr] instance of a name."""
     if _is_identifier(name):
         expr = ast.parse(name).body[0]

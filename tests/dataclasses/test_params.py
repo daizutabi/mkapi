@@ -1,7 +1,7 @@
 import ast
 
 from mkapi.dataclasses import is_dataclass
-from mkapi.objects import Class, get_object
+from mkapi.objects import Class, Parameter, get_object
 
 
 def test_parameters():
@@ -9,37 +9,38 @@ def test_parameters():
     assert isinstance(cls, Class)
     assert is_dataclass(cls)
     p = cls.parameters
-    assert len(p) == 11
-    assert p[0].name == "_node"
+    assert len(p) == 10
+    assert p[0].name == "node"
     assert p[0].type
-    assert ast.unparse(p[0].type) == "ast.ClassDef"
+    assert ast.unparse(p[0].type.expr) == "ast.ClassDef"
     assert p[1].name == "name"
     assert p[1].type
-    assert ast.unparse(p[1].type) == "str"
-    assert p[2].name == "docstring"
+    assert ast.unparse(p[1].type.expr) == "str"
+    assert p[2].name == "_text"
     assert p[2].type
-    assert ast.unparse(p[2].type) == "Docstring | None"
-    assert p[3].name == "parameters"
+    assert (
+        ast.unparse(p[2].type.expr) == "InitVar[str | None]"
+    )  # TODO: Delete `InitVar`
+    assert p[3].name == "_type"
     assert p[3].type
-    assert ast.unparse(p[3].type) == "list[Parameter]"
-    assert p[4].name == "raises"
+    assert (
+        ast.unparse(p[3].type.expr) == "InitVar[ast.expr | None]"
+    )  # TODO: Delete `InitVar`
+    assert p[4].name == "parameters"
     assert p[4].type
-    assert ast.unparse(p[4].type) == "list[Raise]"
-    assert p[5].name == "decorators"
+    assert ast.unparse(p[4].type.expr) == "list[Parameter]"
+    assert p[5].name == "raises"
     assert p[5].type
-    assert ast.unparse(p[5].type) == "list[ast.expr]"
-    assert p[6].name == "type_params"
+    assert ast.unparse(p[5].type.expr) == "list[Raise]"
+    assert p[6].name == "attributes"
     assert p[6].type
-    assert ast.unparse(p[6].type) == "list[ast.type_param]"
-    assert p[7].name == "attributes"
+    assert ast.unparse(p[6].type.expr) == "list[Attribute]"
+    assert p[7].name == "classes"
     assert p[7].type
-    assert ast.unparse(p[7].type) == "list[Attribute]"
-    assert p[8].name == "classes"
+    assert ast.unparse(p[7].type.expr) == "list[Class]"
+    assert p[8].name == "functions"
     assert p[8].type
-    assert ast.unparse(p[8].type) == "list[Class]"
-    assert p[9].name == "functions"
+    assert ast.unparse(p[8].type.expr) == "list[Function]"
+    assert p[9].name == "bases"
     assert p[9].type
-    assert ast.unparse(p[9].type) == "list[Function]"
-    assert p[10].name == "bases"
-    assert p[10].type
-    assert ast.unparse(p[10].type) == "list[Class]"
+    assert ast.unparse(p[9].type.expr) == "list[Class]"

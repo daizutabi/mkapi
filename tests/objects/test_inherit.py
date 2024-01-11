@@ -9,15 +9,19 @@ def test_inherit():
     assert cls.bases[0].name == "Callable"
     assert cls.bases[0].fullname == "mkapi.objects.Callable"
     a = cls.attributes
-    assert len(a) == 15
-    assert get_by_name(a, "_node")
+    for x in a:
+        print(x)
+    assert 0
+    # TODO: fix InitVar, ClassVar
+    assert len(a) == 14
+    assert get_by_name(a, "node")
     assert get_by_name(a, "qualname")
     assert get_by_name(a, "fullname")
     assert get_by_name(a, "module")
     assert get_by_name(a, "classnames")
     p = cls.parameters
     assert len(p) == 11
-    assert get_by_name(p, "_node")
+    assert get_by_name(p, "node")
     assert not get_by_name(p, "qualname")
     assert not get_by_name(p, "fullname")
     assert not get_by_name(p, "module")
