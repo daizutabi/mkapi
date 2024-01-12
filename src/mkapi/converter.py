@@ -1,7 +1,13 @@
 """Converter."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+import mkapi.ast
 from mkapi.objects import load_module
+
+if TYPE_CHECKING:
+    from mkapi.objects import Module
 
 # from mkapi.renderer import renderer
 

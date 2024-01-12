@@ -128,12 +128,6 @@ def iter_parameters(
         else:
             default = next(it)
         yield arg, kind, default
-        # if kind is Parameter.VAR_POSITIONAL:
-        #     arg.arg, default = f"*{arg.arg}", None
-        # elif kind is Parameter.VAR_KEYWORD:
-        #     arg.arg, default = f"**{arg.arg}", None
-        # else:
-        #     default = next(it)
 
 
 def is_property(decorators: list[ast.expr]) -> bool:

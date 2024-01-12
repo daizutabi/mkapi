@@ -9,12 +9,6 @@ from mkapi.converter import convert_html, convert_object
 from mkapi.link import resolve_link
 from mkapi.utils import split_filters, update_filters
 
-# from mkapi.core import postprocess
-# from mkapi.core.base import Base, Section
-# from mkapi.core.code import Code, get_code
-# from mkapi.core.inherit import inherit
-# from mkapi.core.node import Node, get_node
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
 

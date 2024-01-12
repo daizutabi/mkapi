@@ -1,32 +1,21 @@
 import ast
 
 import mkapi.ast
-from mkapi.objects import Module, Object, Parameter, Type, load_module
+from mkapi.objects import load_module
 
 
-def set_markdown(obj: Type, module: Module) -> None:
-    def callback(name: str) -> str:
-        fullname = module.get_fullname(name)
-        if fullname:
-            return f"[{name}][__mkapi__.{fullname}]"
-        return name
-
-    obj.markdown = mkapi.ast.unparse(obj.expr, callback)
-
-
-def test_expr_mkapi_objects():
+def test_set_markdown():
     module = load_module("mkapi.objects")
     assert module
+    module.set_markdown()
+    x = [t.markdown for t in module.types]
+    assert "list[[Item][__mkapi__.mkapi.docstrings.Item]]" in x
+    assert "[Path][__mkapi__.pathlib.Path] | None" in x
+    assert "NotImplementedError" in x
+    assert "[InitVar][__mkapi__.dataclasses.InitVar][str | None]" in x
 
-    def callback(x: str) -> str:
-        fullname = module.get_fullname(x)
-        if fullname:
-            return f"[{x}][__mkapi__.{fullname}]"
-        return x
+    for type in module.types:
+        assert isinstance(type.markdown, str)
+        print(type.markdown)
 
-    cls = module.get_class("Class")
-    assert cls
-    for p in cls.parameters:
-        t = mkapi.ast.unparse(p.type.expr, callback) if p.type else "---"
-        print(p.name, t)
-    # assert 0
+    assert 0

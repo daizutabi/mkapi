@@ -4,8 +4,7 @@ from __future__ import annotations
 import ast
 import importlib
 import importlib.util
-from contextlib import contextmanager
-from dataclasses import InitVar, dataclass, field, fields
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
@@ -57,8 +56,12 @@ class Object:
 
     def __post_init__(self, _text: str | None, _type: ast.expr | None) -> None:
         self.module = Module.current
-        self.type = Type(_type) if _type else None
         self.text = Text(_text) if _text else None
+        self.type = Type(_type) if _type else None
+        if self.module and self.text:
+            self.module.add_text(self.text)
+        if self.module and self.type:
+            self.module.add_type(self.type)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
@@ -168,30 +171,15 @@ class Member(Object):
 
     def __post_init__(self, _text: str | None, _type: ast.expr | None) -> None:
         super().__post_init__(_text, _type)
-        qualname = Class.get_qualclassname()
+        qualname = Class.classnames[-1]
         self.qualname = f"{qualname}.{self.name}" if qualname else self.name
         m_name = self.module.name if self.module else "__mkapi__"
         self.fullname = f"{m_name}.{self.qualname}" if m_name else self.qualname
         objects[self.fullname] = self  # type:ignore
 
-    def iter_objects(self) -> Iterator[Object]:
-        """Yield [Object] instances."""
-        for f in fields(self):
-            obj = getattr(self, f.name)
-            if isinstance(obj, Object):
-                yield obj
-
-    def iter_types(self) -> Iterator[Type]:
-        """Yield [Type] instances."""
-        yield from super().iter_types()
-        for obj in self.iter_objects():
-            yield from obj.iter_types()
-
-    def iter_texts(self) -> Iterator[Text]:
-        """Yield [Text] instances."""
-        yield from super().iter_texts()
-        for obj in self.iter_objects():
-            yield from obj.iter_texts()
+    def iter_members(self) -> Iterator[Member]:
+        """Yield [Member] instances."""
+        yield from []
 
 
 @dataclass(repr=False)
@@ -279,10 +267,10 @@ class Class(Callable):
     """Class class."""
 
     node: ast.ClassDef
-    attributes: list[Attribute]
-    classes: list[Class]
-    functions: list[Function]
-    bases: list[Class]
+    attributes: list[Attribute] = field(default_factory=list, init=False)
+    classes: list[Class] = field(default_factory=list, init=False)
+    functions: list[Function] = field(default_factory=list, init=False)
+    bases: list[Class] = field(default_factory=list, init=False)
     classnames: ClassVar[list[str | None]] = [None]
 
     def add_member(self, member: Attribute | Class | Function | Import) -> None:
@@ -312,28 +300,16 @@ class Class(Callable):
             yield from base.iter_bases()
         yield self
 
-    @classmethod
-    @contextmanager
-    def create(cls, node: ast.ClassDef) -> Iterator[Self]:
-        """Create a [Class] instance."""
-        name = node.name
-        klass = cls(node, node.name, *_callable_args(node), [], [], [], [])
-        qualname = f"{cls.classnames[-1]}.{name}" if cls.classnames[-1] else name
-        cls.classnames.append(qualname)
-        yield klass
-        cls.classnames.pop()
-
-    @classmethod
-    def get_qualclassname(cls) -> str | None:
-        """Return current qualified class name."""
-        return cls.classnames[-1]
-
 
 def create_class(node: ast.ClassDef) -> Class:
     """Return a [Class] instance."""
-    with Class.create(node) as cls:
-        for member in create_members(node):
-            cls.add_member(member)
+    name = node.name
+    cls = Class(node, node.name, *_callable_args(node))
+    qualname = f"{Class.classnames[-1]}.{name}" if Class.classnames[-1] else name
+    Class.classnames.append(qualname)
+    for member in create_members(node):
+        cls.add_member(member)
+    Class.classnames.pop()
     return cls
 
 
@@ -363,12 +339,14 @@ class Module(Member):
     """Module class."""
 
     node: ast.Module
-    imports: list[Import]
-    attributes: list[Attribute]
-    classes: list[Class]
-    functions: list[Function]
-    source: str | None
-    kind: str | None
+    imports: list[Import] = field(default_factory=list, init=False)
+    attributes: list[Attribute] = field(default_factory=list, init=False)
+    classes: list[Class] = field(default_factory=list, init=False)
+    functions: list[Function] = field(default_factory=list, init=False)
+    types: list[Type] = field(default_factory=list, init=False)
+    texts: list[Text] = field(default_factory=list, init=False)
+    source: str | None = None
+    kind: str | None = None
     current: ClassVar[Self | None] = None
 
     def __post_init__(self, _text: str | None, _type: ast.expr | None) -> None:
@@ -376,8 +354,16 @@ class Module(Member):
         self.qualname = self.fullname = self.name
         modules[self.name] = self
 
+    def add_type(self, type_: Type) -> None:
+        """Add a [Type] instance."""
+        self.types.append(type_)
+
+    def add_text(self, text: Text) -> None:
+        """Add a [Text] instance."""
+        self.texts.append(text)
+
     def add_member(self, member: Import | Attribute | Class | Function) -> None:
-        """Add member instance."""
+        """Add a member instance."""
         if isinstance(member, Import):
             if member.level:
                 prefix = ".".join(self.name.split(".")[: member.level])
@@ -437,14 +423,16 @@ class Module(Member):
             return None
         return "\n".join(self.source.split("\n")[:maxline])
 
-    @classmethod
-    @contextmanager
-    def create(cls, node: ast.Module, name: str) -> Iterator[Self]:  # noqa: D102
-        text = ast.get_docstring(node)
-        module = cls(node, name, text, None, [], [], [], [], None, None)
-        cls.current = module
-        yield module
-        cls.current = None
+    def _get_link(self, name: str) -> str:
+        fullname = self.get_fullname(name)
+        if fullname:
+            return f"[{name}][__mkapi__.{fullname}]"
+        return name
+
+    def set_markdown(self) -> None:
+        """Set markdown with link form."""
+        for type_ in self.types:
+            type_.markdown = mkapi.ast.unparse(type_.expr, self._get_link)
 
 
 def get_module_path(name: str) -> Path | None:
@@ -481,18 +469,27 @@ def load_module(name: str) -> Module | None:
 def load_module_from_source(source: str, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from source string."""
     node = ast.parse(source)
-    module = load_module_from_node(node, name)
+    module = create_module_from_node(node, name)
     module.source = source
     return module
 
 
-def load_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
+def create_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from the [ast.Module] node."""
-    with Module.create(node, name) as module:
-        for member in create_members(node):
-            module.add_member(member)
-        _postprocess(module)
+    text = ast.get_docstring(node)
+    module = Module(node, name, text, None)
+    if Module.current is not None:
+        raise NotImplementedError
+    Module.current = module
+    for member in create_members(node):
+        module.add_member(member)
+    Module.current = None
+    _postprocess(module)
     return module
+    # with Module.create(node, name) as module:
+    #     for member in create_members(node):
+    #         module.add_member(member)
+    # return module
 
 
 def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
