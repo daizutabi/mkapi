@@ -25,8 +25,10 @@ def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: list[str]) -> 
         >>> abs_api_paths = ['/api/a','/api/b', '/api/b.c']
         >>> resolve_link('[abc][b.c.d]', abs_src_path, abs_api_paths)
         '[abc](../../api/b.c#b.c.d)'
-        >>> resolve_link('[abc][!b.c.d]', abs_src_path, abs_api_paths)
+        >>> resolve_link('[abc][__mkapi__.b.c.d]', abs_src_path, abs_api_paths)
         '[abc](../../api/b.c#b.c.d)'
+        >>> resolve_link('list[[abc][__mkapi__.b.c.d]]', abs_src_path, abs_api_paths)
+        'list[[abc](../../api/b.c#b.c.d)]'
     """
 
     def replace(match: re.Match) -> str:
@@ -35,8 +37,8 @@ def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: list[str]) -> 
             href = href[2:]
             return f"[{name}]({href})"
         from_mkapi = False
-        if href.startswith("!"):
-            href = href[1:]
+        if href.startswith("__mkapi__."):
+            href = href[10:]
             from_mkapi = True
 
         if href := _resolve_href(href, abs_src_path, abs_api_paths):
@@ -121,7 +123,7 @@ def _match_last(name: str, abs_api_paths: list[str]) -> str:
 #         self.context = {"href": [], "heading_id": ""}
 #         super().feed(html)
 #         href = self.context["href"]
-#         if len(href) == 2:  # noqa: PLR2004
+#         if len(href) == 2:
 #             prefix_url, name_url = href
 #         elif len(href) == 1:
 #             prefix_url, name_url = "", href[0]

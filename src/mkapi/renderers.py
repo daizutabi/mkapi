@@ -6,7 +6,46 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.objects import Module
+from mkapi.objects import Module, load_module
+
+templates: dict[str, Template] = {}
+
+
+def load_templates(path: Path | None = None) -> None:
+    """Load templates."""
+    if not path:
+        path = Path(mkapi.__file__).parent / "templates"
+    loader = FileSystemLoader(path)
+    env = Environment(loader=loader, autoescape=select_autoescape(["jinja2"]))
+    for name in os.listdir(path):
+        templates[Path(name).stem] = env.get_template(name)
+
+
+def render_module(name: str, filters: list[str] | None = None) -> str:
+    """Return a rendered Markdown for Module.
+
+    Args:
+        name: Module name.
+        filters: A list of filters. Avaiable filters: `inherit`, `strict`,
+            `heading`.
+
+    Note:
+        This function returns Markdown instead of HTML. The returned Markdown
+        will be converted into HTML by MkDocs. Then the HTML is rendered into HTML
+        again by other functions in this module.
+    """
+    if not (module := load_module(name)):
+        return f"{name} not found"
+    # module_filter = object_filter = ""
+    # if filters:
+    #     object_filter = "|" + "|".join(filters)
+    # template = self.templates["module"]
+    return templates["module"].render(
+        module=module,
+        # module_filter=module_filter,
+        # object_filter=object_filter,
+    )
+    # return f"{module}: {id(module)}"
 
 
 @dataclass

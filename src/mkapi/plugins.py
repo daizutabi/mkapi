@@ -20,17 +20,17 @@ from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin
 from mkdocs.structure.files import Files, get_files
 
-# from mkdocs.structure.nav import Navigation
-# from mkdocs.utils.templates import TemplateContext
 import mkapi
-from mkapi import converter
+from mkapi import renderers
 from mkapi.utils import find_submodulenames, is_package, split_filters, update_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from mkdocs.structure.nav import Navigation
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
+    from mkdocs.utils.templates import TemplateContext
 
 from mkapi.pages import Page as MkAPIPage
 
@@ -57,6 +57,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         _insert_sys_path(self.config)
+        _update_templates(config, self)
         _update_config(config, self)
         if "admonition" not in config.markdown_extensions:
             config.markdown_extensions.append("admonition")
@@ -109,32 +110,45 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         # if page.title:
         #     page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore
         mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
+
         return mkapi_page.convert_html(html)
 
-        # def on_page_context(
-        #     self,
-        #     context: TemplateContext,
-        #     page: MkDocsPage,
-        #     config: MkDocsConfig,
-        #     nav: Navigation,
-        #     **kwargs,
-        # ) -> TemplateContext:
-        #     """Clear prefix in toc."""
-        #     abs_src_path = page.file.abs_src_path
-        #     if abs_src_path in self.config.abs_api_paths:
-        #         clear_prefix(page.toc, 2)
-        #     else:
-        #         mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
-        #         for level, id_ in mkapi_page.headings:
-        #             clear_prefix(page.toc, level, id_)
-        #     return context
+    def on_page_context(
+        self,
+        context: TemplateContext,
+        page: MkDocsPage,
+        config: MkDocsConfig,
+        nav: Navigation,
+        **kwargs,
+    ) -> TemplateContext:
+        """Clear prefix in toc."""
+        abs_src_path = page.file.abs_src_path
+        if abs_src_path in self.config.abs_api_paths:
+            pass
+            # clear_prefix(page.toc, 2)
+        else:
+            mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
+            for level, id_ in mkapi_page.headings:
+                pass
+                # clear_prefix(page.toc, level, id_)
+        return context
 
     def on_serve(self, server, config: MkDocsConfig, builder, **kwargs):
-        for path in ["themes", "templates"]:
+        for path in ["themes"]:
             path_str = (Path(mkapi.__file__).parent / path).as_posix()
             server.watch(path_str, builder)
         self.__class__.server = server
         return server
+
+
+def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
+    if func := _get_function(plugin, "on_config"):
+        msg = f"[MkAPI] Calling user 'on_config': {plugin.config.on_config}"
+        logger.info(msg)
+        config_ = func(config, plugin)
+        if isinstance(config_, MkDocsConfig):
+            return config_
+    return config
 
 
 def _insert_sys_path(config: MkAPIConfig) -> None:
@@ -157,6 +171,10 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     else:
         plugin.config.abs_api_paths = CACHE_CONFIG["abs_api_paths"]
         config.nav = CACHE_CONFIG["nav"]
+
+
+def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    renderers.load_templates()
 
 
 def _walk_nav(nav: list, create_pages: Callable[[str], list]) -> list:
@@ -273,18 +291,8 @@ def _collect(
 
 
 def _create_page(name: str, path: Path, filters: list[str] | None = None) -> None:
-    with path.open("w") as f:
-        f.write(converter.convert_module(name, filters or []))
-
-
-def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
-    if func := _get_function(plugin, "on_config"):
-        msg = f"[MkAPI] Calling user 'on_config': {plugin.config.on_config}"
-        logger.info(msg)
-        config_ = func(config, plugin)
-        if isinstance(config_, MkDocsConfig):
-            return config_
-    return config
+    with path.open("w") as file:
+        file.write(renderers.render_module(name, filters))
 
 
 def _clear_prefix(

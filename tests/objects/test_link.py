@@ -1,10 +1,11 @@
-from mkapi.objects import load_module
+import re
+
+from mkapi.objects import LINK_PATTERN, load_module
 
 
 def test_set_markdown_objects():
     module = load_module("mkapi.objects")
     assert module
-    module.set_markdown()
     x = [t.markdown for t in module.types]
     assert "list[[Item][__mkapi__.mkapi.docstrings.Item]]" in x
     assert "[Path][__mkapi__.pathlib.Path] | None" in x
@@ -15,7 +16,6 @@ def test_set_markdown_objects():
 def test_set_markdown_plugins():
     module = load_module("mkapi.plugins")
     assert module
-    module.set_markdown()
     x = [t.markdown for t in module.types]
     assert "[MkDocsConfig][__mkapi__.mkdocs.config.defaults.MkDocsConfig]" in x
     assert "[MkDocsPage][__mkapi__.mkdocs.structure.pages.Page]" in x
@@ -33,7 +33,6 @@ def test_set_markdown_bases():
     cls = cls.bases[0]
     module = cls.module
     assert module
-    module.set_markdown()
     x = [t.markdown for t in module.types]
     assert "[Config][__mkapi__.mkdocs.config.base.Config]" in x
     assert "[T][__mkapi__.mkdocs.config.base.T]" in x
@@ -42,3 +41,32 @@ def test_set_markdown_bases():
     assert "[PlainConfigSchema][__mkapi__.mkdocs.config.base.PlainConfigSchema]" in x
     assert "str | [IO][__mkapi__.typing.IO] | None" in x
     assert "[Iterator][__mkapi__.typing.Iterator][[IO][__mkapi__.typing.IO]]" in x
+
+
+def test_link_pattern():
+    def f(m: re.Match) -> str:
+        name = m.group(1)
+        if name == "abc":
+            return f"[{name}][_{name}]"
+        return m.group()
+
+    assert re.search(LINK_PATTERN, "X[abc]Y")
+    assert not re.search(LINK_PATTERN, "X[ab c]Y")
+    assert re.search(LINK_PATTERN, "X[abc][]Y")
+    assert not re.search(LINK_PATTERN, "X[abc](xyz)Y")
+    assert not re.search(LINK_PATTERN, "X[abc][xyz]Y")
+    assert re.sub(LINK_PATTERN, f, "X[abc]Y") == "X[abc][_abc]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc[abc]]Y") == "X[abc[abc][_abc]]Y"
+    assert re.sub(LINK_PATTERN, f, "X[ab]Y") == "X[ab]Y"
+    assert re.sub(LINK_PATTERN, f, "X[ab c]Y") == "X[ab c]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc] c]Y") == "X[abc][_abc] c]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc][]Y") == "X[abc][_abc]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc](xyz)Y") == "X[abc](xyz)Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc][xyz]Y") == "X[abc][xyz]Y"
+
+
+def test_set_markdown_text():
+    module = load_module("mkapi.objects")
+    assert module
+    x = [t.markdown for t in module.texts]
+    assert "Add a [Type][__mkapi__.mkapi.objects.Type] instance." in x

@@ -1,5 +1,16 @@
-# from mkapi.objects import load_module
-# from mkapi.renderer import renderer
+from mkapi.renderers import load_templates, templates
+
+
+def test_load_templates():
+    load_templates()
+    assert "bases" in templates
+    assert "code" in templates
+    assert "docstring" in templates
+    assert "items" in templates
+    assert "macros" in templates
+    assert "member" in templates
+    assert "node" in templates
+    assert "object" in templates
 
 
 # def test_render_module(google):

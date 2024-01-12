@@ -1,18 +1,59 @@
 from markdown import Markdown
 
-from mkapi.pages import Page
+from mkapi.pages import Page, _iter_markdown, convert_html, convert_markdown
 
 source = """
 # Title
-
-## ![mkapi](a.o.Object|a|b)
-
+## ::: a.o.Object|a|b
 text
-
-### ![mkapi](a.s.Section)
-
+### ::: a.s.Section
+::: a.module|m
 end
 """
+
+
+def test_iter_markdown():
+    x = list(_iter_markdown(source))
+    assert x[0] == ("# Title", -1, [])
+    assert x[1] == ("a.o.Object", 2, ["a", "b"])
+    assert x[2] == ("text", -1, [])
+    assert x[3] == ("a.s.Section", 3, [])
+    assert x[4] == ("a.module", 0, ["m"])
+    assert x[5] == ("end", -1, [])
+
+
+def callback_markdown(name, level, filters):
+    f = "|".join(filters)
+    return f"<{name}>[{level}]({f})"
+
+
+def test_convert_markdown():
+    x = convert_markdown(source, callback_markdown)
+    assert "# Title\n\n" in x
+    assert "<!-- mkapi:begin[0] -->\n<a.o.Object>[2](a|b)\n<!-- mkapi:end -->\n\n" in x
+    assert "\n\ntext\n\n" in x
+    assert "<!-- mkapi:begin[1] -->\n<a.s.Section>[3]()\n<!-- mkapi:end -->\n\n" in x
+    assert "<!-- mkapi:begin[2] -->\n<a.module>[0](m)\n<!-- mkapi:end -->\n\n" in x
+
+
+def callback_html(index, html):
+    return f"<X>{index}{html[:10]}</X>"
+
+
+def test_convert_html():
+    markdown = convert_markdown(source, callback_markdown)
+    converter = Markdown()
+    html = converter.convert(markdown)
+    assert "<h1>Title</h1>\n" in html
+    assert "<!-- mkapi:begin[0] -->\n" in html
+    assert '<p><a.o.Object><a href="a|b">2</a></p>' in html
+    assert '<p><a.s.Section><a href="">3</a></p>' in html
+    assert '<p><a.module><a href="m">0</a></p>' in html
+    html = convert_html(html, callback_html)
+    assert "<h1>Title</h1>\n" in html
+    assert "<X>0<p><a.o.Ob</X>\n\n" in html
+    assert "<X>1<p><a.s.Se</X>\n\n" in html
+    assert "<X>2<p><a.modu</X>\n\n" in html
 
 
 def test_page():

@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import importlib
 import importlib.util
+import re
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
@@ -183,6 +184,10 @@ class Member(Object):
         """Yield [Member] instances."""
         yield from []
 
+    @property
+    def id(self) -> str:  # noqa: A003, D102
+        return self.fullname
+
 
 @dataclass(repr=False)
 class Attribute(Member):
@@ -236,7 +241,7 @@ class Callable(Member):
         return get_by_name(self.parameters, name)
 
     def get_raise(self, name: str) -> Raise | None:
-        """Return a [Riase] instance by the name."""
+        """Return a [Raise] instance by the name."""
         return get_by_name(self.raises, name)
 
 
@@ -318,7 +323,7 @@ def create_class(node: ast.ClassDef) -> Class:
 def create_members(
     node: ast.ClassDef | ast.Module,
 ) -> Iterator[Import | Attribute | Class | Function]:
-    """Yield members."""
+    """Yield created members."""
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.FunctionDef):  # noqa: SIM102
             if mkapi.ast.is_property(child.decorator_list):
@@ -425,16 +430,31 @@ class Module(Member):
             return None
         return "\n".join(self.source.split("\n")[:maxline])
 
-    def _get_link(self, name: str) -> str:
-        fullname = self.get_fullname(name)
-        if fullname:
-            return f"[{name}][__mkapi__.{fullname}]"
-        return name
-
     def set_markdown(self) -> None:
         """Set markdown with link form."""
         for type_ in self.types:
-            type_.markdown = mkapi.ast.unparse(type_.expr, self._get_link)
+            type_.markdown = mkapi.ast.unparse(type_.expr, self._get_link_type)
+        for text in self.texts:
+            text.markdown = re.sub(LINK_PATTERN, self._get_link_text, text.str)
+
+    def _get_link_type(self, name: str) -> str:
+        if fullname := self.get_fullname(name):
+            return get_link(name, fullname)
+        return name
+
+    def _get_link_text(self, match: re.Match) -> str:
+        name = match.group(1)
+        if fullname := self.get_fullname(name):
+            return get_link(name, fullname)
+        return match.group()
+
+
+LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
+
+
+def get_link(name: str, fullname: str) -> str:
+    """Return a markdown link."""
+    return f"[{name}][__mkapi__.{fullname}]"
 
 
 def get_module_path(name: str) -> Path | None:
@@ -469,7 +489,7 @@ def load_module(name: str) -> Module | None:
 
 
 def load_module_from_source(source: str, name: str = "__mkapi__") -> Module:
-    """Return a [Module] instance from source string."""
+    """Return a [Module] instance from a source string."""
     node = ast.parse(source)
     module = create_module_from_node(node, name)
     module.source = source
@@ -477,7 +497,7 @@ def load_module_from_source(source: str, name: str = "__mkapi__") -> Module:
 
 
 def create_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module:
-    """Return a [Module] instance from the [ast.Module] node."""
+    """Return a [Module] instance from an [ast.Module] node."""
     text = ast.get_docstring(node)
     module = Module(node, name, text, None)
     if Module.current is not None:
@@ -486,12 +506,13 @@ def create_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module
     for member in create_members(node):
         module.add_member(member)
     Module.current = None
+    module.set_markdown()
     _postprocess(module)
     return module
 
 
 def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
-    """Return a [Object] instance by the fullname."""
+    """Return an [Object] instance by the fullname."""
     if fullname in objects:
         return objects[fullname]
     for modulename in iter_parent_modulenames(fullname):

@@ -5,17 +5,12 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from mkapi.converter import convert_html, convert_object
+# from mkapi.converter import convert_html, convert_object
 from mkapi.link import resolve_link
 from mkapi.utils import split_filters, update_filters
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-
-MKAPI_PATTERN = re.compile(r"^(#*) *?!\[mkapi\]\((.+?)\)$", re.MULTILINE)
-pattern = r"<!-- mkapi:begin:(\S+?):\[(\S*?)\] -->(.*?)<!-- mkapi:end -->"
-OBJECT_PATTERN = re.compile(pattern, re.MULTILINE | re.DOTALL)
+    from collections.abc import Callable, Iterator
 
 
 @dataclass(repr=False)
@@ -23,7 +18,7 @@ class Page:
     """Page class works with [MkAPIPlugin](mkapi.plugins.mkdocs.MkAPIPlugin).
 
     Args:
-        source (str): Markdown source.
+        source: Markdown source.
         abs_src_path: Absolute source path of Markdown.
         abs_api_paths: A list of API paths.
 
@@ -61,24 +56,3 @@ class Page:
             yield wrap_markdown(name, markdown, filters)
         if cursor < len(self.source) and (markdown := self.source[cursor:].strip()):
             yield self._resolve_link(markdown)
-
-    def convert_html(self, html: str) -> str:
-        """Return modified HTML to [MkAPIPlugin][mkapi.plugins.MkAPIPlugin].
-
-        Args:
-            html: Input HTML converted by MkDocs.
-        """
-
-        def replace(match: re.Match) -> str:
-            name = match.group(1)
-            filters = match.group(2).split("|")
-            html = match.group(3)
-            return convert_html(name, html, filters)
-
-        return re.sub(OBJECT_PATTERN, replace, html)
-
-
-def wrap_markdown(name: str, markdown: str, filters: list[str] | None = None) -> str:
-    """Return Markdown text with marker for object."""
-    fs = "|".join(filters) if filters else ""
-    return f"<!-- mkapi:begin:{name}:[{fs}] -->\n\n{markdown}\n\n<!-- mkapi:end -->"
