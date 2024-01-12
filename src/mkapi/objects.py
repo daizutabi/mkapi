@@ -115,8 +115,10 @@ class Raise(Object):
 def create_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
     """Yield [Raise] instances."""
     for child in ast.walk(node):
-        if isinstance(child, ast.Raise) and child.exc:
-            yield Raise(child, "", None, child.exc)
+        if isinstance(child, ast.Raise) and (name := child.exc):
+            if isinstance(name, ast.Call):
+                name = name.func
+            yield Raise(child, "", None, name)
 
 
 @dataclass(repr=False)
@@ -486,10 +488,6 @@ def create_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module
     Module.current = None
     _postprocess(module)
     return module
-    # with Module.create(node, name) as module:
-    #     for member in create_members(node):
-    #         module.add_member(member)
-    # return module
 
 
 def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
@@ -501,6 +499,15 @@ def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
             return objects[fullname]
     objects[fullname] = None
     return None
+
+
+def _postprocess(obj: Module | Class) -> None:
+    _merge_docstring(obj)
+    for func in obj.functions:
+        _merge_docstring(func)
+    for cls in obj.classes:
+        _postprocess(cls)
+        _postprocess_class(cls)
 
 
 def _merge_item(obj: Attribute | Parameter | Return | Raise, item: Item) -> None:
@@ -555,15 +562,6 @@ def _merge_docstring(obj: Module | Class | Function) -> None:
             obj.returns.name = section.name
         else:
             sections.append(section)
-
-
-def _postprocess(obj: Module | Class) -> None:
-    _merge_docstring(obj)
-    for func in obj.functions:
-        _merge_docstring(func)
-    for cls in obj.classes:
-        _postprocess(cls)
-        _postprocess_class(cls)
 
 
 ATTRIBUTE_ORDER_DICT = {
