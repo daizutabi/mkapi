@@ -16,7 +16,7 @@ from mkapi.utils import get_by_name
 
 def test_split_attribute_docstring(google):
     name = "module_level_variable2"
-    node = google.get(name)
+    node = google.get_member(name)
     assert isinstance(node, Attribute)
     assert node.text
     text = node.text.str
@@ -29,14 +29,14 @@ def test_split_attribute_docstring(google):
 
 
 def test_move_property_to_attributes(google):
-    cls = google.get("ExampleClass")
-    attr = cls.get("readonly_property")
+    cls = google.get_member("ExampleClass")
+    attr = cls.get_attribute("readonly_property")
     assert isinstance(attr, Attribute)
     assert attr.text
     assert attr.text.str.startswith("Properties should be")
     assert attr.type
     assert ast.unparse(attr.type.expr) == "str"
-    attr = cls.get("readwrite_property")
+    attr = cls.get_attribute("readwrite_property")
     assert isinstance(attr, Attribute)
     assert attr.text
     assert attr.text.str.endswith("mentioned here.")
@@ -60,19 +60,12 @@ def test_merge_module_attrs(module: Module):
     assert x.type
     assert isinstance(x.type.expr, ast.Name)
     assert isinstance(x.default, ast.Constant)
-    # TODO: fix
-    # assert isinstance(module.docstring, Docstring)
-    # assert len(module.docstring.sections) == 5
-    # assert get_by_name(module.docstring.sections, "Attributes") is None
 
 
 def test_merge_function_args(module: Module):
     f = module.get_function("function_with_types_in_docstring")
     assert isinstance(f, Function)
     assert f.text
-    # TODO: fix
-    # assert isinstance(f.text, Docstring)
-    # assert len(f.docstring.sections) == 2
     p = get_by_name(f.parameters, "param1")
     assert isinstance(p, Parameter)
     assert p.type
@@ -114,15 +107,12 @@ def test_postprocess_class(module: Module):
     c = module.get_class("ExampleError")
     assert isinstance(c, Class)
     assert len(c.parameters) == 3  # with `self` at this state.
-    # TODO: fix
-    # assert len(c.docstring.sections) == 2  # type: ignore
     assert not c.functions
     c = module.get_class("ExampleClass")
     assert isinstance(c, Class)
     assert len(c.parameters) == 4  # with `self` at this state.
-    # TODO: fix
-    # assert len(c.docstring.sections) == 3  # type: ignore
-    assert ast.unparse(c.parameters[3].type.expr) == "list[str]"  # type: ignore
+    assert c.parameters[3].type
+    assert ast.unparse(c.parameters[3].type.expr) == "list[str]"
     assert c.attributes[0].name == "attr1"
     f = c.get_function("example_method")
     assert f
@@ -134,8 +124,6 @@ def test_postprocess_class_pep526(module: Module):
     assert isinstance(c, Class)
     assert len(c.parameters) == 0
     assert c.text
-    # TODO: fix
-    # assert len(c.docstring.sections) == 1  # type: ignore
     assert not c.functions
     assert c.attributes
     assert c.attributes[0].name == "attr1"

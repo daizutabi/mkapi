@@ -5,7 +5,7 @@ import ast
 import importlib
 import importlib.util
 from contextlib import contextmanager
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, dataclass, field, fields
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from inspect import _ParameterKind
     from typing import Self
 
-    from mkapi.docstrings import Docstring, Item, Section
+    from mkapi.docstrings import Item, Section
 
 
 @dataclass
@@ -70,9 +70,15 @@ class Object:
             return "\n".join(source.split("\n")[start:stop][:maxline])
         return None
 
-    def unparse(self) -> str:
-        """Unparse the AST node and return a string expression."""
-        return ast.unparse(self.node)
+    def iter_types(self) -> Iterator[Type]:
+        """Yield [Type] instances."""
+        if self.type:
+            yield self.type
+
+    def iter_texts(self) -> Iterator[Text]:
+        """Yield [Text] instances."""
+        if self.text:
+            yield self.text
 
 
 @dataclass(repr=False)
@@ -168,6 +174,25 @@ class Member(Object):
         self.fullname = f"{m_name}.{self.qualname}" if m_name else self.qualname
         objects[self.fullname] = self  # type:ignore
 
+    def iter_objects(self) -> Iterator[Object]:
+        """Yield [Object] instances."""
+        for f in fields(self):
+            obj = getattr(self, f.name)
+            if isinstance(obj, Object):
+                yield obj
+
+    def iter_types(self) -> Iterator[Type]:
+        """Yield [Type] instances."""
+        yield from super().iter_types()
+        for obj in self.iter_objects():
+            yield from obj.iter_types()
+
+    def iter_texts(self) -> Iterator[Text]:
+        """Yield [Text] instances."""
+        yield from super().iter_texts()
+        for obj in self.iter_objects():
+            yield from obj.iter_texts()
+
 
 @dataclass(repr=False)
 class Attribute(Member):
@@ -175,7 +200,6 @@ class Attribute(Member):
 
     node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
     default: ast.expr | None
-    # type_params: list[ast.type_param] | None
 
 
 def create_attribute(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Attribute:
@@ -185,8 +209,6 @@ def create_attribute(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Attrib
     text, type_ = _attribute_text_type(node.__doc__, type_)
     default = None if isinstance(node, ast.TypeAlias) else node.value
     return Attribute(node, name, text, type_, default)
-    # type_params = node.type_params if isinstance(node, ast.TypeAlias) else None
-    # return Attribute(node, name, text, type_, default, type_params)
 
 
 def create_attribute_from_property(node: ast.FunctionDef) -> Attribute:
@@ -195,9 +217,6 @@ def create_attribute_from_property(node: ast.FunctionDef) -> Attribute:
     type_ = node.returns
     text, type_ = _attribute_text_type(doc, type_)
     return Attribute(node, node.name, text, type_, None)
-    # default = None
-    # type_params = node.type_params
-    # return Attribute(node, name, text, type_, default, type_params)
 
 
 def _attribute_text_type(
@@ -221,15 +240,6 @@ class Callable(Member):
     node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
     parameters: list[Parameter]
     raises: list[Raise]
-
-    def __iter__(self) -> Iterator[Parameter | Raise]:
-        """Yield member instances."""
-        yield from self.parameters
-        yield from self.raises
-
-    def get(self, name: str) -> Parameter | Raise | None:
-        """Return a member instance by the name."""
-        return get_by_name(self, name)
 
     def get_parameter(self, name: str) -> Parameter | None:
         """Return a [Parameter] instance by the name."""
@@ -258,11 +268,6 @@ class Function(Callable):
     node: ast.FunctionDef | ast.AsyncFunctionDef
     returns: Return
 
-    def __iter__(self) -> Iterator[Parameter | Raise | Return]:
-        """Yield member instances."""
-        yield from super().__iter__()
-        yield self.returns
-
 
 def get_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Function:
     """Return a [Function] instance."""
@@ -279,13 +284,6 @@ class Class(Callable):
     functions: list[Function]
     bases: list[Class]
     classnames: ClassVar[list[str | None]] = [None]
-
-    def __iter__(self) -> Iterator[Parameter | Attribute | Class | Function | Raise]:
-        """Yield member instances."""
-        yield from super().__iter__()
-        yield from self.attributes
-        yield from self.classes
-        yield from self.functions
 
     def add_member(self, member: Attribute | Class | Function | Import) -> None:
         """Add a member."""
@@ -378,13 +376,6 @@ class Module(Member):
         self.qualname = self.fullname = self.name
         modules[self.name] = self
 
-    def __iter__(self) -> Iterator[Import | Attribute | Class | Function]:
-        """Yield member instances."""
-        yield from self.imports
-        yield from self.attributes
-        yield from self.classes
-        yield from self.functions
-
     def add_member(self, member: Import | Attribute | Class | Function) -> None:
         """Add member instance."""
         if isinstance(member, Import):
@@ -398,10 +389,6 @@ class Module(Member):
             self.classes.append(member)
         elif isinstance(member, Function):
             self.functions.append(member)
-
-    def get(self, name: str) -> Import | Attribute | Class | Function | None:
-        """Return a member instance by the name."""
-        return get_by_name(self, name)
 
     def get_import(self, name: str) -> Import | None:
         """Return an [Import] instance by the name."""
@@ -419,11 +406,23 @@ class Module(Member):
         """Return an [Function] instance by the name."""
         return get_by_name(self.functions, name)
 
+    def get_member(self, name: str) -> Import | Attribute | Class | Function | None:
+        """Return a member instance by the name."""
+        if obj := self.get_import(name):
+            return obj
+        if obj := self.get_attribute(name):
+            return obj
+        if obj := self.get_class(name):
+            return obj
+        if obj := self.get_function(name):
+            return obj
+        return None
+
     def get_fullname(self, name: str | None = None) -> str | None:
         """Return the fullname of the module."""
         if not name:
             return self.name
-        if obj := self.get(name):
+        if obj := self.get_member(name):
             return obj.fullname
         if "." in name:
             name, attr = name.rsplit(".", maxsplit=1)
@@ -559,7 +558,6 @@ def _merge_docstring(obj: Module | Class | Function) -> None:
             obj.returns.name = section.name
         else:
             sections.append(section)
-    obj.text.str = "xxx"  # TODO: sections -> text string
 
 
 def _postprocess(obj: Module | Class) -> None:

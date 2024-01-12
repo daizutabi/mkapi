@@ -59,7 +59,7 @@ def test_load_module_source():
     assert "class File" in module.source
     module = load_module("mkapi.plugins")
     assert module
-    cls = module.get("MkAPIConfig")
+    cls = module.get_class("MkAPIConfig")
     assert cls
     assert cls.module is module
     src = cls.get_source()
@@ -130,13 +130,9 @@ def test_get_fullname_with_attr():
     assert not module.get_fullname("config_options.A")
 
 
-def test_iter():
+def test_iter_bases():
     module = load_module("mkapi.objects")
     assert module
-    names = [o.name for o in module]
-    assert "modules" in names
-    assert "Class" in names
-    assert "get_object" in names
     cls = module.get_class("Class")
     assert cls
     bases = cls.iter_bases()

@@ -1,3 +1,5 @@
+import ast
+
 from mkapi.objects import Class, get_object, load_module
 from mkapi.utils import get_by_name
 
@@ -45,11 +47,12 @@ def test_inherit_other_module2():
     x = get_by_name(f, "on_pre_template")
     assert x
     p = x.parameters[1]
-    assert p.unparse() == "template: jinja2.Template"
+    assert p.node
+    assert ast.unparse(p.node) == "template: jinja2.Template"
     m = p.module
     assert m
     assert m.name == "mkdocs.plugins"
-    assert m.get("get_plugin_logger")
+    assert m.get_member("get_plugin_logger")
 
 
 def test_inherit_other_module3():
@@ -62,6 +65,6 @@ def test_inherit_other_module3():
     assert m1.get_fullname("jinja2.Template") == a
     m2 = load_module("jinja2")
     assert m2
-    x = m2.get("Template")
+    x = m2.get_member("Template")
     assert x
     assert x.fullname == a

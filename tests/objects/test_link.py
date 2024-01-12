@@ -1,14 +1,17 @@
 import ast
 
 import mkapi.ast
-from mkapi.objects import Module, Object, Parameter, load_module
-
-# def convert(obj:Object):
-#     mkapi.ast._iter_identifiers
+from mkapi.objects import Module, Object, Parameter, Type, load_module
 
 
-#         expr:ast.expr|ast.type_param):
-#     if not module :=
+def set_markdown(obj: Type, module: Module) -> None:
+    def callback(name: str) -> str:
+        fullname = module.get_fullname(name)
+        if fullname:
+            return f"[{name}][__mkapi__.{fullname}]"
+        return name
+
+    obj.markdown = mkapi.ast.unparse(obj.expr, callback)
 
 
 def test_expr_mkapi_objects():
@@ -24,6 +27,6 @@ def test_expr_mkapi_objects():
     cls = module.get_class("Class")
     assert cls
     for p in cls.parameters:
-        t = mkapi.ast.unparse(p.type, callback) if p.type else "---"
+        t = mkapi.ast.unparse(p.type.expr, callback) if p.type else "---"
         print(p.name, t)
-    assert 0
+    # assert 0
