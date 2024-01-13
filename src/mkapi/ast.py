@@ -15,6 +15,7 @@ from ast import (
     ImportFrom,
     Name,
     NodeTransformer,
+    Raise,
     TypeAlias,
 )
 from inspect import Parameter, cleandoc
@@ -31,7 +32,8 @@ type Assign_ = AnnAssign | Assign | TypeAlias
 type Node = Import_ | Def | Assign_
 
 
-def iter_child_nodes(node: AST) -> Iterator[Node]:  # noqa: D103
+def iter_child_nodes(node: AST) -> Iterator[Node]:
+    """Yield child nodes."""
     yield_type = Import | ImportFrom | AsyncFunctionDef | FunctionDef | ClassDef
     for child in (it := ast.iter_child_nodes(node)):
         if isinstance(child, yield_type):
@@ -120,7 +122,7 @@ def _iter_defaults(node: AsyncFunctionDef | FunctionDef) -> Iterator[ast.expr | 
 def iter_parameters(
     node: AsyncFunctionDef | FunctionDef,
 ) -> Iterator[tuple[ast.arg, _ParameterKind, ast.expr | None]]:
-    """Yield parameters from the function node."""
+    """Yield parameters from a function node."""
     it = _iter_defaults(node)
     for arg, kind in _iter_parameters(node):
         if kind in [Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD]:
@@ -130,9 +132,22 @@ def iter_parameters(
         yield arg, kind, default
 
 
-def is_property(decorators: list[ast.expr]) -> bool:
-    """Return True if one of decorators is `property`."""
-    return any(ast.unparse(deco).startswith("property") for deco in decorators)
+def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
+    """Yield [Raise] instances from a function node."""
+    names = []
+    for child in ast.walk(node):
+        if isinstance(child, ast.Raise) and (type_ := child.exc):
+            if isinstance(type_, ast.Call):
+                type_ = type_.func
+            if (name := ast.unparse(type_)) not in names:
+                yield child
+                names.append(name)
+
+
+def is_property(node: ast.FunctionDef) -> bool:
+    """Return True if a function is a property."""
+    decos = node.decorator_list
+    return any(ast.unparse(deco).startswith("property") for deco in decos)
 
 
 # a1.b_2(c[d]) -> a1, b_2, c, d

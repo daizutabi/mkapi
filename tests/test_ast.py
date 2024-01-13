@@ -1,6 +1,11 @@
 import ast
 
-from mkapi.ast import StringTransformer, _iter_identifiers, unparse
+from mkapi.ast import (
+    StringTransformer,
+    _iter_identifiers,
+    iter_raises,
+    unparse,
+)
 
 
 def _ast(src: str) -> ast.expr:
@@ -67,3 +72,12 @@ def test_unparse():
     assert f("a | b.c | d") == "<a> | <b.c> | <d>"
     assert f("list[A]") == "<list>[<A>]"
     assert f("list['A']") == "<list>[<A>]"
+
+
+def test_iter_raises():
+    src = "def f():\n raise ValueError('a')\n raise ValueError\n"
+    node = ast.parse(src).body[0]
+    assert isinstance(node, ast.FunctionDef)
+    raises = list(iter_raises(node))
+    assert len(raises) == 1
+    assert isinstance(raises[0].exc, ast.Call)

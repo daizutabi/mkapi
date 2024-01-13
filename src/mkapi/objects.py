@@ -12,9 +12,11 @@ from typing import TYPE_CHECKING, ClassVar
 import mkapi.ast
 import mkapi.dataclasses
 from mkapi import docstrings
+from mkapi.elements import Text, Type
 from mkapi.utils import (
     del_by_name,
     get_by_name,
+    get_module_path,
     iter_parent_modulenames,
     unique_names,
 )
@@ -24,23 +26,7 @@ if TYPE_CHECKING:
     from inspect import _ParameterKind
     from typing import Self
 
-    from mkapi.docstrings import Item, Section
-
-
-@dataclass
-class Type:
-    """Type class."""
-
-    expr: ast.expr
-    markdown: str = field(default="", init=False)
-
-
-@dataclass
-class Text:
-    """Text class."""
-
-    str: str  # noqa: A003
-    markdown: str = field(default="", init=False)
+    from mkapi.docstrings import Docstring, Item, Section
 
 
 @dataclass
@@ -49,11 +35,9 @@ class Object:
 
     node: ast.AST
     name: str
-    module: Module | None = field(init=False)
-    text: Text | None = field(init=False)
-    type: Type | None = field(init=False)  # noqa: A003
-    _text: InitVar[str | None]
-    _type: InitVar[ast.expr | None]
+    module: Module
+    text: Text
+    type: Type    # noqa: A003
 
     def __post_init__(self, _text: str | None, _type: ast.expr | None) -> None:
         self.module = Module.current
@@ -85,83 +69,6 @@ class Object:
             yield self.text
 
 
-@dataclass(repr=False)
-class Parameter(Object):
-    """Parameter class for [Class] and [Function]."""
-
-    node: ast.arg | None
-    default: ast.expr | None
-    kind: _ParameterKind | None
-
-
-def create_parameters(
-    node: ast.FunctionDef | ast.AsyncFunctionDef,
-) -> Iterator[Parameter]:
-    """Yield parameters from the function node."""
-    for arg, kind, default in mkapi.ast.iter_parameters(node):
-        yield Parameter(arg, arg.arg, None, arg.annotation, default, kind)
-
-
-@dataclass(repr=False)
-class Raise(Object):
-    """Raise class for [Class] and [Function]."""
-
-    node: ast.Raise | None
-
-    def __repr__(self) -> str:
-        exc = ast.unparse(self.type.expr) if self.type else ""
-        return f"{self.__class__.__name__}({exc})"
-
-
-def create_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
-    """Yield [Raise] instances."""
-    for child in ast.walk(node):
-        if isinstance(child, ast.Raise) and (name := child.exc):
-            if isinstance(name, ast.Call):
-                name = name.func
-            yield Raise(child, "", None, name)
-
-
-@dataclass(repr=False)
-class Return(Object):
-    """Return class for [Class] and [Function]."""
-
-    node: ast.expr | None
-
-
-def create_return(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Return:
-    """Return a [Return] instance."""
-    return Return(node.returns, "", None, node.returns)
-
-
-@dataclass(repr=False)
-class Import:
-    """Import class for [Module]."""
-
-    node: ast.Import | ast.ImportFrom
-    name: str
-    fullname: str
-    from_: str | None
-    level: int
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name})"
-
-
-def iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
-    """Yield [Import] instances."""
-    for alias in node.names:
-        name = alias.asname or alias.name
-        if isinstance(node, ast.Import):
-            for parent in iter_parent_modulenames(name):
-                # TODO: ex. import matplotlib.pyplot as plt
-                yield Import(node, parent, parent, None, 0)
-        else:
-            from_ = f"{node.module}"
-            fullname = f"{from_}.{alias.name}"
-            yield Import(node, name, fullname, from_, node.level)
-
-
 objects: dict[str, Attribute | Class | Function | Module | None] = {}
 
 
@@ -176,56 +83,19 @@ class Member(Object):
         super().__post_init__(_text, _type)
         qualname = Class.classnames[-1]
         self.qualname = f"{qualname}.{self.name}" if qualname else self.name
-        m_name = self.module.name if self.module else "__mkapi__"
-        self.fullname = f"{m_name}.{self.qualname}" if m_name else self.qualname
+        if self.module:
+            self.fullname = f"{self.module.name}.{self.qualname}"
+        else:
+            self.fullname = f"{self.qualname}"
         objects[self.fullname] = self  # type:ignore
 
-    def iter_members(self) -> Iterator[Member]:
-        """Yield [Member] instances."""
-        yield from []
+    # def iter_members(self) -> Iterator[Member]:
+    #     """Yield [Member] instances."""
+    #     yield from []
 
     @property
     def id(self) -> str:  # noqa: A003, D102
         return self.fullname
-
-
-@dataclass(repr=False)
-class Attribute(Member):
-    """Atrribute class for [Module] and [Class]."""
-
-    node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
-    default: ast.expr | None
-
-
-def create_attribute(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Attribute:
-    """Return an [Attribute] instance."""
-    name = mkapi.ast.get_assign_name(node) or ""
-    type_ = mkapi.ast.get_assign_type(node)
-    text, type_ = _attribute_text_type(node.__doc__, type_)
-    default = None if isinstance(node, ast.TypeAlias) else node.value
-    return Attribute(node, name, text, type_, default)
-
-
-def create_attribute_from_property(node: ast.FunctionDef) -> Attribute:
-    """Return an [Attribute] instance from a property."""
-    doc = ast.get_docstring(node)
-    type_ = node.returns
-    text, type_ = _attribute_text_type(doc, type_)
-    return Attribute(node, node.name, text, type_, None)
-
-
-def _attribute_text_type(
-    doc: str | None,
-    type_: ast.expr | None,
-) -> tuple[str | None, ast.expr | None]:
-    if not doc:
-        return doc, type_
-    type_doc, text = docstrings.split_without_name(doc, "google")
-    if not type_ and type_doc:
-        # ex. list(str) -> list[str]
-        type_doc = type_doc.replace("(", "[").replace(")", "]")
-        type_ = mkapi.ast.create_expr(type_doc)
-    return text, type_
 
 
 @dataclass(repr=False)
@@ -457,20 +327,6 @@ def get_link(name: str, fullname: str) -> str:
     return f"[{name}][__mkapi__.{fullname}]"
 
 
-def get_module_path(name: str) -> Path | None:
-    """Return the source path of the module name."""
-    try:
-        spec = importlib.util.find_spec(name)
-    except ModuleNotFoundError:
-        return None
-    if not spec or not hasattr(spec, "origin") or not spec.origin:
-        return None
-    path = Path(spec.origin)
-    if not path.exists():  # for builtin, frozen
-        return None
-    return path
-
-
 modules: dict[str, Module | None] = {}
 
 
@@ -505,9 +361,9 @@ def create_module_from_node(node: ast.Module, name: str = "__mkapi__") -> Module
     Module.current = module
     for member in create_members(node):
         module.add_member(member)
+        _postprocess(module)
     Module.current = None
     module.set_markdown()
-    _postprocess(module)
     return module
 
 

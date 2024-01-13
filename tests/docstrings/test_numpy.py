@@ -93,21 +93,21 @@ def test_iter_items_class(numpy, get, get_node):
     doc = get(numpy, "ExampleClass")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[1][1]
-    x = list(iter_items(section, "numpy"))
+    x = list(iter_items(section, "numpy", "A"))
     assert x[0].name == "attr1"
-    assert x[0].type == "str"
-    assert x[0].text == "Description of `attr1`."
+    assert x[0].type.expr.value == "str"  # type: ignore
+    assert x[0].text.str == "Description of `attr1`."
     assert x[1].name == "attr2"
-    assert x[1].type == ":obj:`int`, optional"
-    assert x[1].text == "Description of `attr2`."
+    assert x[1].type.expr.value == ":obj:`int`, optional"  # type: ignore
+    assert x[1].text.str == "Description of `attr2`."
     doc = get(get_node(numpy, "ExampleClass"), "__init__")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[2][1]
-    x = list(iter_items(section, "numpy"))
+    x = list(iter_items(section, "numpy", "A"))
     assert x[0].name == "param1"
-    assert x[0].type == "str"
-    assert x[0].text == "Description of `param1`."
-    assert x[1].text == "Description of `param2`. Multiple\nlines are supported."
+    assert x[0].type.expr.value == "str"  # type: ignore
+    assert x[0].text.str == "Description of `param1`."
+    assert x[1].text.str == "Description of `param2`. Multiple\nlines are supported."
 
 
 def test_get_return(numpy, get):
@@ -127,5 +127,5 @@ def test_iter_items_raises(numpy, get):
     assert name == "Raises"
     items = list(iter_items(section, "numpy", name))
     assert len(items) == 2
-    assert items[0].type == items[0].name == "AttributeError"
-    assert items[1].type == items[1].name == "ValueError"
+    assert items[0].type.expr.value == items[0].name == "AttributeError"  # type: ignore
+    assert items[1].type.expr.value == items[1].name == "ValueError"  # type: ignore

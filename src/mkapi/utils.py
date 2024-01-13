@@ -10,6 +10,20 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
 
+def get_module_path(name: str) -> Path | None:
+    """Return the source path of the module name."""
+    try:
+        spec = find_spec(name)
+    except ModuleNotFoundError:
+        return None
+    if not spec or not hasattr(spec, "origin") or not spec.origin:
+        return None
+    path = Path(spec.origin)
+    if not path.exists():  # for builtin, frozen
+        return None
+    return path
+
+
 def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
     path_str = path.as_posix()
     for pattern in exclude_patterns:

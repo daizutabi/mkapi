@@ -97,21 +97,21 @@ def test_iter_items_class(google, get, get_node):
     doc = get(google, "ExampleClass")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
-    x = list(iter_items(section, "google"))
+    x = list(iter_items(section, "google", "A"))
     assert x[0].name == "attr1"
-    assert x[0].type == "str"
-    assert x[0].text == "Description of `attr1`."
+    assert x[0].type.expr.value == "str"  # type: ignore
+    assert x[0].text.str == "Description of `attr1`."
     assert x[1].name == "attr2"
-    assert x[1].type == ":obj:`int`, optional"
-    assert x[1].text == "Description of `attr2`."
+    assert x[1].type.expr.value == ":obj:`int`, optional"  # type: ignore
+    assert x[1].text.str == "Description of `attr2`."
     doc = get(get_node(google, "ExampleClass"), "__init__")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
-    x = list(iter_items(section, "google"))
+    x = list(iter_items(section, "google", "A"))
     assert x[0].name == "param1"
-    assert x[0].type == "str"
-    assert x[0].text == "Description of `param1`."
-    assert x[1].text == "Description of `param2`. Multiple\nlines are supported."
+    assert x[0].type.expr.value == "str"  # type: ignore
+    assert x[0].text.str == "Description of `param1`."
+    assert x[1].text.str == "Description of `param2`. Multiple\nlines are supported."
 
 
 def test_split_without_name(google, get):
@@ -124,11 +124,6 @@ def test_split_without_name(google, get):
     assert x[1].endswith("    }")
 
 
-def test_repr(google):
-    r = repr(parse(ast.get_docstring(google), "google"))  # type: ignore
-    assert r == "Docstring(num_sections=6)"
-
-
 def test_iter_items_raises(google, get):
     doc = get(google, "module_level_function")
     assert isinstance(doc, str)
@@ -136,5 +131,16 @@ def test_iter_items_raises(google, get):
     assert name == "Raises"
     items = list(iter_items(section, "google", name))
     assert len(items) == 2
-    assert items[0].type == items[0].name == "AttributeError"
-    assert items[1].type == items[1].name == "ValueError"
+    assert items[0].type.expr.value == items[0].name == "AttributeError"  # type: ignore
+    assert items[1].type.expr.value == items[1].name == "ValueError"  # type: ignore
+
+
+def test_parse(google):
+    doc = parse(ast.get_docstring(google), "google")  # type: ignore
+    assert doc.text.str == "Example Google style docstrings."
+    assert doc.sections[0].text.str.startswith("This module")  # type: ignore
+
+
+def test_repr(google):
+    r = repr(parse(ast.get_docstring(google), "google"))  # type: ignore
+    assert r == "Docstring(num_sections=6)"
