@@ -1,7 +1,7 @@
 """Node class represents Markdown and HTML structure."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from mkapi.objects import (
@@ -9,7 +9,6 @@ from mkapi.objects import (
     Class,
     Function,
     Module,
-    Object,
     Parameter,
     Raise,
     Return,
@@ -26,17 +25,17 @@ class Node:
     """Node class."""
 
     name: str
-    object: Module | Class | Function | Attribute | Parameter | Raise | Return  # noqa: A003
-    kind: str
-    parent: Node | None
-    members: list[Node] | None
+    object: Module | Class | Function | Attribute  # noqa: A003
+    members: list[Node] = field(default_factory=list, init=False)
+    parent: Node | None = None
+    html: str = field(init=False)
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__
         return f"{class_name}({self.name!r}, members={len(self)})"
 
     def __len__(self) -> int:
-        return len(self.members or [])
+        return len(self.members)
 
     def __contains__(self, name: str) -> bool:
         if self.members:
@@ -50,89 +49,41 @@ class Node:
         """Returns kind of self."""
         raise NotImplementedError
 
-    def get_markdown(self) -> str:
-        """Returns a Markdown source for docstring of self."""
-        return f"<{self.name}@{id(self)}>"
-
     def walk(self) -> Iterator[Node]:
         """Yields all members."""
         yield self
-        if self.members:
-            for member in self.members:
-                yield from member.walk()
+        for member in self.members:
+            yield from member.walk()
+
+    def get_markdown(self, level: int, filters: list[str]) -> str:
+        """Returns a Markdown source for docstring of self."""
+        markdowns = []
+        for node in self.walk():
+            markdowns.append(f"{node.object.id}\n\n")  # noqa: PERF401
+        return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
+
+    def convert_html(self, html: str, level: int, filters: list[str]) -> str:
+        htmls = html.split("<!-- mkapi:sep -->")
+        for node, html in zip(self.walk(), htmls, strict=False):
+            node.html = html.strip()
+        return "a"
 
 
 def get_node(name: str) -> Node:
     """Return a [Node] instance from the object name."""
     obj = get_object(name)
-    print(obj)
-    if not obj or not isinstance(obj, Module | Class | Function):
+    if not isinstance(obj, Module | Class | Function | Attribute):
         raise NotImplementedError
-    return _get_node(obj)
+    return _get_node(obj, None)
 
 
-def _get_node(obj: Module | Class | Function, parent: Node | None = None) -> Node:
-    """Return a [Node] instance of [Module], [Class], and [Function]."""
-    node = Node(obj.name, obj, _get_kind(obj), parent, [])
-    if isinstance(obj, Module):
-        node.members = list(_iter_members_module(node, obj))
-    elif isinstance(obj, Class):
-        node.members = list(_iter_members_class(node, obj))
-    elif isinstance(obj, Function):
-        node.members = list(_iter_members_function(node, obj))
-    else:
-        raise NotImplementedError
+def _get_node(obj: Module | Class | Function | Attribute, parent: Node | None) -> Node:
+    node = Node(obj.name, obj, parent)
+    if isinstance(obj, Module | Class):
+        node.members = list(_iter_members(node, obj))
     return node
 
 
-def _iter_members_module(node: Node, obj: Module | Class) -> Iterator[Node]:
-    yield from _iter_attributes(node, obj)
-    yield from _iter_classes(node, obj)
-    yield from _iter_functions(node, obj)
-
-
-def _iter_members_class(node: Node, obj: Class) -> Iterator[Node]:
-    yield from _iter_members_module(node, obj)
-    yield from _iter_parameters(node, obj)
-    yield from _iter_raises(node, obj)
-    # bases
-
-
-def _iter_members_function(node: Node, obj: Function) -> Iterator[Node]:
-    yield from _iter_parameters(node, obj)
-    yield from _iter_raises(node, obj)
-    yield from _iter_returns(node, obj)
-
-
-def _iter_attributes(node: Node, obj: Module | Class) -> Iterator[Node]:
-    for attr in obj.attributes:
-        yield Node(attr.name, attr, _get_kind(attr), node, None)
-
-
-def _iter_parameters(node: Node, obj: Class | Function) -> Iterator[Node]:
-    for arg in obj.parameters:
-        yield Node(arg.name, arg, _get_kind(arg), node, None)
-
-
-def _iter_raises(node: Node, obj: Class | Function) -> Iterator[Node]:
-    for raises in obj.raises:
-        yield Node(raises.name, raises, _get_kind(raises), node, None)
-
-
-def _iter_returns(node: Node, obj: Function) -> Iterator[Node]:
-    rt = obj.returns
-    yield Node(rt.name, rt, _get_kind(rt), node, None)
-
-
-def _iter_classes(node: Node, obj: Module | Class) -> Iterator[Node]:
-    for cls in obj.classes:
-        yield _get_node(cls, node)
-
-
-def _iter_functions(node: Node, obj: Module | Class) -> Iterator[Node]:
-    for func in obj.functions:
-        yield _get_node(func, node)
-
-
-def _get_kind(obj: Object) -> str:
-    return obj.__class__.__name__.lower()
+def _iter_members(node: Node, obj: Module | Class) -> Iterator[Node]:
+    for member in obj.attributes + obj.classes + obj.functions:
+        yield _get_node(member, node)

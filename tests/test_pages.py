@@ -1,6 +1,6 @@
 from markdown import Markdown
 
-from mkapi.pages import Page, _iter_markdown, convert_html, convert_markdown
+from mkapi.pages import _iter_markdown, convert_html, convert_markdown
 
 source = """
 # Title
