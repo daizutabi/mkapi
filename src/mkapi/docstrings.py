@@ -235,10 +235,11 @@ def iter_sections(doc: str, style: Style) -> Iterator[Section]:
         yield Section(name, type_, text_, items)
 
 
-@dataclass(repr=False)
-class Docstring(Item):
+@dataclass
+class Docstring:
     """Docstring class."""
 
+    text: Text
     sections: list[Section]
 
     def __repr__(self) -> str:
@@ -252,8 +253,10 @@ class Docstring(Item):
         return get_by_name(self.sections, name)
 
 
-def parse(doc: str, style: Style | None = None) -> Docstring:
+def parse(doc: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
+    if not doc:
+        return Docstring(Text(None), [])
     doc = add_fence(doc)
     style = style or get_style(doc)
     sections = list(iter_sections(doc, style))
@@ -266,7 +269,7 @@ def parse(doc: str, style: Style | None = None) -> Docstring:
         text = Text(text)
     else:
         text = Text(None)
-    return Docstring("", Type(None), text, sections)
+    return Docstring(text, sections)
 
 
 def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
@@ -325,7 +328,5 @@ def merge(a: Docstring | None, b: Docstring | None) -> Docstring | None:
         elif is_named_section:
             sections.append(section)
     sections.extend(s for s in b.sections if not s.name)
-    name_ = a.name or b.name
-    type_ = a.type or b.type
     text = a.text or b.text
-    return Docstring(name_, type_, text, sections)
+    return Docstring(text, sections)

@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import mkapi.ast
 import mkapi.dataclasses
-from mkapi import docstrings
 from mkapi.ast import is_property
 from mkapi.utils import iter_parent_modulenames
 
@@ -94,6 +93,23 @@ def create_returns(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Ret
 
 
 @dataclass(repr=False)
+class Base(Element):
+    """Base class for [Class]."""
+
+    node: ast.expr | None
+
+
+def create_bases(node: ast.ClassDef) -> Iterator[Base]:
+    """Yield [Raise] instances."""
+    for base in node.bases:
+        if isinstance(base, ast.Subscript):
+            name = ast.unparse(base.value)
+        else:
+            name = ast.unparse(base)
+        yield Base(name, base, Type(base), Text(None))
+
+
+@dataclass(repr=False)
 class Import:
     """Import class for [Module]."""
 
@@ -107,7 +123,7 @@ class Import:
         return f"{self.__class__.__name__}({self.name})"
 
 
-def iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
+def _create_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
     """Yield [Import] instances."""
     for alias in node.names:
         if isinstance(node, ast.Import):
@@ -121,6 +137,13 @@ def iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
             from_ = f"{node.module}"
             fullname = f"{from_}.{alias.name}"
             yield Import(node, name, fullname, from_, node.level)
+
+
+def create_imports(node: ast.Module) -> Iterator[Import]:
+    """Yield [Import] instances."""
+    for child in mkapi.ast.iter_child_nodes(node):
+        if isinstance(child, ast.Import | ast.ImportFrom):
+            yield from _create_imports(child)
 
 
 @dataclass(repr=False)
@@ -161,9 +184,18 @@ def create_attribute_from_property(node: ast.FunctionDef) -> Attribute:
 def _attribute_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
     if not text:
         return Type(type_), Text(None)
-    type_doc, text = docstrings.split_without_name(text, "google")
+    type_doc, text = _split_without_name(text)
     if not type_ and type_doc:
         # ex. 'list(str)' -> 'list[str]' for ast.expr
         type_doc = type_doc.replace("(", "[").replace(")", "]")
         type_ = mkapi.ast.create_expr(type_doc)
     return Type(type_), Text(text)
+
+
+def _split_without_name(text: str) -> tuple[str, str]:
+    """Return a tuple of (type, text) for Returns or Yields section."""
+    lines = text.split("\n")
+    if ":" in lines[0]:
+        type_, text_ = lines[0].split(":", maxsplit=1)
+        return type_.strip(), "\n".join([text_.strip(), *lines[1:]])
+    return "", text

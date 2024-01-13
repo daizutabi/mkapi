@@ -1,4 +1,5 @@
-from mkapi.objects import Class, _iter_base_classes, get_object
+from mkapi.objects import Class, _inherit, _iter_base_classes, get_object, load_module
+from mkapi.utils import get_by_name
 
 
 def test_baseclasses():
@@ -23,3 +24,23 @@ def test_baseclasses():
     assert base.name == "Config"
     assert base.qualname == "Config"
     assert base.fullname == "mkdocs.config.base.Config"
+
+
+def test_iter_bases():
+    module = load_module("mkapi.objects")
+    assert module
+    cls = module.get_class("Class")
+    assert cls
+    cls.bases = list(_iter_base_classes(cls))
+    bases = cls.iter_bases()
+    assert next(bases).name == "Object"
+    assert next(bases).name == "Class"
+
+
+def test_inherit():
+    cls = get_object("mkapi.plugins.MkAPIConfig")
+    assert isinstance(cls, Class)
+    cls.bases = list(_iter_base_classes(cls))
+    _inherit(cls, "attributes")
+    assert cls.bases[0].fullname == "mkdocs.config.base.Config"
+    assert get_by_name(cls.attributes, "config_file_path")

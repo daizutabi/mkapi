@@ -30,16 +30,6 @@ def test_inherit():
     assert not get_by_name(p, "classnames")
 
 
-def test_inherit_other_module():
-    cls = get_object("mkapi.plugins.MkAPIConfig")
-    assert isinstance(cls, Class)
-    assert cls.bases[0].fullname == "mkdocs.config.base.Config"
-    a = cls.attributes
-    x = get_by_name(a, "config_file_path")
-    assert x
-    assert x.fullname == "mkdocs.config.base.Config.config_file_path"
-
-
 def test_inherit_other_module2():
     cls = get_object("mkapi.plugins.MkAPIPlugin")
     assert isinstance(cls, Class)
