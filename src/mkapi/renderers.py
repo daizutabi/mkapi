@@ -1,12 +1,19 @@
 """Renderer class."""
+from __future__ import annotations
+
 import os
-from dataclasses import dataclass, field
+import re
+from html.parser import HTMLParser
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.objects import Module, load_module
+from mkapi.importlib import load_module
+
+if TYPE_CHECKING:
+    from mkapi.objects import Class, Function, Module
 
 templates: dict[str, Template] = {}
 
@@ -21,7 +28,7 @@ def load_templates(path: Path | None = None) -> None:
         templates[Path(name).stem] = env.get_template(name)
 
 
-def render_module(name: str, filters: list[str] | None = None) -> str:
+def render_module(name: str, filters: list[str]) -> str:
     """Return a rendered Markdown for Module.
 
     Args:
@@ -45,106 +52,45 @@ def render_module(name: str, filters: list[str] | None = None) -> str:
         # module_filter=module_filter,
         # object_filter=object_filter,
     )
-    # return f"{module}: {id(module)}"
 
 
-@dataclass
-class Renderer:
-    """Render [Object] instance recursively to create API documentation.
+def render(obj: Module | Class | Function, level: int, filters: list[str]) -> str:
+    """Return a rendered HTML for Node.
 
-    Attributes:
-        templates: Jinja template dictionary.
+    Args:
+        obj: Object instance.
+        level: Heading level.
+        filters: Filters.
     """
+    return ""
+    obj_str = render_object(obj, filters=filters)
+    doc_str = render_docstring(obj.doc, filters=filters)
+    members = []
+    for member in obj.classes + obj.functions:
+        member_str = render(member, level + 1, filters)
+        members.append(member_str)
+    return templates["node"].render(obj=obj_str, doc=doc_str, members=members)
 
-    templates: dict[str, Template] = field(default_factory=dict, init=False)
 
-    def __post_init__(self) -> None:
-        path = Path(mkapi.__file__).parent / "templates"
-        loader = FileSystemLoader(path)
-        env = Environment(loader=loader, autoescape=select_autoescape(["jinja2"]))
-        for name in os.listdir(path):
-            template = env.get_template(name)
-            self.templates[Path(name).stem] = template
+def render_object(obj: Module | Class | Function, filters: list[str]) -> str:
+    """Return a rendered HTML for Object.
 
-    def render_module(self, module: Module, filters: list[str] | None = None) -> str:
-        """Return a rendered Markdown for Module.
-
-        Args:
-            module: Module instance.
-            filters: A list of filters. Avaiable filters: `inherit`, `strict`,
-                `heading`.
-
-        Note:
-            This function returns Markdown instead of HTML. The returned Markdown
-            will be converted into HTML by MkDocs. Then the HTML is rendered into HTML
-            again by other functions in this module.
-        """
-        filters = filters if filters else []
-        module_filter = object_filter = ""
-        if filters:
-            object_filter = "|" + "|".join(filters)
-        template = self.templates["module"]
-        return template.render(
-            module=module,
-            module_filter=module_filter,
-            object_filter=object_filter,
-        )
-
-    # def render(self, node: Node, filters: list[str] | None = None) -> str:
-    #     """Return a rendered HTML for Node.
-
-    #     Args:
-    #         node: Node instance.
-    #         filters: Filters.
-    #     """
-    #     obj = self.render_object(node.object, filters=filters)
-    #     docstring = self.render_docstring(node.docstring, filters=filters)
-    #     members = [self.render(member, filters) for member in node.members]
-    #     return self.render_node(node, obj, docstring, members)
-
-    # def render_node(
-    #     self,
-    #     node: Node,
-    #     obj: str,
-    #     docstring: str,
-    #     members: list[str],
-    # ) -> str:
-    #     """Return a rendered HTML for Node using prerendered components.
-
-    #     Args:
-    #         node: Node instance.
-    #         obj: Rendered HTML for Object instance.
-    #         docstring: Rendered HTML for Docstring instance.
-    #         members: A list of rendered HTML for member Node instances.
-    #     """
-    #     template = self.templates["node"]
-    #     return template.render(
-    #         node=node,
-    #         object=obj,
-    #         docstring=docstring,
-    #         members=members,
-    #     )
-
-    # def render_object(self, obj: Object, filters: list[str] | None = None) -> str:
-    #     """Return a rendered HTML for Object.
-
-    #     Args:
-    #         obj: Object instance.
-    #         filters: Filters.
-    #     """
-    #     filters = filters if filters else []
-    #     context = link.resolve_object(obj.html)
-    #     level = context.get("level")
-    #     if level:
-    #         if obj.kind in ["module", "package"]:
-    #             filters.append("plain")
-    #         elif "plain" in filters:
-    #             del filters[filters.index("plain")]
-    #         tag = f"h{level}"
-    #     else:
-    #         tag = "div"
-    #     template = self.templates["object"]
-    #     return template.render(context, object=obj, tag=tag, filters=filters)
+    Args:
+        obj: Object instance.
+        filters: Filters.
+    """
+    context = resolve_object(obj.html)
+    level = context.get("level")
+    if level:
+        if obj.kind in ["module", "package"]:
+            filters.append("plain")
+        elif "plain" in filters:
+            del filters[filters.index("plain")]
+        tag = f"h{level}"
+    else:
+        tag = "div"
+    template = self.templates["object"]
+    return template.render(context, object=obj, tag=tag, filters=filters)
 
     # def render_object_member(
     #     self,
@@ -207,5 +153,54 @@ class Renderer:
     #     return template.render(code=code, module=code.module, filters=filters)
 
 
-#: Renderer instance that is used globally.
-# renderer: Renderer = Renderer()
+class ObjectParser(HTMLParser):  # noqa: D101
+    def feed(self, html: str) -> dict[str, int | str]:  # noqa: D102
+        self.context = {"href": [], "heading_id": ""}
+        super().feed(html)
+        href = self.context["href"]
+        if len(href) == 2:
+            prefix_url, name_url = href
+        elif len(href) == 1:
+            prefix_url, name_url = "", href[0]
+        else:
+            prefix_url, name_url = "", ""
+        self.context["prefix_url"] = prefix_url
+        self.context["name_url"] = name_url
+        del self.context["href"]
+        return self.context
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:  # noqa: D102
+        context = self.context
+        if tag == "p":
+            context["level"] = 0
+        elif re.match(r"h[1-6]", tag):
+            context["level"] = int(tag[1:])
+            for attr in attrs:
+                if attr[0] == "id":
+                    self.context["heading_id"] = attr[1]
+        elif tag == "a":
+            for attr in attrs:
+                if attr[0] == "href":
+                    href = attr[1]
+                    if href.startswith("./"):
+                        href = href[2:]
+                    self.context["href"].append(href)
+
+
+parser = ObjectParser()
+
+
+def resolve_object(html: str) -> dict[str, int | str]:
+    """Reutrns an object context dictionary.
+
+    Args:
+        html: HTML source.
+
+    Examples:
+        >>> resolve_object("<p><a href='a'>p</a><a href='b'>n</a></p>")
+        {'heading_id': '', 'level': 0, 'prefix_url': 'a', 'name_url': 'b'}
+        >>> resolve_object("<h2 id='i'><a href='a'>p</a><a href='b'>n</a></h2>")
+        {'heading_id': 'i', 'level': 2, 'prefix_url': 'a', 'name_url': 'b'}
+    """
+    parser.reset()
+    return parser.feed(html)

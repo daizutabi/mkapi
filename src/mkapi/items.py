@@ -25,6 +25,7 @@ class Type:
 
     expr: ast.expr | None = None
     markdown: str = field(default="", init=False)
+    html: str = field(default="", init=False)
 
 
 @dataclass
@@ -33,6 +34,7 @@ class Text:
 
     str: str | None = None  # noqa: A003
     markdown: str = field(default="", init=False)
+    html: str = field(default="", init=False)
 
 
 @dataclass

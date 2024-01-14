@@ -89,6 +89,14 @@ def test_get_fullname():
     assert get_fullname(module, "jinja2.Template") == name
 
 
+def test_get_fullname_self():
+    module = load_module("mkapi.objects")
+    assert module
+    assert get_fullname(module, "Object") == "mkapi.objects.Object"
+    assert get_fullname(module, "mkapi.objects") == "mkapi.objects"
+    assert get_fullname(module, "mkapi.objects.Object") == "mkapi.objects.Object"
+
+
 def test_iter_base_classes():
     cls = get_object("mkapi.plugins.MkAPIPlugin")
     assert isinstance(cls, Class)
@@ -179,6 +187,7 @@ def test_set_markdown_objects():
     x = [t.markdown for t in iter_types(module)]
     assert "[Class][__mkapi__.mkapi.objects.Class] | None" in x
     assert "list[[Raise][__mkapi__.mkapi.items.Raise]]" in x
+    assert "[mkapi][__mkapi__.mkapi].[objects][__mkapi__.mkapi.objects]" in x
 
 
 def test_set_markdown_plugins():

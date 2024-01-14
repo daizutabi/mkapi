@@ -73,12 +73,15 @@ def get_fullname(module: Module, name: str) -> str | None:
     if obj := module.get_member(name):
         return obj.fullname
     if "." in name:
-        name, attr = name.rsplit(".", maxsplit=1)
-        if attr_ := module.get_attribute(name):
+        name_, attr = name.rsplit(".", maxsplit=1)
+        if attr_ := module.get_attribute(name_):
             return f"{module.name}.{attr_.name}"
-        if import_ := module.get_import(name):  # noqa: SIM102
-            if module_ := load_module(import_.fullname):
-                return get_fullname(module_, attr)
+        if import_ := module.get_import(name_):  # noqa: SIM102
+            if module_ := load_module(import_.fullname):  # noqa: SIM102
+                if fullname := get_fullname(module_, attr):
+                    return fullname
+    if name.startswith(module.name):
+        return name
     return None
 
 
@@ -185,9 +188,9 @@ def set_markdown(module: Module) -> None:  # noqa: C901
     cache: dict[str, str] = {}
 
     def _get_link_type(name: str, asname: str | None = None) -> str:
-        asname = asname or name
         if name in cache:
             return cache[name]
+        asname = asname or name
         fullname = get_fullname(module, name)
         link = f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
         cache[name] = link
@@ -213,25 +216,3 @@ def set_markdown(module: Module) -> None:  # noqa: C901
     for text in iter_texts(module):
         if text.str:
             text.markdown = re.sub(LINK_PATTERN, get_link_text, text.str)
-
-
-# def set_markdown(self) -> None:
-#     """Set markdown with link form."""
-#     for type_ in self.types:
-#         type_.markdown = mkapi.ast.unparse(type_.expr, self._get_link_type)
-#     for text in self.texts:
-#         text.markdown = re.sub(LINK_PATTERN, self._get_link_text, text.str)
-
-# def _get_link_type(self, name: str) -> str:
-#     if fullname := self.get_fullname(name):
-#         return get_link(name, fullname)
-#     return name
-
-# def _get_link_text(self, match: re.Match) -> str:
-#     name = match.group(1)
-#     if fullname := self.get_fullname(name):
-#         return get_link(name, fullname)
-#     return match.group()
-
-
-# LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")

@@ -64,7 +64,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         return _on_config_plugin(config, self)
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
-        """Collect plugin CSS/JavaScript and appends them to `files`."""
+        """Collect plugin CSS/JavaScript and append them to `files`."""
         root = Path(mkapi.__file__).parent / "themes"
         docs_dir = config.docs_dir
         config.docs_dir = root.as_posix()
@@ -96,7 +96,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         return files
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
-        """Convert Markdown source to intermidiate version."""
+        """Convert Markdown source to intermediate version."""
         # clean_page_title(page)
         abs_src_path = page.file.abs_src_path
         abs_api_paths = self.config.abs_api_paths
@@ -110,7 +110,6 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         # if page.title:
         #     page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore
         mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
-
         return mkapi_page.convert_html(html)
 
     def on_page_context(
@@ -128,9 +127,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             # clear_prefix(page.toc, 2)
         else:
             mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
-            for level, id_ in mkapi_page.headings:
-                pass
-                # clear_prefix(page.toc, level, id_)
+            # for level, id_ in mkapi_page.headings:
+            #     clear_prefix(page.toc, level, id_)
         return context
 
     def on_serve(self, server, config: MkDocsConfig, builder, **kwargs):
@@ -290,7 +288,7 @@ def _collect(
     return nav, abs_api_paths
 
 
-def _create_page(name: str, path: Path, filters: list[str] | None = None) -> None:
+def _create_page(name: str, path: Path, filters: list[str]) -> None:
     with path.open("w") as file:
         file.write(renderers.render_module(name, filters))
 

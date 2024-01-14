@@ -239,17 +239,6 @@ def _create_empty_module() -> Module:
     return Module(None, name, doc, [], [], None, None)
 
 
-def iter_objects(obj: Module | Class | Function) -> Iterator[Module | Class | Function]:
-    """Yield [Class] or [Function] instances."""
-    yield obj
-    for cls in obj.classes:
-        if isinstance(obj, Module) or cls.module is obj.module:
-            yield from iter_objects(cls)
-    for func in obj.functions:
-        if isinstance(obj, Module) or func.module is obj.module:
-            yield from iter_objects(func)
-
-
 def merge_parameters(obj: Class | Function) -> None:
     """Merge parameters."""
     section = get_by_type(obj.doc.sections, Parameters)
@@ -320,6 +309,17 @@ def merge_items(obj: Module | Class | Function) -> None:
     """Merge items."""
     for obj_ in iter_objects(obj):
         _merge_items(obj_)
+
+
+def iter_objects(obj: Module | Class | Function) -> Iterator[Module | Class | Function]:
+    """Yield [Class] or [Function] instances."""
+    yield obj
+    for cls in obj.classes:
+        if isinstance(obj, Module) or cls.module is obj.module:
+            yield from iter_objects(cls)
+    for func in obj.functions:
+        if isinstance(obj, Module) or func.module is obj.module:
+            yield from iter_objects(func)
 
 
 def iter_items(obj: Module | Class | Function) -> Iterator[Item]:
