@@ -7,7 +7,6 @@ from mkapi.docstrings import (
     parse,
     split_item,
     split_section,
-    split_without_name,
 )
 
 
@@ -97,31 +96,21 @@ def test_iter_items_class(google, get, get_node):
     doc = get(google, "ExampleClass")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
-    x = list(iter_items(section, "google", "A"))
-    assert x[0].name == "attr1"
-    assert x[0].type.expr.value == "str"  # type: ignore
-    assert x[0].text.str == "Description of `attr1`."
-    assert x[1].name == "attr2"
-    assert x[1].type.expr.value == ":obj:`int`, optional"  # type: ignore
-    assert x[1].text.str == "Description of `attr2`."
+    x = list(iter_items(section, "google"))
+    assert x[0][0] == "attr1"
+    assert x[0][1].expr.value == "str"  # type: ignore
+    assert x[0][2].str == "Description of `attr1`."
+    assert x[1][0] == "attr2"
+    assert x[1][1].expr.value == ":obj:`int`, optional"  # type: ignore
+    assert x[1][2].str == "Description of `attr2`."
     doc = get(get_node(google, "ExampleClass"), "__init__")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
-    x = list(iter_items(section, "google", "A"))
-    assert x[0].name == "param1"
-    assert x[0].type.expr.value == "str"  # type: ignore
-    assert x[0].text.str == "Description of `param1`."
-    assert x[1].text.str == "Description of `param2`. Multiple\nlines are supported."
-
-
-def test_split_without_name(google, get):
-    doc = get(google, "module_level_function")
-    assert isinstance(doc, str)
-    section = list(_iter_sections(doc, "google"))[2][1]
-    x = split_without_name(section, "google")
-    assert x[0] == "bool"
-    assert x[1].startswith("True if")
-    assert x[1].endswith("    }")
+    x = list(iter_items(section, "google"))
+    assert x[0][0] == "param1"
+    assert x[0][1].expr.value == "str"  # type: ignore
+    assert x[0][2].str == "Description of `param1`."
+    assert x[1][2].str == "Description of `param2`. Multiple\nlines are supported."
 
 
 def test_iter_items_raises(google, get):
@@ -129,10 +118,10 @@ def test_iter_items_raises(google, get):
     assert isinstance(doc, str)
     name, section = list(_iter_sections(doc, "google"))[3]
     assert name == "Raises"
-    items = list(iter_items(section, "google", name))
+    items = list(iter_items(section, "google"))
     assert len(items) == 2
-    assert items[0].type.expr.value == items[0].name == "AttributeError"  # type: ignore
-    assert items[1].type.expr.value == items[1].name == "ValueError"  # type: ignore
+    assert items[0][0] == "AttributeError"
+    assert items[1][0] == "ValueError"
 
 
 def test_parse(google):

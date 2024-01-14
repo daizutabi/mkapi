@@ -27,5 +27,6 @@ def test_merge(google, get, get_node):
     b = parse(get(get_node(google, "ExampleClass"), "__init__"))
     doc = merge(a, b)
     assert doc
-    assert [s.name for s in doc] == ["", "Attributes", "Note", "Parameters", ""]
+    names = ["", "Attributes", "Note", "Parameters", ""]
+    assert [s.name for s in doc.sections] == names
     doc.sections[-1].text.str.endswith("with it.")  # type: ignore

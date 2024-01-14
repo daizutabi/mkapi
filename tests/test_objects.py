@@ -6,14 +6,15 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.elements import Return
+from mkapi.docstrings import Docstring
+from mkapi.items import Item, Return, Section
 from mkapi.objects import (
     Class,
     Function,
     create_class,
     create_function,
     create_module,
-    iter_elements,
+    iter_items,
     iter_objects,
     objects,
 )
@@ -129,12 +130,19 @@ def test_relative_import():
 
 
 def test_iter():
-    """# test module
+    """'''test module.'''
     m: str
     n = 1
+    '''int: attribute n.'''
     class A(D):
+        '''class.
+
+        Args:
+            a: attribute a.
+        '''
         a: int
         def f(x: int, y: str) -> bool:
+            '''function.'''
             class B(E):
                 c: list
             raise ValueError
@@ -155,8 +163,11 @@ def test_iter():
     assert next(objs).name == "A"
     assert next(objs).name == "f"
     assert next(objs).name == "B"
-    elms = list(iter_elements(module))
+    items = list(iter_items(module))
     for x in "mnaxyc":
-        assert get_by_name(elms, x)
-    assert get_by_name(elms, "ValueError")
-    assert any(isinstance(x, Return) for x in elms)
+        assert get_by_name(items, x)
+    assert get_by_name(items, "ValueError")
+    assert any(isinstance(x, Return) for x in items)
+    assert any(isinstance(x, Item) for x in items)
+    assert any(isinstance(x, Section) for x in items)
+    assert any(isinstance(x, Docstring) for x in items)

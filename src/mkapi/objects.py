@@ -9,21 +9,23 @@ import mkapi.ast
 import mkapi.dataclasses
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
-from mkapi.elements import (
+from mkapi.items import (
+    Item,
     Text,
-    create_attributes,
-    create_bases,
-    create_imports,
-    create_parameters,
-    create_raises,
-    create_returns,
+    Type,
+    iter_attributes,
+    iter_bases,
+    iter_imports,
+    iter_parameters,
+    iter_raises,
+    iter_returns,
 )
 from mkapi.utils import get_by_name
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.elements import Attribute, Base, Import, Parameter, Raise, Return
+    from mkapi.items import Attribute, Base, Import, Parameter, Raise, Return
 
 
 @dataclass
@@ -96,9 +98,9 @@ def create_function(
     """Return a [Function] instance."""
     module = module or _create_empty_module()
     doc = docstrings.parse(ast.get_docstring(node))
-    parameters = list(create_parameters(node))
-    raises = list(create_raises(node))
-    returns = list(create_returns(node))
+    parameters = list(iter_parameters(node))
+    raises = list(iter_raises(node))
+    returns = list(iter_returns(node))
     args = ([], [], parameters, raises, returns)
     func = Function(node, node.name, module, parent, doc, *args)
     for child in mkapi.ast.iter_child_nodes(node):
@@ -131,8 +133,8 @@ def create_class(
     name = node.name
     module = module or _create_empty_module()
     doc = docstrings.parse(ast.get_docstring(node))
-    attributes = list(create_attributes(node))
-    bases = list(create_bases(node))
+    attributes = list(iter_attributes(node))
+    bases = list(iter_bases(node))
     args = ([], [], [], [], attributes, bases)
     cls = Class(node, name, module, parent, doc, *args)
     for child in mkapi.ast.iter_child_nodes(node):
@@ -198,13 +200,13 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from an [ast.Module] node."""
     doc = docstrings.parse(ast.get_docstring(node))
     imports = []
-    for import_ in create_imports(node):
+    for import_ in iter_imports(node):
         if import_.level:
             names = name.split(".")
             prefix = ".".join(name.split(".")[: len(names) - import_.level + 1])
             import_.fullname = f"{prefix}.{import_.fullname}"
         imports.append(import_)
-    attributes = list(create_attributes(node))
+    attributes = list(iter_attributes(node))
     module = Module(node, name, doc, imports, attributes, None, None)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
@@ -216,7 +218,7 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
 
 def _create_empty_module() -> Module:
     name = "__mkapi__"
-    doc = Docstring(Text(None), [])
+    doc = Docstring("", Type(None), Text(None), [])
     return Module(None, name, doc, [], [], None, None)
 
 
@@ -230,13 +232,11 @@ def iter_objects(obj: Module | Class | Function) -> Iterator[Class | Function]:
         yield from iter_objects(func)
 
 
-def iter_elements(
-    obj: Module | Class | Function,
-) -> Iterator[Attribute | Parameter | Raise | Return | Base]:
+def iter_items(obj: Module | Class | Function) -> Iterator[Item]:
     """Yield [Element] instances."""
     for obj_ in iter_objects(obj):
         if obj_ is not obj:
-            yield from iter_elements(obj_)
+            yield from iter_items(obj_)
     if isinstance(obj, Function | Class):
         yield from obj.parameters
         yield from obj.raises
@@ -246,3 +246,4 @@ def iter_elements(
         yield from obj.attributes
     if isinstance(obj, Class):
         yield from obj.bases
+    yield from obj.doc

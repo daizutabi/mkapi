@@ -6,50 +6,50 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.elements import (
+from mkapi.items import (
     Attribute,
-    Element,
+    Item,
     Text,
     Type,
-    _create_imports,
-    create_attributes,
-    create_bases,
-    create_parameters,
-    create_raises,
-    create_returns,
+    _iter_imports,
+    iter_attributes,
+    iter_bases,
+    iter_parameters,
+    iter_raises,
+    iter_returns,
 )
 from mkapi.utils import get_module_path
 
 
-def _get_args(source: str):
+def _get_parameters(source: str):
     node = ast.parse(source).body[0]
     assert isinstance(node, ast.FunctionDef)
-    return list(create_parameters(node))
+    return list(iter_parameters(node))
 
 
 def test_create_parameters():
-    args = _get_args("def f():\n pass")
+    args = _get_parameters("def f():\n pass")
     assert not args
-    args = _get_args("def f(x):\n pass")
+    args = _get_parameters("def f(x):\n pass")
     assert args[0].type.expr is None
     assert args[0].default is None
     assert args[0].kind is Parameter.POSITIONAL_OR_KEYWORD
-    x = _get_args("def f(x=1):\n pass")[0]
+    x = _get_parameters("def f(x=1):\n pass")[0]
     assert isinstance(x.default, ast.Constant)
-    x = _get_args("def f(x:str='s'):\n pass")[0]
+    x = _get_parameters("def f(x:str='s'):\n pass")[0]
     assert x.type.expr
     assert isinstance(x.type.expr, ast.Name)
     assert x.type.expr.id == "str"
     assert isinstance(x.default, ast.Constant)
     assert x.default.value == "s"
-    x = _get_args("def f(x:'X'='s'):\n pass")[0]
+    x = _get_parameters("def f(x:'X'='s'):\n pass")[0]
     assert x.type
     assert isinstance(x.type.expr, ast.Constant)
     assert x.type.expr.value == "X"
 
 
 def test_create_parameters_tuple():
-    x = _get_args("def f(x:tuple[int]=(1,)):\n pass")[0]
+    x = _get_parameters("def f(x:tuple[int]=(1,)):\n pass")[0]
     assert x.type
     node = x.type.expr
     assert isinstance(node, ast.Subscript)
@@ -63,7 +63,7 @@ def test_create_parameters_tuple():
 
 
 def test_create_parameters_slice():
-    x = _get_args("def f(x:tuple[int,str]=(1,'s')):\n pass")[0]
+    x = _get_parameters("def f(x:tuple[int,str]=(1,'s')):\n pass")[0]
     assert x.type
     node = x.type.expr
     assert isinstance(node, ast.Subscript)
@@ -78,7 +78,7 @@ def test_create_parameters_slice():
 def _get_attributes(source: str):
     node = ast.parse(source).body[0]
     assert isinstance(node, ast.ClassDef)
-    return list(create_attributes(node))
+    return list(iter_attributes(node))
 
 
 def test_get_attributes():
@@ -127,21 +127,21 @@ def test_iter_import_nodes_alias():
     src = "import matplotlib.pyplot"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.Import)
-    x = list(_create_imports(node))
+    x = list(_iter_imports(node))
     assert len(x) == 2
     assert x[0].fullname == "matplotlib"
     assert x[1].fullname == "matplotlib.pyplot"
     src = "import matplotlib.pyplot as plt"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.Import)
-    x = list(_create_imports(node))
+    x = list(_iter_imports(node))
     assert len(x) == 1
     assert x[0].fullname == "matplotlib.pyplot"
     assert x[0].name == "plt"
     src = "from matplotlib import pyplot as plt"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.ImportFrom)
-    x = list(_create_imports(node))
+    x = list(_iter_imports(node))
     assert len(x) == 1
     assert x[0].fullname == "matplotlib.pyplot"
     assert x[0].name == "plt"
@@ -180,7 +180,7 @@ def get(google):
 
 def test_create_parameters_google(get):
     func = get("function_with_pep484_type_annotations")
-    x = list(create_parameters(func))
+    x = list(iter_parameters(func))
     assert x[0].name == "param1"
     assert isinstance(x[0].type.expr, ast.Name)
     assert x[0].type.expr.id == "int"
@@ -189,7 +189,7 @@ def test_create_parameters_google(get):
     assert x[1].type.expr.id == "str"
 
     func = get("module_level_function")
-    x = list(create_parameters(func))
+    x = list(iter_parameters(func))
     assert x[0].name == "param1"
     assert x[0].type.expr is None
     assert x[0].default is None
@@ -211,7 +211,7 @@ def test_create_parameters_google(get):
 
 def test_create_raises(get):
     func = get("module_level_function")
-    x = next(create_raises(func))
+    x = next(iter_raises(func))
     assert x.name == "ValueError"
     assert x.text.str is None
     assert isinstance(x.type.expr, ast.Name)
@@ -220,14 +220,14 @@ def test_create_raises(get):
 
 def test_create_returns(get):
     func = get("function_with_pep484_type_annotations")
-    x = next(create_returns(func))
+    x = next(iter_returns(func))
     assert x.name == ""
     assert isinstance(x.type.expr, ast.Name)
     assert x.type.expr.id == "bool"
 
 
 def test_create_attributes(google, get):
-    x = list(create_attributes(google))
+    x = list(iter_attributes(google))
     assert x[0].name == "module_level_variable1"
     assert x[0].type.expr is None
     assert x[0].text.str is None
@@ -242,7 +242,7 @@ def test_create_attributes(google, get):
     assert isinstance(x[1].default, ast.Constant)
     assert x[1].default.value == 98765
     cls = get("ExamplePEP526Class")
-    x = list(create_attributes(cls))
+    x = list(iter_attributes(cls))
     assert x[0].name == "attr1"
     assert isinstance(x[0].type.expr, ast.Name)
     assert x[0].type.expr.id == "str"
@@ -253,7 +253,7 @@ def test_create_attributes(google, get):
 
 def test_create_attributes_from_property(get):
     cls = get("ExampleClass")
-    x = list(create_attributes(cls))
+    x = list(iter_attributes(cls))
     assert x[0].name == "readonly_property"
     assert isinstance(x[0].type.expr, ast.Name)
     assert x[0].type.expr.id == "str"
@@ -266,12 +266,12 @@ def test_create_attributes_from_property(get):
 
 
 def test_repr():
-    e = Element("abc", None, Type(None), Text(None))
-    assert repr(e) == "Element(abc)"
+    e = Item("abc", Type(None), Text(None))
+    assert repr(e) == "Item(abc)"
     src = "import matplotlib.pyplot as plt"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.Import)
-    x = list(_create_imports(node))
+    x = list(_iter_imports(node))
     assert repr(x[0]) == "Import(plt)"
 
 
@@ -279,7 +279,7 @@ def test_create_bases():
     node = ast.parse("class A(B, C[D]): passs")
     cls = node.body[0]
     assert isinstance(cls, ast.ClassDef)
-    bases = create_bases(cls)
+    bases = iter_bases(cls)
     base = next(bases)
     assert base.name == "B"
     assert isinstance(base.type.expr, ast.Name)

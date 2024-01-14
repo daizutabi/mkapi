@@ -6,7 +6,6 @@ from mkapi.docstrings import (
     iter_items,
     split_item,
     split_section,
-    split_without_name,
 )
 
 
@@ -93,31 +92,21 @@ def test_iter_items_class(numpy, get, get_node):
     doc = get(numpy, "ExampleClass")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[1][1]
-    x = list(iter_items(section, "numpy", "A"))
-    assert x[0].name == "attr1"
-    assert x[0].type.expr.value == "str"  # type: ignore
-    assert x[0].text.str == "Description of `attr1`."
-    assert x[1].name == "attr2"
-    assert x[1].type.expr.value == ":obj:`int`, optional"  # type: ignore
-    assert x[1].text.str == "Description of `attr2`."
+    x = list(iter_items(section, "numpy"))
+    assert x[0][0] == "attr1"
+    assert x[0][1].expr.value == "str"  # type: ignore
+    assert x[0][2].str == "Description of `attr1`."
+    assert x[1][0] == "attr2"
+    assert x[1][1].expr.value == ":obj:`int`, optional"  # type: ignore
+    assert x[1][2].str == "Description of `attr2`."
     doc = get(get_node(numpy, "ExampleClass"), "__init__")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[2][1]
-    x = list(iter_items(section, "numpy", "A"))
-    assert x[0].name == "param1"
-    assert x[0].type.expr.value == "str"  # type: ignore
-    assert x[0].text.str == "Description of `param1`."
-    assert x[1].text.str == "Description of `param2`. Multiple\nlines are supported."
-
-
-def test_get_return(numpy, get):
-    doc = get(numpy, "module_level_function")
-    assert isinstance(doc, str)
-    section = list(_iter_sections(doc, "numpy"))[2][1]
-    x = split_without_name(section, "numpy")
-    assert x[0] == "bool"
-    assert x[1].startswith("True if")
-    assert x[1].endswith("    }")
+    x = list(iter_items(section, "numpy"))
+    assert x[0][0] == "param1"
+    assert x[0][1].expr.value == "str"  # type: ignore
+    assert x[0][2].str == "Description of `param1`."
+    assert x[1][2].str == "Description of `param2`. Multiple\nlines are supported."
 
 
 def test_iter_items_raises(numpy, get):
@@ -125,7 +114,7 @@ def test_iter_items_raises(numpy, get):
     assert isinstance(doc, str)
     name, section = list(_iter_sections(doc, "numpy"))[3]
     assert name == "Raises"
-    items = list(iter_items(section, "numpy", name))
+    items = list(iter_items(section, "numpy"))
     assert len(items) == 2
-    assert items[0].type.expr.value == items[0].name == "AttributeError"  # type: ignore
-    assert items[1].type.expr.value == items[1].name == "ValueError"  # type: ignore
+    assert items[0][0] == "AttributeError"  # type: ignore
+    assert items[1][0] == "ValueError"  # type: ignore
