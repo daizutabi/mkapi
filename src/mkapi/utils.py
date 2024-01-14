@@ -195,6 +195,13 @@ def get_by_kind[T](items: Iterable[T], kind: str) -> T | None:  # noqa: D103
     return get_by_name(items, kind, attr="kind")
 
 
+def get_by_type[T](items: Iterable, type_: type[T]) -> T | None:  # noqa: D103
+    for item in items:
+        if isinstance(item, type_):
+            return item
+    return None
+
+
 def del_by_name[T](items: list[T], name: str, attr: str = "name") -> None:  # noqa: D103
     for k, item in enumerate(items):
         if getattr(item, attr, None) == name:

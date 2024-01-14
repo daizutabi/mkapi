@@ -7,7 +7,7 @@ import pytest
 
 from mkapi.ast import iter_child_nodes
 from mkapi.docstrings import Docstring
-from mkapi.items import Item, Return, Section
+from mkapi.items import Attributes, Item, Parameters, Raises, Return, Returns, Section
 from mkapi.objects import (
     Class,
     Function,
@@ -16,6 +16,11 @@ from mkapi.objects import (
     create_module,
     iter_items,
     iter_objects,
+    iter_texts,
+    iter_types,
+    merge_items,
+    merge_parameters,
+    merge_returns,
     objects,
 )
 from mkapi.utils import get_by_name, get_module_path
@@ -129,6 +134,40 @@ def test_relative_import():
     assert i.fullname == "x.y.e.f"
 
 
+def test_merge_items():
+    """'''test'''
+    def f(x: int=0, y: str='s')->bool:
+        '''function.
+
+        Args:
+            x: parameter x.
+            z: parameter z.
+
+        Returns:
+            Return True.'''
+    """
+    src = inspect.getdoc(test_merge_items)
+    assert src
+    node = ast.parse(src)
+    module = create_module(node, "x")
+    func = module.get_function("f")
+    assert func
+    merge_parameters(func)
+    assert get_by_name(func.parameters, "x")
+    assert get_by_name(func.parameters, "y")
+    assert not get_by_name(func.parameters, "z")
+    items = func.doc.get("Parameters").items  # type: ignore
+    assert get_by_name(items, "x")
+    assert get_by_name(items, "y")
+    assert get_by_name(items, "z")
+    assert [item.name for item in items] == ["x", "y", "z"]
+    merge_returns(func)
+    assert func.returns[0].type
+    assert func.returns[0].text.str == "Return True."
+    item = func.doc.get("Returns").items[0]  # type: ignore
+    assert item.type.expr.id == "bool"  # type: ignore
+
+
 def test_iter():
     """'''test module.'''
     m: str
@@ -137,13 +176,13 @@ def test_iter():
     class A(D):
         '''class.
 
-        Args:
+        Attributes:
             a: attribute a.
         '''
         a: int
-        def f(x: int, y: str) -> bool:
+        def f(x: int, y: str) -> list[str]:
             '''function.'''
-            class B(E):
+            class B(E,F.G):
                 c: list
             raise ValueError
     """
@@ -158,16 +197,23 @@ def test_iter():
     cls = func.get_class("B")
     assert cls
     assert cls.fullname == "x.A.f.B"
-
     objs = iter_objects(module)
+    assert next(objs).name == "x"
     assert next(objs).name == "A"
     assert next(objs).name == "f"
     assert next(objs).name == "B"
+    merge_items(module)
     items = list(iter_items(module))
     for x in "mnaxyc":
         assert get_by_name(items, x)
+    for x in ["x.A.f.B", "x.A.f", "F.G"]:
+        assert get_by_name(items, x)
     assert get_by_name(items, "ValueError")
     assert any(isinstance(x, Return) for x in items)
+    assert any(isinstance(x, Docstring) for x in items)
     assert any(isinstance(x, Item) for x in items)
     assert any(isinstance(x, Section) for x in items)
-    assert any(isinstance(x, Docstring) for x in items)
+    assert any(isinstance(x, Parameters) for x in items)
+    assert any(isinstance(x, Attributes) for x in items)
+    assert any(isinstance(x, Raises) for x in items)
+    assert any(isinstance(x, Returns) for x in items)

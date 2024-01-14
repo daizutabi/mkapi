@@ -8,10 +8,15 @@ from typing import TYPE_CHECKING
 import mkapi.ast
 import mkapi.dataclasses
 from mkapi.ast import is_property
-from mkapi.utils import get_by_name, iter_parent_modulenames, join_without_first_indent
+from mkapi.utils import (
+    get_by_name,
+    iter_parent_modulenames,
+    join_without_first_indent,
+    unique_names,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Sequence
     from inspect import _ParameterKind
 
 
@@ -199,6 +204,12 @@ class Section(Item):
 
     items: list[Item]
 
+    def __repr__(self) -> str:
+        if not self.items:
+            return f"{self.__class__.__name__}({self.name})"
+        args = ", ".join(item.name for item in self.items)
+        return f"{self.__class__.__name__}({args})"
+
     def __iter__(self) -> Iterator[Item]:
         return iter(self.items)
 
@@ -262,3 +273,28 @@ def create_returns(name: str, text: str, style: str) -> Returns:
     text_ = Text(text_ or None)
     returns = [Return("", type_, text_)]
     return Returns(name, Type(None), Text(None), returns)
+
+
+@dataclass(repr=False)
+class Bases(Section):
+    """Bases section."""
+
+    items: list[Base]
+
+
+def iter_merged_items[T](items_ast: Sequence[T], items_doc: Sequence[T]) -> Iterator[T]:
+    """Yield merged [Item] instances.
+
+    `items_ast` are overwritten in-place.
+    """
+    for name in unique_names(items_ast, items_doc):
+        item_ast, item_doc = get_by_name(items_ast, name), get_by_name(items_doc, name)
+        if item_ast and not item_doc:
+            yield item_ast
+        elif not item_ast and item_doc:
+            yield item_doc
+        if isinstance(item_ast, Item) and isinstance(item_doc, Item):
+            item_ast.name = item_ast.name or item_doc.name
+            item_ast.type = item_ast.type if item_ast.type.expr else item_doc.type
+            item_ast.text = item_ast.text if item_ast.text.str else item_doc.text
+            yield item_ast

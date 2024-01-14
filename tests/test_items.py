@@ -1,4 +1,5 @@
 import ast
+import inspect
 import sys
 from inspect import Parameter
 from pathlib import Path
@@ -14,10 +15,12 @@ from mkapi.items import (
     _iter_imports,
     iter_attributes,
     iter_bases,
+    iter_merged_items,
     iter_parameters,
     iter_raises,
     iter_returns,
 )
+from mkapi.objects import create_module
 from mkapi.utils import get_module_path
 
 
@@ -288,3 +291,26 @@ def test_create_bases():
     assert base.name == "C"
     assert isinstance(base.type.expr, ast.Subscript)
     assert isinstance(base.type.expr.slice, ast.Name)
+
+
+def test_iter_merged_items():
+    """'''test'''
+    def f(x: int=0):
+        '''function.
+
+        Args:
+            x: parameter.'''
+    """
+    src = inspect.getdoc(test_iter_merged_items)
+    assert src
+    node = ast.parse(src)
+    module = create_module(node, "x")
+    func = module.get_function("f")
+    assert func
+    items_ast = func.parameters
+    items_doc = func.doc.sections[0].items
+    item = next(iter_merged_items(items_ast, items_doc))
+    assert item.name == "x"
+    assert item.type.expr.id == "int"  # type: ignore
+    assert item.default.value == 0  # type: ignore
+    assert item.text.str == "parameter."

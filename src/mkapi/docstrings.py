@@ -81,9 +81,8 @@ def iter_items(section: str, style: Style) -> Iterator[tuple[str, Type, Text]]:
     for item in _iter_items(section):
         name, type_, text = split_item(item, style)
         name = name.replace("*", "")  # *args -> args, **kwargs -> kwargs
-        # if section_name == "Raises":
-        #     type_ = name
-        yield name, Type(ast.Constant(type_)), Text(text)
+        type_ = ast.Constant(type_) if type_ else None
+        yield name, Type(type_), Text(text)
 
 
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
@@ -225,6 +224,16 @@ class Docstring(Item):
         for section in self.sections:
             yield section
             yield from section.items
+
+    def iter_types(self) -> Iterator[Type]:  # noqa: D102
+        for item in self:
+            if item.type.expr:
+                yield item.type
+
+    def iter_texts(self) -> Iterator[Text]:  # noqa: D102
+        for item in self:
+            if item.text.str:
+                yield item.text
 
     def get(self, name: str) -> Section | None:
         """Return a [Section] by name."""

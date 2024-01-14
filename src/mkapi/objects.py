@@ -10,17 +10,26 @@ import mkapi.dataclasses
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
 from mkapi.items import (
+    Attributes,
+    Bases,
     Item,
+    Parameters,
+    Raises,
+    Returns,
     Text,
     Type,
+    create_attributes,
+    create_parameters,
+    create_raises,
     iter_attributes,
     iter_bases,
     iter_imports,
+    iter_merged_items,
     iter_parameters,
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import get_by_name
+from mkapi.utils import get_by_name, get_by_type
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -50,6 +59,10 @@ class Object:
         else:
             self.qualname = self.name
         self.fullname = f"{self.module.name}.{self.qualname}"
+        self.doc.name = self.fullname
+        expr = ast.parse(self.fullname).body[0]
+        if isinstance(expr, ast.Expr):
+            self.doc.type.expr = expr.value
         objects[self.fullname] = self  # type:ignore
 
     def __repr__(self) -> str:
@@ -160,6 +173,11 @@ class Module:
     source: str | None = None
     kind: str | None = None
 
+    def __post_init__(self) -> None:
+        expr = ast.parse(self.name).body[0]
+        if isinstance(expr, ast.Expr):
+            self.doc.type.expr = expr.value
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
 
@@ -222,28 +240,100 @@ def _create_empty_module() -> Module:
     return Module(None, name, doc, [], [], None, None)
 
 
-def iter_objects(obj: Module | Class | Function) -> Iterator[Class | Function]:
+def iter_objects(obj: Module | Class | Function) -> Iterator[Module | Class | Function]:
     """Yield [Class] or [Function] instances."""
-    if not isinstance(obj, Module):
-        yield obj
+    yield obj
     for cls in obj.classes:
         yield from iter_objects(cls)
     for func in obj.functions:
         yield from iter_objects(func)
 
 
-def iter_items(obj: Module | Class | Function) -> Iterator[Item]:
-    """Yield [Element] instances."""
-    for obj_ in iter_objects(obj):
-        if obj_ is not obj:
-            yield from iter_items(obj_)
+def merge_parameters(obj: Class | Function) -> None:
+    """Merge parameters."""
+    section = get_by_type(obj.doc.sections, Parameters)
+    if not section:
+        if not obj.parameters:
+            return
+        section = create_parameters([])
+        obj.doc.sections.append(section)
+    # TODO: *args, **kwargs
+    section.items = list(iter_merged_items(obj.parameters, section.items))
+
+
+def merge_attributes(obj: Module | Class) -> None:
+    """Merge attributes."""
+    section = get_by_type(obj.doc.sections, Attributes)
+    if not section:
+        if not obj.attributes:
+            return
+        section = create_attributes([])
+        obj.doc.sections.append(section)
+    section.items = list(iter_merged_items(obj.attributes, section.items))
+
+
+def merge_raises(obj: Class | Function) -> None:
+    """Merge raises."""
+    section = get_by_type(obj.doc.sections, Raises)
+    if not section:
+        if not obj.raises:
+            return
+        section = create_raises([])
+        obj.doc.sections.append(section)
+    section.items = list(iter_merged_items(obj.raises, section.items))
+
+
+def merge_returns(obj: Function) -> None:
+    """Merge returns."""
+    section = get_by_type(obj.doc.sections, Returns)
+    if not section:
+        if not obj.returns:
+            return
+        # TODO: yields
+        section = Returns("Returns", Type(None), Text(None), [])
+        obj.doc.sections.append(section)
+    section.items = list(iter_merged_items(obj.returns, section.items))
+
+
+def merge_bases(obj: Class) -> None:
+    """Merge bases."""
+    if not obj.bases:
+        return
+    section = Bases("Bases", Type(None), Text(None), obj.bases)
+    obj.doc.sections.insert(0, section)
+
+
+def _merge_items(obj: Module | Class | Function) -> None:
     if isinstance(obj, Function | Class):
-        yield from obj.parameters
-        yield from obj.raises
+        merge_parameters(obj)
+        merge_raises(obj)
     if isinstance(obj, Function):
-        yield from obj.returns
+        merge_returns(obj)
     if isinstance(obj, Module | Class):
-        yield from obj.attributes
+        merge_attributes(obj)
     if isinstance(obj, Class):
-        yield from obj.bases
-    yield from obj.doc
+        merge_bases(obj)
+
+
+def merge_items(obj: Module | Class | Function) -> None:
+    """Merge items."""
+    for obj_ in iter_objects(obj):
+        _merge_items(obj_)
+
+
+def iter_items(obj: Module | Class | Function) -> Iterator[Item]:
+    """Yield [Item] instances."""
+    for obj_ in iter_objects(obj):
+        yield from obj_.doc
+
+
+def iter_types(obj: Module | Class | Function) -> Iterator[Type]:
+    """Yield [Type] instances."""
+    for obj_ in iter_objects(obj):
+        yield from obj_.doc.iter_types()
+
+
+def iter_texts(obj: Module | Class | Function) -> Iterator[Text]:
+    """Yield [Text] instances."""
+    for obj_ in iter_objects(obj):
+        yield from obj_.doc.iter_texts()
