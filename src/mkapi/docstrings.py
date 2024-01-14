@@ -15,6 +15,7 @@ from mkapi.items import (
     create_parameters,
     create_raises,
     create_returns,
+    iter_merged_items,
 )
 from mkapi.utils import (
     add_admonition,
@@ -259,21 +260,6 @@ def parse(doc: str | None, style: Style | None = None) -> Docstring:
     return Docstring("", Type(None), text, sections)
 
 
-def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
-    """Yield merged [Item] instances from two lists of [Item]."""
-    for name in unique_names(a, b):
-        ai, bi = get_by_name(a, name), get_by_name(b, name)
-        if ai and not bi:
-            yield ai
-        elif not ai and bi:
-            yield bi
-        elif ai and bi:
-            name_ = ai.name or bi.name
-            type_ = ai.type if ai.type.expr else bi.type
-            text = ai.text if ai.text.str else bi.text
-            yield Item(name_, type_, text)
-
-
 def merge_sections(a: Section, b: Section) -> Section:
     """Merge two [Section] instances into one [Section] instance."""
     if a.name != b.name:
@@ -296,11 +282,11 @@ def iter_merge_sections(a: list[Section], b: list[Section]) -> Iterator[Section]
                 yield merge_sections(ai, bi)
 
 
-def merge(a: Docstring | None, b: Docstring | None) -> Docstring | None:
+def merge(a: Docstring, b: Docstring) -> Docstring:
     """Merge two [Docstring] instances into one [Docstring] instance."""
-    if not a or not a.sections:
+    if not a.sections:
         return b
-    if not b or not b.sections:
+    if not b.sections:
         return a
     sections: list[Section] = []
     for ai in a.sections:

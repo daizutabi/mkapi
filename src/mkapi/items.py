@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import mkapi.ast
-import mkapi.dataclasses
 from mkapi.ast import is_property
 from mkapi.utils import (
     get_by_name,

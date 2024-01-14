@@ -314,3 +314,22 @@ def test_iter_merged_items():
     assert item.type.expr.id == "int"  # type: ignore
     assert item.default.value == 0  # type: ignore
     assert item.text.str == "parameter."
+
+
+def test_iter_merged_items_():
+    a = [
+        Item("a", Type(None), Text("item a")),
+        Item("b", Type(ast.Constant("int")), Text("item b")),
+    ]
+    b = [
+        Item("a", Type(ast.Constant("str")), Text("item A")),
+        Item("c", Type(ast.Constant("list")), Text("item c")),
+    ]
+    c = list(iter_merged_items(a, b))
+    assert c[0].name == "a"
+    assert c[0].type.expr.value == "str"  # type: ignore
+    assert c[0].text.str == "item a"
+    assert c[1].name == "b"
+    assert c[1].type.expr.value == "int"  # type: ignore
+    assert c[2].name == "c"
+    assert c[2].type.expr.value == "list"  # type: ignore

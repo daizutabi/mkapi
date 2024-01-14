@@ -16,8 +16,6 @@ from mkapi.objects import (
     create_module,
     iter_items,
     iter_objects,
-    iter_texts,
-    iter_types,
     merge_items,
     merge_parameters,
     merge_returns,
@@ -115,6 +113,17 @@ def test_create_module(google):
     assert isinstance(func, Function)
     assert func.fullname == "google.ExampleClass.example_method"
     assert repr(module) == "Module(google)"
+
+
+def test_fullname(google):
+    module = create_module(google, "examples.styles.google")
+    c = module.get_class("ExampleClass")
+    assert isinstance(c, Class)
+    f = c.get_function("example_method")
+    assert isinstance(f, Function)
+    assert c.fullname == "examples.styles.google.ExampleClass"
+    name = "examples.styles.google.ExampleClass.example_method"
+    assert f.fullname == name
 
 
 def test_relative_import():

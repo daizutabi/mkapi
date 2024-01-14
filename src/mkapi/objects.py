@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import mkapi.ast
-import mkapi.dataclasses
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
 from mkapi.items import (
@@ -244,9 +243,11 @@ def iter_objects(obj: Module | Class | Function) -> Iterator[Module | Class | Fu
     """Yield [Class] or [Function] instances."""
     yield obj
     for cls in obj.classes:
-        yield from iter_objects(cls)
+        if isinstance(obj, Module) or cls.module is obj.module:
+            yield from iter_objects(cls)
     for func in obj.functions:
-        yield from iter_objects(func)
+        if isinstance(obj, Module) or func.module is obj.module:
+            yield from iter_objects(func)
 
 
 def merge_parameters(obj: Class | Function) -> None:

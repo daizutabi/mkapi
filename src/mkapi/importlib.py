@@ -2,18 +2,33 @@
 from __future__ import annotations
 
 import ast
+import importlib
+import inspect
 import re
 from typing import TYPE_CHECKING
 
-import mkapi.dataclasses
-from mkapi import docstrings
+import mkapi.ast
+import mkapi.docstrings
+from mkapi.ast import iter_identifiers
+from mkapi.items import Parameter
+from mkapi.objects import (
+    Class,
+    Module,
+    create_module,
+    iter_texts,
+    iter_types,
+    merge_items,
+    objects,
+)
+from mkapi.utils import del_by_name, get_module_path, iter_parent_modulenames
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import Self
+    from inspect import _ParameterKind
 
-    from mkapi.docstrings import Docstring, Item, Section
-    from mkapi.items import Attribute, Import, Parameter, Raise, Return
+    from mkapi.objects import Attribute, Function
+
+modules: dict[str, Module | None] = {}
 
 
 def load_module(name: str) -> Module | None:
@@ -28,166 +43,195 @@ def load_module(name: str) -> Module | None:
     module = load_module_from_source(source, name)
     module.kind = "package" if path.stem == "__init__" else "module"
     modules[name] = module
+    _postprocess(module)
     return module
 
 
 def load_module_from_source(source: str, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from a source string."""
     node = ast.parse(source)
-    module = create_module_from_node(node, name)
+    module = create_module(node, name)
     module.source = source
     return module
 
 
-# def get_object(fullname: str) -> Module | Class | Function | None:
-#     """Return an [Object] instance by the fullname."""
-#     if fullname in objects:
-#         return objects[fullname]
-#     for modulename in iter_parent_modulenames(fullname):
-#         if load_module(modulename) and fullname in objects:
-#             return objects[fullname]
-#     objects[fullname] = None
-#     return None
+def get_object(fullname: str) -> Module | Class | Function | None:
+    """Return an [Object] instance by the fullname."""
+    if fullname in modules:
+        return modules[fullname]
+    if fullname in objects:
+        return objects[fullname]
+    for modulename in iter_parent_modulenames(fullname):
+        if load_module(modulename) and fullname in objects:
+            return objects[fullname]
+    objects[fullname] = None
+    return None
+
+
+def get_fullname(module: Module, name: str) -> str | None:
+    """Return the fullname of an object in the module."""
+    if obj := module.get_member(name):
+        return obj.fullname
+    if "." in name:
+        name, attr = name.rsplit(".", maxsplit=1)
+        if attr_ := module.get_attribute(name):
+            return f"{module.name}.{attr_.name}"
+        if import_ := module.get_import(name):  # noqa: SIM102
+            if module_ := load_module(import_.fullname):
+                return get_fullname(module_, attr)
+    return None
+
+
+def _postprocess(obj: Module | Class) -> None:
+    if isinstance(obj, Module):
+        merge_items(obj)
+        set_markdown(obj)
+    if isinstance(obj, Class):
+        _postprocess_class(obj)
+    for cls in obj.classes:
+        _postprocess(cls)
+
+
+def _postprocess_class(cls: Class) -> None:
+    inherit_base_classes(cls)
+    if init := cls.get_function("__init__"):
+        cls.parameters = init.parameters
+        cls.raises = init.raises
+        cls.doc = mkapi.docstrings.merge(cls.doc, init.doc)
+        del_by_name(cls.functions, "__init__")
+    if is_dataclass(cls):
+        cls.parameters = list(iter_dataclass_parameters(cls))
+
+
+def iter_base_classes(cls: Class) -> Iterator[Class]:
+    """Yield base classes.
+
+    This function is called in postprocess for inheritance.
+    """
+    if not cls.module:
+        return
+    for node in cls.node.bases:
+        name = next(mkapi.ast.iter_identifiers(node))
+        if fullname := get_fullname(cls.module, name):
+            base = get_object(fullname)
+            if base and isinstance(base, Class):
+                yield base
+
+
+def inherit_base_classes(cls: Class) -> None:
+    """Inherit objects from base classes."""
+    # TODO: fix InitVar, ClassVar for dataclasses.
+    bases = list(iter_base_classes(cls))
+    for name in ["attributes", "functions", "classes"]:
+        members = {}
+        for base in bases:
+            for member in getattr(base, name):
+                members[member.name] = member
+        for member in getattr(cls, name):
+            members[member.name] = member
+        setattr(cls, name, list(members.values()))
+
+
+def _get_dataclass_decorator(cls: Class, module: Module) -> ast.expr | None:
+    for deco in cls.node.decorator_list:
+        name = next(iter_identifiers(deco))
+        if get_fullname(module, name) == "dataclasses.dataclass":
+            return deco
+    return None
+
+
+def is_dataclass(cls: Class, module: Module | None = None) -> bool:
+    """Return True if the class is a dataclass."""
+    if module := module or cls.module:
+        return _get_dataclass_decorator(cls, module) is not None
+    return False
+
+
+def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
+    """Yield [Parameter] instances for dataclass signature."""
+    if not cls.module or not (modulename := cls.module.name):
+        raise NotImplementedError
+    try:
+        module = importlib.import_module(modulename)
+    except ModuleNotFoundError:
+        return
+    members = dict(inspect.getmembers(module, inspect.isclass))
+    obj = members[cls.name]
+
+    for param in inspect.signature(obj).parameters.values():
+        if attr := cls.get_attribute(param.name):
+            args = (attr.name, attr.type, attr.text, attr.default)
+            yield Parameter(*args, param.kind)
+        else:
+            raise NotImplementedError
+
+
+# def _iter_decorator_args(deco: ast.expr) -> Iterator[tuple[str, Any]]:
+#     for child in ast.iter_child_nodes(deco):
+#         if isinstance(child, ast.keyword):
+#             if child.arg and isinstance(child.value, ast.Constant):
+#                 yield child.arg, child.value.value
+
+
+# def _get_decorator_args(deco: ast.expr) -> dict[str, Any]:
+#     return dict(_iter_decorator_args(deco))
+
+
+LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
+
+
+def set_markdown(module: Module) -> None:  # noqa: C901
+    """Set markdown with link form."""
+    cache: dict[str, str] = {}
+
+    def _get_link_type(name: str, asname: str | None = None) -> str:
+        asname = asname or name
+        if name in cache:
+            return cache[name]
+        fullname = get_fullname(module, name)
+        link = f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
+        cache[name] = link
+        return link
+
+    def get_link_type(name: str) -> str:
+        names = []
+        parents = iter_parent_modulenames(name)
+        for name_, asname in zip(parents, name.split("."), strict=True):
+            names.append(_get_link_type(name_, asname))
+        return ".".join(names)
+
+    def get_link_text(match: re.Match) -> str:
+        name = match.group(1)
+        link = get_link_type(name)
+        if name != link:
+            return link
+        return match.group()
+
+    for type_ in iter_types(module):
+        if type_.expr:
+            type_.markdown = mkapi.ast.unparse(type_.expr, get_link_type)
+    for text in iter_texts(module):
+        if text.str:
+            text.markdown = re.sub(LINK_PATTERN, get_link_text, text.str)
+
+
+# def set_markdown(self) -> None:
+#     """Set markdown with link form."""
+#     for type_ in self.types:
+#         type_.markdown = mkapi.ast.unparse(type_.expr, self._get_link_type)
+#     for text in self.texts:
+#         text.markdown = re.sub(LINK_PATTERN, self._get_link_text, text.str)
+
+# def _get_link_type(self, name: str) -> str:
+#     if fullname := self.get_fullname(name):
+#         return get_link(name, fullname)
+#     return name
+
+# def _get_link_text(self, match: re.Match) -> str:
+#     name = match.group(1)
+#     if fullname := self.get_fullname(name):
+#         return get_link(name, fullname)
+#     return match.group()
 
 
 # LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
-
-
-# def get_link(name: str, fullname: str) -> str:
-#     """Return a markdown link."""
-#     return f"[{name}][__mkapi__.{fullname}]"
-
-
-# modules: dict[str, Module | None] = {}
-
-
-# # def _postprocess(obj: Module | Class) -> None:
-# #     _merge_docstring(obj)
-# #     for func in obj.functions:
-# #         _merge_docstring(func)
-# #     for cls in obj.classes:
-# #         _postprocess(cls)
-# #         _postprocess_class(cls)
-
-
-# # def _merge_item(obj: Attribute | Parameter | Return | Raise, item: Item) -> None:
-# #     if not obj.type and item.type:
-# #         # ex. list(str) -> list[str]
-# #         type_ = item.type.replace("(", "[").replace(")", "]")
-# #         obj.type = Type(mkapi.ast.create_expr(type_))
-# #     obj.text = Text(item.text)  # Does item.text win?
-
-
-# # def _new(
-# #     cls: type[Attribute | Parameter | Raise],
-# #     name: str,
-# # ) -> Attribute | Parameter | Raise:
-# #     args = (None, name, None, None)
-# #     if cls is Attribute:
-# #         return Attribute(*args, None)
-# #     if cls is Parameter:
-# #         return Parameter(*args, None, None)
-# #     if cls is Raise:
-# #         return Raise(*args)
-# #     raise NotImplementedError
-
-
-# # def _merge_items(cls: type, attrs: list, items: list[Item]) -> list:
-# #     names = unique_names(attrs, items)
-# #     attrs_ = []
-# #     for name in names:
-# #         if not (attr := get_by_name(attrs, name)):
-# #             attr = _new(cls, name)
-# #         attrs_.append(attr)
-# #         if not (item := get_by_name(items, name)):
-# #             continue
-# #         _merge_item(attr, item)  # type: ignore
-# #     return attrs_
-
-
-# # def _merge_docstring(obj: Module | Class | Function) -> None:
-# #     """Merge [Object] and [Docstring]."""
-# #     if not obj.text:
-# #         return
-# #     sections: list[Section] = []
-# #     for section in docstrings.parse(obj.text.str):
-# #         if section.name == "Attributes" and isinstance(obj, Module | Class):
-# #             obj.attributes = _merge_items(Attribute, obj.attributes, section.items)
-# #         elif section.name == "Parameters" and isinstance(obj, Class | Function):
-# #             obj.parameters = _merge_items(Parameter, obj.parameters, section.items)
-# #         elif section.name == "Raises" and isinstance(obj, Class | Function):
-# #             obj.raises = _merge_items(Raise, obj.raises, section.items)
-# #         elif section.name in ["Returns", "Yields"] and isinstance(obj, Function):
-# #             _merge_item(obj.returns, section)
-# #             obj.returns.name = section.name
-# #         else:
-# #             sections.append(section)
-
-
-# # ATTRIBUTE_ORDER_DICT = {
-# #     ast.AnnAssign: 1,
-# #     ast.Assign: 2,
-# #     ast.FunctionDef: 3,
-# #     ast.TypeAlias: 4,
-# # }
-
-
-# # def _attribute_order(attr: Attribute) -> int:
-# #     if not attr.node:
-# #         return 0
-# #     return ATTRIBUTE_ORDER_DICT.get(type(attr.node), 10)
-
-
-# def _iter_base_classes(cls: Class) -> Iterator[Class]:
-#     """Yield base classes.
-
-#     This function is called in postprocess for setting base classes.
-#     """
-#     if not cls.module:
-#         return
-#     for node in cls.node.bases:
-#         base_name = next(mkapi.ast.iter_identifiers(node))
-#         base_fullname = cls.module.get_fullname(base_name)
-#         if not base_fullname:
-#             continue
-#         base = get_object(base_fullname)
-#         if base and isinstance(base, Class):
-#             yield base
-
-
-# def _inherit(cls: Class, name: str) -> None:
-#     # TODO: fix InitVar, ClassVar for dataclasses.
-#     members = {}
-#     for base in cls.bases:
-#         for member in getattr(base, name):
-#             members[member.name] = member
-#     for member in getattr(cls, name):
-#         members[member.name] = member
-#     setattr(cls, name, list(members.values()))
-
-
-# # def _postprocess_class(cls: Class) -> None:
-# #     cls.bases = list(_iter_base_classes(cls))
-# #     for name in ["attributes", "functions", "classes"]:
-# #         _inherit(cls, name)
-# #     if init := cls.get_function("__init__"):
-# #         cls.parameters = init.parameters
-# #         cls.raises = init.raises
-# #         # cls.docstring = docstrings.merge(cls.docstring, init.docstring)
-# #         cls.attributes.sort(key=_attribute_order)
-# #         del_by_name(cls.functions, "__init__")
-# #     if mkapi.dataclasses.is_dataclass(cls):
-# #         for attr, kind in mkapi.dataclasses.iter_parameters(cls):
-# #             args = (None, attr.name, None, None, attr.default, kind)
-# #             parameter = Parameter(*args)
-# #             parameter.text = attr.text
-# #             parameter.type = attr.type
-# #             parameter.module = attr.module
-# #             cls.parameters.append(parameter)
-
-# def get_globals(module: Module) -> dict[str, Class | Function | Attribute | Import]:
-#     members = module.classes + module.functions + module.imports
-#     globals_ = {member.fullname: member for member in members}
-#     for attribute in module.attributes:
-#         globals_[f"{module.name}.{attribute.name}"] = attribute  # type: ignore
-#     return globals_
