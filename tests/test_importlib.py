@@ -186,11 +186,9 @@ def test_set_markdown_objects():
     module = load_module("mkapi.objects")
     assert module
     x = [t.markdown for t in iter_types(module)]
-    for z in x:
-        print(z)
+    assert "[mkapi][__mkapi__.mkapi].objects" in x  # no link at last part.
     assert "[Class][__mkapi__.mkapi.objects.Class]" in x
     assert "list[[Raise][__mkapi__.mkapi.items.Raise]]" in x
-    assert "[mkapi][__mkapi__.mkapi].[objects][__mkapi__.mkapi.objects]" in x
 
 
 def test_set_markdown_plugins():

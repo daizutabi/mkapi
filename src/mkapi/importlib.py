@@ -5,12 +5,13 @@ import ast
 import importlib
 import inspect
 import re
+from functools import partial
 from typing import TYPE_CHECKING
 
 import mkapi.ast
 import mkapi.docstrings
 from mkapi.ast import iter_identifiers
-from mkapi.items import Parameter
+from mkapi.items import Parameter, TypeKind
 from mkapi.objects import (
     Class,
     Module,
@@ -202,20 +203,23 @@ def set_markdown(module: Module) -> None:  # noqa: C901
     """Set markdown with link form."""
     cache: dict[str, str] = {}
 
-    def _get_link_type(name: str, asname: str | None = None) -> str:
+    def _get_link_type(name: str, asname: str) -> str:
         if name in cache:
             return cache[name]
-        asname = asname or name
         fullname = get_fullname(module, name)
         link = f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
         cache[name] = link
         return link
 
-    def get_link_type(name: str) -> str:
+    def get_link_type(name: str, kind: TypeKind = TypeKind.REFERENCE) -> str:
         names = []
         parents = iter_parent_modulenames(name)
-        for name_, asname in zip(parents, name.split("."), strict=True):
-            names.append(_get_link_type(name_, asname))
+        asnames = name.split(".")
+        for k, (name_, asname) in enumerate(zip(parents, asnames, strict=True)):
+            if kind is TypeKind.OBJECT and k == len(asnames) - 1:
+                names.append(asname)
+            else:
+                names.append(_get_link_type(name_, asname))
         return ".".join(names)
 
     def get_link_text(match: re.Match) -> str:
@@ -227,7 +231,9 @@ def set_markdown(module: Module) -> None:  # noqa: C901
 
     for type_ in iter_types(module):
         if type_.expr:
-            type_.markdown = mkapi.ast.unparse(type_.expr, get_link_type)
+            get_link = partial(get_link_type, kind=type_.kind)
+            type_.markdown = mkapi.ast.unparse(type_.expr, get_link)
+
     for text in iter_texts(module):
         if text.str:
             text.markdown = re.sub(LINK_PATTERN, get_link_text, text.str)
