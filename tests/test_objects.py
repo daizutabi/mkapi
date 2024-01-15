@@ -66,10 +66,10 @@ def test_create_function(get):
     assert "__mkapi__.module_level_function" in objects
     assert objects["__mkapi__.module_level_function"] is func
     assert len(func.parameters) == 4
-    assert func.get_parameter("param1")
-    assert func.get_parameter("param2")
-    assert func.get_parameter("args")
-    assert func.get_parameter("kwargs")
+    assert get_by_name(func.parameters, "param1")
+    assert get_by_name(func.parameters, "param2")
+    assert get_by_name(func.parameters, "args")
+    assert get_by_name(func.parameters, "kwargs")
     assert len(func.returns) == 0
     assert len(func.raises) == 1
     assert len(func.doc.sections) == 4
@@ -85,16 +85,16 @@ def test_create_class(get):
     assert len(cls.parameters) == 0
     assert len(cls.raises) == 0
     assert len(cls.functions) == 6
-    assert cls.get_function("__init__")
-    assert cls.get_function("example_method")
-    assert cls.get_function("__special__")
-    assert cls.get_function("__special_without_docstring__")
-    assert cls.get_function("_private")
-    assert cls.get_function("_private_without_docstring")
+    assert get_by_name(cls.functions, "__init__")
+    assert get_by_name(cls.functions, "example_method")
+    assert get_by_name(cls.functions, "__special__")
+    assert get_by_name(cls.functions, "__special_without_docstring__")
+    assert get_by_name(cls.functions, "_private")
+    assert get_by_name(cls.functions, "_private_without_docstring")
     assert len(cls.attributes) == 2
     assert cls.get_attribute("readonly_property")
     assert cls.get_attribute("readwrite_property")
-    func = cls.get_function("__init__")
+    func = get_by_name(cls.functions, "__init__")
     assert isinstance(func, Function)
     assert func.qualname == "ExampleClass.__init__"
     assert func.fullname == "__mkapi__.ExampleClass.__init__"
@@ -106,10 +106,10 @@ def test_create_module(google):
     assert module.name == "google"
     assert len(module.functions) == 4
     assert len(module.classes) == 3
-    cls = module.get_class("ExampleClass")
+    cls = get_by_name(module.classes, "ExampleClass")
     assert isinstance(cls, Class)
     assert cls.fullname == "google.ExampleClass"
-    func = cls.get_function("example_method")
+    func = get_by_name(cls.functions, "example_method")
     assert isinstance(func, Function)
     assert func.fullname == "google.ExampleClass.example_method"
     assert repr(module) == "Module(google)"
@@ -117,9 +117,9 @@ def test_create_module(google):
 
 def test_fullname(google):
     module = create_module(google, "examples.styles.google")
-    c = module.get_class("ExampleClass")
+    c = get_by_name(module.classes, "ExampleClass")
     assert isinstance(c, Class)
-    f = c.get_function("example_method")
+    f = get_by_name(c.functions, "example_method")
     assert isinstance(f, Function)
     assert c.fullname == "examples.styles.google.ExampleClass"
     name = "examples.styles.google.ExampleClass.example_method"
@@ -135,10 +135,10 @@ def test_relative_import():
     assert src
     node = ast.parse(src)
     module = create_module(node, "x.y.z")
-    i = module.get_import("d")
+    i = get_by_name(module.imports, "d")
     assert i
     assert i.fullname == "x.y.z.c.d"
-    i = module.get_import("f")
+    i = get_by_name(module.imports, "f")
     assert i
     assert i.fullname == "x.y.e.f"
 
@@ -159,7 +159,7 @@ def test_merge_items():
     assert src
     node = ast.parse(src)
     module = create_module(node, "x")
-    func = module.get_function("f")
+    func = get_by_name(module.functions, "f")
     assert func
     merge_parameters(func)
     assert get_by_name(func.parameters, "x")
@@ -199,11 +199,11 @@ def test_iter():
     assert src
     node = ast.parse(src)
     module = create_module(node, "x")
-    cls = module.get_class("A")
+    cls = get_by_name(module.classes, "A")
     assert cls
-    func = cls.get_function("f")
+    func = get_by_name(cls.functions, "f")
     assert func
-    cls = func.get_class("B")
+    cls = get_by_name(func.classes, "B")
     assert cls
     assert cls.fullname == "x.A.f.B"
     objs = iter_objects(module)

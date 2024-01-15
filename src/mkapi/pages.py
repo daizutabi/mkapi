@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @dataclass(repr=False)
 class Page:
-    """Page class works with [MkAPIPlugin](mkapi.plugins.MkAPIPlugin).
+    """Page class works with [MkAPIPlugin][mkapi.plugins.MkAPIPlugin].
 
     Args:
         source: Markdown source.
@@ -113,7 +113,7 @@ def _iter_type_text(obj: Module | Class | Function) -> Iterator[Type | Text]:
 
 
 def get_markdown(obj: Module | Class | Function) -> str:
-    """Returns a Markdown source."""
+    """Return a Markdown source."""
     markdowns = []
     for type_text in _iter_type_text(obj):
         markdowns.append(type_text.markdown)  # noqa: PERF401

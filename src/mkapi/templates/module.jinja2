@@ -2,14 +2,9 @@
 
 {{ module.kind }}
 
-## Classes
-
-{% for cls in module.classes -%}
-### ::: {{ cls.fullname }}
+{% for cls in module.classes %}
+## ::: {{ cls.fullname }}
 {% endfor -%}
-
-## Functions
-
-{% for func in module.functions -%}
-### ::: {{ func.fullname }}
+{% for func in module.functions %}
+## ::: {{ func.fullname }}
 {% endfor -%}

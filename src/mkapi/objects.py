@@ -17,6 +17,7 @@ from mkapi.items import (
     Returns,
     Text,
     Type,
+    TypeKind,
     create_attributes,
     create_parameters,
     create_raises,
@@ -36,21 +37,40 @@ if TYPE_CHECKING:
     from mkapi.items import Attribute, Base, Import, Parameter, Raise, Return
 
 
+objects: dict[str, Module | Class | Function | None] = {}
+
+
 @dataclass
 class Object:
-    """Object class for class or function."""
+    """Object class for module, class, or function."""
 
-    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
+    node: ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
     name: str
-    module: Module
-    parent: Object | None
     doc: Docstring
-    classes: list[Class]
-    functions: list[Function]
-    parameters: list[Parameter]
-    raises: list[Raise]
+    classes: list[Class] = field(default_factory=list, init=False)
+    functions: list[Function] = field(default_factory=list, init=False)
     qualname: str = field(init=False)
     fullname: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.doc.name = self.fullname
+        expr = ast.parse(self.fullname).body[0]
+        if isinstance(expr, ast.Expr):
+            self.doc.type.expr = expr.value
+            self.doc.type.kind = TypeKind.OBJECT
+        objects[self.fullname] = self  # type:ignore
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name})"
+
+
+@dataclass(repr=False)
+class Callable(Object):
+    """Callable class for class or function."""
+
+    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
+    module: Module = field(kw_only=True)
+    parent: Callable | None = field(kw_only=True)
 
     def __post_init__(self) -> None:
         if self.parent:
@@ -58,54 +78,23 @@ class Object:
         else:
             self.qualname = self.name
         self.fullname = f"{self.module.name}.{self.qualname}"
-        self.doc.name = self.fullname
-        expr = ast.parse(self.fullname).body[0]
-        if isinstance(expr, ast.Expr):
-            self.doc.type.expr = expr.value
-        objects[self.fullname] = self  # type:ignore
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name})"
-
-    def get_source(self, maxline: int | None = None) -> str | None:
-        """Return the source code segment."""
-        if (module := self.module) and (source := module.source):
-            start, stop = self.node.lineno - 1, self.node.end_lineno
-            return "\n".join(source.split("\n")[start:stop][:maxline])
-        return None
-
-    def get_class(self, name: str) -> Class | None:
-        """Return a [Class] instance by the name."""
-        return get_by_name(self.classes, name)
-
-    def get_function(self, name: str) -> Function | None:
-        """Return a [Function] instance by the name."""
-        return get_by_name(self.functions, name)
-
-    def get_parameter(self, name: str) -> Parameter | None:
-        """Return a [Parameter] instance by the name."""
-        return get_by_name(self.parameters, name)
-
-    def get_raise(self, name: str) -> Raise | None:
-        """Return a [Raise] instance by the name."""
-        return get_by_name(self.raises, name)
-
-
-objects: dict[str, Class | Function | None] = {}
+        super().__post_init__()
 
 
 @dataclass(repr=False)
-class Function(Object):
+class Function(Callable):
     """Function class."""
 
     node: ast.FunctionDef | ast.AsyncFunctionDef
+    parameters: list[Parameter]
     returns: list[Return]
+    raises: list[Raise]
 
 
 def create_function(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
     module: Module | None = None,
-    parent: Object | None = None,
+    parent: Callable | None = None,
 ) -> Function:
     """Return a [Function] instance."""
     module = module or _create_empty_module()
@@ -113,8 +102,8 @@ def create_function(
     parameters = list(iter_parameters(node))
     raises = list(iter_raises(node))
     returns = list(iter_returns(node))
-    args = ([], [], parameters, raises, returns)
-    func = Function(node, node.name, module, parent, doc, *args)
+    args = (parameters, returns, raises)
+    func = Function(node, node.name, doc, *args, module=module, parent=parent)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             func.classes.append(create_class(child, module, func))
@@ -124,12 +113,14 @@ def create_function(
 
 
 @dataclass(repr=False)
-class Class(Object):
+class Class(Callable):
     """Class class."""
 
     node: ast.ClassDef
-    attributes: list[Attribute]
     bases: list[Base]
+    attributes: list[Attribute]
+    parameters: list[Parameter] = field(default_factory=list, init=False)
+    raises: list[Raise] = field(default_factory=list, init=False)
 
     def get_attribute(self, name: str) -> Attribute | None:
         """Return an [Attribute] instance by the name."""
@@ -139,78 +130,37 @@ class Class(Object):
 def create_class(
     node: ast.ClassDef,
     module: Module | None = None,
-    parent: Object | None = None,
+    parent: Callable | None = None,
 ) -> Class:
     """Return a [Class] instance."""
     name = node.name
     module = module or _create_empty_module()
     doc = docstrings.parse(ast.get_docstring(node))
-    attributes = list(iter_attributes(node))
     bases = list(iter_bases(node))
-    args = ([], [], [], [], attributes, bases)
-    cls = Class(node, name, module, parent, doc, *args)
+    attributes = list(iter_attributes(node))
+    cls = Class(node, name, doc, bases, attributes, module=module, parent=parent)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             cls.classes.append(create_class(child, module, cls))
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):  # noqa: SIM102
-            if not cls.get_attribute(child.name):  # for property
+            if not get_by_name(attributes, child.name):  # for property
                 cls.functions.append(create_function(child, module, cls))
     return cls
 
 
-@dataclass
-class Module:
+@dataclass(repr=False)
+class Module(Object):
     """Module class."""
 
-    node: ast.Module | None
-    name: str
-    doc: Docstring
+    node: ast.Module
     imports: list[Import]
     attributes: list[Attribute]
-    classes: list[Class] = field(default_factory=list, init=False)
-    functions: list[Function] = field(default_factory=list, init=False)
     source: str | None = None
     kind: str | None = None
 
     def __post_init__(self) -> None:
-        expr = ast.parse(self.name).body[0]
-        if isinstance(expr, ast.Expr):
-            self.doc.type.expr = expr.value
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name})"
-
-    def get_import(self, name: str) -> Import | None:
-        """Return an [Import] instance by the name."""
-        return get_by_name(self.imports, name)
-
-    def get_attribute(self, name: str) -> Attribute | None:
-        """Return an [Attribute] instance by the name."""
-        return get_by_name(self.attributes, name)
-
-    def get_class(self, name: str) -> Class | None:
-        """Return an [Class] instance by the name."""
-        return get_by_name(self.classes, name)
-
-    def get_function(self, name: str) -> Function | None:
-        """Return an [Function] instance by the name."""
-        return get_by_name(self.functions, name)
-
-    def get_source(self, maxline: int | None = None) -> str | None:
-        """Return the source of the module."""
-        if not self.source:
-            return None
-        return "\n".join(self.source.split("\n")[:maxline])
-
-    def get_member(self, name: str) -> Import | Class | Function | None:
-        """Return a member instance by the name."""
-        if obj := self.get_import(name):
-            return obj
-        if obj := self.get_class(name):
-            return obj
-        if obj := self.get_function(name):
-            return obj
-        return None
+        self.fullname = self.qualname = self.name
+        super().__post_init__()
 
 
 def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
@@ -236,7 +186,7 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
 def _create_empty_module() -> Module:
     name = "__mkapi__"
     doc = Docstring("", Type(None), Text(None), [])
-    return Module(None, name, doc, [], [], None, None)
+    return Module(ast.Module(), name, doc, [], [], None, None)
 
 
 def merge_parameters(obj: Class | Function) -> None:

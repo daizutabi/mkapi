@@ -20,13 +20,17 @@ from mkapi.objects import (
     merge_items,
     objects,
 )
-from mkapi.utils import del_by_name, get_module_path, iter_parent_modulenames
+from mkapi.utils import (
+    del_by_name,
+    get_by_name,
+    get_module_path,
+    iter_parent_modulenames,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from inspect import _ParameterKind
 
-    from mkapi.objects import Attribute, Function
+    from mkapi.objects import Function, Import
 
 modules: dict[str, Module | None] = {}
 
@@ -68,15 +72,26 @@ def get_object(fullname: str) -> Module | Class | Function | None:
     return None
 
 
+def get_member(module: Module, name: str) -> Import | Class | Function | None:
+    """Return a member instance by the name."""
+    if obj := get_by_name(module.imports, name):
+        return obj
+    if obj := get_by_name(module.classes, name):
+        return obj
+    if obj := get_by_name(module.functions, name):
+        return obj
+    return None
+
+
 def get_fullname(module: Module, name: str) -> str | None:
     """Return the fullname of an object in the module."""
-    if obj := module.get_member(name):
+    if obj := get_member(module, name):
         return obj.fullname
     if "." in name:
         name_, attr = name.rsplit(".", maxsplit=1)
-        if attr_ := module.get_attribute(name_):
+        if attr_ := get_by_name(module.attributes, name_):
             return f"{module.name}.{attr_.name}"
-        if import_ := module.get_import(name_):  # noqa: SIM102
+        if import_ := get_by_name(module.imports, name_):  # noqa: SIM102
             if module_ := load_module(import_.fullname):  # noqa: SIM102
                 if fullname := get_fullname(module_, attr):
                     return fullname
@@ -97,7 +112,7 @@ def _postprocess(obj: Module | Class) -> None:
 
 def _postprocess_class(cls: Class) -> None:
     inherit_base_classes(cls)
-    if init := cls.get_function("__init__"):
+    if init := get_by_name(cls.functions, "__init__"):
         cls.parameters = init.parameters
         cls.raises = init.raises
         cls.doc = mkapi.docstrings.merge(cls.doc, init.doc)

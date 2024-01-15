@@ -21,7 +21,7 @@ from mkapi.items import (
     iter_returns,
 )
 from mkapi.objects import create_module
-from mkapi.utils import get_module_path
+from mkapi.utils import get_by_name, get_module_path
 
 
 def _get_parameters(source: str):
@@ -305,7 +305,7 @@ def test_iter_merged_items():
     assert src
     node = ast.parse(src)
     module = create_module(node, "x")
-    func = module.get_function("f")
+    func = get_by_name(module.functions, "f")
     assert func
     items_ast = func.parameters
     items_doc = func.doc.sections[0].items

@@ -3,6 +3,7 @@ import re
 
 import mkapi.ast
 import mkapi.importlib
+import mkapi.inspect
 import mkapi.objects
 from mkapi.importlib import (
     LINK_PATTERN,
@@ -30,13 +31,13 @@ def test_load_module_source():
     assert "class File" in module.source
     module = load_module("mkapi.plugins")
     assert module
-    cls = module.get_class("MkAPIConfig")
+    cls = get_by_name(module.classes, "MkAPIConfig")
     assert cls
     assert cls.module is module
-    src = cls.get_source()
+    src = mkapi.inspect.get_source(cls)
     assert src
     assert src.startswith("class MkAPIConfig")
-    src = module.get_source()
+    src = mkapi.inspect.get_source(module)
     assert src
     assert "MkAPIPlugin" in src
 
@@ -55,13 +56,13 @@ def test_get_object():
     mkapi.objects.objects.clear()
     module = load_module("mkapi.objects")
     c = get_object("mkapi.objects.Object")
-    f = get_object("mkapi.objects.Module.get_class")
+    f = get_object("mkapi.objects.Module.__post_init__")
     assert isinstance(c, Class)
     assert c.module is module
     assert isinstance(f, Function)
     assert f.module is module
     c2 = get_object("mkapi.objects.Object")
-    f2 = get_object("mkapi.objects.Module.get_class")
+    f2 = get_object("mkapi.objects.Module.__post_init__")
     assert c is c2
     assert f is f2
     m1 = load_module("mkdocs.structure.files")
@@ -102,14 +103,14 @@ def test_iter_base_classes():
     assert isinstance(cls, Class)
     assert cls.qualname == "MkAPIPlugin"
     assert cls.fullname == "mkapi.plugins.MkAPIPlugin"
-    func = cls.get_function("on_config")
+    func = get_by_name(cls.functions, "on_config")
     assert func
     assert func.qualname == "MkAPIPlugin.on_config"
     assert func.fullname == "mkapi.plugins.MkAPIPlugin.on_config"
     base = next(iter_base_classes(cls))
     assert base.name == "BasePlugin"
     assert base.fullname == "mkdocs.plugins.BasePlugin"
-    func = base.get_function("on_config")
+    func = get_by_name(base.functions, "on_config")
     assert func
     assert func.qualname == "BasePlugin.on_config"
     assert func.fullname == "mkdocs.plugins.BasePlugin.on_config"
@@ -174,7 +175,7 @@ def test_link_pattern():
 def test_iter_types():
     module = load_module("mkapi.plugins")
     assert module
-    cls = module.get_class("MkAPIConfig")
+    cls = get_by_name(module.classes, "MkAPIConfig")
     assert cls
     types = [ast.unparse(x.expr) for x in iter_types(module)]  # type: ignore
     assert "BasePlugin[MkAPIConfig]" in types
@@ -185,7 +186,9 @@ def test_set_markdown_objects():
     module = load_module("mkapi.objects")
     assert module
     x = [t.markdown for t in iter_types(module)]
-    assert "[Class][__mkapi__.mkapi.objects.Class] | None" in x
+    for z in x:
+        print(z)
+    assert "[Class][__mkapi__.mkapi.objects.Class]" in x
     assert "list[[Raise][__mkapi__.mkapi.items.Raise]]" in x
     assert "[mkapi][__mkapi__.mkapi].[objects][__mkapi__.mkapi.objects]" in x
 

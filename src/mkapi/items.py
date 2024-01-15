@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import TYPE_CHECKING
 
 import mkapi.ast
@@ -18,12 +19,15 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from inspect import _ParameterKind
 
+TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
+
 
 @dataclass
 class Type:
     """Type class."""
 
     expr: ast.expr | None = None
+    kind: TypeKind = TypeKind.REFERENCE
     markdown: str = field(default="", init=False)
     html: str = field(default="", init=False)
 
