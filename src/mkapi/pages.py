@@ -4,12 +4,13 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from mkapi import renderers
-from mkapi.importlib import get_object, iter_texts, iter_types
-from mkapi.objects import Class, Function, Module
+from mkapi.importlib import get_object, load_module
+from mkapi.objects import Class, Function, Module, iter_objects, iter_texts, iter_types
 from mkapi.utils import split_filters, update_filters
 
 # from mkapi.converter import convert_html, convert_object
@@ -36,7 +37,6 @@ class Page:
 
     source: str
     abs_src_path: str
-    abs_api_paths: list[str]
     filters: list[list[str]] = field(default_factory=list)
     objects: list[Module | Class | Function] = field(default_factory=list, init=False)
     levels: list[int] = field(default_factory=list, init=False)
@@ -51,7 +51,8 @@ class Page:
                 markdowns.append(_object_markdown(markdown, index))
                 index += 1
         markdown = "\n\n".join(markdowns)
-        return resolve_link(markdown, self.abs_src_path, self.abs_api_paths)
+        replace = partial(_replace_link, abs_src_path=self.abs_src_path)
+        return re.sub(LINK_PATTERN, replace, markdown)
 
     def _callback_markdown(self, name: str, level: int, filters: list[str]) -> str:
         obj = get_object(name)
@@ -134,62 +135,32 @@ def convert_html(
     return html
 
 
+object_uris: dict[str, Path] = {}
+
+
+def collect_objects(name: str | list[str], abs_path: Path) -> None:
+    """Collect objects for link."""
+    if isinstance(name, list):
+        for name_ in name:
+            collect_objects(name_, abs_path)
+        return
+    if not (module := load_module(name)):
+        return
+    for obj in iter_objects(module):
+        object_uris.setdefault(obj.fullname, abs_path)
+
+
 LINK_PATTERN = re.compile(r"\[(\S+?)\]\[(\S+?)\]")
 
 
-def resolve_link(markdown: str, abs_src_path: str, abs_api_paths: list[str]) -> str:
-    """Reutrn resolved link.
-
-    Args:
-        markdown: Markdown source.
-        abs_src_path: Absolute source path of Markdown.
-        abs_api_paths: List of API paths.
-
-    Examples:
-        >>> abs_src_path = '/src/examples/example.md'
-        >>> abs_api_paths = ['/api/a','/api/b', '/api/b.c']
-        >>> resolve_link('[abc][b.c.d]', abs_src_path, abs_api_paths)
-        '[abc](../../api/b.c#b.c.d)'
-        >>> resolve_link('[abc][__mkapi__.b.c.d]', abs_src_path, abs_api_paths)
-        '[abc](../../api/b.c#b.c.d)'
-        >>> resolve_link('list[[abc][__mkapi__.b.c.d]]', abs_src_path, abs_api_paths)
-        'list[[abc](../../api/b.c#b.c.d)]'
-    """
-
-    def replace(match: re.Match) -> str:
-        name, href = match.groups()
-        if href.startswith("!__mkapi__."):  # Just for MkAPI documentation.
-            href = href[11:]
-            return f"[{name}]({href})"
+def _replace_link(match: re.Match, abs_src_path: str) -> str:
+    asname, fullname = match.groups()
+    if fullname.startswith("__mkapi__."):
+        from_mkapi = True
+        fullname = fullname[10:]
+    else:
         from_mkapi = False
-        if href.startswith("__mkapi__."):
-            href = href[10:]
-            from_mkapi = True
-
-        if href := _resolve_href(href, abs_src_path, abs_api_paths):
-            # print(f"[{name}]({href})")
-            return f"[{name}]({href})"
-        return name if from_mkapi else match.group()
-
-    return re.sub(LINK_PATTERN, replace, markdown)
-
-
-def _resolve_href(name: str, abs_src_path: str, abs_api_paths: list[str]) -> str:
-    if not name:
-        return ""
-    abs_api_path = _match_last(name, abs_api_paths)
-    if not abs_api_path:
-        return ""
-    relpath = os.path.relpath(abs_api_path, Path(abs_src_path).parent)
-    relpath = relpath.replace("\\", "/")
-    return f"{relpath}#{name}"
-
-
-# TODO: match longest.
-def _match_last(name: str, abs_api_paths: list[str]) -> str:
-    match = ""
-    for abs_api_path in abs_api_paths:
-        _, path = os.path.split(abs_api_path)
-        if name.startswith(path[:-3]):
-            match = abs_api_path
-    return match
+    if uri := object_uris.get(fullname):
+        uri = uri.relative_to(Path(abs_src_path).parent, walk_up=True).as_posix()
+        return f"[{asname}]({uri}#{fullname})"
+    return asname if from_mkapi else match.group()

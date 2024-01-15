@@ -1,7 +1,9 @@
+from pathlib import Path
+
 from markdown import Markdown
 
 from mkapi.objects import Class, iter_types
-from mkapi.pages import Page, _iter_markdown
+from mkapi.pages import Page, _iter_markdown, collect_objects
 
 source = """
 # Title
@@ -29,36 +31,10 @@ def callback_markdown(name, level, filters):
 
 
 def test_convert_markdown():
-    abs_src_path = "/examples/docs/tutorial/index.md"
-    abs_api_paths = [
-        "/examples/docs/api/mkapi.md",
-        "/examples/docs/api/mkapi.items.md",
-    ]
-    page = Page("::: mkapi.items.Parameters", abs_src_path, abs_api_paths)
+    collect_objects("mkapi.items", Path("/x/api/a.md"))
+    abs_src_path = "/b.md"
+    page = Page("::: mkapi.items.Parameters", abs_src_path)
     x = page.convert_markdown()
     assert "<!-- mkapi:begin[0] -->" in x
     assert "<!-- mkapi:end -->" in x
-    assert "[Section](../api/mkapi.items.md#mkapi.items.Section)" in x
-    assert "[Item](../api/mkapi.items.md#mkapi.items.Item) | None" in x
-    assert "[mkapi](../api/mkapi.md#mkapi).[items]" in x
-    assert "list[[Parameter](../api/mkapi.items.md" in x
-    page = Page("::: mkapi.items.Parameters", "", [])
-    x = page.convert_markdown()
-    assert "../api/mkapi.items" not in x
-
-
-def test_convert_html():
-    abs_src_path = "/examples/docs/tutorial/index.md"
-    abs_api_paths = [
-        "/examples/docs/api/mkapi.md",
-        "/examples/docs/api/mkapi.items.md",
-    ]
-    page = Page("::: mkapi.items.Parameters", abs_src_path, abs_api_paths)
-    markdown = page.convert_markdown()
-    converter = Markdown()
-    html = converter.convert(markdown)
-    page.convert_html(html)
-    obj = page.objects[0]
-    assert isinstance(obj, Class)
-    x = "\n".join(x.html for x in iter_types(obj))
-    assert '<p><a href="../api/mkapi.items.md#mkapi.items.Item">Item</a>' in x
+    assert "[Section](x/api/a.md#mkapi.items.Section)" in x

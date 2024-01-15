@@ -78,8 +78,8 @@ def test_get_object():
 def test_get_fullname():
     module = load_module("mkapi.plugins")
     assert module
-    name = "mkdocs.utils.templates.TemplateContext"
-    assert get_fullname(module, "TemplateContext") == name
+    name = "mkdocs.structure.pages.Page"
+    assert get_fullname(module, "MkDocsPage") == name
     name = "mkdocs.config.config_options.Type"
     assert get_fullname(module, "config_options.Type") == name
     assert not get_fullname(module, "config_options.A")
@@ -196,7 +196,6 @@ def test_set_markdown_plugins():
     assert module
     x = [t.markdown for t in iter_types(module)]
     assert "[MkDocsPage][__mkapi__.mkdocs.structure.pages.Page]" in x
-    assert "tuple[list, list[[Path][__mkapi__.pathlib.Path]]]" in x
 
 
 def test_set_markdown_mkdocs():

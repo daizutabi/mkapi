@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import sys
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeGuard
 
@@ -22,15 +23,16 @@ from mkdocs.structure.files import Files, get_files
 
 import mkapi
 from mkapi import renderers
+from mkapi.pages import collect_objects
 from mkapi.utils import find_submodulenames, is_package, split_filters, update_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mkdocs.structure.nav import Navigation
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
-    from mkdocs.utils.templates import TemplateContext
+    # from mkdocs.utils.templates import TemplateContext
+    # from mkdocs.structure.nav import Navigation
 
 from mkapi.pages import Page as MkAPIPage
 
@@ -46,14 +48,13 @@ class MkAPIConfig(Config):
     page_title = config_options.Type(str, default="")
     section_title = config_options.Type(str, default="")
     on_config = config_options.Type(str, default="")
-    abs_api_paths = config_options.Type(list, default=[])
     pages = config_options.Type(dict, default={})
 
 
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     """MkAPIPlugin class for API generation."""
 
-    server = None
+    nav = None
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         _insert_sys_path(self.config)
@@ -99,9 +100,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Convert Markdown source to intermediate version."""
         # clean_page_title(page)
         abs_src_path = page.file.abs_src_path
-        abs_api_paths = self.config.abs_api_paths
-        filters = self.config.filters
-        mkapi_page = MkAPIPage(markdown, abs_src_path, abs_api_paths, filters)
+        mkapi_page = MkAPIPage(markdown, abs_src_path, self.config.filters)
         self.config.pages[abs_src_path] = mkapi_page
         return mkapi_page.convert_markdown()
 
@@ -112,30 +111,29 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
         return mkapi_page.convert_html(html)
 
-    def on_page_context(
-        self,
-        context: TemplateContext,
-        page: MkDocsPage,
-        config: MkDocsConfig,
-        nav: Navigation,
-        **kwargs,
-    ) -> TemplateContext:
-        """Clear prefix in toc."""
-        abs_src_path = page.file.abs_src_path
-        if abs_src_path in self.config.abs_api_paths:
-            pass
-            # clear_prefix(page.toc, 2)
-        else:
-            mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
-            # for level, id_ in mkapi_page.headings:
-            #     clear_prefix(page.toc, level, id_)
-        return context
+    # def on_page_context(
+    #     self,
+    #     context: TemplateContext,
+    #     page: MkDocsPage,
+    #     config: MkDocsConfig,
+    #     nav: Navigation,
+    #     **kwargs,
+    # ) -> TemplateContext:
+    #     """Clear prefix in toc."""
+    #     src_uri = page.file.src_uri
+    #     if src_uri in self.config.pages:
+    #         pass
+    #         # clear_prefix(page.toc, 2)
+    #     else:
+    #         mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
+    #         # for level, id_ in mkapi_page.headings:
+    #         #     clear_prefix(page.toc, level, id_)
+    #     return context
 
     def on_serve(self, server, config: MkDocsConfig, builder, **kwargs):
-        for path in ["themes"]:
+        for path in ["themes", "templates"]:
             path_str = (Path(mkapi.__file__).parent / path).as_posix()
             server.watch(path_str, builder)
-        self.__class__.server = server
         return server
 
 
@@ -157,22 +155,21 @@ def _insert_sys_path(config: MkAPIConfig) -> None:
             sys.path.insert(0, path)
 
 
-CACHE_CONFIG = {}
-
-
 def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
-    if not plugin.server:
-        abs_api_paths = _update_nav(config, plugin)
-        plugin.config.abs_api_paths = abs_api_paths
-        CACHE_CONFIG["abs_api_paths"] = abs_api_paths
-        CACHE_CONFIG["nav"] = config.nav
+    if not MkAPIPlugin.nav:
+        _update_nav(config, plugin)
+        MkAPIPlugin.nav = config.nav
     else:
-        plugin.config.abs_api_paths = CACHE_CONFIG["abs_api_paths"]
-        config.nav = CACHE_CONFIG["nav"]
+        config.nav = MkAPIPlugin.nav
 
 
 def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     renderers.load_templates()
+
+
+def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    create_pages = partial(_create_pages, config=config, plugin=plugin)
+    config.nav = _walk_nav(config.nav, create_pages)  # type: ignore
 
 
 def _walk_nav(nav: list, create_pages: Callable[[str], list]) -> list:
@@ -193,17 +190,6 @@ def _walk_nav(nav: list, create_pages: Callable[[str], list]) -> list:
         else:
             nav_.append(item)
     return nav_
-
-
-def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[Path]:
-    def create_pages(item: str) -> list:
-        nav, paths = _collect(item, config, plugin)
-        abs_api_paths.extend(paths)
-        return nav
-
-    abs_api_paths: list[Path] = []
-    config.nav = _walk_nav(config.nav, create_pages)  # type: ignore
-    return list(set(abs_api_paths))
 
 
 API_URL_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
@@ -255,11 +241,7 @@ def _get_function(plugin: MkAPIPlugin, name: str) -> Callable | None:
     return None
 
 
-def _collect(
-    item: str,
-    config: MkDocsConfig,
-    plugin: MkAPIPlugin,
-) -> tuple[list, list[Path]]:
+def _create_pages(item: str, config: MkDocsConfig, plugin: MkAPIPlugin) -> list:
     """Collect modules."""
     api_path, name, filters = _get_path_modulename_filters(item, plugin.config.filters)
     abs_api_path = Path(config.docs_dir) / api_path
@@ -276,16 +258,14 @@ def _collect(
 
     def callback(name: str, depth: int, ispackage) -> dict[str, str]:
         module_path = name + ".md"
-        abs_module_path = abs_api_path / module_path
-        abs_api_paths.append(abs_module_path)
-        _create_page(name, abs_module_path, filters)
-        nav_path = (Path(api_path) / module_path).as_posix()
+        abs_path = abs_api_path / module_path
+        collect_objects(name, abs_path)
+        _create_page(name, abs_path, filters)
+        src_uri = (Path(api_path) / module_path).as_posix()
         title = page_title(name, depth, ispackage) if page_title else name
-        return {title: nav_path}
+        return {title: src_uri}
 
-    abs_api_paths: list[Path] = []
-    nav = _create_nav(name, callback, section_title, predicate)
-    return nav, abs_api_paths
+    return _create_nav(name, callback, section_title, predicate)
 
 
 def _create_page(name: str, path: Path, filters: list[str]) -> None:

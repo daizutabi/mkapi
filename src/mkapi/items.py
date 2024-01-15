@@ -55,7 +55,7 @@ class Item:
 
 @dataclass(repr=False)
 class Parameter(Item):
-    """Parameter class for [Class] or [Function]."""
+    """Parameter class for [Class][mkapi.objects.Class] or [Function]."""
 
     default: ast.expr | None
     kind: _ParameterKind | None
