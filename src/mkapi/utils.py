@@ -44,7 +44,7 @@ def is_package(name: str) -> bool:
     return False
 
 
-def iter_submodulenames(name: str) -> Iterator[str]:
+def iter_submodule_names(name: str) -> Iterator[str]:
     """Yield submodule names."""
     spec = find_spec(name)
     if not spec or not spec.submodule_search_locations:
@@ -55,7 +55,7 @@ def iter_submodulenames(name: str) -> Iterator[str]:
                 yield f"{name}.{path.stem}"
 
 
-def find_submodulenames(
+def find_submodule_names(
     name: str,
     predicate: Callable[[str], bool] | None = None,
 ) -> list[str]:
@@ -64,18 +64,18 @@ def find_submodulenames(
     Optionally, only return submodules that satisfy a given predicate.
     """
     predicate = predicate or (lambda _: True)
-    names = [name for name in iter_submodulenames(name) if predicate(name)]
+    names = [name for name in iter_submodule_names(name) if predicate(name)]
     names.sort(key=lambda x: not is_package(x))
     return names
 
 
-def iter_parent_modulenames(fullname: str, *, reverse: bool = False) -> Iterator[str]:
+def iter_parent_module_names(fullname: str, *, reverse: bool = False) -> Iterator[str]:
     """Yield parent module names.
 
     Examples:
-        >>> list(iter_parent_modulenames("a.b.c.d"))
+        >>> list(iter_parent_module_names("a.b.c.d"))
         ['a', 'a.b', 'a.b.c', 'a.b.c.d']
-        >>> list(iter_parent_modulenames("a.b.c.d", reverse=True))
+        >>> list(iter_parent_module_names("a.b.c.d", reverse=True))
         ['a.b.c.d', 'a.b.c', 'a.b', 'a']
     """
     names = fullname.split(".")

@@ -25,7 +25,7 @@ from mkapi.utils import (
     del_by_name,
     get_by_name,
     get_module_path,
-    iter_parent_modulenames,
+    iter_parent_module_names,
 )
 
 if TYPE_CHECKING:
@@ -66,8 +66,8 @@ def get_object(fullname: str) -> Module | Class | Function | None:
         return modules[fullname]
     if fullname in objects:
         return objects[fullname]
-    for modulename in iter_parent_modulenames(fullname):
-        if load_module(modulename) and fullname in objects:
+    for module_name in iter_parent_module_names(fullname):
+        if load_module(module_name) and fullname in objects:
             return objects[fullname]
     objects[fullname] = None
     return None
@@ -168,10 +168,10 @@ def is_dataclass(cls: Class, module: Module | None = None) -> bool:
 
 def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
     """Yield [Parameter] instances for dataclass signature."""
-    if not cls.module or not (modulename := cls.module.name):
+    if not cls.module or not (module_name := cls.module.name):
         raise NotImplementedError
     try:
-        module = importlib.import_module(modulename)
+        module = importlib.import_module(module_name)
     except ModuleNotFoundError:
         return
     members = dict(inspect.getmembers(module, inspect.isclass))
@@ -213,7 +213,7 @@ def set_markdown(module: Module) -> None:  # noqa: C901
 
     def get_link_type(name: str, kind: TypeKind = TypeKind.REFERENCE) -> str:
         names = []
-        parents = iter_parent_modulenames(name)
+        parents = iter_parent_module_names(name)
         asnames = name.split(".")
         for k, (name_, asname) in enumerate(zip(parents, asnames, strict=True)):
             if kind is TypeKind.OBJECT and k == len(asnames) - 1:

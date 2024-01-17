@@ -10,7 +10,7 @@ import mkapi.ast
 from mkapi.ast import is_property
 from mkapi.utils import (
     get_by_name,
-    iter_parent_modulenames,
+    iter_parent_module_names,
     join_without_first_indent,
     unique_names,
 )
@@ -131,7 +131,7 @@ def _iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
             if alias.asname:
                 yield Import(alias.asname, alias.name, None, 0)
             else:
-                for fullname in iter_parent_modulenames(alias.name):
+                for fullname in iter_parent_module_names(alias.name):
                     yield Import(fullname, fullname, None, 0)
         else:
             name = alias.asname or alias.name

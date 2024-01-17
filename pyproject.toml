@@ -43,7 +43,7 @@ packages = ["src/mkapi"]
 python = ["3.12"]
 
 [tool.hatch.envs.default]
-dependencies = ["pytest-cov", "mkdocs-material"]
+dependencies = ["pytest-cov", "mkdocs-material", 'polars']
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests src/mkapi}"
 

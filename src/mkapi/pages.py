@@ -131,8 +131,7 @@ def convert_html(
     htmls = html.split("<!-- mkapi:sep -->")
     for type_text, html in zip(_iter_type_text(obj), htmls, strict=True):
         type_text.html = html.strip()
-    # return renderers.render(obj, level, filters)
-    return html
+    return renderers.render(obj, level, filters)
 
 
 object_uris: dict[str, Path] = {}

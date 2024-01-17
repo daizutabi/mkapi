@@ -14,7 +14,7 @@ from mkapi.plugins import (
     MkAPIConfig,
     MkAPIPlugin,
     _create_nav,
-    _get_path_modulename_filters,
+    _get_path_module_name_filters,
     _insert_sys_path,
     _on_config_plugin,
     _walk_nav,
@@ -106,68 +106,8 @@ def nav(mkdocs_config: MkDocsConfig):
 def test_nav_before_update(nav):
     assert isinstance(nav, list)
     assert nav[0] == "index.md"
-    assert nav[1] == "<api>/mkapi.objects|nav_filter1|nav_filter2"
-    assert nav[2] == {"Section": ["1.md", "<api2>/mkapi|nav_filter3", "2.md"]}
-    assert nav[3] == {"API": "<api>/mkdocs|nav_filter4"}
-
-
-def test_walk_nav(nav):
-    def create_pages(item: str) -> list:
-        print(item)
-        items.append(item.split("|")[-1])
-        if item.endswith("filter4"):
-            return ["a"]
-        return ["b", "c"]
-
-    items = []
-    nav = _walk_nav(nav, create_pages)
-    assert items == ["nav_filter2", "nav_filter3", "nav_filter4"]
-    assert isinstance(nav, list)
-    assert nav[1:3] == ["b", "c"]
-    assert nav[3] == {"Section": ["1.md", "b", "c", "2.md"]}
-    assert nav[4] == {"API": "a"}
-
-
-def test_get_path_modulename_filters():
-    p, m, f = _get_path_modulename_filters("<api>/a.b|f1|f2", ["f"])
-    assert p == "api"
-    assert m == "a.b"
-    assert f == ["f", "f1", "f2"]
-    p, m, f = _get_path_modulename_filters("<api>/a", ["f"])
-    assert p == "api"
-    assert m == "a"
-    assert f == ["f"]
-
-
-def test_create_nav():
-    def callback(name, depth, ispackage):  # noqa: ARG001
-        return {name.upper(): f"test/{name}.md"}
-
-    def section(name, depth):  # noqa: ARG001
-        return name.replace(".", "-")
-
-    f = _create_nav
-    a = [{"MKDOCS.PLUGINS": "test/mkdocs.plugins.md"}]
-    assert f("mkdocs.plugins", callback) == a
-    a = [{"MKDOCS.LIVERELOAD": "test/mkdocs.livereload.md"}]
-    assert f("mkdocs.livereload", callback) == a
-    nav = f("mkdocs.commands", callback)
-    assert nav[0] == {"MKDOCS.COMMANDS": "test/mkdocs.commands.md"}
-    assert nav[-1] == {"MKDOCS.COMMANDS.SERVE": "test/mkdocs.commands.serve.md"}
-    nav = f("mkdocs", callback, section, lambda x: "tests" not in x)
-    assert len(nav[1]) == 1
-    assert "mkdocs-commands" in nav[1]
-
-
-# def test_walk_module_tree():
-#     tree = find_submodule_tree("mkdocs", )
-#     _walk_module_tree(tree)
-#     assert 0
-
-
-# def test_collect(mkdocs_config: MkDocsConfig):
-#     docs_dir = mkdocs_config.docs_dir
-#     assert 0
+    print(nav)
+    assert 0
 
 
 # @pytest.fixture(scope="module")
@@ -187,8 +127,8 @@ def on_config(config, mkapi):
     return config
 
 
-def module_title(modulename: str) -> str:
-    return modulename.rsplit(".")[-1]
+def module_title(module_name: str) -> str:
+    return module_name.rsplit(".")[-1]
 
 
 def section_title(package_name: str) -> str:

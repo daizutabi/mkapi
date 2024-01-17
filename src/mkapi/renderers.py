@@ -62,8 +62,8 @@ def render(obj: Module | Class | Function, level: int, filters: list[str]) -> st
         level: Heading level.
         filters: Filters.
     """
-    return ""
     obj_str = render_object(obj, filters=filters)
+    return obj_str
     doc_str = render_docstring(obj.doc, filters=filters)
     members = []
     for member in obj.classes + obj.functions:
@@ -79,18 +79,18 @@ def render_object(obj: Module | Class | Function, filters: list[str]) -> str:
         obj: Object instance.
         filters: Filters.
     """
-    context = resolve_object(obj.html)
-    level = context.get("level")
-    if level:
-        if obj.kind in ["module", "package"]:
-            filters.append("plain")
-        elif "plain" in filters:
-            del filters[filters.index("plain")]
-        tag = f"h{level}"
-    else:
-        tag = "div"
-    template = self.templates["object"]
-    return template.render(context, object=obj, tag=tag, filters=filters)
+    # context = resolve_object(obj.html)
+    # level = context.get("level")
+    # if level:
+    #     if obj.kind in ["module", "package"]:
+    #         filters.append("plain")
+    #     elif "plain" in filters:
+    #         del filters[filters.index("plain")]
+    #     tag = f"h{level}"
+    # else:
+    #     tag = "div"
+    # template = self.templates["object"]
+    # return template.render(context, object=obj, tag=tag, filters=filters)
 
     # def render_object_member(
     #     self,

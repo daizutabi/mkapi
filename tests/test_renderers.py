@@ -1,4 +1,7 @@
-from mkapi.renderers import load_templates, templates
+import pytest
+
+from mkapi.importlib import load_module
+from mkapi.renderers import load_templates, render_module, templates
 
 
 def test_load_templates():
@@ -11,6 +14,18 @@ def test_load_templates():
     assert "member" in templates
     assert "node" in templates
     assert "object" in templates
+
+
+@pytest.fixture(scope="module")
+def template():
+    load_templates()
+    return templates["module"]
+
+
+def test_get_templates(template):
+    print(template)
+    module = load_module("mkapi.objects")
+    assert module
 
 
 # def test_render_module(google):
