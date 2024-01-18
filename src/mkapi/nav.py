@@ -53,37 +53,43 @@ def _get_apinav_dict(name: str, find: Callable[[str], list[str]]) -> dict[str, l
     return {name: names}
 
 
-def gen_apinav(nav: list) -> Generator[tuple[str, bool], Any, None]:
+def gen_apinav(
+    nav: list,
+    depth: int = 0,
+) -> Generator[tuple[str, bool, int], Any, None]:
     """Yield tuple of (module name, is_section).
 
     Sent value is used to modify section names or nav items.
     """
     for k, page in enumerate(nav):
         if isinstance(page, str):
-            page_ = yield page, False
+            page_ = yield page, False, depth
             if page_:
                 nav[k] = page_
         elif isinstance(page, dict) and len(page) == 1:
             section, pages = next(iter(page.items()))
-            section = yield section, True
+            section = yield section, True, depth
             if isinstance(section, str):
                 page.clear()
                 page[section] = pages
-            yield from gen_apinav(pages)
+            yield from gen_apinav(pages, depth + 1)
 
 
 def update_apinav(
     nav: list,
-    page: Callable[[str], str | dict[str, str]],
-    section: Callable[[str], str] | None = None,
+    page: Callable[[str, int], str | dict[str, str]],
+    section: Callable[[str, int], str] | None = None,
 ) -> None:
     """Update API navigation."""
     it = gen_apinav(nav)
-    name, is_section = it.send(None)
+    name, is_section, depth = it.send(None)
     while True:
-        value = (section(name) if section else name) if is_section else page(name)
+        if is_section:
+            value = section(name, depth) if section else name
+        else:
+            value = page(name, depth)
         try:
-            name, is_section = it.send(value)
+            name, is_section, depth = it.send(value)
         except StopIteration:
             break
 
@@ -126,8 +132,8 @@ def _split_path_name_filters(item: str) -> tuple[str, str, list[str]]:
 
 def update_nav(
     nav: list,
-    create_page: Callable[[str, str, list[str]], str | None],
-    section: Callable[[str], str] | None = None,
+    create_page: Callable[[str, int, str, list[str]], str | None],
+    section: Callable[[str, int], str] | None = None,
     predicate: Callable[[str], bool] | None = None,
 ) -> list:
     """Update navigation."""
@@ -136,9 +142,9 @@ def update_nav(
         api_path, name, filters = _split_path_name_filters(item)
         nav = get_apinav(name, predicate)
 
-        def page(name: str) -> str | dict[str, str]:
+        def page(name: str, depth: int) -> str | dict[str, str]:
             path = f"{api_path}/{name}.md"
-            title = create_page(name, path, filters)
+            title = create_page(name, depth, path, filters)
             return {title: path} if title else path
 
         update_apinav(nav, page, section)

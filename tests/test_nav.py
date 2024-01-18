@@ -42,18 +42,18 @@ def test_get_nav():
 
 
 def test_update_apinav():
-    def section(name: str) -> str:
-        return name.replace(".", "-")
+    def section(name: str, depth: int) -> str:
+        return name.replace(".", "-" * depth)
 
-    def page(name: str) -> str | dict[str, str]:
+    def page(name: str, depth: int) -> str | dict[str, str]:
         if is_package(name):
             return name.upper() + ".md"
-        return {name: f"api/{name}.md"}
+        return {name: f"api{depth}/{name}.md"}
 
     nav = get_apinav("mkdocs.**")
     update_apinav(nav, page)
     assert "MKDOCS.COMMANDS.md" in nav
-    assert {"mkdocs.config.base": "api/mkdocs.config.base.md"} in nav
+    assert {"mkdocs.config.base": "api0/mkdocs.config.base.md"} in nav
     nav = get_apinav("mkdocs.***")
     update_apinav(nav, page, section)
     assert "MKDOCS.md" in nav[0]["mkdocs"][0]
@@ -112,9 +112,9 @@ def test_split_path_name_filters():
 
 
 def test_update_nav():
-    def create_page(name: str, path: str, filters: list[str]) -> str:
-        return name.upper() + ".".join(filters) + path
+    def create_page(name: str, depth: int, path: str, filters: list[str]) -> str:
+        return name.upper() + ".".join(filters) + path + f".{depth}"
 
     nav = yaml.safe_load(src)
     nav = update_nav(nav, create_page)
-    assert "MKAPI.OBJECTSf1.f2api1/mkapi.objects.md" in nav[1]
+    assert "MKAPI.OBJECTSf1.f2api1/mkapi.objects.md.0" in nav[1]
