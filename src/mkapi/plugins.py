@@ -166,7 +166,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     page = _get_function("page_title", plugin)
     section = _get_function("section_title", plugin)
 
-    def create_page(name: str, depth: int, path: str, filters: list[str]) -> str:
+    def create_page(name: str, path: str, filters: list[str], depth: int) -> str:
         abs_path = Path(config.docs_dir) / path
         abs_path.parent.mkdir(parents=True, exist_ok=True)
         collect_objects(name, abs_path)

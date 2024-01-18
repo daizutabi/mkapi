@@ -116,37 +116,38 @@ def create_nav(nav: list, create_apinav: Callable[[str], list]) -> list:
     return nav_
 
 
-API_URL_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
+API_URI_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
 
 
 def _is_api_entry(item: str | list | dict) -> TypeGuard[str]:
     if not isinstance(item, str):
         return False
-    return re.match(API_URL_PATTERN, item) is not None
+    return re.match(API_URI_PATTERN, item) is not None
 
 
-def _split_path_name_filters(item: str) -> tuple[str, str, list[str]]:
-    if not (m := re.match(API_URL_PATTERN, item)):
+def _split_name_path_filters(item: str) -> tuple[str, str, list[str]]:
+    if not (m := re.match(API_URI_PATTERN, item)):
         raise NotImplementedError
     path, name_filters = m.groups()
-    return path, *split_filters(name_filters)
+    name, filters = split_filters(name_filters)
+    return name, path, filters
 
 
 def update_nav(
     nav: list,
-    create_page: Callable[[str, int, str, list[str]], str | None],
+    create_page: Callable[[str, str, list[str], int], str | None],
     section: Callable[[str, int], str] | None = None,
     predicate: Callable[[str], bool] | None = None,
 ) -> list:
     """Update navigation."""
 
     def create_apinav(item: str) -> list:
-        api_path, name, filters = _split_path_name_filters(item)
+        name, api_path, filters = _split_name_path_filters(item)
         nav = get_apinav(name, predicate)
 
         def page(name: str, depth: int) -> str | dict[str, str]:
             path = f"{api_path}/{name}.md"
-            title = create_page(name, depth, path, filters)
+            title = create_page(name, path, filters, depth)
             return {title: path} if title else path
 
         update_apinav(nav, page, section)

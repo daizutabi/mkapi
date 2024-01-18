@@ -122,10 +122,6 @@ class Class(Callable):
     parameters: list[Parameter] = field(default_factory=list, init=False)
     raises: list[Raise] = field(default_factory=list, init=False)
 
-    def get_attribute(self, name: str) -> Attribute | None:
-        """Return an [Attribute] instance by the name."""
-        return get_by_name(self.attributes, name)
-
 
 def create_class(
     node: ast.ClassDef,

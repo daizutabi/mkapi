@@ -92,8 +92,8 @@ def test_create_class(get):
     assert get_by_name(cls.functions, "_private")
     assert get_by_name(cls.functions, "_private_without_docstring")
     assert len(cls.attributes) == 2
-    assert cls.get_attribute("readonly_property")
-    assert cls.get_attribute("readwrite_property")
+    assert get_by_name(cls.attributes, "readonly_property")
+    assert get_by_name(cls.attributes, "readwrite_property")
     func = get_by_name(cls.functions, "__init__")
     assert isinstance(func, Function)
     assert func.qualname == "ExampleClass.__init__"

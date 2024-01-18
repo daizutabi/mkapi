@@ -151,23 +151,23 @@ def inherit_base_classes(cls: Class) -> None:
         setattr(cls, name, list(members.values()))
 
 
-def _get_dataclass_decorator(cls: Class, module: Module) -> ast.expr | None:
-    for deco in cls.node.decorator_list:
-        name = next(iter_identifiers(deco))
-        if get_fullname(module, name) == "dataclasses.dataclass":
+def _get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
+    if not obj.module:
+        return None
+    for deco in obj.node.decorator_list:
+        deco_name = next(iter_identifiers(deco))
+        if get_fullname(obj.module, deco_name) == name:
             return deco
     return None
 
 
-def is_dataclass(cls: Class, module: Module | None = None) -> bool:
-    """Return True if the class is a dataclass."""
-    if module := module or cls.module:
-        return _get_dataclass_decorator(cls, module) is not None
-    return False
+def is_dataclass(cls: Class) -> bool:
+    """Return True if a [Class] instance is a dataclass."""
+    return _get_decorator(cls, "dataclasses.dataclass") is not None
 
 
 def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
-    """Yield [Parameter] instances for dataclass signature."""
+    """Yield [Parameter] instances a for dataclass signature."""
     if not cls.module or not (module_name := cls.module.name):
         raise NotImplementedError
     try:
@@ -178,7 +178,7 @@ def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
     obj = members[cls.name]
 
     for param in inspect.signature(obj).parameters.values():
-        if attr := cls.get_attribute(param.name):
+        if attr := get_by_name(cls.attributes, param.name):
             args = (attr.name, attr.type, attr.text, attr.default)
             yield Parameter(*args, param.kind)
         else:

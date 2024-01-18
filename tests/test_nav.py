@@ -1,7 +1,6 @@
 import yaml
 
 from mkapi.nav import (
-    _split_path_name_filters,
     create_nav,
     gen_apinav,
     get_apinav,
@@ -104,15 +103,8 @@ def test_nav_dict():
     assert {"C": ["m.md", {"X": "x.md"}, "n.md"]} in nav
 
 
-def test_split_path_name_filters():
-    path, name, filters = _split_path_name_filters("<a/b/c>/d.e.f|g|h|i")
-    assert path == "a/b/c"
-    assert name == "d.e.f"
-    assert filters == ["g", "h", "i"]
-
-
 def test_update_nav():
-    def create_page(name: str, depth: int, path: str, filters: list[str]) -> str:
+    def create_page(name: str, path: str, filters: list[str], depth: int) -> str:
         return name.upper() + ".".join(filters) + path + f".{depth}"
 
     nav = yaml.safe_load(src)
