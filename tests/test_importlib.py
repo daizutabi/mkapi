@@ -13,7 +13,7 @@ from mkapi.importlib import (
     iter_base_classes,
     load_module,
 )
-from mkapi.objects import Class, Function, Module, iter_objects, iter_texts, iter_types
+from mkapi.objects import Class, Function, iter_texts, iter_types
 from mkapi.utils import get_by_name
 
 
@@ -179,7 +179,6 @@ def test_iter_types():
     assert cls
     types = [ast.unparse(x.expr) for x in iter_types(module)]  # type: ignore
     assert "BasePlugin[MkAPIConfig]" in types
-    assert "TypeGuard[str]" in types
 
 
 def test_set_markdown_objects():

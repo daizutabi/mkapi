@@ -106,6 +106,8 @@ def create_nav(nav: list, create_apinav: Callable[[str], list]) -> list:
                 value = create_apinav(value)
                 if len(value) == 1 and isinstance(value[0], str):
                     value = value[0]
+                elif len(value) == 1 and isinstance(value[0], dict):
+                    value = next(iter(value[0].values()))
             elif isinstance(value, list):
                 value = create_nav(value, create_apinav)
             nav_.append({key: value})

@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 from jinja2.environment import Environment
-from mkdocs.commands.build import build
 from mkdocs.config import load_config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import PluginCollection
@@ -13,11 +12,8 @@ import mkapi
 from mkapi.plugins import (
     MkAPIConfig,
     MkAPIPlugin,
-    _create_nav,
-    _get_path_module_name_filters,
     _insert_sys_path,
     _on_config_plugin,
-    _walk_nav,
 )
 
 
@@ -96,40 +92,3 @@ def test_insert_sys_path(mkapi_config: MkAPIConfig):
 def test_on_config_plugin(mkdocs_config, mkapi_plugin):
     config = _on_config_plugin(mkdocs_config, mkapi_plugin)
     assert mkdocs_config is config
-
-
-@pytest.fixture(scope="module")
-def nav(mkdocs_config: MkDocsConfig):
-    return mkdocs_config.nav
-
-
-def test_nav_before_update(nav):
-    assert isinstance(nav, list)
-    assert nav[0] == "index.md"
-    print(nav)
-    assert 0
-
-
-# @pytest.fixture(scope="module")
-# def env(mkdocs_config: MkDocsConfig):
-#     return mkdocs_config.theme.get_env()
-
-
-# def test_mkdocs_build(mkdocs_config: MkDocsConfig):
-#     config = mkdocs_config
-#     config.plugins.on_startup(command="build", dirty=False)
-#     try:
-#         build(config, dirty=False)
-#     finally:
-#         config.plugins.on_shutdown()
-def on_config(config, mkapi):
-    print("Called with config and mkapi.")
-    return config
-
-
-def module_title(module_name: str) -> str:
-    return module_name.rsplit(".")[-1]
-
-
-def section_title(package_name: str) -> str:
-    return package_name.upper()
