@@ -1,7 +1,7 @@
 import pytest
 
 from mkapi.importlib import load_module
-from mkapi.renderers import load_templates, render_module, templates
+from mkapi.renderers import load_templates, templates
 
 
 def test_load_templates():

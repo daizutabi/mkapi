@@ -9,6 +9,7 @@ import importlib
 import os
 import sys
 from pathlib import Path
+from shutil import rmtree
 from typing import TYPE_CHECKING
 
 import yaml
@@ -20,7 +21,7 @@ from mkdocs.structure.files import get_files
 
 import mkapi
 from mkapi import renderers
-from mkapi.nav import update_nav
+from mkapi.nav import create_nav, update_nav
 from mkapi.pages import Page as MkAPIPage
 from mkapi.pages import collect_objects
 from mkapi.utils import is_package
@@ -47,6 +48,7 @@ class MkAPIConfig(Config):
     section_title = config_options.Type(str, default="")
     on_config = config_options.Type(str, default="")
     pages = config_options.Type(dict, default={})
+    api_dirs = config_options.Type(list, default=[])
 
 
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
@@ -66,10 +68,6 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Collect plugin CSS/JavaScript and append them to `files`."""
         for file in _collect_theme_files(config, self):
             files.append(file)
-        print("AAAAAAAAAAAAAA")
-        for file in files:
-            print(file, file.page)
-        print("AAAAAAAAAAAAAA")
         return files
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
@@ -112,6 +110,13 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             server.watch(path_str, builder)
         return server
 
+    def on_shutdown(self) -> None:
+        for path in self.config.api_dirs:
+            if path.exists():
+                msg = f"Deleting API directory: {path.as_posix()!r}"
+                logger.info(msg)
+                rmtree(path)
+
 
 def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
     if fullname := plugin.config.get(name, None):
@@ -142,12 +147,15 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
 
 def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    _make_api_dir(config, plugin)
     page = _get_function("page_title", plugin)
     section = _get_function("section_title", plugin)
 
     def create_page(name: str, path: str, filters: list[str], depth: int) -> str:
         abs_path = Path(config.docs_dir) / path
-        abs_path.parent.mkdir(parents=True, exist_ok=True)
+        if abs_path.exists():
+            msg = f"Duplicated API page: {abs_path.as_posix()!r}"
+            logger.warning(msg)
         collect_objects(name, abs_path)
         with abs_path.open("w") as file:
             file.write(renderers.render_markdown(name, filters))
@@ -157,12 +165,30 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         return any(ex not in name for ex in plugin.config.exclude)
 
     if config.nav:
-        config.nav = update_nav(config.nav, create_page, section, predicate)
+        update_nav(config.nav, create_page, section, predicate)
+
+
+def _make_api_dir(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    def mkdir(name: str, path: str, fileters: list[str]) -> list:  # noqa: ARG001
+        api_dir = Path(config.docs_dir) / path
+        if api_dir.exists() and api_dir not in plugin.config.api_dirs:
+            msg = f"API directory exists: {api_dir.as_posix()!r}"
+            logger.error(msg)
+            sys.exit()
+        if not api_dir.exists():
+            msg = f"Creating API directory: {api_dir.as_posix()!r}"
+            logger.info(msg)
+            api_dir.mkdir()
+            plugin.config.api_dirs.append(api_dir)
+        return []
+
+    if config.nav:
+        create_nav(config.nav, mkdir)
 
 
 def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
     if func := _get_function("on_config", plugin):
-        msg = f"Calling {plugin.config.on_config}"
+        msg = f"Calling {plugin.config.on_config!r}"
         logger.info(msg)
         config_ = func(config, plugin)
         if isinstance(config_, MkDocsConfig):
@@ -220,16 +246,6 @@ def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File
 #     if title.startswith("![mkapi]("):
 #         page.title = title[9:-1].split("|")[0]  # type: ignore
 
-
-# def _rmtree(path: Path) -> None:
-#     """Delete directory created by MkAPI."""
-#     if not path.exists():
-#         return
-#     try:
-#         shutil.rmtree(path)
-#     except PermissionError:
-#         msg = f"[MkAPI] Couldn't delete directory: {path}"
-#         logger.warning(msg)
 
 # def create_source_page(path: Path, module: Module, filters: list[str]) -> None:
 #     """Create a page for source."""

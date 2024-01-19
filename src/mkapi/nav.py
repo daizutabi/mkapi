@@ -94,16 +94,18 @@ def update_apinav(
             break
 
 
-def create_nav(nav: list, create_apinav: Callable[[str], list]) -> list:
+def create_nav(nav: list, create_apinav: Callable[[str, str, list[str]], list]) -> list:
     """Create navigation."""
     nav_ = []
     for item in nav:
-        if _is_api_entry(item):
-            nav_.extend(create_apinav(item))
+        if match := _match_api_entry(item):
+            name, path, filters = _split_name_path_filters(match)
+            nav_.extend(create_apinav(name, path, filters))
         elif isinstance(item, dict) and len(item) == 1:
             key, value = next(iter(item.items()))
-            if _is_api_entry(value):
-                value = create_apinav(value)
+            if match := _match_api_entry(value):
+                name, path, filters = _split_name_path_filters(match)
+                value = create_apinav(name, path, filters)
                 if len(value) == 1 and isinstance(value[0], str):
                     value = value[0]
                 elif len(value) == 1 and isinstance(value[0], dict):
@@ -119,16 +121,14 @@ def create_nav(nav: list, create_apinav: Callable[[str], list]) -> list:
 API_URI_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
 
 
-def _is_api_entry(item: str | list | dict) -> TypeGuard[str]:
+def _match_api_entry(item: str | list | dict) -> re.Match | None:
     if not isinstance(item, str):
-        return False
-    return re.match(API_URI_PATTERN, item) is not None
+        return None
+    return re.match(API_URI_PATTERN, item)
 
 
-def _split_name_path_filters(item: str) -> tuple[str, str, list[str]]:
-    if not (m := re.match(API_URI_PATTERN, item)):
-        raise NotImplementedError
-    path, name_filters = m.groups()
+def _split_name_path_filters(match: re.Match) -> tuple[str, str, list[str]]:
+    path, name_filters = match.groups()
     name, filters = split_filters(name_filters)
     return name, path, filters
 
@@ -138,19 +138,17 @@ def update_nav(
     create_page: Callable[[str, str, list[str], int], str | None],
     section: Callable[[str, int], str] | None = None,
     predicate: Callable[[str], bool] | None = None,
-) -> list:
+) -> None:
     """Update navigation."""
 
-    def create_apinav(item: str) -> list:
-        name, api_path, filters = _split_name_path_filters(item)
-        nav = get_apinav(name, predicate)
-
+    def create_apinav(name: str, api_path: str, filters: list[str]) -> list:
         def page(name: str, depth: int) -> str | dict[str, str]:
             path = f"{api_path}/{name}.md"
             title = create_page(name, path, filters, depth)
             return {title: path} if title else path
 
+        nav = get_apinav(name, predicate)
         update_apinav(nav, page, section)
         return nav
 
-    return create_nav(nav, create_apinav)
+    nav[:] = create_nav(nav, create_apinav)

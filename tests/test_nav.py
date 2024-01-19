@@ -74,7 +74,7 @@ src = """
 
 
 def test_nav_empty():
-    def create_apinav(_):
+    def create_apinav(*_):
         return []
 
     nav = yaml.safe_load(src)
@@ -83,7 +83,7 @@ def test_nav_empty():
 
 
 def test_nav_single():
-    def create_apinav(_):
+    def create_apinav(*_):
         return ["a.md"]
 
     nav = yaml.safe_load(src)
@@ -95,7 +95,7 @@ def test_nav_single():
 
 
 def test_nav_dict():
-    def create_apinav(_):
+    def create_apinav(*_):
         return ["m.md", {"X": "x.md"}, "n.md"]
 
     nav = yaml.safe_load(src)
@@ -108,5 +108,5 @@ def test_update_nav():
         return name.upper() + ".".join(filters) + path + f".{depth}"
 
     nav = yaml.safe_load(src)
-    nav = update_nav(nav, create_page)
+    update_nav(nav, create_page)
     assert "MKAPI.OBJECTSf1.f2api1/mkapi.objects.md.0" in nav[1]
