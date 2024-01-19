@@ -226,3 +226,14 @@ def test_iter():
     assert any(isinstance(x, Attributes) for x in items)
     assert any(isinstance(x, Raises) for x in items)
     assert any(isinstance(x, Returns) for x in items)
+
+
+def test_iter_objects():
+    name = "polars.dataframe.frame"
+    node = load_module_node(name)
+    module = create_module(node, name)
+    cls = get_by_name(module.classes, "DataFrame")
+    assert cls
+    print(cls.classes)
+    print(cls.functions)
+    assert 0

@@ -12,6 +12,8 @@ from mkapi.importlib import (
     is_dataclass,
     iter_base_classes,
     load_module,
+    modules,
+    objects,
 )
 from mkapi.objects import Class, Function, iter_texts, iter_types
 from mkapi.utils import get_by_name
@@ -73,6 +75,14 @@ def test_get_object():
     m4 = load_module("mkdocs.structure.files")
     assert m2 is not m3
     assert m3 is m4
+
+
+def test_get_object_module():
+    modules.clear()
+    objects.clear()
+    obj = get_object("mkapi.objects")
+    module = load_module("mkapi.objects")
+    assert obj is module
 
 
 def test_get_fullname():

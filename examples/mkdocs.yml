@@ -20,12 +20,12 @@ plugins:
 
 nav:
   - index.md
-  - <api>/mkapi.objects|nav_filter1|nav_filter2
+  # - <api>/mkapi.objects|nav_filter1|nav_filter2
   - Section:
     - 1.md
-    - mkapi: <api>/mkapi.**|nav_filter3
+    # - mkapi: <api>/mkapi.**|nav_filter3
     - 2.md
-  - API: <api>/mkdocs.***|nav_filter4
+  # - API: <api>/mkdocs.***|nav_filter4
 
 
 extra_css:

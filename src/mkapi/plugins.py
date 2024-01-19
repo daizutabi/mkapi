@@ -16,7 +16,7 @@ from mkdocs.config import config_options
 from mkdocs.config.base import Config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin, get_plugin_logger
-from mkdocs.structure.files import Files, get_files
+from mkdocs.structure.files import get_files
 
 import mkapi
 from mkapi import renderers
@@ -28,6 +28,7 @@ from mkapi.utils import is_package
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from mkdocs.structure.files import File, Files
     from mkdocs.structure.pages import Page as MkDocsPage
     # from mkdocs.structure.toc import AnchorLink, TableOfContents
     # from mkdocs.utils.templates import TemplateContext
@@ -63,34 +64,12 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         """Collect plugin CSS/JavaScript and append them to `files`."""
-        root = Path(mkapi.__file__).parent / "themes"
-        docs_dir = config.docs_dir
-        config.docs_dir = root.as_posix()
-        theme_files = get_files(config)
-        config.docs_dir = docs_dir
-        theme_name = config.theme.name or "mkdocs"
-
-        css = []
-        js = []
-        for file in theme_files:
-            path = Path(file.src_path).as_posix()
-            if path.endswith(".css"):
-                if "common" in path or theme_name in path:
-                    files.append(file)
-                    css.append(path)
-            elif path.endswith(".js"):
-                files.append(file)
-                js.append(path)
-            elif path.endswith(".yml"):
-                with (root / path).open() as f:
-                    data = yaml.safe_load(f)
-                css = data.get("extra_css", []) + css
-                js = data.get("extra_javascript", []) + js
-        css = [x for x in css if x not in config.extra_css]
-        js = [x for x in js if x not in config.extra_javascript]
-        config.extra_css.extend(css)
-        config.extra_javascript.extend(js)
-
+        for file in _collect_theme_files(config, self):
+            files.append(file)
+        print("AAAAAAAAAAAAAA")
+        for file in files:
+            print(file, file.page)
+        print("AAAAAAAAAAAAAA")
         return files
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
@@ -171,7 +150,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         abs_path.parent.mkdir(parents=True, exist_ok=True)
         collect_objects(name, abs_path)
         with abs_path.open("w") as file:
-            file.write(renderers.render_module(name, filters))
+            file.write(renderers.render_markdown(name, filters))
         return page(name, depth, is_package(name)) if page else name
 
     def predicate(name: str) -> bool:
@@ -183,12 +162,44 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
 def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
     if func := _get_function("on_config", plugin):
-        msg = f"Calling user 'on_config': {plugin.config.on_config}"
+        msg = f"Calling {plugin.config.on_config}"
         logger.info(msg)
         config_ = func(config, plugin)
         if isinstance(config_, MkDocsConfig):
             return config_
     return config
+
+
+def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:
+    root = Path(mkapi.__file__).parent / "themes"
+    docs_dir = config.docs_dir
+    config.docs_dir = root.as_posix()
+    theme_files = get_files(config)
+    config.docs_dir = docs_dir
+    theme_name = config.theme.name or "mkdocs"
+    files: list[File] = []
+    css: list[str] = []
+    js: list[str] = []
+    for file in theme_files:
+        path = Path(file.src_path).as_posix()
+        if path.endswith(".css"):
+            if "common" in path or theme_name in path:
+                files.append(file)
+                css.append(path)
+        elif path.endswith(".js"):
+            files.append(file)
+            js.append(path)
+        elif path.endswith((".yml", ".yaml")):
+            with (root / path).open() as f:
+                data = yaml.safe_load(f)
+            if isinstance(data, dict):
+                css.extend(data.get("extra_css", []))
+                js.extend(data.get("extra_javascript", []))
+    css = [f for f in css if f not in config.extra_css]
+    js = [f for f in js if f not in config.extra_javascript]
+    config.extra_css.extend(css)
+    config.extra_javascript.extend(js)
+    return files
 
 
 # def _clear_prefix(

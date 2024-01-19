@@ -28,8 +28,8 @@ def load_templates(path: Path | None = None) -> None:
         templates[Path(name).stem] = env.get_template(name)
 
 
-def render_module(name: str, filters: list[str]) -> str:
-    """Return a rendered Markdown for Module.
+def render_markdown(name: str, filters: list[str]) -> str:
+    """Return a rendered Markdown for an object.
 
     Args:
         name: Module name.

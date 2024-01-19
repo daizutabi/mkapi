@@ -80,6 +80,7 @@ class Page:
 OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.MULTILINE)
 
 
+# TODO: `.*` and `.**` pattern for name.
 def _iter_markdown(source: str) -> Iterator[tuple[str, int, list[str]]]:
     """Yield tuples of (text, level, filters)."""
     cursor = 0
@@ -104,6 +105,7 @@ pattern = r"<!-- mkapi:begin\[(\d+)\] -->(.*?)<!-- mkapi:end -->"
 NODE_PATTERN = re.compile(pattern, re.MULTILINE | re.DOTALL)
 
 
+# TODO: use doc.iter_types and doc.iter_texts instead of `iter_types` and `iter_texts`
 def _iter_type_text(obj: Module | Class | Function) -> Iterator[Type | Text]:
     for type_ in iter_types(obj):
         if type_.markdown:
