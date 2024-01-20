@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from inspect import _ParameterKind
 
+    from mkapi.objects import Attribute
+
 TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
 
 
@@ -156,6 +158,7 @@ class Assign(Item):
     """Assign class for [Module] or [Class]."""
 
     default: ast.expr | None
+    node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
 
 
 def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
@@ -175,14 +178,14 @@ def create_assign(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Assign:
     type_ = mkapi.ast.get_assign_type(node)
     type_, text = _assign_type_text(type_, node.__doc__)
     default = None if isinstance(node, ast.TypeAlias) else node.value
-    return Assign(name, type_, text, default)
+    return Assign(name, type_, text, default, node)
 
 
 def create_assign_from_property(node: ast.FunctionDef) -> Assign:
     """Return an [Assign] instance from a property."""
-    text = ast.get_docstring(node)
-    type_, text = _assign_type_text(node.returns, text)
-    return Assign(node.name, type_, text, None)
+    node.__doc__ = ast.get_docstring(node)
+    type_, text = _assign_type_text(node.returns, node.__doc__)
+    return Assign(node.name, type_, text, None, node)
 
 
 def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
@@ -249,8 +252,8 @@ class Assigns(Section):
 
 def create_assigns(items: Iterable[tuple[str, Type, Text]]) -> Assigns:
     """Return an Assigns section."""
-    attributes = [Assign(*args, None) for args in items]
-    return Assigns("Assigns", Type(None), Text(None), attributes)
+    assigns = [Assign(*args, None, None) for args in items]
+    return Assigns("Assigns", Type(None), Text(None), assigns)
 
 
 @dataclass(repr=False)

@@ -31,7 +31,7 @@ from mkapi.utils import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.objects import Function, Import
+    from mkapi.objects import Attribute, Function, Import
 
 modules: dict[str, Module | None] = {}
 
@@ -60,7 +60,7 @@ def load_module_from_source(source: str, name: str = "__mkapi__") -> Module:
     return module
 
 
-def get_object(fullname: str) -> Module | Class | Function | None:
+def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     """Return an [Object] instance by the fullname."""
     if fullname in modules:
         return modules[fullname]
@@ -88,13 +88,18 @@ def get_source(
     return None
 
 
-def get_member(module: Module, name: str) -> Import | Class | Function | None:
+def get_member(
+    module: Module,
+    name: str,
+) -> Import | Class | Function | Attribute | None:
     """Return a member instance by the name."""
     if obj := get_by_name(module.imports, name):
         return obj
     if obj := get_by_name(module.classes, name):
         return obj
     if obj := get_by_name(module.functions, name):
+        return obj
+    if obj := get_by_name(module.attributes, name):
         return obj
     return None
 
@@ -105,8 +110,8 @@ def get_fullname(module: Module, name: str) -> str | None:
         return obj.fullname
     if "." in name:
         name_, attr = name.rsplit(".", maxsplit=1)
-        if attr_ := get_by_name(module.attributes, name_):
-            return f"{module.name}.{attr_.name}"
+        # if attr_ := get_by_name(module.attributes, name_):
+        #     return f"{module.name}.{attr_.name}"
         if import_ := get_by_name(module.imports, name_):  # noqa: SIM102
             if module_ := load_module(import_.fullname):  # noqa: SIM102
                 if fullname := get_fullname(module_, attr):

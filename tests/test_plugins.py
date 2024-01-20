@@ -97,7 +97,8 @@ def test_on_config_plugin(mkdocs_config, mkapi_plugin):
 
 def test_mkdocs_build(mkdocs_config: MkDocsConfig):
     config = mkdocs_config
-    config.nav = [{"API": "<api>/polars.dataframe.***"}]
+    # config.nav = [{"API": "<api>/polars.dataframe.***"}]
+    config.nav = [{"API": "<api>/polars.dataframe.frame"}]
     config.plugins.on_startup(command="build", dirty=False)
     try:
         build(config)

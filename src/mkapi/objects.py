@@ -9,6 +9,7 @@ import mkapi.ast
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
 from mkapi.items import (
+    Assign,
     Assigns,
     Bases,
     Item,
@@ -34,7 +35,7 @@ from mkapi.utils import get_by_name, get_by_type
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.items import Assign, Base, Import, Parameter, Raise, Return
+    from mkapi.items import Base, Import, Parameter, Raise, Return
 
 
 objects: dict[str, Module | Class | Function | None] = {}
@@ -44,11 +45,9 @@ objects: dict[str, Module | Class | Function | None] = {}
 class Object:
     """Object class for module, class, or function."""
 
-    node: ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
+    node: ast.AST | None
     name: str
     doc: Docstring
-    classes: list[Class] = field(default_factory=list, init=False)
-    functions: list[Function] = field(default_factory=list, init=False)
     qualname: str = field(init=False)
     fullname: str = field(init=False)
 
@@ -65,12 +64,11 @@ class Object:
 
 
 @dataclass(repr=False)
-class Callable(Object):
-    """Callable class for class or function."""
+class Member(Object):
+    """Member class of module or class."""
 
-    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
-    module: Module = field(kw_only=True)
-    parent: Callable | None = field(kw_only=True)
+    module: Module
+    parent: Callable | None
 
     def __post_init__(self) -> None:
         if self.parent:
@@ -79,6 +77,42 @@ class Callable(Object):
             self.qualname = self.name
         self.fullname = f"{self.module.name}.{self.qualname}"
         super().__post_init__()
+
+
+@dataclass(repr=False)
+class Attribute(Assign, Member):
+    """Attribute class."""
+
+    default: ast.expr | None
+
+
+def create_attribute(
+    assign: Assign,
+    module: Module | None = None,
+    parent: Class | None = None,
+) -> Attribute:
+    """Return an [Attribute] instance."""
+    node, name = assign.node, assign.name
+    type_, default = assign.type, assign.default
+    module = module or _create_empty_module()
+    if assign.node and assign.node.__doc__:
+        doc = docstrings.parse(assign.node.__doc__)
+    else:
+        doc = Docstring("", Type(None), Text(None), [])
+    if doc.sections and doc.sections[0].name == "":
+        text = doc.sections[0].text
+    else:
+        text = assign.text
+    return Attribute(node, name, doc, module, parent, type_, text, default)
+
+
+@dataclass(repr=False)
+class Callable(Member):
+    """Callable class for class or function."""
+
+    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
+    classes: list[Class] = field(default_factory=list, init=False)
+    functions: list[Function] = field(default_factory=list, init=False)
 
 
 @dataclass(repr=False)
@@ -102,8 +136,7 @@ def create_function(
     parameters = list(iter_parameters(node))
     raises = list(iter_raises(node))
     returns = list(iter_returns(node))
-    args = (parameters, returns, raises)
-    func = Function(node, node.name, doc, *args, module=module, parent=parent)
+    func = Function(node, node.name, doc, module, parent, parameters, returns, raises)  # type: ignore
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             func.classes.append(create_class(child, module, func))
@@ -118,7 +151,7 @@ class Class(Callable):
 
     node: ast.ClassDef
     bases: list[Base]
-    attributes: list[Assign]
+    attributes: list[Attribute] = field(default_factory=list, init=False)
     parameters: list[Parameter] = field(default_factory=list, init=False)
     raises: list[Raise] = field(default_factory=list, init=False)
 
@@ -133,13 +166,14 @@ def create_class(
     module = module or _create_empty_module()
     doc = docstrings.parse(ast.get_docstring(node))
     bases = list(iter_bases(node))
-    attributes = list(iter_assigns(node))
-    cls = Class(node, name, doc, bases, attributes, module=module, parent=parent)
+    cls = Class(node, name, doc, module, parent, bases)
+    for child in iter_assigns(node):
+        cls.attributes.append(create_attribute(child, module, cls))
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             cls.classes.append(create_class(child, module, cls))
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):  # noqa: SIM102
-            if not get_by_name(attributes, child.name):  # for property
+            if not get_by_name(cls.attributes, child.name):  # for property
                 cls.functions.append(create_function(child, module, cls))
     return cls
 
@@ -150,7 +184,9 @@ class Module(Object):
 
     node: ast.Module
     imports: list[Import]
-    attributes: list[Assign]
+    attributes: list[Attribute] = field(default_factory=list, init=False)
+    classes: list[Class] = field(default_factory=list, init=False)
+    functions: list[Function] = field(default_factory=list, init=False)
     source: str | None = None
     kind: str | None = None
 
@@ -169,8 +205,9 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
             prefix = ".".join(name.split(".")[: len(names) - import_.level + 1])
             import_.fullname = f"{prefix}.{import_.fullname}"
         imports.append(import_)
-    attributes = list(iter_assigns(node))
-    module = Module(node, name, doc, imports, attributes, None, None)
+    module = Module(node, name, doc, imports, None, None)
+    for child in iter_assigns(node):
+        module.attributes.append(create_attribute(child, module))
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             module.classes.append(create_class(child, module))
@@ -182,7 +219,7 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
 def _create_empty_module() -> Module:
     name = "__mkapi__"
     doc = Docstring("", Type(None), Text(None), [])
-    return Module(ast.Module(), name, doc, [], [], None, None)
+    return Module(ast.Module(), name, doc, [], None, None)
 
 
 def merge_parameters(obj: Class | Function) -> None:
@@ -251,21 +288,25 @@ def _merge_items(obj: Module | Class | Function) -> None:
         merge_bases(obj)
 
 
-def merge_items(obj: Module | Class | Function) -> None:
+def merge_items(module: Module) -> None:
     """Merge items."""
-    for obj_ in iter_objects(obj):
-        _merge_items(obj_)
+    for obj in iter_objects(module):
+        if isinstance(obj, Module | Class | Function):
+            _merge_items(obj)
 
 
 def iter_objects_with_depth(
-    obj: Module | Class | Function,
+    obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
     depth: int = 0,
-) -> Iterator[tuple[Module | Class | Function, int]]:
+) -> Iterator[tuple[Module | Attribute | Class | Function, int]]:
     """Yield [Class] or [Function] instances and depth."""
     yield obj, depth
-    if depth == maxdepth:
+    if depth == maxdepth or isinstance(obj, Attribute):
         return
+    if isinstance(obj, Module | Class):
+        for attr in obj.attributes:
+            yield attr, depth + 1
     for cls in obj.classes:
         if isinstance(obj, Module) or cls.module is obj.module:
             yield from iter_objects_with_depth(cls, maxdepth, depth + 1)
@@ -275,27 +316,29 @@ def iter_objects_with_depth(
 
 
 def iter_objects(
-    obj: Module | Class | Function,
+    obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
-) -> Iterator[Module | Class | Function]:
+) -> Iterator[Module | Attribute | Class | Function]:
     """Yield [Class] or [Function] instances."""
     for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
         yield obj_
 
 
-def iter_items(obj: Module | Class | Function) -> Iterator[Item]:
-    """Yield [Item] instances."""
-    for obj_ in iter_objects(obj):
-        yield from obj_.doc
+# def iter_items(obj: Module | Class | Function) -> Iterator[Item]:
+#     """Yield [Item] instances."""
+#     for obj_ in iter_objects(obj):
+#         yield from obj_.doc
 
 
 def iter_types(obj: Module | Class | Function) -> Iterator[Type]:
     """Yield [Type] instances."""
+    assert isinstance(obj, Module)
     for obj_ in iter_objects(obj):
         yield from obj_.doc.iter_types()
 
 
 def iter_texts(obj: Module | Class | Function) -> Iterator[Text]:
     """Yield [Text] instances."""
+    assert isinstance(obj, Module)
     for obj_ in iter_objects(obj):
         yield from obj_.doc.iter_texts()

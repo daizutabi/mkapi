@@ -10,11 +10,13 @@ from typing import TYPE_CHECKING
 from mkapi import renderers
 from mkapi.importlib import get_object
 from mkapi.items import Type
-from mkapi.objects import Class, Function, Module
+from mkapi.objects import Attribute, Class, Function, Module
 from mkapi.utils import delete_ptags, split_filters, update_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+
+type Object = Module | Class | Function | Attribute
 
 
 @dataclass(repr=False)
@@ -33,7 +35,7 @@ class Page:
     source: str
     path: str
     filters: list[list[str]] = field(default_factory=list)
-    objects: list[Module | Class | Function] = field(default_factory=list, init=False)
+    objects: list[Object] = field(default_factory=list, init=False)
     levels: list[int] = field(default_factory=list, init=False)
 
     def convert_markdown(self) -> str:  # noqa: D102
@@ -51,7 +53,7 @@ class Page:
 
     def _callback_markdown(self, name: str, level: int, filters: list[str]) -> str:
         obj = get_object(name)
-        if not isinstance(obj, Module | Class | Function):
+        if not isinstance(obj, Module | Class | Function | Attribute):
             raise NotImplementedError
         self.objects.append(obj)
         self.levels.append(level)
@@ -84,7 +86,7 @@ def create_page(
 ) -> None:
     """Create API page."""
 
-    def _predicate(obj: Module | Class | Function) -> bool:
+    def _predicate(obj: Object) -> bool:
         if predicate and not predicate(obj.fullname):
             return False
         object_paths.setdefault(obj.fullname, path)
@@ -127,7 +129,7 @@ pattern = r"<!-- mkapi:begin\[(\d+)\] -->(.*?)<!-- mkapi:end -->"
 NODE_PATTERN = re.compile(pattern, re.MULTILINE | re.DOTALL)
 
 
-def get_markdown(obj: Module | Class | Function) -> str:
+def get_markdown(obj: Object) -> str:
     """Return a Markdown source."""
     markdowns = []
     for element in obj.doc.iter_elements():
@@ -135,24 +137,18 @@ def get_markdown(obj: Module | Class | Function) -> str:
     return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
 
-def convert_html(
-    obj: Module | Class | Function,
-    html: str,
-    level: int,
-    filters: list[str],
-) -> str:
+def convert_html(obj: Object, html: str, level: int, filters: list[str]) -> str:
     """Convert HTML input."""
     htmls = html.split("<!-- mkapi:sep -->")
     for element, html in zip(obj.doc.iter_elements(), htmls, strict=True):
         element.html = html.strip()
         if isinstance(element, Type):
             element.html = delete_ptags(element.html)
-        if "See" in element.html:
-            print("v" * 50)
-            print(element.markdown)
-            print("-" * 50)
-            print(element.html)
-            print("^" * 50)
+        print("v" * 50)
+        print(element.markdown)
+        print("-" * 50)
+        print(element.html)
+        print("^" * 50)
     return renderers.render(obj, level, filters)
 
 
