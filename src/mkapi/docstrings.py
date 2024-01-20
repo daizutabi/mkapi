@@ -11,7 +11,7 @@ from mkapi.items import (
     Section,
     Text,
     Type,
-    create_attributes,
+    create_assigns,
     create_parameters,
     create_raises,
     create_returns,
@@ -120,7 +120,7 @@ def _subsplit(doc: str, style: Style) -> list[str]:
 SECTION_NAMES: list[tuple[str, ...]] = [
     ("Parameters", "Parameter", "Params", "Param"),
     ("Parameters", "Arguments", "Argument", "Args", "Arg"),
-    ("Attributes", "Attribute", "Attrs", "Attr"),
+    ("Assigns", "Assign", "Attributes", "Attribute", "Attrs", "Attr"),
     ("Examples", "Example"),
     ("Returns", "Return"),
     ("Raises", "Raise"),
@@ -192,8 +192,8 @@ def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
 def _create_section(name: str, text: str, style: Style) -> Section:
     if name == "Parameters":
         return create_parameters(iter_items(text, style))
-    if name == "Attributes":
-        return create_attributes(iter_items(text, style))
+    if name == "Assigns":
+        return create_assigns(iter_items(text, style))
     if name == "Raises":
         return create_raises(iter_items(text, style))
     if name in ["Returns", "Yields"]:
@@ -203,7 +203,7 @@ def _create_section(name: str, text: str, style: Style) -> Section:
 
 def iter_sections(doc: str, style: Style) -> Iterator[Section]:
     """Yield [Section] instances by splitting a docstring."""
-    names = ["Parameters", "Attributes", "Raises", "Returns", "Yields"]
+    names = ["Parameters", "Assigns", "Raises", "Returns", "Yields"]
     for name, text in _iter_sections(doc, style):
         if name in names:
             yield _create_section(name, text, style)

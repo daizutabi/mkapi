@@ -44,7 +44,7 @@ def test_iter_sections(google):
     assert sections[1][1].endswith("google.py")
     assert sections[2][1].startswith("Section breaks")
     assert sections[2][1].endswith("section starts.")
-    assert sections[3][0] == "Attributes"
+    assert sections[3][0] == "Assigns"
     assert sections[3][1].startswith("module_level_")
     assert sections[3][1].endswith("with it.")
     assert sections[4][0] == "Todo"

@@ -152,40 +152,40 @@ def iter_imports(node: ast.Module) -> Iterator[Import]:
 
 
 @dataclass(repr=False)
-class Attribute(Item):
-    """Atrribute class for [Module] or [Class]."""
+class Assign(Item):
+    """Assign class for [Module] or [Class]."""
 
     default: ast.expr | None
 
 
-def iter_attributes(node: ast.ClassDef | ast.Module) -> Iterator[Attribute]:
-    """Yield [Attribute] instances."""
+def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
+    """Yield [Assign] instances."""
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):
-            attr = create_attribute(child)
+            attr = create_assign(child)
             if attr.name:
                 yield attr
         elif isinstance(child, ast.FunctionDef) and is_property(child):
-            yield create_attribute_from_property(child)
+            yield create_assign_from_property(child)
 
 
-def create_attribute(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Attribute:
-    """Return an [Attribute] instance."""
+def create_assign(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Assign:
+    """Return an [Assign] instance."""
     name = mkapi.ast.get_assign_name(node) or ""
     type_ = mkapi.ast.get_assign_type(node)
-    type_, text = _attribute_type_text(type_, node.__doc__)
+    type_, text = _assign_type_text(type_, node.__doc__)
     default = None if isinstance(node, ast.TypeAlias) else node.value
-    return Attribute(name, type_, text, default)
+    return Assign(name, type_, text, default)
 
 
-def create_attribute_from_property(node: ast.FunctionDef) -> Attribute:
-    """Return an [Attribute] instance from a property."""
+def create_assign_from_property(node: ast.FunctionDef) -> Assign:
+    """Return an [Assign] instance from a property."""
     text = ast.get_docstring(node)
-    type_, text = _attribute_type_text(node.returns, text)
-    return Attribute(node.name, type_, text, None)
+    type_, text = _assign_type_text(node.returns, text)
+    return Assign(node.name, type_, text, None)
 
 
-def _attribute_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
+def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
     if not text:
         return Type(type_), Text(None)
     type_doc, text = split_without_name(text, "google")
@@ -241,16 +241,16 @@ def create_parameters(items: Iterable[tuple[str, Type, Text]]) -> Parameters:
 
 
 @dataclass(repr=False)
-class Attributes(Section):
-    """Attributes section."""
+class Assigns(Section):
+    """Assigns section."""
 
-    items: list[Attribute]
+    items: list[Assign]
 
 
-def create_attributes(items: Iterable[tuple[str, Type, Text]]) -> Attributes:
-    """Return an attributes section."""
-    attributes = [Attribute(*args, None) for args in items]
-    return Attributes("Attributes", Type(None), Text(None), attributes)
+def create_assigns(items: Iterable[tuple[str, Type, Text]]) -> Assigns:
+    """Return an Assigns section."""
+    attributes = [Assign(*args, None) for args in items]
+    return Assigns("Assigns", Type(None), Text(None), attributes)
 
 
 @dataclass(repr=False)

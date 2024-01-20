@@ -9,7 +9,7 @@ import mkapi.ast
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
 from mkapi.items import (
-    Attributes,
+    Assigns,
     Bases,
     Item,
     Parameters,
@@ -18,10 +18,10 @@ from mkapi.items import (
     Text,
     Type,
     TypeKind,
-    create_attributes,
+    create_assigns,
     create_parameters,
     create_raises,
-    iter_attributes,
+    iter_assigns,
     iter_bases,
     iter_imports,
     iter_merged_items,
@@ -34,7 +34,7 @@ from mkapi.utils import get_by_name, get_by_type
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.items import Attribute, Base, Import, Parameter, Raise, Return
+    from mkapi.items import Assign, Base, Import, Parameter, Raise, Return
 
 
 objects: dict[str, Module | Class | Function | None] = {}
@@ -118,7 +118,7 @@ class Class(Callable):
 
     node: ast.ClassDef
     bases: list[Base]
-    attributes: list[Attribute]
+    attributes: list[Assign]
     parameters: list[Parameter] = field(default_factory=list, init=False)
     raises: list[Raise] = field(default_factory=list, init=False)
 
@@ -133,7 +133,7 @@ def create_class(
     module = module or _create_empty_module()
     doc = docstrings.parse(ast.get_docstring(node))
     bases = list(iter_bases(node))
-    attributes = list(iter_attributes(node))
+    attributes = list(iter_assigns(node))
     cls = Class(node, name, doc, bases, attributes, module=module, parent=parent)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
@@ -150,7 +150,7 @@ class Module(Object):
 
     node: ast.Module
     imports: list[Import]
-    attributes: list[Attribute]
+    attributes: list[Assign]
     source: str | None = None
     kind: str | None = None
 
@@ -169,7 +169,7 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
             prefix = ".".join(name.split(".")[: len(names) - import_.level + 1])
             import_.fullname = f"{prefix}.{import_.fullname}"
         imports.append(import_)
-    attributes = list(iter_attributes(node))
+    attributes = list(iter_assigns(node))
     module = Module(node, name, doc, imports, attributes, None, None)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
@@ -199,11 +199,11 @@ def merge_parameters(obj: Class | Function) -> None:
 
 def merge_attributes(obj: Module | Class) -> None:
     """Merge attributes."""
-    section = get_by_type(obj.doc.sections, Attributes)
+    section = get_by_type(obj.doc.sections, Assigns)
     if not section:
         if not obj.attributes:
             return
-        section = create_attributes([])
+        section = create_assigns([])
         obj.doc.sections.append(section)
     section.items = list(iter_merged_items(obj.attributes, section.items))
 

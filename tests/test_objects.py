@@ -7,7 +7,7 @@ import pytest
 
 from mkapi.ast import iter_child_nodes
 from mkapi.docstrings import Docstring
-from mkapi.items import Attributes, Item, Parameters, Raises, Return, Returns, Section
+from mkapi.items import Assigns, Item, Parameters, Raises, Return, Returns, Section
 from mkapi.objects import (
     Class,
     Function,
@@ -223,7 +223,7 @@ def test_iter():
     assert any(isinstance(x, Item) for x in items)
     assert any(isinstance(x, Section) for x in items)
     assert any(isinstance(x, Parameters) for x in items)
-    assert any(isinstance(x, Attributes) for x in items)
+    assert any(isinstance(x, Assigns) for x in items)
     assert any(isinstance(x, Raises) for x in items)
     assert any(isinstance(x, Returns) for x in items)
 

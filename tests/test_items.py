@@ -8,12 +8,12 @@ import pytest
 
 from mkapi.ast import iter_child_nodes
 from mkapi.items import (
-    Attribute,
+    Assign,
     Item,
     Text,
     Type,
     _iter_imports,
-    iter_attributes,
+    iter_assigns,
     iter_bases,
     iter_merged_items,
     iter_parameters,
@@ -81,13 +81,13 @@ def test_create_parameters_slice():
 def _get_attributes(source: str):
     node = ast.parse(source).body[0]
     assert isinstance(node, ast.ClassDef)
-    return list(iter_attributes(node))
+    return list(iter_assigns(node))
 
 
 def test_get_attributes():
     src = "class A:\n x=f.g(1,p='2')\n '''docstring'''"
     x = _get_attributes(src)[0]
-    assert isinstance(x, Attribute)
+    assert isinstance(x, Assign)
     assert x.type.expr is None
     assert isinstance(x.default, ast.Call)
     assert ast.unparse(x.default.func) == "f.g"
@@ -95,9 +95,9 @@ def test_get_attributes():
     src = "class A:\n x:X\n y:y\n '''docstring\n a'''\n z=0"
     assigns = _get_attributes(src)
     x, y, z = assigns
-    assert isinstance(x, Attribute)
-    assert isinstance(y, Attribute)
-    assert isinstance(z, Attribute)
+    assert isinstance(x, Assign)
+    assert isinstance(y, Assign)
+    assert isinstance(z, Assign)
     assert not x.text.str
     assert x.default is None
     assert y.text.str == "docstring\na"
@@ -230,7 +230,7 @@ def test_create_returns(get):
 
 
 def test_create_attributes(google, get):
-    x = list(iter_attributes(google))
+    x = list(iter_assigns(google))
     assert x[0].name == "module_level_variable1"
     assert x[0].type.expr is None
     assert x[0].text.str is None
@@ -245,7 +245,7 @@ def test_create_attributes(google, get):
     assert isinstance(x[1].default, ast.Constant)
     assert x[1].default.value == 98765
     cls = get("ExamplePEP526Class")
-    x = list(iter_attributes(cls))
+    x = list(iter_assigns(cls))
     assert x[0].name == "attr1"
     assert isinstance(x[0].type.expr, ast.Name)
     assert x[0].type.expr.id == "str"
@@ -256,7 +256,7 @@ def test_create_attributes(google, get):
 
 def test_create_attributes_from_property(get):
     cls = get("ExampleClass")
-    x = list(iter_attributes(cls))
+    x = list(iter_assigns(cls))
     assert x[0].name == "readonly_property"
     assert isinstance(x[0].type.expr, ast.Name)
     assert x[0].type.expr.id == "str"
