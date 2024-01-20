@@ -27,7 +27,6 @@ from mkapi import renderers
 from mkapi.nav import create_nav, update_nav
 from mkapi.pages import Page as MkAPIPage
 from mkapi.pages import create_page
-from mkapi.utils import is_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -177,6 +176,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         if abs_path.exists():
             msg = f"Duplicated API page: {abs_path.as_posix()!r}"
             logger.warning(msg)
+        # TODO: .**
         create_page(f"{name}.**", abs_path, 1, filters)
         plugin.config.api_uris.append(path)
         return page(name, depth) if page else name

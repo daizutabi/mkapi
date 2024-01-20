@@ -32,8 +32,17 @@ def test_page(tmpdir):
     create_page(name, path, 1, ["f", "g"])
     path = tmpdir.mkdir("src") / "b.md"
     page = Page("# Title\n::: mkapi.objects.Class", path)
-    x = page.convert_markdown()
-    assert "<!-- mkapi:begin[0] -->" in x
-    assert "<!-- mkapi:end -->" in x
-    assert "[Callable](../a.md#mkapi.objects.Callable)" in x
-    assert "list[[Base](../a.md#mkapi.items.Base)]" in x
+    markdown = page.convert_markdown()
+    assert "<!-- mkapi:begin[0] -->" in markdown
+    assert "<!-- mkapi:end -->" in markdown
+    assert "[Callable](../a.md#mkapi.objects.Callable)" in markdown
+    assert "list[[Base](../a.md#mkapi.items.Base)]" in markdown
+    html = Markdown().convert(markdown)
+    html = page.convert_html(html)
+    # print(html)
+    # assert 0
+    # assert len(page.objects) == 1
+    # obj = page.objects[0]
+    # for elm in obj.doc.iter_elements():
+    #     print(elm)
+    # assert 0

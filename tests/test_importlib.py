@@ -225,3 +225,12 @@ def test_set_markdown_text():
     for i in x:
         print(i)
     assert any("[Parameter][__mkapi__.mkapi.items.Parameter]" for i in x)
+
+
+def test_aa():
+    obj = get_object("polars.dataframe.frame.DataFrame")
+    assert isinstance(obj, Class)
+    x = get_by_name(obj.attributes, "dtypes")
+    assert x
+    print(x.text)
+    # assert 0

@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING
 
 from mkapi import renderers
 from mkapi.importlib import get_object
+from mkapi.items import Type
 from mkapi.objects import Class, Function, Module
-from mkapi.utils import split_filters, update_filters
+from mkapi.utils import delete_ptags, split_filters, update_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -93,7 +94,8 @@ def create_page(
 
     with path.open("w") as file:
         for name in names:
-            file.write(renderers.render_markdown(name, level, filters, _predicate))
+            markdown = renderers.render_markdown(name, level, filters, _predicate)
+            file.write(markdown)
             if name != names[-1]:
                 file.write("\n")
 
@@ -142,8 +144,15 @@ def convert_html(
     """Convert HTML input."""
     htmls = html.split("<!-- mkapi:sep -->")
     for element, html in zip(obj.doc.iter_elements(), htmls, strict=True):
-        # TODO: add id.
         element.html = html.strip()
+        if isinstance(element, Type):
+            element.html = delete_ptags(element.html)
+        if "See" in element.html:
+            print("v" * 50)
+            print(element.markdown)
+            print("-" * 50)
+            print(element.html)
+            print("^" * 50)
     return renderers.render(obj, level, filters)
 
 

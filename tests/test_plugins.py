@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 from jinja2.environment import Environment
+from mkdocs.commands.build import build
 from mkdocs.config import load_config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import PluginCollection
@@ -92,3 +93,14 @@ def test_insert_sys_path(mkapi_config: MkAPIConfig):
 def test_on_config_plugin(mkdocs_config, mkapi_plugin):
     config = _on_config_plugin(mkdocs_config, mkapi_plugin)
     assert mkdocs_config is config
+
+
+def test_mkdocs_build(mkdocs_config: MkDocsConfig):
+    config = mkdocs_config
+    config.nav = [{"API": "<api>/polars.dataframe.***"}]
+    config.plugins.on_startup(command="build", dirty=False)
+    try:
+        build(config)
+    finally:
+        config.plugins.on_shutdown()
+    # assert 0

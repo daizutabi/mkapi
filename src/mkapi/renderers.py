@@ -73,31 +73,6 @@ def render_markdown(
         markdowns.append(_render_markdown(obj_.fullname, level_, filters_))
     return "\n".join(markdowns)
 
-    # if suffix == 1:
-    #     members = [obj.classes + obj.functions]
-    #     m
-
-    # obj =
-    # if name.endswith(".*"):
-    #     name = name[:-2]
-    #     members =
-    #     markdowns = []
-    #     for markdown i
-    # heading = "#" * level + " " if level else ""
-    # markdown = f"{heading}::: {name}{filters_}"
-    # return _render_markdown(name, level, filters_)
-    # if not (module := load_module(name)):
-    #     return f"{name} not found"
-    # # module_filter = object_filter = ""
-    # # if filters:
-    # #     object_filter = "|" + "|".join(filters)
-    # # template = self.templates["module"]
-    # return templates["module"].render(
-    #     module=module,
-    #     # module_filter=module_filter,
-    #     # object_filter=object_filter,
-    # )
-
 
 def render(obj: Module | Class | Function, level: int, filters: list[str]) -> str:
     """Return a rendered HTML for Node.
@@ -107,23 +82,21 @@ def render(obj: Module | Class | Function, level: int, filters: list[str]) -> st
         level: Heading level.
         filters: Filters.
     """
-    obj_str = render_object(obj, filters=filters)
+    obj_str = render_object(obj, level, filters)
     return obj_str
-    doc_str = render_docstring(obj.doc, filters=filters)
-    members = []
-    for member in obj.classes + obj.functions:
-        member_str = render(member, level + 1, filters)
-        members.append(member_str)
-    return templates["node"].render(obj=obj_str, doc=doc_str, members=members)
+    # doc_str = render_docstring(obj.doc, filters=filters)
+    # members = []
+    # for member in obj.classes + obj.functions:
+    #     member_str = render(member, level + 1, filters)
+    #     members.append(member_str)
+    # return templates["node"].render(obj=obj_str, doc=doc_str, members=members)
 
 
-def render_object(obj: Module | Class | Function, filters: list[str]) -> str:
-    """Return a rendered HTML for Object.
-
-    Args:
-        obj: Object instance.
-        filters: Filters.
-    """
+def render_object(
+    obj: Module | Class | Function, level: int, filters: list[str]
+) -> str:
+    """Return a rendered HTML for Object."""
+    return obj.fullname
     # context = resolve_object(obj.html)
     # level = context.get("level")
     # if level:

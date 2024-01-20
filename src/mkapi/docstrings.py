@@ -129,6 +129,7 @@ SECTION_NAMES: list[tuple[str, ...]] = [
     ("Warnings", "Warns"),
     ("Note",),
     ("Notes",),
+    ("See Also", "See also"),
 ]
 
 CURRENT_DOCSTRING_STYLE: list[Style] = ["google"]
