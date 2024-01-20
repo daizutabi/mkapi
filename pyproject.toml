@@ -18,7 +18,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.12"
-dependencies = ["jinja2", "markdown", "mkdocs"]
+dependencies = ["jinja2", "markdown", "mkdocs", 'halo', 'tqdm']
 
 [project.urls]
 Documentation = "https://github.com/daizutabi/mkapi#readme" # FIXME
@@ -67,7 +67,7 @@ omit = ["src/mkapi/__about__.py"]
 exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
 
 [tool.hatch.envs.docs]
-dependencies = ["mkdocs", "mkdocs-material"]
+dependencies = ["mkdocs", "mkdocs-material", 'polars']
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict {args}"
 serve = "mkdocs serve --dev-addr localhost:8000 {args}"

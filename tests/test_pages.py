@@ -2,8 +2,8 @@ from pathlib import Path
 
 from markdown import Markdown
 
-from mkapi.objects import Class, iter_types
-from mkapi.pages import Page, _iter_markdown, collect_objects
+from mkapi.objects import Class
+from mkapi.pages import Page, create_page, object_paths, split_markdown
 
 source = """
 # Title
@@ -15,8 +15,8 @@ end
 """
 
 
-def test_iter_markdown():
-    x = list(_iter_markdown(source))
+def test_split_markdown():
+    x = list(split_markdown(source))
     assert x[0] == ("# Title", -1, [])
     assert x[1] == ("a.o.Object", 2, ["a", "b"])
     assert x[2] == ("text", -1, [])
@@ -25,16 +25,15 @@ def test_iter_markdown():
     assert x[5] == ("end", -1, [])
 
 
-def callback_markdown(name, level, filters):
-    f = "|".join(filters)
-    return f"<{name}>[{level}]({f})"
-
-
-def test_convert_markdown():
-    collect_objects("mkapi.items", Path("/x/api/a.md"))
-    abs_src_path = "/b.md"
-    page = Page("::: mkapi.items.Parameters", abs_src_path)
+def test_page(tmpdir):
+    object_paths.clear()
+    name = "mkapi.objects.**, mkapi.items.*"
+    path = Path(tmpdir / "a.md")
+    create_page(name, path, 1, ["f", "g"])
+    path = tmpdir.mkdir("src") / "b.md"
+    page = Page("# Title\n::: mkapi.objects.Class", path)
     x = page.convert_markdown()
     assert "<!-- mkapi:begin[0] -->" in x
     assert "<!-- mkapi:end -->" in x
-    assert "[Section](x/api/a.md#mkapi.items.Section)" in x
+    assert "[Callable](../a.md#mkapi.objects.Callable)" in x
+    assert "list[[Base](../a.md#mkapi.items.Base)]" in x

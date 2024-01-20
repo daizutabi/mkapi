@@ -1,8 +1,14 @@
 from mkapi.utils import (
     find_submodule_names,
+    get_module_path,
     is_package,
     iter_submodule_names,
 )
+
+
+def test_get_module_path():
+    assert get_module_path("mkdocs")
+    assert get_module_path("polars")
 
 
 def test_is_package():

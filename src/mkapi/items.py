@@ -23,22 +23,26 @@ TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
 
 
 @dataclass
-class Type:
-    """Type class."""
+class Element:
+    """Element type."""
 
-    expr: ast.expr | None = None
-    kind: TypeKind = TypeKind.REFERENCE
     markdown: str = field(default="", init=False)
     html: str = field(default="", init=False)
 
 
 @dataclass
-class Text:
+class Type(Element):
+    """Type class."""
+
+    expr: ast.expr | None = None
+    kind: TypeKind = TypeKind.REFERENCE
+
+
+@dataclass
+class Text(Element):
     """Text class."""
 
-    str: str | None = None  # noqa: A003
-    markdown: str = field(default="", init=False)
-    html: str = field(default="", init=False)
+    str: str | None = None
 
 
 @dataclass
@@ -46,7 +50,7 @@ class Item:
     """Element class."""
 
     name: str
-    type: Type  # noqa: A003
+    type: Type
     text: Text
 
     def __repr__(self) -> str:

@@ -10,9 +10,12 @@ from typing import TYPE_CHECKING
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.importlib import load_module
+from mkapi.importlib import get_object
+from mkapi.objects import iter_objects_with_depth
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from mkapi.objects import Class, Function, Module
 
 templates: dict[str, Template] = {}
@@ -28,30 +31,72 @@ def load_templates(path: Path | None = None) -> None:
         templates[Path(name).stem] = env.get_template(name)
 
 
-def render_markdown(name: str, filters: list[str]) -> str:
+NAME_PATTERN = re.compile(r"^(.+?)(\.\*+)?$")
+
+
+def _split_name_depth(name: str) -> tuple[str, int]:
+    if m := NAME_PATTERN.match(name):
+        depth = m.group(2) or "."
+        return m.group(1), int(len(depth)) - 1
+    return name, 0
+
+
+def _render_markdown(name: str, level: int, filters: str) -> str:
+    heading = "#" * level + " " if level else ""
+    return f"{heading}::: {name}{filters}\n"
+
+
+def render_markdown(
+    name: str,
+    level: int,
+    filters: list[str],
+    predicate: Callable[[Module | Class | Function], bool] | None = None,
+) -> str:
     """Return a rendered Markdown for an object.
 
-    Args:
-        name: Module name.
-        filters: A list of filters. Avaiable filters: `inherit`, `strict`,
-            `heading`.
+    Optionally, only return objects that satisfy a given predicate.
 
     Note:
         This function returns Markdown instead of HTML. The returned Markdown
         will be converted into HTML by MkDocs. Then the HTML is rendered into HTML
         again by other functions in this module.
     """
-    if not (module := load_module(name)):
-        return f"{name} not found"
-    # module_filter = object_filter = ""
-    # if filters:
-    #     object_filter = "|" + "|".join(filters)
-    # template = self.templates["module"]
-    return templates["module"].render(
-        module=module,
-        # module_filter=module_filter,
-        # object_filter=object_filter,
-    )
+    filters_ = "|" + "|".join(filters) if filters else ""
+    name, maxdepth = _split_name_depth(name)
+    if not (obj := get_object(name)):
+        return f"{name!r} not found.\n"
+    markdowns = []
+    for obj_, depth in iter_objects_with_depth(obj, maxdepth):
+        if predicate and not predicate(obj_):
+            continue
+        level_ = level + depth if level else 0
+        markdowns.append(_render_markdown(obj_.fullname, level_, filters_))
+    return "\n".join(markdowns)
+
+    # if suffix == 1:
+    #     members = [obj.classes + obj.functions]
+    #     m
+
+    # obj =
+    # if name.endswith(".*"):
+    #     name = name[:-2]
+    #     members =
+    #     markdowns = []
+    #     for markdown i
+    # heading = "#" * level + " " if level else ""
+    # markdown = f"{heading}::: {name}{filters_}"
+    # return _render_markdown(name, level, filters_)
+    # if not (module := load_module(name)):
+    #     return f"{name} not found"
+    # # module_filter = object_filter = ""
+    # # if filters:
+    # #     object_filter = "|" + "|".join(filters)
+    # # template = self.templates["module"]
+    # return templates["module"].render(
+    #     module=module,
+    #     # module_filter=module_filter,
+    #     # object_filter=object_filter,
+    # )
 
 
 def render(obj: Module | Class | Function, level: int, filters: list[str]) -> str:

@@ -8,22 +8,25 @@ from __future__ import annotations
 import importlib
 import os
 import sys
+import warnings
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING
 
 import yaml
+from halo import Halo
 from mkdocs.config import config_options
 from mkdocs.config.base import Config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin, get_plugin_logger
-from mkdocs.structure.files import get_files
+from mkdocs.structure.files import Files, get_files
+from tqdm import tqdm  # type: ignore
 
 import mkapi
 from mkapi import renderers
 from mkapi.nav import create_nav, update_nav
 from mkapi.pages import Page as MkAPIPage
-from mkapi.pages import collect_objects
+from mkapi.pages import create_page
 from mkapi.utils import is_package
 
 if TYPE_CHECKING:
@@ -49,6 +52,7 @@ class MkAPIConfig(Config):
     on_config = config_options.Type(str, default="")
     pages = config_options.Type(dict, default={})
     api_dirs = config_options.Type(list, default=[])
+    api_uris = config_options.Type(list, default=[])
 
 
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
@@ -64,11 +68,20 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             config.markdown_extensions.append("admonition")
         return _on_config_plugin(config, self)
 
+    # def on_pre_build(self, *, config: MkDocsConfig) -> None:
+    #     logger.info(len(self.config.api_uris))
+
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         """Collect plugin CSS/JavaScript and append them to `files`."""
         for file in _collect_theme_files(config, self):
             files.append(file)
         return files
+
+    def on_nav(self, *args, **kwargs) -> None:
+        total = len(self.config.api_uris)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.bar = tqdm(desc="Building API", total=total, colour="green")
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         """Convert Markdown source to intermediate version."""
@@ -83,7 +96,12 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         # if page.title:
         #     page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore
         mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
+        if page.file.src_uri in self.config.api_uris:
+            self.bar.update(1)
         return mkapi_page.convert_html(html)
+
+    def on_post_build(self, *, config: MkDocsConfig) -> None:
+        self.bar.clear()
 
     # def on_page_context(
     #     self,
@@ -147,25 +165,29 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
 
 def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    if not config.nav:
+        return
+
     _make_api_dir(config, plugin)
     page = _get_function("page_title", plugin)
     section = _get_function("section_title", plugin)
 
-    def create_page(name: str, path: str, filters: list[str], depth: int) -> str:
+    def _create_page(name: str, path: str, filters: list[str], depth: int) -> str:
         abs_path = Path(config.docs_dir) / path
         if abs_path.exists():
             msg = f"Duplicated API page: {abs_path.as_posix()!r}"
             logger.warning(msg)
-        collect_objects(name, abs_path)
-        with abs_path.open("w") as file:
-            file.write(renderers.render_markdown(name, filters))
-        return page(name, depth, is_package(name)) if page else name
+        create_page(f"{name}.**", abs_path, 1, filters)
+        plugin.config.api_uris.append(path)
+        return page(name, depth) if page else name
 
     def predicate(name: str) -> bool:
         return any(ex not in name for ex in plugin.config.exclude)
 
-    if config.nav:
-        update_nav(config.nav, create_page, section, predicate)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        with Halo(text="Updating nav...", spinner="dots"):
+            update_nav(config.nav, _create_page, section, predicate)
 
 
 def _make_api_dir(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:

@@ -73,6 +73,21 @@ def get_object(fullname: str) -> Module | Class | Function | None:
     return None
 
 
+def get_source(
+    obj: Module | Class | Function,
+    maxline: int | None = None,
+) -> str | None:
+    """Return the source code of an object."""
+    if isinstance(obj, Module):
+        if obj.source:
+            return "\n".join(obj.source.split("\n")[:maxline])
+        return None
+    if (module := obj.module) and (source := module.source):
+        start, stop = obj.node.lineno - 1, obj.node.end_lineno
+        return "\n".join(source.split("\n")[start:stop][:maxline])
+    return None
+
+
 def get_member(module: Module, name: str) -> Import | Class | Function | None:
     """Return a member instance by the name."""
     if obj := get_by_name(module.imports, name):
@@ -151,7 +166,8 @@ def inherit_base_classes(cls: Class) -> None:
         setattr(cls, name, list(members.values()))
 
 
-def _get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
+def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
+    """Return a decorator expr by name."""
     if not obj.module:
         return None
     for deco in obj.node.decorator_list:
@@ -163,7 +179,7 @@ def _get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
 
 def is_dataclass(cls: Class) -> bool:
     """Return True if a [Class] instance is a dataclass."""
-    return _get_decorator(cls, "dataclasses.dataclass") is not None
+    return get_decorator(cls, "dataclasses.dataclass") is not None
 
 
 def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
@@ -237,3 +253,35 @@ def set_markdown(module: Module) -> None:  # noqa: C901
     for text in iter_texts(module):
         if text.str:
             text.markdown = re.sub(LINK_PATTERN, get_link_text, text.str)
+
+
+# type Object = Module | Class | Function
+
+# def get_class(obj: Object, name: str) -> Class | None:
+#     """Return a [Class] instance by the name."""
+#     return get_by_name(obj.classes, name)
+
+
+# def get_function(obj: Object, name: str) -> Function | None:
+#     """Return a [Function] instance by the name."""
+#     return get_by_name(obj.functions, name)
+
+
+# def get_attribute(obj: Module | Class, name: str) -> Attribute | None:
+#     """Return an [Attribute] instance by the name."""
+#     return get_by_name(obj.attributes, name)
+
+
+# def get_parameter(obj: Class | Function, name: str) -> Parameter | None:
+#     """Return a [Parameter] instance by the name."""
+#     return get_by_name(obj.parameters, name)
+
+
+# def get_raise(obj: Class | Function, name: str) -> Raise | None:
+#     """Return a [Raise] instance by the name."""
+#     return get_by_name(obj.raises, name)
+
+
+# def get_import(obj: Module, name: str) -> Import | None:
+#     """Return an [Import] instance by the name."""
+#     return get_by_name(obj.imports, name)

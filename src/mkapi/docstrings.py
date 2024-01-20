@@ -28,6 +28,8 @@ from mkapi.utils import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from mkapi.items import Element
+
 
 type Style = Literal["google", "numpy"]
 
@@ -226,15 +228,22 @@ class Docstring(Item):
             yield section
             yield from section.items
 
-    def iter_types(self) -> Iterator[Type]:  # noqa: D102
+    def iter_types(self) -> Iterator[Type]:
+        """Yield [Type] instances."""
         for item in self:
             if item.type.expr:
                 yield item.type
 
-    def iter_texts(self) -> Iterator[Text]:  # noqa: D102
+    def iter_texts(self) -> Iterator[Text]:
+        """Yield [Text] instances."""
         for item in self:
             if item.text.str:
                 yield item.text
+
+    def iter_elements(self) -> Iterator[Element]:
+        """Yield [Element] instances."""
+        yield from self.iter_types()
+        yield from self.iter_texts()
 
     def get(self, name: str) -> Section | None:
         """Return a [Section] by name."""

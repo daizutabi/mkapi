@@ -3,12 +3,12 @@ import re
 
 import mkapi.ast
 import mkapi.importlib
-import mkapi.inspect
 import mkapi.objects
 from mkapi.importlib import (
     LINK_PATTERN,
     get_fullname,
     get_object,
+    get_source,
     is_dataclass,
     iter_base_classes,
     load_module,
@@ -36,10 +36,10 @@ def test_load_module_source():
     cls = get_by_name(module.classes, "MkAPIConfig")
     assert cls
     assert cls.module is module
-    src = mkapi.inspect.get_source(cls)
+    src = get_source(cls)
     assert src
     assert src.startswith("class MkAPIConfig")
-    src = mkapi.inspect.get_source(module)
+    src = get_source(module)
     assert src
     assert "MkAPIPlugin" in src
 

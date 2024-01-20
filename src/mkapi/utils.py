@@ -19,7 +19,7 @@ def get_module_path(name: str) -> Path | None:
     if not spec or not hasattr(spec, "origin") or not spec.origin:
         return None
     path = Path(spec.origin)
-    if not path.exists():  # for builtin, frozen
+    if not path.exists() or path.suffix != ".py":  # for builtin, frozen
         return None
     return path
 

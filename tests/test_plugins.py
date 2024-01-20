@@ -49,7 +49,7 @@ def test_mkdocs_config(mkdocs_config: MkDocsConfig):
     assert isinstance(config.plugins["mkapi"], MkAPIPlugin)
     assert config.pages is None
     assert isinstance(config.theme, Theme)
-    assert config.theme.name == "mkdocs"
+    assert config.theme.name == "material"
     assert isinstance(config.theme.get_env(), Environment)
     assert config.extra_css == ["custom.css"]
     assert str(config.extra_javascript[0]).endswith("tex-mml-chtml.js")

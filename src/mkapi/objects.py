@@ -257,15 +257,30 @@ def merge_items(obj: Module | Class | Function) -> None:
         _merge_items(obj_)
 
 
-def iter_objects(obj: Module | Class | Function) -> Iterator[Module | Class | Function]:
-    """Yield [Class] or [Function] instances."""
-    yield obj
+def iter_objects_with_depth(
+    obj: Module | Class | Function,
+    maxdepth: int = -1,
+    depth: int = 0,
+) -> Iterator[tuple[Module | Class | Function, int]]:
+    """Yield [Class] or [Function] instances and depth."""
+    yield obj, depth
+    if depth == maxdepth:
+        return
     for cls in obj.classes:
         if isinstance(obj, Module) or cls.module is obj.module:
-            yield from iter_objects(cls)
+            yield from iter_objects_with_depth(cls, maxdepth, depth + 1)
     for func in obj.functions:
         if isinstance(obj, Module) or func.module is obj.module:
-            yield from iter_objects(func)
+            yield from iter_objects_with_depth(func, maxdepth, depth + 1)
+
+
+def iter_objects(
+    obj: Module | Class | Function,
+    maxdepth: int = -1,
+) -> Iterator[Module | Class | Function]:
+    """Yield [Class] or [Function] instances."""
+    for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
+        yield obj_
 
 
 def iter_items(obj: Module | Class | Function) -> Iterator[Item]:

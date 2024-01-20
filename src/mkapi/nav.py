@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 from functools import partial
-from typing import TYPE_CHECKING, TypeGuard
+from typing import TYPE_CHECKING
 
 from mkapi.utils import find_submodule_names, get_module_path, is_package, split_filters
 
@@ -82,7 +82,10 @@ def update_apinav(
 ) -> None:
     """Update API navigation."""
     it = gen_apinav(nav)
-    name, is_section, depth = it.send(None)
+    try:
+        name, is_section, depth = it.send(None)
+    except StopIteration:
+        return
     while True:
         if is_section:
             value = section(name, depth) if section else name

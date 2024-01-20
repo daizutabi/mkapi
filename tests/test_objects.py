@@ -232,8 +232,11 @@ def test_iter_objects():
     name = "polars.dataframe.frame"
     node = load_module_node(name)
     module = create_module(node, name)
-    cls = get_by_name(module.classes, "DataFrame")
-    assert cls
-    print(cls.classes)
-    print(cls.functions)
-    assert 0
+    x = list(iter_objects(module, 0))
+    assert len(x) == 1
+    x = list(iter_objects(module, 1))
+    assert get_by_name(x, "DataFrame")
+    assert not get_by_name(x, "product")
+    x = list(iter_objects(module, 2))
+    assert get_by_name(x, "DataFrame")
+    assert get_by_name(x, "product")
