@@ -63,8 +63,9 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         _insert_sys_path(self.config)
         _update_templates(config, self)
         _update_config(config, self)
-        if "admonition" not in config.markdown_extensions:
-            config.markdown_extensions.append("admonition")
+        for name in ["admonition", "attr_list"]:
+            if name not in config.markdown_extensions:
+                config.markdown_extensions.append(name)
         return _on_config_plugin(config, self)
 
     # def on_pre_build(self, *, config: MkDocsConfig) -> None:
@@ -130,7 +131,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def on_shutdown(self) -> None:
         for path in self.config.api_dirs:
             if path.exists():
-                msg = f"Deleting API directory: {path.as_posix()!r}"
+                msg = f"Deleting API directory: {path}"
                 logger.info(msg)
                 rmtree(path)
 
@@ -194,11 +195,11 @@ def _make_api_dir(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     def mkdir(name: str, path: str, fileters: list[str]) -> list:  # noqa: ARG001
         api_dir = Path(config.docs_dir) / path
         if api_dir.exists() and api_dir not in plugin.config.api_dirs:
-            msg = f"API directory exists: {api_dir.as_posix()!r}"
+            msg = f"API directory exists: {api_dir}"
             logger.error(msg)
             sys.exit()
         if not api_dir.exists():
-            msg = f"Creating API directory: {api_dir.as_posix()!r}"
+            msg = f"Creating API directory: {api_dir}"
             logger.info(msg)
             api_dir.mkdir()
             plugin.config.api_dirs.append(api_dir)

@@ -16,7 +16,9 @@ from mkapi.objects import iter_objects_with_depth
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mkapi.objects import Class, Function, Module
+    from mkapi.objects import Attribute, Class, Function, Module
+
+type Object = Module | Class | Function | Attribute
 
 templates: dict[str, Template] = {}
 
@@ -50,7 +52,7 @@ def render_markdown(
     name: str,
     level: int,
     filters: list[str],
-    predicate: Callable[[Module | Class | Function], bool] | None = None,
+    predicate: Callable[[Object], bool] | None = None,
 ) -> str:
     """Return a rendered Markdown for an object.
 
@@ -74,7 +76,7 @@ def render_markdown(
     return "\n".join(markdowns)
 
 
-def render(obj: Module | Class | Function, level: int, filters: list[str]) -> str:
+def render(obj: Object, level: int, filters: list[str]) -> str:
     """Return a rendered HTML for Node.
 
     Args:
@@ -92,11 +94,10 @@ def render(obj: Module | Class | Function, level: int, filters: list[str]) -> st
     # return templates["node"].render(obj=obj_str, doc=doc_str, members=members)
 
 
-def render_object(
-    obj: Module | Class | Function, level: int, filters: list[str]
-) -> str:
+def render_object(obj: Object, level: int, filters: list[str]) -> str:
     """Return a rendered HTML for Object."""
-    return obj.fullname
+    tag = f"h{level}" if level else "div"
+    return templates["object"].render(object=obj, tag=tag, filters=filters)
     # context = resolve_object(obj.html)
     # level = context.get("level")
     # if level:

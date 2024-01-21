@@ -3,7 +3,7 @@ from pathlib import Path
 from markdown import Markdown
 
 from mkapi.objects import Class
-from mkapi.pages import Page, create_page, object_paths, split_markdown
+from mkapi.pages import Page, create_page, object_paths, set_html, split_markdown
 
 source = """
 # Title
@@ -25,7 +25,7 @@ def test_split_markdown():
     assert x[5] == ("end", -1, [])
 
 
-def test_page(tmpdir):
+def test_create_page(tmpdir):
     object_paths.clear()
     name = "mkapi.objects.**, mkapi.items.*"
     path = Path(tmpdir / "a.md")
@@ -37,12 +37,30 @@ def test_page(tmpdir):
     assert "<!-- mkapi:end -->" in markdown
     assert "[Callable](../a.md#mkapi.objects.Callable)" in markdown
     assert "list[[Base](../a.md#mkapi.items.Base)]" in markdown
-    html = Markdown().convert(markdown)
-    html = page.convert_html(html)
+
+
+def test_set_html(tmpdir):
+    object_paths.clear()
+    name = "polars.**"
+    path = Path(tmpdir / "a.md")
+    create_page(name, path, 1, ["f", "g"])
+    # print(object_paths)
+    path = tmpdir.mkdir("src") / "b.md"
+    page = Page("# Title\n::: polars.dataframe.frame.DataFrame", path)
+    markdown = page.convert_markdown()
+    obj = page.objects[0]
+    for elm in obj.doc.iter_elements():
+        print(elm)
+    # assert "<!-- mkapi:begin[0] -->" in markdown
+    # assert "<!-- mkapi:end -->" in markdown
+    # assert "[Callable](../a.md#mkapi.objects.Callable)" in markdown
+    # assert "list[[Base](../a.md#mkapi.items.Base)]" in markdown
+    # html = Markdown().convert(markdown)
+    # html = page.convert_html(html)
     # print(html)
     # assert 0
     # assert len(page.objects) == 1
     # obj = page.objects[0]
     # for elm in obj.doc.iter_elements():
     #     print(elm)
-    # assert 0
+    assert 0

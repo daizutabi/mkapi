@@ -12,7 +12,7 @@ from mkapi.items import (
     Item,
     Text,
     Type,
-    _iter_imports,
+    _iter_imports_from_import,
     iter_assigns,
     iter_bases,
     iter_merged_items,
@@ -130,21 +130,21 @@ def test_iter_import_nodes_alias():
     src = "import matplotlib.pyplot"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.Import)
-    x = list(_iter_imports(node))
+    x = list(_iter_imports_from_import(node))
     assert len(x) == 2
     assert x[0].fullname == "matplotlib"
     assert x[1].fullname == "matplotlib.pyplot"
     src = "import matplotlib.pyplot as plt"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.Import)
-    x = list(_iter_imports(node))
+    x = list(_iter_imports_from_import(node))
     assert len(x) == 1
     assert x[0].fullname == "matplotlib.pyplot"
     assert x[0].name == "plt"
     src = "from matplotlib import pyplot as plt"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.ImportFrom)
-    x = list(_iter_imports(node))
+    x = list(_iter_imports_from_import(node))
     assert len(x) == 1
     assert x[0].fullname == "matplotlib.pyplot"
     assert x[0].name == "plt"
@@ -270,12 +270,12 @@ def test_create_attributes_from_property(get):
 
 def test_repr():
     e = Item("abc", Type(None), Text(None))
-    assert repr(e) == "Item(abc)"
+    assert repr(e) == "Item('abc')"
     src = "import matplotlib.pyplot as plt"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.Import)
-    x = list(_iter_imports(node))
-    assert repr(x[0]) == "Import(plt)"
+    x = list(_iter_imports_from_import(node))
+    assert repr(x[0]) == "Import('plt')"
 
 
 def test_create_bases():

@@ -58,20 +58,21 @@ class Page:
         self.objects.append(obj)
         self.levels.append(level)
         self.filters.append(filters)
-        return get_markdown(obj)
+        return get_markdown(obj, level)
 
     def convert_html(self, html: str) -> str:  # noqa: D102
         def replace(match: re.Match) -> str:
             index, html = match.groups()
-            return self._callback_html(int(index), html)
+            return self._callback_html(html, int(index))
 
         return re.sub(NODE_PATTERN, replace, html)
 
-    def _callback_html(self, index: int, html: str) -> str:
+    def _callback_html(self, html: str, index: int) -> str:
         obj = self.objects[index]
         level = self.levels[index]
         filters = self.filters[index]
-        return convert_html(obj, html, level, filters)
+        set_html(obj, html, level)
+        return renderers.render(obj, level, filters)
 
 
 object_paths: dict[str, Path] = {}
@@ -129,27 +130,27 @@ pattern = r"<!-- mkapi:begin\[(\d+)\] -->(.*?)<!-- mkapi:end -->"
 NODE_PATTERN = re.compile(pattern, re.MULTILINE | re.DOTALL)
 
 
-def get_markdown(obj: Object) -> str:
+def get_markdown(obj: Object, level: int) -> str:
     """Return a Markdown source."""
-    markdowns = []
+    if level:
+        fullname = obj.fullname.replace("_", "\\_")
+        markdowns = ["#" * level + f" {fullname} {{: #{fullname}}}"]
+    else:
+        markdowns = []
     for element in obj.doc.iter_elements():
-        markdowns.append(element.markdown)  # noqa: PERF401
+        markdowns.append(element.markdown)
     return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
 
-def convert_html(obj: Object, html: str, level: int, filters: list[str]) -> str:
-    """Convert HTML input."""
+def set_html(obj: Object, html: str, level: int) -> None:
+    """Set HTML input."""
     htmls = html.split("<!-- mkapi:sep -->")
+    if level:
+        htmls = htmls[1:]
     for element, html in zip(obj.doc.iter_elements(), htmls, strict=True):
         element.html = html.strip()
         if isinstance(element, Type):
             element.html = delete_ptags(element.html)
-        print("v" * 50)
-        print(element.markdown)
-        print("-" * 50)
-        print(element.html)
-        print("^" * 50)
-    return renderers.render(obj, level, filters)
 
 
 LINK_PATTERN = re.compile(r"\[(\S+?)\]\[(\S+?)\]")

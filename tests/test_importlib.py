@@ -1,29 +1,29 @@
 import ast
 import re
 
-import mkapi.ast
-import mkapi.importlib
-import mkapi.objects
 from mkapi.importlib import (
     LINK_PATTERN,
+    _iter_texts,
+    _iter_types,
     get_fullname,
+    get_member,
     get_object,
     get_source,
     is_dataclass,
     iter_base_classes,
     load_module,
     modules,
-    objects,
 )
-from mkapi.objects import Class, Function, iter_texts, iter_types
+from mkapi.items import Import
+from mkapi.objects import Class, Function, objects
 from mkapi.utils import get_by_name
 
 
 def test_module_not_found():
     assert load_module("xxx") is None
-    assert mkapi.importlib.modules["xxx"] is None
+    assert modules["xxx"] is None
     assert load_module("markdown")
-    assert "markdown" in mkapi.importlib.modules
+    assert "markdown" in modules
 
 
 def test_load_module_source():
@@ -54,8 +54,8 @@ def test_module_kind():
 
 
 def test_get_object():
-    mkapi.importlib.modules.clear()
-    mkapi.objects.objects.clear()
+    modules.clear()
+    objects.clear()
     module = load_module("mkapi.objects")
     c = get_object("mkapi.objects.Object")
     f = get_object("mkapi.objects.Module.__post_init__")
@@ -70,7 +70,7 @@ def test_get_object():
     m1 = load_module("mkdocs.structure.files")
     m2 = load_module("mkdocs.structure.files")
     assert m1 is m2
-    mkapi.importlib.modules.clear()
+    modules.clear()
     m3 = load_module("mkdocs.structure.files")
     m4 = load_module("mkdocs.structure.files")
     assert m2 is not m3
@@ -187,14 +187,14 @@ def test_iter_types():
     assert module
     cls = get_by_name(module.classes, "MkAPIConfig")
     assert cls
-    types = [ast.unparse(x.expr) for x in iter_types(module)]  # type: ignore
+    types = [ast.unparse(x.expr) for x in _iter_types(module)]  # type: ignore
     assert "BasePlugin[MkAPIConfig]" in types
 
 
 def test_set_markdown_objects():
     module = load_module("mkapi.objects")
     assert module
-    x = [t.markdown for t in iter_types(module)]
+    x = [t.markdown for t in _iter_types(module)]
     assert "[mkapi][__mkapi__.mkapi].objects" in x  # no link at last part.
     assert "[Class][__mkapi__.mkapi.objects.Class]" in x
     assert "list[[Raise][__mkapi__.mkapi.items.Raise]]" in x
@@ -203,14 +203,14 @@ def test_set_markdown_objects():
 def test_set_markdown_plugins():
     module = load_module("mkapi.plugins")
     assert module
-    x = [t.markdown for t in iter_types(module)]
+    x = [t.markdown for t in _iter_types(module)]
     assert "[MkDocsPage][__mkapi__.mkdocs.structure.pages.Page]" in x
 
 
 def test_set_markdown_mkdocs():
     module = load_module("mkdocs.plugins")
     assert module
-    x = [t.markdown for t in iter_types(module)]
+    x = [t.markdown for t in _iter_types(module)]
     link = (
         "[jinja2][__mkapi__.jinja2].[Environment]"
         "[__mkapi__.jinja2.environment.Environment]"
@@ -221,7 +221,7 @@ def test_set_markdown_mkdocs():
 def test_set_markdown_text():
     module = load_module("mkapi.importlib")
     assert module
-    x = [t.markdown for t in iter_texts(module)]
+    x = [t.markdown for t in _iter_texts(module)]
     for i in x:
         print(i)
     assert any("[Parameter][__mkapi__.mkapi.items.Parameter]" for i in x)
@@ -240,6 +240,21 @@ def test_attribute():
     # assert 0
 
 
-def test_get_object_attribute():
-    obj = get_object("polars.dataframe.frame.DataFrame.dtypes")
-    assert obj
+def test_fullname_polars():
+    module = load_module("polars.dataframe.frame")
+    assert module
+    # im = get_member(module, "DataType")
+    # assert im
+    # assert isinstance(im, Import)
+    # print(im.name, im.fullname)
+    # module = load_module("polars")
+    # assert module
+    # obj = get_member(module, "DataType")
+    # assert obj
+    # print(obj.fullname, type(obj))
+    # module = load_module("polars.datatypes")
+    # assert module
+    # obj = get_member(module, "DataType")
+    # assert obj
+    # print(obj.fullname, type(obj))
+    # assert 0

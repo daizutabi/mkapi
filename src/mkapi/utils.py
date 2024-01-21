@@ -1,6 +1,7 @@
 """Utility code."""
 from __future__ import annotations
 
+import ast
 import re
 from importlib.util import find_spec
 from pathlib import Path
@@ -67,6 +68,30 @@ def find_submodule_names(
     names = [name for name in iter_submodule_names(name) if predicate(name)]
     names.sort(key=lambda x: not is_package(x))
     return names
+
+
+module_node_sources: dict[str, tuple[ast.Module, str] | None] = {}
+
+
+def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
+    """Return a tuple of ([ast.Module], source) from a module name."""
+    if name in module_node_sources:
+        return module_node_sources[name]
+    if not (path := get_module_path(name)):
+        module_node_sources[name] = None
+        return None
+    with path.open("r", encoding="utf-8") as f:
+        source = f.read()
+    node = ast.parse(source)
+    module_node_sources[name] = node, source
+    return node, source
+
+
+def get_module_node(name: str) -> ast.Module | None:
+    """Return an [ast.Module] instance from a module name."""
+    if node_source := get_module_node_source(name):
+        return node_source[0]
+    return None
 
 
 def iter_parent_module_names(fullname: str, *, reverse: bool = False) -> Iterator[str]:

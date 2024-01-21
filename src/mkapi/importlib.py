@@ -11,27 +11,27 @@ from typing import TYPE_CHECKING
 import mkapi.ast
 import mkapi.docstrings
 from mkapi.ast import iter_identifiers
-from mkapi.items import Parameter, TypeKind
+from mkapi.items import Import, Parameter, TypeKind
 from mkapi.objects import (
     Class,
     Module,
     create_module,
-    iter_texts,
-    iter_types,
+    iter_objects,
     merge_items,
     objects,
 )
 from mkapi.utils import (
     del_by_name,
     get_by_name,
-    get_module_path,
+    get_module_node_source,
     iter_parent_module_names,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.objects import Attribute, Function, Import
+    from mkapi.items import Text, Type
+    from mkapi.objects import Attribute, Function
 
 modules: dict[str, Module | None] = {}
 
@@ -40,23 +40,14 @@ def load_module(name: str) -> Module | None:
     """Return a [Module] instance by the name."""
     if name in modules:
         return modules[name]
-    if not (path := get_module_path(name)):
+    if not (node_source := get_module_node_source(name)):
         modules[name] = None
         return None
-    with path.open("r", encoding="utf-8") as f:
-        source = f.read()
-    module = load_module_from_source(source, name)
-    module.kind = "package" if path.stem == "__init__" else "module"
-    modules[name] = module
-    _postprocess(module)
-    return module
-
-
-def load_module_from_source(source: str, name: str = "__mkapi__") -> Module:
-    """Return a [Module] instance from a source string."""
-    node = ast.parse(source)
+    node, source = node_source
     module = create_module(node, name)
     module.source = source
+    modules[name] = module
+    _postprocess(module)
     return module
 
 
@@ -88,13 +79,8 @@ def get_source(
     return None
 
 
-def get_member(
-    module: Module,
-    name: str,
-) -> Import | Class | Function | Attribute | None:
+def get_member(module: Module, name: str) -> Class | Function | Attribute | None:
     """Return a member instance by the name."""
-    if obj := get_by_name(module.imports, name):
-        return obj
     if obj := get_by_name(module.classes, name):
         return obj
     if obj := get_by_name(module.functions, name):
@@ -104,14 +90,25 @@ def get_member(
     return None
 
 
+# def get_fullname_from_import(import_: Import) -> str | None:
+#     fullname = import_.fullname
+#     if module := load_module(fullname):
+#         return fullname
+#     if "." in fullname:
+#         name, attr = fullname.rsplit(".", maxsplit=1)
+#         if module := load_module(name):
+#             return get_fullname(module, attr)
+#     return None
+
+
 def get_fullname(module: Module, name: str) -> str | None:
     """Return the fullname of an object in the module."""
     if obj := get_member(module, name):
         return obj.fullname
+    if import_ := get_by_name(module.imports, name):
+        return import_.fullname  # TODO: resolve without 'load_module'
     if "." in name:
         name_, attr = name.rsplit(".", maxsplit=1)
-        # if attr_ := get_by_name(module.attributes, name_):
-        #     return f"{module.name}.{attr_.name}"
         if import_ := get_by_name(module.imports, name_):  # noqa: SIM102
             if module_ := load_module(import_.fullname):  # noqa: SIM102
                 if fullname := get_fullname(module_, attr):
@@ -250,14 +247,24 @@ def set_markdown(module: Module) -> None:  # noqa: C901
             return link
         return match.group()
 
-    for type_ in iter_types(module):
+    for type_ in _iter_types(module):
         if type_.expr:
             get_link = partial(get_link_type, kind=type_.kind)
             type_.markdown = mkapi.ast.unparse(type_.expr, get_link)
 
-    for text in iter_texts(module):
+    for text in _iter_texts(module):
         if text.str:
             text.markdown = re.sub(LINK_PATTERN, get_link_text, text.str)
+
+
+def _iter_types(module: Module) -> Iterator[Type]:
+    for obj_ in iter_objects(module):
+        yield from obj_.doc.iter_types()
+
+
+def _iter_texts(module: Module) -> Iterator[Text]:
+    for obj_ in iter_objects(module):
+        yield from obj_.doc.iter_texts()
 
 
 # type Object = Module | Class | Function

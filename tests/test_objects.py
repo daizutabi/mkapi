@@ -7,6 +7,7 @@ import pytest
 
 from mkapi.ast import iter_child_nodes
 from mkapi.docstrings import Docstring
+from mkapi.importlib import get_object
 from mkapi.items import Assigns, Item, Parameters, Raises, Return, Returns, Section
 from mkapi.objects import (
     Class,
@@ -14,8 +15,8 @@ from mkapi.objects import (
     create_class,
     create_function,
     create_module,
-    # iter_items,
     iter_objects,
+    iter_objects_with_depth,
     merge_items,
     merge_parameters,
     merge_returns,
@@ -73,7 +74,7 @@ def test_create_function(get):
     assert len(func.returns) == 0
     assert len(func.raises) == 1
     assert len(func.doc.sections) == 4
-    assert repr(func) == "Function(module_level_function)"
+    assert repr(func) == "Function('module_level_function')"
 
 
 def test_create_class(get):
@@ -98,7 +99,7 @@ def test_create_class(get):
     assert isinstance(func, Function)
     assert func.qualname == "ExampleClass.__init__"
     assert func.fullname == "__mkapi__.ExampleClass.__init__"
-    assert repr(cls) == "Class(ExampleClass)"
+    assert repr(cls) == "Class('ExampleClass')"
 
 
 def test_create_module(google):
@@ -112,7 +113,7 @@ def test_create_module(google):
     func = get_by_name(cls.functions, "example_method")
     assert isinstance(func, Function)
     assert func.fullname == "google.ExampleClass.example_method"
-    assert repr(module) == "Module(google)"
+    assert repr(module) == "Module('google')"
 
 
 def test_fullname(google):
@@ -242,3 +243,41 @@ def test_iter_objects():
     x = list(iter_objects(module, 2))
     assert get_by_name(x, "DataFrame")
     assert get_by_name(x, "product")
+    # for x in iter_objects_with_depth(obj):
+    #     print(x, x[0].fullname)
+
+
+def test_get_object_attribute():
+    obj = get_object("polars.dataframe.frame.DataFrame.dtypes")
+    assert obj
+    name = "polars.datatypes.classes.IntegerType"
+    obj = get_object(name)
+    assert isinstance(obj, Class)
+    assert obj.fullname == name
+    func = get_by_name(obj.functions, "is_integer")
+    assert isinstance(func, Function)
+    assert func.fullname == "polars.datatypes.classes.DataType.is_integer"
+
+
+def test_kind():
+    obj = get_object("mkapi")
+    assert obj
+    assert obj.kind == "package"
+    obj = get_object("mkapi.objects")
+    assert obj
+    assert obj.kind == "module"
+    obj = get_object("mkapi.objects.Object")
+    assert obj
+    assert obj.kind == "class"
+    obj = get_object("mkapi.objects.create_function")
+    assert obj
+    assert obj.kind == "function"
+    obj = get_object("mkapi.objects.Object.__post_init__")
+    assert obj
+    assert obj.kind == "method"
+    obj = get_object("mkapi.objects.Object.kind")
+    assert obj
+    assert obj.kind == "property"
+    obj = get_object("mkapi.objects.Object.node")
+    assert obj
+    assert obj.kind == "attribute"

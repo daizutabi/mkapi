@@ -10,6 +10,8 @@ import mkapi.ast
 from mkapi.ast import is_property
 from mkapi.utils import (
     get_by_name,
+    get_module_node,
+    get_module_path,
     iter_parent_module_names,
     join_without_first_indent,
     unique_names,
@@ -19,7 +21,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from inspect import _ParameterKind
 
-    from mkapi.objects import Attribute
 
 TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
 
@@ -56,7 +57,7 @@ class Item:
     text: Text
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name})"
+        return f"{self.__class__.__name__}({self.name!r})"
 
 
 @dataclass(repr=False)
@@ -122,16 +123,15 @@ class Import:
     """Import class for [Module]."""
 
     name: str
-    fullname: str
+    fullname: str | None
     from_: str | None
     level: int
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name})"
+        return f"{self.__class__.__name__}({self.name!r})"
 
 
-def _iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
-    """Yield [Import] instances."""
+def _iter_imports_from_import(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
     for alias in node.names:
         if isinstance(node, ast.Import):
             if alias.asname:
@@ -146,11 +146,41 @@ def _iter_imports(node: ast.Import | ast.ImportFrom) -> Iterator[Import]:
             yield Import(name, fullname, from_, node.level)
 
 
-def iter_imports(node: ast.Module) -> Iterator[Import]:
-    """Yield [Import] instances."""
+def _iter_imports_from_module(node: ast.Module) -> Iterator[Import]:
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.Import | ast.ImportFrom):
-            yield from _iter_imports(child)
+            yield from _iter_imports_from_import(child)
+
+
+def _iter_imports(node: ast.Module, name: str) -> Iterator[Import]:
+    """Yield [Import] instances."""
+    names = name.split(".")
+    n = len(names)
+    for import_ in _iter_imports_from_module(node):
+        if import_.level:
+            prefix = ".".join(names[: n - import_.level + 1])
+            import_.fullname = f"{prefix}.{import_.fullname}"
+        yield import_
+
+
+def _get_fullname(fullname: str) -> str | None:
+    if get_module_path(fullname):
+        return fullname
+    if "." not in fullname:
+        return None
+    module, name = fullname.rsplit(".", maxsplit=1)
+    if not (node := get_module_node(module)):
+        return None
+    if import_ := get_by_name(_iter_imports(node, module), name):
+        return _get_fullname(import_.fullname)
+    return fullname
+
+
+def iter_imports(node: ast.Module, name: str) -> Iterator[Import]:
+    """Yield [Import] instances."""
+    for import_ in _iter_imports(node, name):
+        import_.fullname = _get_fullname(import_.fullname)
+        yield import_
 
 
 @dataclass(repr=False)
@@ -218,7 +248,7 @@ class Section(Item):
 
     def __repr__(self) -> str:
         if not self.items:
-            return f"{self.__class__.__name__}({self.name})"
+            return f"{self.__class__.__name__}({self.name!r})"
         args = ", ".join(item.name for item in self.items)
         return f"{self.__class__.__name__}({args})"
 
