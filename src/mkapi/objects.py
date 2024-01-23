@@ -23,7 +23,6 @@ from mkapi.items import (
     create_raises,
     iter_assigns,
     iter_bases,
-    iter_imports,
     iter_merged_items,
     iter_parameters,
     iter_raises,
@@ -34,7 +33,7 @@ from mkapi.utils import get_by_name, get_by_type, is_package
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.items import Base, Import, Parameter, Raise, Return
+    from mkapi.items import Base, Parameter, Raise, Return
 
 
 objects: dict[str, Module | Class | Function | None] = {}
@@ -199,7 +198,6 @@ class Module(Object):
     """Module class."""
 
     node: ast.Module
-    imports: list[Import]
     attributes: list[Attribute] = field(default_factory=list, init=False)
     classes: list[Class] = field(default_factory=list, init=False)
     functions: list[Function] = field(default_factory=list, init=False)
@@ -218,15 +216,7 @@ class Module(Object):
 def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
     """Return a [Module] instance from an [ast.Module] node."""
     doc = docstrings.parse(ast.get_docstring(node))
-    # imports = []
-    # for import_ in _iter_imports_from_module(node):
-    #     if import_.level:
-    #         names = name.split(".")
-    #         prefix = ".".join(name.split(".")[: len(names) - import_.level + 1])
-    #         import_.fullname = f"{prefix}.{import_.fullname}"
-    #     imports.append(import_)
-    imports = list(iter_imports(node, name))
-    module = Module(name, node, doc, imports, None)
+    module = Module(name, node, doc, None)
     for child in iter_assigns(node):
         module.attributes.append(create_attribute(child, module))
     for child in mkapi.ast.iter_child_nodes(node):
@@ -240,7 +230,7 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
 def _create_empty_module() -> Module:
     name = "__mkapi__"
     doc = Docstring("", Type(None), Text(None), [])
-    return Module(name, ast.Module(), doc, [], None)
+    return Module(name, ast.Module(), doc, None)
 
 
 def merge_parameters(obj: Class | Function) -> None:

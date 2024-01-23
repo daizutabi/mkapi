@@ -5,8 +5,6 @@ from mkapi.importlib import (
     LINK_PATTERN,
     _iter_texts,
     _iter_types,
-    get_fullname,
-    get_member,
     get_object,
     get_source,
     is_dataclass,
@@ -14,7 +12,6 @@ from mkapi.importlib import (
     load_module,
     modules,
 )
-from mkapi.items import Import
 from mkapi.objects import Class, Function, objects
 from mkapi.utils import get_by_name
 
@@ -83,29 +80,6 @@ def test_get_object_module():
     obj = get_object("mkapi.objects")
     module = load_module("mkapi.objects")
     assert obj is module
-
-
-def test_get_fullname():
-    module = load_module("mkapi.plugins")
-    assert module
-    name = "mkdocs.structure.pages.Page"
-    assert get_fullname(module, "MkDocsPage") == name
-    name = "mkdocs.config.config_options.Type"
-    assert get_fullname(module, "config_options.Type") == name
-    assert not get_fullname(module, "config_options.A")
-    module = load_module("mkdocs.plugins")
-    assert module
-    assert get_fullname(module, "jinja2") == "jinja2"
-    name = "jinja2.environment.Template"
-    assert get_fullname(module, "jinja2.Template") == name
-
-
-def test_get_fullname_self():
-    module = load_module("mkapi.objects")
-    assert module
-    assert get_fullname(module, "Object") == "mkapi.objects.Object"
-    assert get_fullname(module, "mkapi.objects") == "mkapi.objects"
-    assert get_fullname(module, "mkapi.objects.Object") == "mkapi.objects.Object"
 
 
 def test_iter_base_classes():
@@ -240,21 +214,13 @@ def test_attribute():
     # assert 0
 
 
-def test_fullname_polars():
-    module = load_module("polars.dataframe.frame")
-    assert module
-    # im = get_member(module, "DataType")
-    # assert im
-    # assert isinstance(im, Import)
-    # print(im.name, im.fullname)
-    # module = load_module("polars")
-    # assert module
-    # obj = get_member(module, "DataType")
-    # assert obj
-    # print(obj.fullname, type(obj))
-    # module = load_module("polars.datatypes")
-    # assert module
-    # obj = get_member(module, "DataType")
-    # assert obj
-    # print(obj.fullname, type(obj))
-    # assert 0
+def test_get_object_attribute():
+    obj = get_object("polars.dataframe.frame.DataFrame.dtypes")
+    assert obj
+    name = "polars.datatypes.classes.IntegerType"
+    obj = get_object(name)
+    assert isinstance(obj, Class)
+    assert obj.fullname == name
+    func = get_by_name(obj.functions, "is_integer")
+    assert isinstance(func, Function)
+    assert func.fullname == "polars.datatypes.classes.DataType.is_integer"

@@ -1,7 +1,6 @@
 """importlib module."""
 from __future__ import annotations
 
-import ast
 import importlib
 import inspect
 import re
@@ -11,7 +10,7 @@ from typing import TYPE_CHECKING
 import mkapi.ast
 import mkapi.docstrings
 from mkapi.ast import iter_identifiers
-from mkapi.items import Import, Parameter, TypeKind
+from mkapi.items import Parameter, TypeKind
 from mkapi.objects import (
     Class,
     Module,
@@ -28,6 +27,7 @@ from mkapi.utils import (
 )
 
 if TYPE_CHECKING:
+    import ast
     from collections.abc import Iterator
 
     from mkapi.items import Text, Type
@@ -76,45 +76,6 @@ def get_source(
     if (module := obj.module) and (source := module.source):
         start, stop = obj.node.lineno - 1, obj.node.end_lineno
         return "\n".join(source.split("\n")[start:stop][:maxline])
-    return None
-
-
-def get_member(module: Module, name: str) -> Class | Function | Attribute | None:
-    """Return a member instance by the name."""
-    if obj := get_by_name(module.classes, name):
-        return obj
-    if obj := get_by_name(module.functions, name):
-        return obj
-    if obj := get_by_name(module.attributes, name):
-        return obj
-    return None
-
-
-# def get_fullname_from_import(import_: Import) -> str | None:
-#     fullname = import_.fullname
-#     if module := load_module(fullname):
-#         return fullname
-#     if "." in fullname:
-#         name, attr = fullname.rsplit(".", maxsplit=1)
-#         if module := load_module(name):
-#             return get_fullname(module, attr)
-#     return None
-
-
-def get_fullname(module: Module, name: str) -> str | None:
-    """Return the fullname of an object in the module."""
-    if obj := get_member(module, name):
-        return obj.fullname
-    if import_ := get_by_name(module.imports, name):
-        return import_.fullname  # TODO: resolve without 'load_module'
-    if "." in name:
-        name_, attr = name.rsplit(".", maxsplit=1)
-        if import_ := get_by_name(module.imports, name_):  # noqa: SIM102
-            if module_ := load_module(import_.fullname):  # noqa: SIM102
-                if fullname := get_fullname(module_, attr):
-                    return fullname
-    if name.startswith(module.name):
-        return name
     return None
 
 
@@ -265,35 +226,3 @@ def _iter_types(module: Module) -> Iterator[Type]:
 def _iter_texts(module: Module) -> Iterator[Text]:
     for obj_ in iter_objects(module):
         yield from obj_.doc.iter_texts()
-
-
-# type Object = Module | Class | Function
-
-# def get_class(obj: Object, name: str) -> Class | None:
-#     """Return a [Class] instance by the name."""
-#     return get_by_name(obj.classes, name)
-
-
-# def get_function(obj: Object, name: str) -> Function | None:
-#     """Return a [Function] instance by the name."""
-#     return get_by_name(obj.functions, name)
-
-
-# def get_attribute(obj: Module | Class, name: str) -> Attribute | None:
-#     """Return an [Attribute] instance by the name."""
-#     return get_by_name(obj.attributes, name)
-
-
-# def get_parameter(obj: Class | Function, name: str) -> Parameter | None:
-#     """Return a [Parameter] instance by the name."""
-#     return get_by_name(obj.parameters, name)
-
-
-# def get_raise(obj: Class | Function, name: str) -> Raise | None:
-#     """Return a [Raise] instance by the name."""
-#     return get_by_name(obj.raises, name)
-
-
-# def get_import(obj: Module, name: str) -> Import | None:
-#     """Return an [Import] instance by the name."""
-#     return get_by_name(obj.imports, name)

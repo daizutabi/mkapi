@@ -1,5 +1,6 @@
 from mkapi.utils import (
     find_submodule_names,
+    get_module_node,
     get_module_path,
     is_package,
     iter_submodule_names,
@@ -31,3 +32,10 @@ def test_find_submodule_names():
     names = find_submodule_names("mkdocs", is_package)
     assert "mkdocs.structure" in names
     assert "mkdocs.plugins" not in names
+
+
+def test_get_module_node():
+    node1 = get_module_node("mkapi")
+    assert node1
+    node2 = get_module_node("mkapi")
+    assert node1 is node2

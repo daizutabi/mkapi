@@ -6,9 +6,7 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.docstrings import Docstring
 from mkapi.importlib import get_object
-from mkapi.items import Assigns, Item, Parameters, Raises, Return, Returns, Section
 from mkapi.objects import (
     Class,
     Function,
@@ -16,21 +14,19 @@ from mkapi.objects import (
     create_function,
     create_module,
     iter_objects,
-    iter_objects_with_depth,
     merge_items,
     merge_parameters,
     merge_returns,
     objects,
 )
-from mkapi.utils import get_by_name, get_module_path
+from mkapi.utils import get_by_name, get_module_node
 
-
-def load_module_node(name):
-    path = get_module_path(name)
-    assert path
-    with path.open("r", encoding="utf-8") as f:
-        source = f.read()
-    return ast.parse(source)
+# def load_module_node(name):
+#     path = get_module_path(name)
+#     assert path
+#     with path.open("r", encoding="utf-8") as f:
+#         source = f.read()
+#     return ast.parse(source)
 
 
 @pytest.fixture(scope="module")
@@ -38,7 +34,7 @@ def google():
     path = str(Path(__file__).parent.parent)
     if path not in sys.path:
         sys.path.insert(0, str(path))
-    return load_module_node("examples.styles.example_google")
+    return get_module_node("examples.styles.example_google")
 
 
 @pytest.fixture(scope="module")
@@ -125,23 +121,6 @@ def test_fullname(google):
     assert c.fullname == "examples.styles.google.ExampleClass"
     name = "examples.styles.google.ExampleClass.example_method"
     assert f.fullname == name
-
-
-def test_relative_import():
-    """# test module
-    from .c import d
-    from ..e import f
-    """
-    src = inspect.getdoc(test_relative_import)
-    assert src
-    node = ast.parse(src)
-    module = create_module(node, "x.y.z")
-    i = get_by_name(module.imports, "d")
-    assert i
-    assert i.fullname == "x.y.z.c.d"
-    i = get_by_name(module.imports, "f")
-    assert i
-    assert i.fullname == "x.y.e.f"
 
 
 def test_merge_items():
@@ -233,7 +212,8 @@ def test_iter():
 
 def test_iter_objects():
     name = "polars.dataframe.frame"
-    node = load_module_node(name)
+    node = get_module_node(name)
+    assert node
     module = create_module(node, name)
     x = list(iter_objects(module, 0))
     assert len(x) == 1
@@ -247,37 +227,28 @@ def test_iter_objects():
     #     print(x, x[0].fullname)
 
 
-def test_get_object_attribute():
-    obj = get_object("polars.dataframe.frame.DataFrame.dtypes")
-    assert obj
-    name = "polars.datatypes.classes.IntegerType"
-    obj = get_object(name)
-    assert isinstance(obj, Class)
-    assert obj.fullname == name
-    func = get_by_name(obj.functions, "is_integer")
-    assert isinstance(func, Function)
-    assert func.fullname == "polars.datatypes.classes.DataType.is_integer"
-
-
 def test_kind():
-    obj = get_object("mkapi")
-    assert obj
-    assert obj.kind == "package"
-    obj = get_object("mkapi.objects")
-    assert obj
-    assert obj.kind == "module"
-    obj = get_object("mkapi.objects.Object")
-    assert obj
-    assert obj.kind == "class"
-    obj = get_object("mkapi.objects.create_function")
-    assert obj
-    assert obj.kind == "function"
-    obj = get_object("mkapi.objects.Object.__post_init__")
-    assert obj
-    assert obj.kind == "method"
-    obj = get_object("mkapi.objects.Object.kind")
-    assert obj
-    assert obj.kind == "property"
-    obj = get_object("mkapi.objects.Object.node")
-    assert obj
-    assert obj.kind == "attribute"
+    node = get_module_node("mkapi")
+    assert node
+    module = create_module(node, "mkapi")
+    assert module.kind == "package"
+    node = get_module_node("mkapi.objects")
+    assert node
+    module = create_module(node, "mkapi.objects")
+    assert module
+    assert module.kind == "module"
+    cls = get_by_name(module.classes, "Object")
+    assert cls
+    assert cls.kind == "class"
+    func = get_by_name(module.functions, "create_function")
+    assert func
+    assert func.kind == "function"
+    method = get_by_name(cls.functions, "__post_init__")
+    assert method
+    assert method.kind == "method"
+    prop = get_by_name(cls.attributes, "kind")
+    assert prop
+    assert prop.kind == "property"
+    attr = get_by_name(cls.attributes, "node")
+    assert attr
+    assert attr.kind == "attribute"

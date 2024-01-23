@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import re
+from functools import cache
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -70,20 +71,14 @@ def find_submodule_names(
     return names
 
 
-module_node_sources: dict[str, tuple[ast.Module, str] | None] = {}
-
-
+@cache
 def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
     """Return a tuple of ([ast.Module], source) from a module name."""
-    if name in module_node_sources:
-        return module_node_sources[name]
     if not (path := get_module_path(name)):
-        module_node_sources[name] = None
         return None
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
     node = ast.parse(source)
-    module_node_sources[name] = node, source
     return node, source
 
 
