@@ -221,7 +221,7 @@ class Docstring(Item):
     sections: list[Section]
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(num_sections={len(self.sections)})"
+        return f"{self.__class__.__name__}(sections={len(self.sections)})"
 
     def __iter__(self) -> Iterator[Item]:
         yield self

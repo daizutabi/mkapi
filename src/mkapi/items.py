@@ -183,10 +183,7 @@ class Section(Item):
     items: list[Item]
 
     def __repr__(self) -> str:
-        if not self.items:
-            return f"{self.__class__.__name__}({self.name!r})"
-        args = ", ".join(item.name for item in self.items)
-        return f"{self.__class__.__name__}({args})"
+        return f"{self.__class__.__name__}(items={len(self.items)})"
 
     def __iter__(self) -> Iterator[Item]:
         return iter(self.items)

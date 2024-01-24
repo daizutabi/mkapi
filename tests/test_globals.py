@@ -1,15 +1,19 @@
 import ast
 import inspect
+import re
 
 import pytest
 
 from mkapi.globals import (
+    LINK_PATTERN,
     Global,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
     _resolve,
     get_fullname,
     get_globals,
+    get_link_from_text,
+    get_link_from_type,
 )
 from mkapi.objects import create_module
 from mkapi.utils import get_by_name, get_module_node
@@ -120,7 +124,54 @@ def test_get_fullname():
     assert x == "jinja2.environment.Template"
     x = get_fullname("mkapi.objects", "Object")
     assert x == "mkapi.objects.Object"
-    x = get_fullname("mkapi.objects", "Object")
+    x = get_fullname("mkapi.objects", "mkapi.objects")
+    assert x == "mkapi.objects"
+    x = get_fullname("mkapi.objects", "mkapi.objects.Object")
     assert x == "mkapi.objects.Object"
     x = get_fullname("polars.dataframe.frame", "DataType")
     assert x == "polars.datatypes.classes.DataType"
+
+
+def test_link_pattern():
+    def f(m: re.Match) -> str:
+        name = m.group(1)
+        if name == "abc":
+            return f"[{name}][_{name}]"
+        return m.group()
+
+    assert re.search(LINK_PATTERN, "X[abc]Y")
+    assert not re.search(LINK_PATTERN, "X[ab c]Y")
+    assert re.search(LINK_PATTERN, "X[abc][]Y")
+    assert not re.search(LINK_PATTERN, "X[abc](xyz)Y")
+    assert not re.search(LINK_PATTERN, "X[abc][xyz]Y")
+    assert re.sub(LINK_PATTERN, f, "X[abc]Y") == "X[abc][_abc]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc[abc]]Y") == "X[abc[abc][_abc]]Y"
+    assert re.sub(LINK_PATTERN, f, "X[ab]Y") == "X[ab]Y"
+    assert re.sub(LINK_PATTERN, f, "X[ab c]Y") == "X[ab c]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc] c]Y") == "X[abc][_abc] c]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc][]Y") == "X[abc][_abc]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc](xyz)Y") == "X[abc](xyz)Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc][xyz]Y") == "X[abc][xyz]Y"
+
+
+def test_get_link_from_type():
+    x = get_link_from_type("mkapi.objects", "Object")
+    assert x == "[Object][__mkapi__.mkapi.objects.Object]"
+    x = get_link_from_type("mkapi.objects", "Object.__repr__")
+    assert ".[__repr__][__mkapi__.mkapi.objects.Object.__repr__]" in x
+    x = get_link_from_type("mkapi.plugins", "MkDocsPage")
+    assert x == "[MkDocsPage][__mkapi__.mkdocs.structure.pages.Page]"
+    x = get_link_from_type("mkdocs.plugins", "jinja2.Template")
+    assert "[jinja2][__mkapi__.jinja2]." in x
+    assert "[Template][__mkapi__.jinja2.environment.Template]" in x
+    x = get_link_from_type("polars", "DataFrame")
+    assert x == "[DataFrame][__mkapi__.polars.dataframe.frame.DataFrame]"
+    assert get_link_from_type("mkapi.objects", "str") == "str"
+    assert get_link_from_type("mkapi.objects", "None") == "None"
+    x = get_link_from_type("mkapi.objects", "mkapi.objects", is_object=True)
+    assert x == "[mkapi][__mkapi__.mkapi].objects"
+
+
+def test_get_link_from_text():
+    x = get_link_from_text("mkapi.objects", "# title\n[Object]")
+    assert x == "# title\n[Object][__mkapi__.mkapi.objects.Object]"

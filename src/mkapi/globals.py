@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from dataclasses import dataclass
 from functools import cache
 from typing import TYPE_CHECKING
@@ -114,8 +115,8 @@ def _iter_globals(module: str) -> Iterator[Global | Import]:
         yield Global(name[n:], name)
     for import_ in _iter_imports(module):
         name = import_.name[n:]
-        fullname = _resolve(import_.fullname) or import_.fullname
-        yield Import(name, fullname)
+        if fullname := _resolve(import_.fullname):
+            yield Import(name, fullname)
 
 
 @cache
@@ -127,6 +128,8 @@ def get_globals(module: str) -> Globals:
 @cache
 def get_fullname(module: str, name: str) -> str | None:
     """Return the fullname of an object in the module."""
+    if name.startswith(module):
+        return name
     names = get_globals(module).names
     if global_ := get_by_name(names, name):
         return global_.fullname
@@ -141,110 +144,35 @@ def get_fullname(module: str, name: str) -> str | None:
     return None
 
 
-# def get_member(module: Module, name: str) -> Class | Function | Attribute | None:
-#     """Return a member instance by the name."""
-#     if obj := get_by_name(module.classes, name):
-#         return obj
-#     if obj := get_by_name(module.functions, name):
-#         return obj
-#     if obj := get_by_name(module.attributes, name):
-#         return obj
-#     return None
+def _get_link(module: str, name: str, asname: str) -> str:
+    fullname = get_fullname(module, name)
+    return f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
 
 
-# def get_fullname_from_import(import_: Import) -> str | None:
-#     fullname = import_.fullname
-#     if module := load_module(fullname):
-#         return fullname
-#     if "." in fullname:
-#         name, attr = fullname.rsplit(".", maxsplit=1)
-#         if module := load_module(name):
-#             return get_fullname(module, attr)
-#     return None
+def get_link_from_type(module: str, name: str, *, is_object: bool = False) -> str:
+    """Return markdown links from type."""
+    names = []
+    parents = iter_parent_module_names(name)
+    asnames = name.split(".")
+    for k, (name_, asname) in enumerate(zip(parents, asnames, strict=True)):
+        if is_object and k == len(asnames) - 1:
+            names.append(asname)
+        else:
+            names.append(_get_link(module, name_, asname))
+    return ".".join(names)
 
 
-# def get_fullname(module: Module, name: str) -> str | None:
-#     """Return the fullname of an object in the module."""
-#     if obj := get_member(module, name):
-#         return obj.fullname
-#     if import_ := get_by_name(module.imports, name):
-#         return import_.fullname  # TODO: resolve without 'load_module'
-#     if "." in name:
-#         name_, attr = name.rsplit(".", maxsplit=1)
-#         if import_ := get_by_name(module.imports, name_):  # noqa: SIM102
-#             if module_ := load_module(import_.fullname):  # noqa: SIM102
-#                 if fullname := get_fullname(module_, attr):
-#                     return fullname
-#     if name.startswith(module.name):
-#         return name
-#     return None
+LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
 
 
-# @dataclass(repr=False)
-# class Import:
-#     """Import class for [Module]."""
+def get_link_from_text(module: str, text: str) -> str:
+    """Return markdown links from text."""
 
-#     name: str
-#     fullname: str | None
-#     # from_: str | None
-#     # level: int
+    def replace(match: re.Match) -> str:
+        name = match.group(1)
+        link = get_link_from_type(module, name)
+        if name != link:
+            return link
+        return match.group()
 
-#     def __repr__(self) -> str:
-#         return f"{self.__class__.__name__}({self.name!r})"
-
-
-# def _iter_imports_from_import(
-#     node: ast.Import | ast.ImportFrom,
-# ) -> Iterator[tuple[str, str, int]]:
-#     for alias in node.names:
-#         if isinstance(node, ast.Import):
-#             if alias.asname:
-#                 yield alias.asname, alias.name, 0
-#             else:
-#                 for fullname in iter_parent_module_names(alias.name):
-#                     yield fullname, fullname, 0
-#         else:
-#             name = alias.asname or alias.name
-#             fullname = f"{node.module}.{alias.name}"
-#             yield name, fullname, node.level
-
-
-# def _iter_imports_from_module(node: ast.Module) -> Iterator[tuple[str, str, int]]:
-#     for child in mkapi.ast.iter_child_nodes(node):
-#         if isinstance(child, ast.Import | ast.ImportFrom):
-#             yield from _iter_imports_from_import(child)
-
-
-# def _iter_imports_relative(node: ast.Module, name: str) -> Iterator[tuple[str, str]]:
-#     """Yield [Import] instances."""
-#     names = name.split(".")
-#     n = len(names)
-#     for name_, fullname, level in _iter_imports_from_module(node):
-#         if level:
-#             prefix = ".".join(names[: n - level + 1])
-#             yield name_, f"{prefix}.{fullname}"
-#         else:
-#             yield name_, fullname
-
-
-# def _get_fullname(fullname: str) -> str | None:
-#     if get_module_path(fullname):
-#         return fullname
-#     if "." not in fullname:
-#         return None
-#     module, name = fullname.rsplit(".", maxsplit=1)
-#     if not (node := get_module_node(module)):
-#         return None
-#     print("AA", module)
-#     for name_, fullname_ in _iter_imports_relative(node, module):
-#         print("BB", name_, fullname_)
-#         if name_ == name:
-#             return _get_fullname(fullname_)
-#     return fullname
-
-
-# def iter_imports(node: ast.Module, name: str) -> Iterator[Import]:
-#     """Yield [Import] instances."""
-#     for name_, fullname in _iter_imports_relative(node, name):
-#         # yield Import(name_, _get_fullname(fullname))
-#         yield Import(name_, fullname)
+    return re.sub(LINK_PATTERN, replace, text)

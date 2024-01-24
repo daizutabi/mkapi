@@ -1,5 +1,6 @@
 import ast
 import inspect
+import re
 import sys
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import pytest
 
 from mkapi.ast import iter_child_nodes
 from mkapi.objects import (
+    LINK_PATTERN,
     Class,
     Function,
     create_class,
@@ -237,7 +239,7 @@ def test_iter_objects_type_text():
     module = create_module(node, name)
     assert module
     for obj in iter_objects(module):
-        print(obj, obj.doc.type)
-        for x in obj.doc:
-            print(x, x.type)
+        print("---", obj, "-------------")
+        for x in obj.doc.iter_types():
+            print(x)
     assert 0

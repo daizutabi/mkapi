@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import ast
+import re
 from dataclasses import dataclass, field
+from functools import partial
 from typing import TYPE_CHECKING
 
 import mkapi.ast
 from mkapi import docstrings
-from mkapi.docstrings import Docstring
+from mkapi.docstrings import Docstring, Section
 from mkapi.items import (
     Assign,
     Assigns,
@@ -18,7 +20,6 @@ from mkapi.items import (
     Text,
     Type,
     TypeKind,
-    create_assigns,
     create_parameters,
     create_raises,
     iter_assigns,
@@ -28,10 +29,10 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import get_by_name, get_by_type, is_package
+from mkapi.utils import get_by_name, get_by_type, is_package, iter_parent_module_names
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
 
     from mkapi.items import Base, Parameter, Raise, Return
 
@@ -41,7 +42,7 @@ objects: dict[str, Module | Class | Function | Attribute | None] = {}
 
 @dataclass
 class Object:
-    """Object class for module, class, or function."""
+    """Object class."""
 
     name: str
     node: ast.AST | None
@@ -68,7 +69,7 @@ class Object:
 
 @dataclass(repr=False)
 class Member(Object):
-    """Member class of module or class."""
+    """Member class."""
 
     module: Module
     parent: Callable | None
@@ -83,9 +84,10 @@ class Member(Object):
 
 
 @dataclass(repr=False)
-class Attribute(Assign, Member):
+class Attribute(Member):
     """Attribute class."""
 
+    type: Type
     default: ast.expr | None
 
     @property
@@ -107,13 +109,7 @@ def create_attribute(
         doc = docstrings.parse(assign.node.__doc__)
     else:
         doc = Docstring("", Type(None), Text(None), [])
-    if doc.text.str:
-        text = doc.text
-    elif doc.sections and doc.sections[0].name == "":
-        text = doc.sections[0].text
-    else:
-        text = assign.text
-    return Attribute(name, node, doc, module, parent, type_, text, default)
+    return Attribute(name, node, doc, module, parent, type_, default)
 
 
 @dataclass(repr=False)
@@ -246,14 +242,31 @@ def merge_parameters(obj: Class | Function) -> None:
     section.items = list(iter_merged_items(obj.parameters, section.items))
 
 
+@dataclass(repr=False)
+class Attributes(Section):
+    """Attributes section."""
+
+    items: list[Attribute]
+
+
+def create_attributes(items: Iterable[Attribute]) -> Attributes:
+    """Return an Attributes section."""
+    return Attributes("Attributes", Type(None), Text(None), list(items))
+
+
 def merge_attributes(obj: Module | Class) -> None:
     """Merge attributes."""
-    section = get_by_type(obj.doc.sections, Assigns)
-    if not section:
+    if section := get_by_type(obj.doc.sections, Assigns):
+        index = obj.doc.sections.index(section)
+        module = obj if isinstance(obj, Module) else obj.module
+        parent = obj if isinstance(obj, Class) else None
+        attrs = (create_attribute(assign, module, parent) for assign in section.items)
+        section = create_attributes(attrs)
+        obj.doc.sections[index] = section
+    else:
         if not obj.attributes:
             return
-        # TODO: create_assigns -> create_attributes
-        section = create_assigns([])
+        section = create_attributes([])
         obj.doc.sections.append(section)
     section.items = list(iter_merged_items(obj.attributes, section.items))
 
@@ -335,3 +348,56 @@ def iter_objects(
     """Yield [Object] instances."""
     for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
         yield obj_
+
+
+LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
+
+
+def set_markdown(module: Module) -> None:  # noqa: C901
+    """Set markdown with link form."""
+    cache: dict[str, str] = {}
+
+    def _get_link_type(name: str, asname: str) -> str:
+        if name in cache:
+            return cache[name]
+        fullname = get_fullname(module, name)
+        link = f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
+        cache[name] = link
+        return link
+
+    def get_link_type(name: str, kind: TypeKind = TypeKind.REFERENCE) -> str:
+        names = []
+        parents = iter_parent_module_names(name)
+        asnames = name.split(".")
+        for k, (name_, asname) in enumerate(zip(parents, asnames, strict=True)):
+            if kind is TypeKind.OBJECT and k == len(asnames) - 1:
+                names.append(asname)
+            else:
+                names.append(_get_link_type(name_, asname))
+        return ".".join(names)
+
+    def get_link_text(match: re.Match) -> str:
+        name = match.group(1)
+        link = get_link_type(name)
+        if name != link:
+            return link
+        return match.group()
+
+    for type_ in _iter_types(module):
+        if type_.expr:
+            get_link = partial(get_link_type, kind=type_.kind)
+            type_.markdown = mkapi.ast.unparse(type_.expr, get_link)
+
+    for text in _iter_texts(module):
+        if text.str:
+            text.markdown = re.sub(LINK_PATTERN, get_link_text, text.str)
+
+
+def _iter_types(module: Module) -> Iterator[Type]:
+    for obj_ in iter_objects(module):
+        yield from obj_.doc.iter_types()
+
+
+def _iter_texts(module: Module) -> Iterator[Text]:
+    for obj_ in iter_objects(module):
+        yield from obj_.doc.iter_texts()
