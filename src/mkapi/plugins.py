@@ -15,8 +15,7 @@ from typing import TYPE_CHECKING
 
 import yaml
 from halo import Halo
-from mkdocs.config import config_options
-from mkdocs.config.base import Config
+from mkdocs.config import Config, config_options
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import Files, get_files
@@ -60,7 +59,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     nav: list | None = None
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
-        _insert_sys_path(self.config)
+        _insert_sys_path(config, self)
         _update_templates(config, self)
         _update_config(config, self)
         for name in ["admonition", "attr_list"]:
@@ -144,9 +143,9 @@ def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
     return None
 
 
-def _insert_sys_path(config: MkAPIConfig) -> None:
+def _insert_sys_path(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     config_dir = Path(config.config_file_path).parent
-    for src_dir in config.src_dirs:
+    for src_dir in plugin.config.src_dirs:
         path = os.path.normpath(config_dir / src_dir)
         if path not in sys.path:
             sys.path.insert(0, path)

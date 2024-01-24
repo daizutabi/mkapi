@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from mkapi.items import Base, Parameter, Raise, Return
 
 
-objects: dict[str, Module | Class | Function | None] = {}
+objects: dict[str, Module | Class | Function | Attribute | None] = {}
 
 
 @dataclass
@@ -58,7 +58,7 @@ class Object:
         objects[self.fullname] = self  # type:ignore
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r})"
+        return f"{self.kind.title()}({self.name!r})"
 
     @property
     def kind(self) -> str:
@@ -224,6 +224,7 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
             module.classes.append(create_class(child, module))
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
             module.functions.append(create_function(child, module))
+    merge_items(module)
     return module
 
 
@@ -312,7 +313,7 @@ def iter_objects_with_depth(
     maxdepth: int = -1,
     depth: int = 0,
 ) -> Iterator[tuple[Module | Class | Function | Attribute, int]]:
-    """Yield [Class] or [Function] instances and depth."""
+    """Yield [Object] instances and depth."""
     yield obj, depth
     if depth == maxdepth or isinstance(obj, Attribute):
         return
@@ -330,13 +331,7 @@ def iter_objects_with_depth(
 def iter_objects(
     obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
-) -> Iterator[Module | Attribute | Class | Function]:
-    """Yield [Class] or [Function] instances."""
+) -> Iterator[Module | Class | Function | Attribute]:
+    """Yield [Object] instances."""
     for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
         yield obj_
-
-
-# def iter_items(obj: Module | Class | Function) -> Iterator[Item]:
-#     """Yield [Item] instances."""
-#     for obj_ in iter_objects(obj):
-#         yield from obj_.doc

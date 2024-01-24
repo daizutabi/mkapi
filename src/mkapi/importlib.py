@@ -16,7 +16,7 @@ from mkapi.objects import (
     Module,
     create_module,
     iter_objects,
-    merge_items,
+    # merge_items,
     objects,
 )
 from mkapi.utils import (
@@ -53,7 +53,7 @@ def load_module(name: str) -> Module | None:
 
 def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     """Return an [Object] instance by the fullname."""
-    if fullname in modules:
+    if fullname in modules:  # can delete?
         return modules[fullname]
     if fullname in objects:
         return objects[fullname]
@@ -81,7 +81,7 @@ def get_source(
 
 def _postprocess(obj: Module | Class) -> None:
     if isinstance(obj, Module):
-        merge_items(obj)
+        # merge_items(obj)
         set_markdown(obj)
     if isinstance(obj, Class):
         _postprocess_class(obj)

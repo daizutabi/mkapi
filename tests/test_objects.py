@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.importlib import get_object
 from mkapi.objects import (
     Class,
     Function,
@@ -15,18 +14,9 @@ from mkapi.objects import (
     create_module,
     iter_objects,
     merge_items,
-    merge_parameters,
-    merge_returns,
     objects,
 )
 from mkapi.utils import get_by_name, get_module_node
-
-# def load_module_node(name):
-#     path = get_module_path(name)
-#     assert path
-#     with path.open("r", encoding="utf-8") as f:
-#         source = f.read()
-#     return ast.parse(source)
 
 
 @pytest.fixture(scope="module")
@@ -123,110 +113,6 @@ def test_fullname(google):
     assert f.fullname == name
 
 
-def test_merge_items():
-    """'''test'''
-    def f(x: int=0, y: str='s')->bool:
-        '''function.
-
-        Args:
-            x: parameter x.
-            z: parameter z.
-
-        Returns:
-            Return True.'''
-    """
-    src = inspect.getdoc(test_merge_items)
-    assert src
-    node = ast.parse(src)
-    module = create_module(node, "x")
-    func = get_by_name(module.functions, "f")
-    assert func
-    merge_parameters(func)
-    assert get_by_name(func.parameters, "x")
-    assert get_by_name(func.parameters, "y")
-    assert not get_by_name(func.parameters, "z")
-    items = func.doc.get("Parameters").items  # type: ignore
-    assert get_by_name(items, "x")
-    assert get_by_name(items, "y")
-    assert get_by_name(items, "z")
-    assert [item.name for item in items] == ["x", "y", "z"]
-    merge_returns(func)
-    assert func.returns[0].type
-    assert func.returns[0].text.str == "Return True."
-    item = func.doc.get("Returns").items[0]  # type: ignore
-    assert item.type.expr.id == "bool"  # type: ignore
-
-
-def test_iter():
-    """'''test module.'''
-    m: str
-    n = 1
-    '''int: attribute n.'''
-    class A(D):
-        '''class.
-
-        Attributes:
-            a: attribute a.
-        '''
-        a: int
-        def f(x: int, y: str) -> list[str]:
-            '''function.'''
-            class B(E,F.G):
-                c: list
-            raise ValueError
-    """
-    src = inspect.getdoc(test_iter)
-    assert src
-    node = ast.parse(src)
-    module = create_module(node, "x")
-    cls = get_by_name(module.classes, "A")
-    assert cls
-    func = get_by_name(cls.functions, "f")
-    assert func
-    cls = get_by_name(func.classes, "B")
-    assert cls
-    assert cls.fullname == "x.A.f.B"
-    objs = iter_objects(module)
-    assert next(objs).name == "x"
-    assert next(objs).name == "m"
-    assert next(objs).name == "n"
-    assert next(objs).name == "A"
-    assert next(objs).name == "a"
-    assert next(objs).name == "f"
-    merge_items(module)
-    # items = list(iter_items(module))
-    # for x in "mnaxyc":
-    #     assert get_by_name(items, x)
-    # for x in ["x.A.f.B", "x.A.f", "F.G"]:
-    #     assert get_by_name(items, x)
-    # assert get_by_name(items, "ValueError")
-    # assert any(isinstance(x, Return) for x in items)
-    # assert any(isinstance(x, Docstring) for x in items)
-    # assert any(isinstance(x, Item) for x in items)
-    # assert any(isinstance(x, Section) for x in items)
-    # assert any(isinstance(x, Parameters) for x in items)
-    # assert any(isinstance(x, Assigns) for x in items)
-    # assert any(isinstance(x, Raises) for x in items)
-    # assert any(isinstance(x, Returns) for x in items)
-
-
-def test_iter_objects():
-    name = "polars.dataframe.frame"
-    node = get_module_node(name)
-    assert node
-    module = create_module(node, name)
-    x = list(iter_objects(module, 0))
-    assert len(x) == 1
-    x = list(iter_objects(module, 1))
-    assert get_by_name(x, "DataFrame")
-    assert not get_by_name(x, "product")
-    x = list(iter_objects(module, 2))
-    assert get_by_name(x, "DataFrame")
-    assert get_by_name(x, "product")
-    # for x in iter_objects_with_depth(obj):
-    #     print(x, x[0].fullname)
-
-
 def test_kind():
     node = get_module_node("mkapi")
     assert node
@@ -252,3 +138,106 @@ def test_kind():
     attr = get_by_name(cls.attributes, "node")
     assert attr
     assert attr.kind == "attribute"
+
+
+def test_merge_items():
+    """'''test'''
+    def f(x: int = 0, y: str = 's') -> bool:
+        '''function.
+
+        Args:
+            x: parameter x.
+            z: parameter z.
+
+        Returns:
+            Return True.'''
+    """
+    src = inspect.getdoc(test_merge_items)
+    assert src
+    node = ast.parse(src)
+    module = create_module(node, "x")
+    func = get_by_name(module.functions, "f")
+    assert func
+    # merge_parameters(func)
+    assert get_by_name(func.parameters, "x")
+    assert get_by_name(func.parameters, "y")
+    assert not get_by_name(func.parameters, "z")
+    items = func.doc.get("Parameters").items  # type: ignore
+    assert get_by_name(items, "x")
+    assert get_by_name(items, "y")
+    assert get_by_name(items, "z")
+    assert [item.name for item in items] == ["x", "y", "z"]
+    # merge_returns(func)
+    assert func.returns[0].type
+    assert func.returns[0].text.str == "Return True."
+    item = func.doc.get("Returns").items[0]  # type: ignore
+    assert item.type.expr.id == "bool"  # type: ignore
+
+
+def test_iter_objects():
+    """'''test module.'''
+    m: str
+    n = 1
+    '''int: attribute n.'''
+    class A(D):
+        '''class.
+
+        Attributes:
+            a: attribute a.
+        '''
+        a: int
+        def f(x: int, y: str) -> list[str]:
+            '''function.'''
+            class B(E,F.G):
+                c: list
+            raise ValueError
+    """
+    src = inspect.getdoc(test_iter_objects)
+    assert src
+    node = ast.parse(src)
+    module = create_module(node, "x")
+    cls = get_by_name(module.classes, "A")
+    assert cls
+    func = get_by_name(cls.functions, "f")
+    assert func
+    cls = get_by_name(func.classes, "B")
+    assert cls
+    assert cls.fullname == "x.A.f.B"
+    objs = iter_objects(module)
+    assert next(objs).name == "x"
+    assert next(objs).name == "m"
+    assert next(objs).name == "n"
+    assert next(objs).name == "A"
+    assert next(objs).name == "a"
+    assert next(objs).name == "f"
+    merge_items(module)
+
+
+def test_iter_objects_polars():
+    name = "polars.dataframe.frame"
+    node = get_module_node(name)
+    assert node
+    module = create_module(node, name)
+    x = list(iter_objects(module, 0))
+    assert len(x) == 1
+    x = list(iter_objects(module, 1))
+    assert get_by_name(x, "DataFrame")
+    assert not get_by_name(x, "product")
+    x = list(iter_objects(module, 2))
+    assert get_by_name(x, "DataFrame")
+    assert get_by_name(x, "product")
+    # for x in iter_objects_with_depth(obj):
+    #     print(x, x[0].fullname)
+
+
+def test_iter_objects_type_text():
+    name = "mkapi.plugins"
+    node = get_module_node(name)
+    assert node
+    module = create_module(node, name)
+    assert module
+    for obj in iter_objects(module):
+        print(obj, obj.doc.type)
+        for x in obj.doc:
+            print(x, x.type)
+    assert 0

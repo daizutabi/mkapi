@@ -3,49 +3,65 @@
 from __future__ import annotations
 
 import ast
+from dataclasses import dataclass
 from functools import cache
 from typing import TYPE_CHECKING
 
 import mkapi.ast
-from mkapi.utils import get_module_node, get_module_path, iter_parent_module_names
+from mkapi.utils import (
+    get_by_name,
+    get_module_node,
+    get_module_path,
+    iter_parent_module_names,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-@cache
-def _get_objects(name: str) -> list[str]:
-    return list(_iter_objects(name))
+@dataclass(repr=False)
+class Name:
+    """Import class for [Module]."""
+
+    name: str
+    fullname: str
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r})"
 
 
-@cache
-def _get_imports(name: str) -> list[tuple[str, str]]:
-    return list(_iter_imports(name))
+@dataclass(repr=False)
+class Import(Name):
+    """Import class for [Module]."""
 
 
-def _iter_objects(name: str) -> Iterator[str]:
-    yield name
-    if not (node := get_module_node(name)):
+@dataclass(repr=False)
+class Global(Name):
+    """Import class for [Module]."""
+
+
+def _iter_objects(module: str) -> Iterator[str]:
+    if not (node := get_module_node(module)):
         return
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
-            yield f"{name}.{child.name}"
+            yield f"{module}.{child.name}"
         elif isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):  # noqa: SIM102
             if assign_name := mkapi.ast.get_assign_name(child):  # noqa: SIM102
                 if not assign_name.startswith("__"):
-                    yield f"{name}.{assign_name}"
+                    yield f"{module}.{assign_name}"
 
 
-def _iter_imports(name: str) -> Iterator[tuple[str, str]]:
-    if not (node := get_module_node(name)):
+def _iter_imports(module: str) -> Iterator[Import]:
+    if not (node := get_module_node(module)):
         return
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.Import):
-            for name_, fullname in _iter_imports_from_import(child):
-                yield f"{name}.{name_}", fullname
+            for name, fullname in _iter_imports_from_import(child):
+                yield Import(f"{module}.{name}", fullname)
         elif isinstance(child, ast.ImportFrom):
-            for name_, fullname in _iter_imports_from_import_from(child, name):
-                yield f"{name}.{name_}", fullname
+            for name, fullname in _iter_imports_from_import_from(child, module):
+                yield Import(f"{module}.{name}", fullname)
 
 
 def _iter_imports_from_import(node: ast.Import) -> Iterator[tuple[str, str]]:
@@ -53,8 +69,8 @@ def _iter_imports_from_import(node: ast.Import) -> Iterator[tuple[str, str]]:
         if alias.asname:
             yield alias.asname, alias.name
         else:
-            for name in iter_parent_module_names(alias.name):
-                yield name, name
+            for module_name in iter_parent_module_names(alias.name):
+                yield module_name, module_name
 
 
 def _iter_imports_from_import_from(
@@ -73,31 +89,56 @@ def _iter_imports_from_import_from(
         yield alias.asname or alias.name, f"{module}.{alias.name}"
 
 
+@cache
 def _resolve(name: str) -> str | None:
     if get_module_path(name) or "." not in name:
         return name
     module, _ = name.rsplit(".", maxsplit=1)
-    if name in _get_objects(module):
+    if name in _iter_objects(module):
         return name
-    for name_, fullname in _get_imports(module):
-        if name_ == name:
-            return _resolve(fullname)
+    if import_ := get_by_name(_iter_imports(module), name):
+        return _resolve(import_.fullname)
     return None
 
 
+@dataclass(repr=False)
+class Globals:
+    """Globals class."""
+
+    names: list[Import | Global]
+
+
+def _iter_globals(module: str) -> Iterator[Global | Import]:
+    n = len(module) + 1
+    for name in _iter_objects(module):
+        yield Global(name[n:], name)
+    for import_ in _iter_imports(module):
+        name = import_.name[n:]
+        fullname = _resolve(import_.fullname) or import_.fullname
+        yield Import(name, fullname)
+
+
 @cache
-def get_globals(name: str) -> list[tuple[str, str]]:
-    """Return a global dictionary of a module."""
-    return list(_iter_globals(name))
+def get_globals(module: str) -> Globals:
+    """Return a global list of a module."""
+    return Globals(list(_iter_globals(module)))
 
 
-def _iter_globals(name: str) -> Iterator[tuple[str, str]]:
-    n = len(name) + 1
-    for name_ in _iter_objects(name):
-        if name_ != name:
-            yield name_[n:], name_[n:]
-    for name_, fullname in _iter_imports(name):
-        yield name_[n:], _resolve(fullname) or fullname
+@cache
+def get_fullname(module: str, name: str) -> str | None:
+    """Return the fullname of an object in the module."""
+    names = get_globals(module).names
+    if global_ := get_by_name(names, name):
+        return global_.fullname
+    if "." not in name:
+        return None
+    name, attr = name.rsplit(".", maxsplit=1)
+    global_ = get_by_name(names, name)
+    if isinstance(global_, Global):
+        return f"{global_.fullname}.{attr}"
+    if isinstance(global_, Import):
+        return _resolve(f"{global_.fullname}.{attr}")
+    return None
 
 
 # def get_member(module: Module, name: str) -> Class | Function | Attribute | None:

@@ -10,9 +10,6 @@ import mkapi.ast
 from mkapi.ast import is_property
 from mkapi.utils import (
     get_by_name,
-    get_module_node,
-    get_module_path,
-    iter_parent_module_names,
     join_without_first_indent,
     unique_names,
 )
@@ -39,6 +36,10 @@ class Type(Element):
 
     expr: ast.expr | None = None
     kind: TypeKind = TypeKind.REFERENCE
+
+    def __repr__(self) -> str:
+        args = ast.unparse(self.expr) if self.expr else ""
+        return f"{self.__class__.__name__}({args})"
 
 
 @dataclass
