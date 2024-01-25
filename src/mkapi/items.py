@@ -8,7 +8,11 @@ from typing import TYPE_CHECKING
 
 import mkapi.ast
 from mkapi.ast import is_property
-from mkapi.globals import get_link_from_text, get_link_from_type
+from mkapi.globals import (
+    get_link_from_text,
+    get_link_from_type,
+    get_link_from_type_string,
+)
 from mkapi.utils import (
     get_by_name,
     join_without_first_indent,
@@ -18,6 +22,8 @@ from mkapi.utils import (
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from inspect import _ParameterKind
+
+    from mkapi.objects import Attribute
 
 
 TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
@@ -49,7 +55,11 @@ class Type(Element):
         def get_link(name: str) -> str:
             return get_link_from_type(module, name, is_object=is_object)
 
-        if self.expr and not self.markdown:
+        if self.markdown:
+            return
+        if isinstance(self.expr, ast.Constant) and isinstance(self.expr.value, str):
+            self.markdown = get_link_from_type_string(module, self.expr.value)
+        elif self.expr:
             self.markdown = mkapi.ast.unparse(self.expr, get_link)
 
 
@@ -91,7 +101,7 @@ def iter_parameters(
     """Yield [Parameter] instances."""
     for arg, kind, default in mkapi.ast.iter_parameters(node):
         type_ = Type(arg.annotation)
-        yield Parameter(arg.arg, type_, Text(None), default, kind)
+        yield Parameter(arg.arg, type_, Text(), default, kind)
 
 
 @dataclass(repr=False)
@@ -106,7 +116,7 @@ def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]
             if isinstance(type_, ast.Call):
                 type_ = type_.func
             name = ast.unparse(type_)
-            yield Raise(name, Type(type_), Text(None))
+            yield Raise(name, Type(type_), Text())
 
 
 @dataclass(repr=False)
@@ -117,7 +127,7 @@ class Return(Item):
 def iter_returns(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Return]:
     """Return a [Return] instance."""
     if node.returns:
-        yield Return("", Type(node.returns), Text(None))
+        yield Return("", Type(node.returns), Text())
 
 
 @dataclass(repr=False)
@@ -132,7 +142,7 @@ def iter_bases(node: ast.ClassDef) -> Iterator[Base]:
             name = ast.unparse(base.value)
         else:
             name = ast.unparse(base)
-        yield Base(name, Type(base), Text(None))
+        yield Base(name, Type(base), Text())
 
 
 @dataclass(repr=False)
@@ -172,7 +182,7 @@ def create_assign_from_property(node: ast.FunctionDef) -> Assign:
 
 def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
     if not text:
-        return Type(type_), Text(None)
+        return Type(type_), Text()
     type_doc, text = split_without_name(text, "google")
     if not type_ and type_doc:
         # ex. 'list(str)' -> 'list[str]' for ast.expr
@@ -190,6 +200,24 @@ def split_without_name(text: str, style: str) -> tuple[str, str]:
     if style == "numpy" and len(lines) > 1 and lines[1].startswith(" "):
         return lines[0], join_without_first_indent(lines[1:])
     return "", text
+
+
+def iter_merged_items[T](items_ast: Sequence[T], items_doc: Sequence[T]) -> Iterator[T]:
+    """Yield merged [Item] instances.
+
+    `items_ast` are overwritten in-place.
+    """
+    for name in unique_names(items_ast, items_doc):
+        item_ast, item_doc = get_by_name(items_ast, name), get_by_name(items_doc, name)
+        if item_ast and not item_doc:
+            yield item_ast
+        elif not item_ast and item_doc:
+            yield item_doc
+        if isinstance(item_ast, Item) and isinstance(item_doc, Item):
+            item_ast.name = item_ast.name or item_doc.name
+            item_ast.type = item_ast.type if item_ast.type.expr else item_doc.type
+            item_ast.text = item_ast.text if item_ast.text.str else item_doc.text
+            yield item_ast
 
 
 @dataclass(repr=False)
@@ -219,7 +247,7 @@ class Parameters(Section):
 def create_parameters(items: Iterable[tuple[str, Type, Text]]) -> Parameters:
     """Return a parameters section."""
     parameters = [Parameter(*args, None, None) for args in items]
-    return Parameters("Parameters", Type(None), Text(None), parameters)
+    return Parameters("Parameters", Type(), Text(), parameters)
 
 
 @dataclass(repr=False)
@@ -232,7 +260,19 @@ class Assigns(Section):
 def create_assigns(items: Iterable[tuple[str, Type, Text]]) -> Assigns:
     """Return an Assigns section."""
     assigns = [Assign(*args, None, None) for args in items]
-    return Assigns("Assigns", Type(None), Text(None), assigns)
+    return Assigns("Assigns", Type(), Text(), assigns)
+
+
+@dataclass(repr=False)
+class Attributes(Section):
+    """Attributes section."""
+
+    items: list[Attribute]
+
+
+def create_attributes(items: Iterable[Attribute]) -> Attributes:
+    """Return an Attributes section."""
+    return Attributes("Attributes", Type(), Text(), list(items))
 
 
 @dataclass(repr=False)
@@ -247,7 +287,7 @@ def create_raises(items: Iterable[tuple[str, Type, Text]]) -> Raises:
     raises = [Raise(*args) for args in items]
     for raise_ in raises:
         raise_.type.expr = ast.Constant(raise_.name)
-    return Raises("Raises", Type(None), Text(None), raises)
+    return Raises("Raises", Type(), Text(), raises)
 
 
 @dataclass(repr=False)
@@ -263,7 +303,7 @@ def create_returns(name: str, text: str, style: str) -> Returns:
     type_ = Type(ast.Constant(type_) if type_ else None)
     text_ = Text(text_ or None)
     returns = [Return("", type_, text_)]
-    return Returns(name, Type(None), Text(None), returns)
+    return Returns(name, Type(), Text(), returns)
 
 
 @dataclass(repr=False)
@@ -271,21 +311,3 @@ class Bases(Section):
     """Bases section."""
 
     items: list[Base]
-
-
-def iter_merged_items[T](items_ast: Sequence[T], items_doc: Sequence[T]) -> Iterator[T]:
-    """Yield merged [Item] instances.
-
-    `items_ast` are overwritten in-place.
-    """
-    for name in unique_names(items_ast, items_doc):
-        item_ast, item_doc = get_by_name(items_ast, name), get_by_name(items_doc, name)
-        if item_ast and not item_doc:
-            yield item_ast
-        elif not item_ast and item_doc:
-            yield item_doc
-        if isinstance(item_ast, Item) and isinstance(item_doc, Item):
-            item_ast.name = item_ast.name or item_doc.name
-            item_ast.type = item_ast.type if item_ast.type.expr else item_doc.type
-            item_ast.text = item_ast.text if item_ast.text.str else item_doc.text
-            yield item_ast

@@ -7,6 +7,7 @@ import pytest
 from mkapi.globals import (
     LINK_PATTERN,
     Global,
+    _iter_identifiers,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
     _resolve,
@@ -14,6 +15,7 @@ from mkapi.globals import (
     get_globals,
     get_link_from_text,
     get_link_from_type,
+    get_link_from_type_string,
 )
 from mkapi.objects import create_module
 from mkapi.utils import get_by_name, get_module_node
@@ -175,3 +177,21 @@ def test_get_link_from_type():
 def test_get_link_from_text():
     x = get_link_from_text("mkapi.objects", "# title\n[Object]")
     assert x == "# title\n[Object][__mkapi__.mkapi.objects.Object]"
+    x = get_link_from_text("mkapi.objects", "# title\n[XXX]")
+    assert x == "# title\n[XXX]"
+    x = get_link_from_text("mkapi.objects", "# title\n[XXX]", name_only=True)
+    assert x == "# title\nXXX"
+
+
+def test_iter_identifiers():
+    x = "dict, Sequence, ndarray, Series, or pandas.DataFrame."
+    x = list(_iter_identifiers(x))
+    assert ("dict", True) in x
+    assert ("Sequence", True) in x
+    assert ("pandas.DataFrame", True) in x
+
+
+def test_get_link_from_type_string():
+    x = get_link_from_type_string("mkapi.objects", "1 Object or Class.")
+    assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
+    assert "or [Class][__mkapi__.mkapi.objects.Class]." in x

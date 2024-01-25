@@ -50,7 +50,7 @@ def test_set_html(tmpdir):
     markdown = page.convert_markdown()
     obj = page.objects[0]
     for elm in obj.doc.iter_elements():
-        print(elm)
+        print(elm.markdown)
     # assert "<!-- mkapi:begin[0] -->" in markdown
     # assert "<!-- mkapi:end -->" in markdown
     # assert "[Callable](../a.md#mkapi.objects.Callable)" in markdown

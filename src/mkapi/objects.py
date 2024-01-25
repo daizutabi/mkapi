@@ -6,8 +6,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import mkapi.ast
+import mkapi.docstrings
 from mkapi import docstrings
-from mkapi.docstrings import Docstring, Section
+from mkapi.ast import iter_identifiers
+from mkapi.docstrings import Docstring
+from mkapi.globals import get_fullname
 from mkapi.items import (
     Assign,
     Assigns,
@@ -18,6 +21,7 @@ from mkapi.items import (
     Text,
     Type,
     TypeKind,
+    create_attributes,
     create_parameters,
     create_raises,
     iter_assigns,
@@ -27,12 +31,17 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import get_by_name, get_by_type, is_package
+from mkapi.utils import (
+    get_by_name,
+    get_by_type,
+    is_package,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterator
 
     from mkapi.items import Base, Parameter, Raise, Return
+    from mkapi.objects import Attribute, Function
 
 
 objects: dict[str, Module | Class | Function | Attribute | None] = {}
@@ -107,7 +116,7 @@ def create_attribute(
     if assign.node and assign.node.__doc__:
         doc = docstrings.parse(assign.node.__doc__)
     else:
-        doc = Docstring("", Type(None), Text(None), [])
+        doc = Docstring("", Type(), Text(), [])
     return Attribute(name, node, doc, module, parent, type_, default)
 
 
@@ -208,6 +217,12 @@ class Module(Object):
         return "package" if is_package(self.name) else "module"
 
 
+def _create_empty_module() -> Module:
+    name = "__mkapi__"
+    doc = Docstring("Docstring", Type(), Text(), [])
+    return Module(name, ast.Module(), doc, None)
+
+
 def create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
     """Return a [Module] instance from an [ast.Module] node."""
     doc = docstrings.parse(ast.get_docstring(node))
@@ -231,16 +246,22 @@ def merge_items(module: Module) -> None:
             _merge_items(obj)
 
 
+def _merge_items(obj: Module | Class | Function) -> None:
+    if isinstance(obj, Function | Class):
+        merge_parameters(obj)
+        merge_raises(obj)
+    if isinstance(obj, Function):
+        merge_returns(obj)
+    if isinstance(obj, Module | Class):
+        merge_attributes(obj)
+    if isinstance(obj, Class):
+        merge_bases(obj)
+
+
 def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
     for obj in iter_objects(module):
         obj.doc.set_markdown(module.name)
-
-
-def _create_empty_module() -> Module:
-    name = "__mkapi__"
-    doc = Docstring("", Type(None), Text(None), [])
-    return Module(name, ast.Module(), doc, None)
 
 
 def merge_parameters(obj: Class | Function) -> None:
@@ -253,18 +274,6 @@ def merge_parameters(obj: Class | Function) -> None:
         obj.doc.sections.append(section)
     # TODO: *args, **kwargs
     section.items = list(iter_merged_items(obj.parameters, section.items))
-
-
-@dataclass(repr=False)
-class Attributes(Section):
-    """Attributes section."""
-
-    items: list[Attribute]
-
-
-def create_attributes(items: Iterable[Attribute]) -> Attributes:
-    """Return an Attributes section."""
-    return Attributes("Attributes", Type(None), Text(None), list(items))
 
 
 def merge_attributes(obj: Module | Class) -> None:
@@ -302,7 +311,7 @@ def merge_returns(obj: Function) -> None:
         if not obj.returns:
             return
         # TODO: yields
-        section = Returns("Returns", Type(None), Text(None), [])
+        section = Returns("Returns", Type(), Text(), [])
         obj.doc.sections.append(section)
     section.items = list(iter_merged_items(obj.returns, section.items))
 
@@ -311,20 +320,8 @@ def merge_bases(obj: Class) -> None:
     """Merge bases."""
     if not obj.bases:
         return
-    section = Bases("Bases", Type(None), Text(None), obj.bases)
+    section = Bases("Bases", Type(), Text(), obj.bases)
     obj.doc.sections.insert(0, section)
-
-
-def _merge_items(obj: Module | Class | Function) -> None:
-    if isinstance(obj, Function | Class):
-        merge_parameters(obj)
-        merge_raises(obj)
-    if isinstance(obj, Function):
-        merge_returns(obj)
-    if isinstance(obj, Module | Class):
-        merge_attributes(obj)
-    if isinstance(obj, Class):
-        merge_bases(obj)
 
 
 def iter_objects_with_depth(
@@ -354,3 +351,30 @@ def iter_objects(
     """Yield [Object] instances."""
     for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
         yield obj_
+
+
+def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
+    """Return a decorator expr by name."""
+    if not obj.module:
+        return None
+    for deco in obj.node.decorator_list:
+        deco_name = next(iter_identifiers(deco))
+        if get_fullname(obj.module.name, deco_name) == name:
+            return deco
+    return None
+
+
+def is_dataclass(cls: Class) -> bool:
+    """Return True if a [Class] instance is a dataclass."""
+    return get_decorator(cls, "dataclasses.dataclass") is not None
+
+
+# def _iter_decorator_args(deco: ast.expr) -> Iterator[tuple[str, Any]]:
+#     for child in ast.iter_child_nodes(deco):
+#         if isinstance(child, ast.keyword):
+#             if child.arg and isinstance(child.value, ast.Constant):
+#                 yield child.arg, child.value.value
+
+
+# def _get_decorator_args(deco: ast.expr) -> dict[str, Any]:
+#     return dict(_iter_decorator_args(deco))

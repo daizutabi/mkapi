@@ -166,7 +166,7 @@ def get_link_from_type(module: str, name: str, *, is_object: bool = False) -> st
 LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
 
 
-def get_link_from_text(module: str, text: str) -> str:
+def get_link_from_text(module: str, text: str, *, name_only: bool = False) -> str:
     """Return markdown links from text."""
 
     def replace(match: re.Match) -> str:
@@ -174,6 +174,41 @@ def get_link_from_text(module: str, text: str) -> str:
         link = get_link_from_type(module, name, is_object=False)
         if name != link:
             return link
-        return match.group()
+        return name if name_only else match.group()
 
     return re.sub(LINK_PATTERN, replace, text)
+
+
+def get_link_from_type_string(module: str, source: str) -> str:
+    """Return markdown links from string-type."""
+    strs = []
+    for name, isidentifier in _iter_identifiers(source):
+        if isidentifier:
+            strs.append(get_link_from_type(module, name, is_object=False))
+        else:
+            strs.append(name)
+    return "".join(strs)
+
+
+def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
+    """Yield identifiers as a tuple of (name, isidentifier)."""
+    start = stop = 0
+    while start < len(source):
+        c = source[start]
+        if c.isidentifier():
+            stop = start
+            while stop < len(source):
+                c = source[stop]
+                if c == "." or c.isdigit() or c.isidentifier():
+                    stop += 1
+                else:
+                    break
+            if source[stop - 1] == ".":
+                yield source[start : stop - 1], True
+                yield ".", False
+            else:
+                yield source[start:stop], True
+            start = stop
+        else:
+            yield c, False
+            start += 1

@@ -12,6 +12,8 @@ from mkapi.objects import (
     create_class,
     create_function,
     create_module,
+    get_decorator,
+    is_dataclass,
     iter_objects,
     merge_items,
     objects,
@@ -250,3 +252,15 @@ def test_set_markdown():
     assert isinstance(obj, Function)
     m = obj.doc.text.markdown
     assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."
+
+
+def test_get_decorator():
+    name = "mkapi.objects"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    assert module
+    cls = get_by_name(module.classes, "Member")
+    assert isinstance(cls, Class)
+    assert get_decorator(cls, "dataclasses.dataclass")
+    assert is_dataclass(cls)

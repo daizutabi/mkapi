@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 import mkapi.ast
 import mkapi.docstrings
-from mkapi.ast import iter_identifiers
 from mkapi.globals import get_fullname
 from mkapi.items import Parameter
 from mkapi.objects import (
     Class,
     Module,
     create_module,
+    is_dataclass,
     objects,
 )
 from mkapi.utils import (
@@ -25,7 +25,6 @@ from mkapi.utils import (
 )
 
 if TYPE_CHECKING:
-    import ast
     from collections.abc import Iterator
 
     from mkapi.objects import Attribute, Function
@@ -114,22 +113,6 @@ def inherit_base_classes(cls: Class) -> None:
         setattr(cls, name, list(members.values()))
 
 
-def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
-    """Return a decorator expr by name."""
-    if not obj.module:
-        return None
-    for deco in obj.node.decorator_list:
-        deco_name = next(iter_identifiers(deco))
-        if get_fullname(obj.module.name, deco_name) == name:
-            return deco
-    return None
-
-
-def is_dataclass(cls: Class) -> bool:
-    """Return True if a [Class] instance is a dataclass."""
-    return get_decorator(cls, "dataclasses.dataclass") is not None
-
-
 def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
     """Yield [Parameter] instances a for dataclass signature."""
     if not cls.module or not (module_name := cls.module.name):
@@ -147,14 +130,3 @@ def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
             yield Parameter(*args, param.kind)
         else:
             raise NotImplementedError
-
-
-# def _iter_decorator_args(deco: ast.expr) -> Iterator[tuple[str, Any]]:
-#     for child in ast.iter_child_nodes(deco):
-#         if isinstance(child, ast.keyword):
-#             if child.arg and isinstance(child.value, ast.Constant):
-#                 yield child.arg, child.value.value
-
-
-# def _get_decorator_args(deco: ast.expr) -> dict[str, Any]:
-#     return dict(_iter_decorator_args(deco))

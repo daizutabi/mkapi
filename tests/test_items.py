@@ -264,7 +264,7 @@ def test_iter_merged_items():
 
 def test_iter_merged_items_():
     a = [
-        Item("a", Type(None), Text("item a")),
+        Item("a", Type(), Text("item a")),
         Item("b", Type(ast.Constant("int")), Text("item b")),
     ]
     b = [

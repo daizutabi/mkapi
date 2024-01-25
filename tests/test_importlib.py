@@ -1,11 +1,10 @@
 from mkapi.importlib import (
     get_object,
     get_source,
-    is_dataclass,
     iter_base_classes,
     load_module,
 )
-from mkapi.objects import Class, Function, objects
+from mkapi.objects import Class, Function
 from mkapi.utils import get_by_name
 
 
@@ -89,7 +88,6 @@ def test_inherit_base_classes():
 def test_iter_dataclass_parameters():
     cls = get_object("mkapi.items.Parameters")
     assert isinstance(cls, Class)
-    assert is_dataclass(cls)
     p = cls.parameters
     assert len(p) == 4
     assert p[0].name == "name"

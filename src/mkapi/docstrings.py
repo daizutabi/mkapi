@@ -205,7 +205,7 @@ def _create_section_items(name: str, text: str, style: Style) -> Section:
 def _create_section(name: str, text: str) -> Section:
     if name in ["Note", "Notes", "Warning", "Warnings"]:
         text = add_admonition(name, text)
-    return Section(name, Type(None), Text(text), [])
+    return Section(name, Type(), Text(text), [])
 
 
 def iter_sections(doc: str, style: Style) -> Iterator[Section]:
@@ -251,14 +251,14 @@ class Docstring(Item):
 
     def set_markdown(self, module: str) -> None:
         """Set Markdown text with link."""
-        for elem in self.iter_elements():
-            elem.set_markdown(module)
+        for element in self.iter_elements():
+            element.set_markdown(module)
 
 
 def parse(doc: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
     if not doc:
-        return Docstring("Docstring", Type(None), Text(None), [])
+        return Docstring("Docstring", Type(), Text(), [])
     doc = add_fence(doc)
     style = style or get_style(doc)
     sections = list(iter_sections(doc, style))
@@ -267,8 +267,8 @@ def parse(doc: str | None, style: Style | None = None) -> Docstring:
         text = sections[0].text
         del sections[0]
     else:
-        type_ = Type(None)
-        text = Text(None)
+        type_ = Type()
+        text = Text()
     return Docstring("Docstring", type_, text, sections)
 
 
