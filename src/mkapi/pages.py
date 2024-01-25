@@ -60,19 +60,32 @@ class Page:
         self.filters.append(filters)
         return get_markdown(obj, level)
 
-    def convert_html(self, html: str) -> str:  # noqa: D102
+    def convert_html(
+        self,
+        html: str,
+        callback: Callable[..., str] | None = None,
+    ) -> str:
+        """Convert HTML."""
+        if not callback:
+            callback = renderers.render
+
         def replace(match: re.Match) -> str:
             index, html = match.groups()
-            return self._callback_html(html, int(index))
+            return self._callback_html(html, int(index), callback)
 
         return re.sub(NODE_PATTERN, replace, html)
 
-    def _callback_html(self, html: str, index: int) -> str:
+    def _callback_html(
+        self,
+        html: str,
+        index: int,
+        callback: Callable[..., str],
+    ) -> str:
         obj = self.objects[index]
         level = self.levels[index]
         filters = self.filters[index]
         set_html(obj, html, level)
-        return renderers.render(obj, level, filters)
+        return callback(obj, level, filters)
 
 
 object_paths: dict[str, Path] = {}

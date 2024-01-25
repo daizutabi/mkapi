@@ -277,7 +277,8 @@ def merge_sections(a: Section, b: Section) -> Section:
     if a.name != b.name:
         raise ValueError
     type_ = a.type if a.type.expr else b.type
-    text = Text(f"{a.text.str}\n\n{b.text.str}".strip())
+    text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
+    text.markdown = f"{a.text.markdown}\n\n{b.text.markdown}".strip()
     return Section(a.name, type_, text, list(iter_merged_items(a.items, b.items)))
 
 
@@ -314,5 +315,6 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
             sections.append(section)
     sections.extend(s for s in b.sections if not s.name)
     type_ = a.type if a.type.expr else b.type
-    text = Text(f"{a.text.str}\n\n{b.text.str}".strip())
+    text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
+    text.markdown = f"{a.text.markdown}\n\n{b.text.markdown}".strip()
     return Docstring("Docstring", type_, text, sections)

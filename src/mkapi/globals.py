@@ -128,7 +128,7 @@ def get_globals(module: str) -> Globals:
 @cache
 def get_fullname(module: str, name: str) -> str | None:
     """Return the fullname of an object in the module."""
-    if name.startswith(module):
+    if name.startswith(module) or module.startswith(name):
         return name
     names = get_globals(module).names
     if global_ := get_by_name(names, name):
@@ -196,7 +196,7 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
     while start < len(source):
         c = source[start]
         if c.isidentifier():
-            stop = start
+            stop = start + 1
             while stop < len(source):
                 c = source[stop]
                 if c == "." or c.isdigit() or c.isidentifier():
@@ -209,6 +209,15 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
             else:
                 yield source[start:stop], True
             start = stop
+        elif c in ['"', "'"]:
+            stop = start + 1
+            while stop < len(source):
+                if source[stop] != source[start]:
+                    stop += 1
+                else:
+                    break
+            yield source[start : stop + 1], False
+            start = stop + 1
         else:
             yield c, False
             start += 1

@@ -41,26 +41,24 @@ def test_create_page(tmpdir):
 
 def test_set_html(tmpdir):
     object_paths.clear()
-    name = "polars.**"
+    name = "polars,polars.dataframe"
     path = Path(tmpdir / "a.md")
     create_page(name, path, 1, ["f", "g"])
-    # print(object_paths)
-    path = tmpdir.mkdir("src") / "b.md"
+    name = "polars.datatypes.classes.*"
+    path = Path(tmpdir / "b.md")
+    create_page(name, path, 1, ["f", "g"])
+    path = tmpdir.mkdir("src") / "c.md"
     page = Page("# Title\n::: polars.dataframe.frame.DataFrame", path)
-    markdown = page.convert_markdown()
+    x = page.convert_markdown()
+    assert "[polars](../a.md#polars).[dataframe](../a.md#polars.dataframe).frame" in x
+    assert "[DataType](../b.md#polars.datatypes.classes.DataType)" in x
+    html = Markdown().convert(x)
+    html = page.convert_html(html, lambda *_: "")
+    assert len(page.objects) == 1
     obj = page.objects[0]
     for elm in obj.doc.iter_elements():
+        print("-----")
+        print(elm)
         print(elm.markdown)
-    # assert "<!-- mkapi:begin[0] -->" in markdown
-    # assert "<!-- mkapi:end -->" in markdown
-    # assert "[Callable](../a.md#mkapi.objects.Callable)" in markdown
-    # assert "list[[Base](../a.md#mkapi.items.Base)]" in markdown
-    # html = Markdown().convert(markdown)
-    # html = page.convert_html(html)
-    # print(html)
-    # assert 0
-    # assert len(page.objects) == 1
-    # obj = page.objects[0]
-    # for elm in obj.doc.iter_elements():
-    #     print(elm)
+        print(elm.html)
     assert 0

@@ -230,6 +230,19 @@ def test_iter_objects_polars():
     assert get_by_name(x, "product")
 
 
+def test_iter_elements():
+    name = "polars.dataframe.frame"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    assert module
+    obj = get_by_name(module.classes, "DataFrame")
+    assert obj
+    for elm in obj.doc.iter_elements():
+        print(elm)
+    assert 0
+
+
 def test_set_markdown():
     name = "mkapi.plugins"
     node = get_module_node(name)
@@ -240,6 +253,7 @@ def test_set_markdown():
     obj = get_by_name(module.classes, "MkAPIPlugin")
     assert isinstance(obj, Class)
     m = obj.doc.type.markdown
+    assert "[mkapi][__mkapi__.mkapi]." in m
     assert ".[plugins][__mkapi__.mkapi.plugins].MkAPIPlugin" in m
     m = obj.bases[0].type.markdown
     assert "[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]" in m
@@ -252,6 +266,20 @@ def test_set_markdown():
     assert isinstance(obj, Function)
     m = obj.doc.text.markdown
     assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."
+
+
+def test_set_markdown_polars():
+    name = "polars.dataframe.frame"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    assert module
+    obj = get_by_name(module.classes, "DataFrame")
+    assert isinstance(obj, Class)
+    m = obj.doc.type.markdown
+    assert "[polars][__mkapi__.polars].[dataframe]" in m
+    assert "[__mkapi__.polars.dataframe].[frame]" in m
+    assert "[__mkapi__.polars.dataframe.frame].DataFrame" in m
 
 
 def test_get_decorator():

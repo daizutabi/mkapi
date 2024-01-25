@@ -53,6 +53,8 @@ def test_resolve():
     assert _resolve("jinja2.Template") == "jinja2.environment.Template"
     assert _resolve("polars.DataFrame") == "polars.dataframe.frame.DataFrame"
     assert _resolve("polars.DataType") == "polars.datatypes.classes.DataType"
+    assert _resolve("polars.col") == "polars.functions.col"
+    assert _resolve("polars.row") is None
     assert _resolve("mkdocs.config.Config") == "mkdocs.config.base.Config"
 
 
@@ -184,10 +186,17 @@ def test_get_link_from_text():
 
 
 def test_iter_identifiers():
-    x = "dict, Sequence, ndarray, Series, or pandas.DataFrame."
+    x = "1"
+    assert next(_iter_identifiers(x)) == ("1", False)
+    x = "a1"
+    assert next(_iter_identifiers(x)) == ("a1", True)
+    x = "a,b"
+    assert list(_iter_identifiers(x)) == [("a", True), (",", False), ("b", True)]
+    x = "dict, Sequence, ndarray, 'Series', or pandas.DataFrame."
     x = list(_iter_identifiers(x))
     assert ("dict", True) in x
     assert ("Sequence", True) in x
+    assert ("'Series'", False) in x
     assert ("pandas.DataFrame", True) in x
 
 
