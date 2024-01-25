@@ -1,6 +1,5 @@
 import ast
 import inspect
-import re
 import sys
 from pathlib import Path
 
@@ -8,7 +7,6 @@ import pytest
 
 from mkapi.ast import iter_child_nodes
 from mkapi.objects import (
-    LINK_PATTERN,
     Class,
     Function,
     create_class,
@@ -61,7 +59,7 @@ def test_create_function(get):
     assert get_by_name(func.parameters, "kwargs")
     assert len(func.returns) == 0
     assert len(func.raises) == 1
-    assert len(func.doc.sections) == 4
+    assert len(func.doc.sections) == 3
     assert repr(func) == "Function('module_level_function')"
 
 
@@ -91,7 +89,7 @@ def test_create_class(get):
 
 
 def test_create_module(google):
-    module = create_module(google, "google")
+    module = create_module("google", google)
     assert module.name == "google"
     assert len(module.functions) == 4
     assert len(module.classes) == 3
@@ -105,7 +103,7 @@ def test_create_module(google):
 
 
 def test_fullname(google):
-    module = create_module(google, "examples.styles.google")
+    module = create_module("examples.styles.google", google)
     c = get_by_name(module.classes, "ExampleClass")
     assert isinstance(c, Class)
     f = get_by_name(c.functions, "example_method")
@@ -118,11 +116,11 @@ def test_fullname(google):
 def test_kind():
     node = get_module_node("mkapi")
     assert node
-    module = create_module(node, "mkapi")
+    module = create_module("mkapi", node)
     assert module.kind == "package"
     node = get_module_node("mkapi.objects")
     assert node
-    module = create_module(node, "mkapi.objects")
+    module = create_module("mkapi.objects", node)
     assert module
     assert module.kind == "module"
     cls = get_by_name(module.classes, "Object")
@@ -157,14 +155,14 @@ def test_merge_items():
     src = inspect.getdoc(test_merge_items)
     assert src
     node = ast.parse(src)
-    module = create_module(node, "x")
+    module = create_module("x", node)
     func = get_by_name(module.functions, "f")
     assert func
     # merge_parameters(func)
     assert get_by_name(func.parameters, "x")
     assert get_by_name(func.parameters, "y")
     assert not get_by_name(func.parameters, "z")
-    items = func.doc.get("Parameters").items  # type: ignore
+    items = get_by_name(func.doc.sections, "Parameters").items  # type: ignore
     assert get_by_name(items, "x")
     assert get_by_name(items, "y")
     assert get_by_name(items, "z")
@@ -172,7 +170,7 @@ def test_merge_items():
     # merge_returns(func)
     assert func.returns[0].type
     assert func.returns[0].text.str == "Return True."
-    item = func.doc.get("Returns").items[0]  # type: ignore
+    item = get_by_name(func.doc.sections, "Returns").items[0]  # type: ignore
     assert item.type.expr.id == "bool"  # type: ignore
 
 
@@ -197,7 +195,7 @@ def test_iter_objects():
     src = inspect.getdoc(test_iter_objects)
     assert src
     node = ast.parse(src)
-    module = create_module(node, "x")
+    module = create_module("x", node)
     cls = get_by_name(module.classes, "A")
     assert cls
     func = get_by_name(cls.functions, "f")
@@ -219,7 +217,7 @@ def test_iter_objects_polars():
     name = "polars.dataframe.frame"
     node = get_module_node(name)
     assert node
-    module = create_module(node, name)
+    module = create_module(name, node)
     x = list(iter_objects(module, 0))
     assert len(x) == 1
     x = list(iter_objects(module, 1))
@@ -228,18 +226,27 @@ def test_iter_objects_polars():
     x = list(iter_objects(module, 2))
     assert get_by_name(x, "DataFrame")
     assert get_by_name(x, "product")
-    # for x in iter_objects_with_depth(obj):
-    #     print(x, x[0].fullname)
 
 
-def test_iter_objects_type_text():
+def test_set_markdown():
     name = "mkapi.plugins"
     node = get_module_node(name)
     assert node
-    module = create_module(node, name)
+    module = create_module(name, node)
     assert module
-    for obj in iter_objects(module):
-        print("---", obj, "-------------")
-        for x in obj.doc.iter_types():
-            print(x)
-    assert 0
+    assert module.doc.type.markdown == "[mkapi][__mkapi__.mkapi].plugins"
+    obj = get_by_name(module.classes, "MkAPIPlugin")
+    assert isinstance(obj, Class)
+    m = obj.doc.type.markdown
+    assert ".[plugins][__mkapi__.mkapi.plugins].MkAPIPlugin" in m
+    m = obj.bases[0].type.markdown
+    assert "[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]" in m
+    assert "[[MkAPIConfig][__mkapi__.mkapi.plugins.MkAPIConfig]]" in m
+    name = "mkapi.items"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    obj = get_by_name(module.functions, "iter_raises")
+    assert isinstance(obj, Function)
+    m = obj.doc.text.markdown
+    assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."

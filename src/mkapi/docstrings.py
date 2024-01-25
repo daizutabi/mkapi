@@ -28,7 +28,7 @@ from mkapi.utils import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.items import Element
+    from mkapi.objects import Attribute
 
 
 type Style = Literal["google", "numpy"]
@@ -121,10 +121,11 @@ SECTION_NAMES: list[tuple[str, ...]] = [
     ("Parameters", "Parameter", "Params", "Param"),
     ("Parameters", "Arguments", "Argument", "Args", "Arg"),
     ("Assigns", "Assign", "Attributes", "Attribute", "Attrs", "Attr"),
-    ("Examples", "Example"),
     ("Returns", "Return"),
     ("Raises", "Raise"),
     ("Yields", "Yield"),
+    ("Example",),
+    ("Examples",),
     ("Warning", "Warn"),
     ("Warnings", "Warns"),
     ("Note",),
@@ -189,7 +190,7 @@ def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
         yield "", prev_text
 
 
-def _create_section(name: str, text: str, style: Style) -> Section:
+def _create_section_items(name: str, text: str, style: Style) -> Section:
     if name == "Parameters":
         return create_parameters(iter_items(text, style))
     if name == "Assigns":
@@ -201,17 +202,19 @@ def _create_section(name: str, text: str, style: Style) -> Section:
     raise NotImplementedError
 
 
+def _create_section(name: str, text: str) -> Section:
+    if name in ["Note", "Notes", "Warning", "Warnings"]:
+        text = add_admonition(name, text)
+    return Section(name, Type(None), Text(text), [])
+
+
 def iter_sections(doc: str, style: Style) -> Iterator[Section]:
     """Yield [Section] instances by splitting a docstring."""
-    names = ["Parameters", "Assigns", "Raises", "Returns", "Yields"]
     for name, text in _iter_sections(doc, style):
-        if name in names:
-            yield _create_section(name, text, style)
-        elif name in ["Note", "Notes", "Warning", "Warnings"]:
-            text_ = add_admonition(name, text)
-            yield Section(name, Type(None), Text(text_), [])
+        if name in ["Parameters", "Assigns", "Raises", "Returns", "Yields"]:
+            yield _create_section_items(name, text, style)
         else:
-            yield Section(name, Type(None), Text(text), [])
+            yield _create_section(name, text)
 
 
 @dataclass
@@ -223,7 +226,7 @@ class Docstring(Item):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
 
-    def __iter__(self) -> Iterator[Item]:
+    def __iter__(self) -> Iterator[Item | Attribute]:
         yield self
         for section in self.sections:
             yield section
@@ -241,33 +244,32 @@ class Docstring(Item):
             if item.text.str:
                 yield item.text
 
-    def iter_elements(self) -> Iterator[Element]:
-        """Yield [Element] instances."""
+    def iter_elements(self) -> Iterator[Type | Text]:
+        """Yield [Type] or [Text] instances."""
         yield from self.iter_types()
         yield from self.iter_texts()
 
-    def get(self, name: str) -> Section | None:
-        """Return a [Section] by name."""
-        return get_by_name(self.sections, name)
+    def set_markdown(self, module: str) -> None:
+        """Set Markdown text with link."""
+        for elem in self.iter_elements():
+            elem.set_markdown(module)
 
 
 def parse(doc: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
     if not doc:
-        return Docstring("", Type(None), Text(None), [])
+        return Docstring("Docstring", Type(None), Text(None), [])
     doc = add_fence(doc)
     style = style or get_style(doc)
     sections = list(iter_sections(doc, style))
-    if sections and not sections[0].name and (text := sections[0].text.str):
-        if "\n\n" not in text:
-            del sections[0]
-        else:
-            text, rest = text.split("\n\n", maxsplit=1)
-            sections[0].text.str = rest
-        text = Text(text)
+    if sections and not sections[0].name:
+        type_ = sections[0].type
+        text = sections[0].text
+        del sections[0]
     else:
+        type_ = Type(None)
         text = Text(None)
-    return Docstring("", Type(None), text, sections)
+    return Docstring("Docstring", type_, text, sections)
 
 
 def merge_sections(a: Section, b: Section) -> Section:
@@ -311,5 +313,6 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
         elif is_named_section:
             sections.append(section)
     sections.extend(s for s in b.sections if not s.name)
-    text = a.text or b.text
-    return Docstring("", Type(None), text, sections)
+    type_ = a.type if a.type.expr else b.type
+    text = Text(f"{a.text.str}\n\n{b.text.str}".strip())
+    return Docstring("Docstring", type_, text, sections)

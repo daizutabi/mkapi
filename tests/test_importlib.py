@@ -1,26 +1,12 @@
-import ast
-import re
-
 from mkapi.importlib import (
-    LINK_PATTERN,
-    _iter_texts,
-    _iter_types,
     get_object,
     get_source,
     is_dataclass,
     iter_base_classes,
     load_module,
-    modules,
 )
 from mkapi.objects import Class, Function, objects
 from mkapi.utils import get_by_name
-
-
-def test_module_not_found():
-    assert load_module("xxx") is None
-    assert modules["xxx"] is None
-    assert load_module("markdown")
-    assert "markdown" in modules
 
 
 def test_load_module_source():
@@ -41,19 +27,10 @@ def test_load_module_source():
     assert "MkAPIPlugin" in src
 
 
-def test_module_kind():
-    module = load_module("mkapi")
-    assert module
-    assert module.kind == "package"
-    module = load_module("mkapi.objects")
-    assert module
-    assert module.kind == "module"
-
-
 def test_get_object():
-    modules.clear()
-    objects.clear()
     module = load_module("mkapi.objects")
+    a = get_object("mkapi.objects")
+    assert module is a
     c = get_object("mkapi.objects.Object")
     f = get_object("mkapi.objects.Module.__post_init__")
     assert isinstance(c, Class)
@@ -67,19 +44,6 @@ def test_get_object():
     m1 = load_module("mkdocs.structure.files")
     m2 = load_module("mkdocs.structure.files")
     assert m1 is m2
-    modules.clear()
-    m3 = load_module("mkdocs.structure.files")
-    m4 = load_module("mkdocs.structure.files")
-    assert m2 is not m3
-    assert m3 is m4
-
-
-def test_get_object_module():
-    modules.clear()
-    objects.clear()
-    obj = get_object("mkapi.objects")
-    module = load_module("mkapi.objects")
-    assert obj is module
 
 
 def test_iter_base_classes():

@@ -250,7 +250,7 @@ def test_iter_merged_items():
     src = inspect.getdoc(test_iter_merged_items)
     assert src
     node = ast.parse(src)
-    module = create_module(node, "x")
+    module = create_module("x", node)
     func = get_by_name(module.functions, "f")
     assert func
     items_ast = func.parameters

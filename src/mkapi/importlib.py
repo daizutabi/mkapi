@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import importlib
 import inspect
+from functools import cache
 from typing import TYPE_CHECKING
 
 import mkapi.ast
 import mkapi.docstrings
 from mkapi.ast import iter_identifiers
+from mkapi.globals import get_fullname
 from mkapi.items import Parameter
 from mkapi.objects import (
     Class,
@@ -28,28 +30,19 @@ if TYPE_CHECKING:
 
     from mkapi.objects import Attribute, Function
 
-modules: dict[str, Module | None] = {}
 
-
+@cache
 def load_module(name: str) -> Module | None:
     """Return a [Module] instance by the name."""
-    if name in modules:
-        return modules[name]
     if not (node_source := get_module_node_source(name)):
-        modules[name] = None
         return None
-    node, source = node_source
-    module = create_module(node, name)
-    module.source = source
-    modules[name] = module
+    module = create_module(name, *node_source)
     _postprocess(module)
     return module
 
 
 def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     """Return an [Object] instance by the fullname."""
-    # if fullname in modules:
-    #     return modules[fullname]
     if fullname in objects:
         return objects[fullname]
     for module_name in iter_parent_module_names(fullname):
@@ -101,7 +94,7 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
         return
     for node in cls.node.bases:
         name = next(mkapi.ast.iter_identifiers(node))
-        if fullname := get_fullname(cls.module, name):
+        if fullname := get_fullname(cls.module.name, name):
             base = get_object(fullname)
             if base and isinstance(base, Class):
                 yield base
@@ -127,7 +120,7 @@ def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
         return None
     for deco in obj.node.decorator_list:
         deco_name = next(iter_identifiers(deco))
-        if get_fullname(obj.module, deco_name) == name:
+        if get_fullname(obj.module.name, deco_name) == name:
             return deco
     return None
 

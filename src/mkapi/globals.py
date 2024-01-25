@@ -149,16 +149,17 @@ def _get_link(module: str, name: str, asname: str) -> str:
     return f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
 
 
+@cache
 def get_link_from_type(module: str, name: str, *, is_object: bool = False) -> str:
     """Return markdown links from type."""
     names = []
     parents = iter_parent_module_names(name)
     asnames = name.split(".")
-    for k, (name_, asname) in enumerate(zip(parents, asnames, strict=True)):
+    for k, (name, asname) in enumerate(zip(parents, asnames, strict=True)):
         if is_object and k == len(asnames) - 1:
             names.append(asname)
         else:
-            names.append(_get_link(module, name_, asname))
+            names.append(_get_link(module, name, asname))
     return ".".join(names)
 
 
@@ -170,7 +171,7 @@ def get_link_from_text(module: str, text: str) -> str:
 
     def replace(match: re.Match) -> str:
         name = match.group(1)
-        link = get_link_from_type(module, name)
+        link = get_link_from_type(module, name, is_object=False)
         if name != link:
             return link
         return match.group()

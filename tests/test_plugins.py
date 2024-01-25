@@ -81,9 +81,9 @@ def test_mkapi_config(mkapi_config: MkAPIConfig):
     assert config.exclude == [".tests"]
 
 
-def test_insert_sys_path(mkapi_config: MkAPIConfig):
+def test_insert_sys_path(mkdocs_config, mkapi_plugin):
     assert not importlib.util.find_spec("custom")
-    _insert_sys_path(mkapi_config)
+    _insert_sys_path(mkdocs_config, mkapi_plugin)
     spec = importlib.util.find_spec("custom")
     assert spec
     assert spec.origin

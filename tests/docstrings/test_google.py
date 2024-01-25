@@ -4,6 +4,7 @@ from mkapi.docstrings import (
     _iter_items,
     _iter_sections,
     iter_items,
+    merge,
     parse,
     split_item,
     split_section,
@@ -39,7 +40,7 @@ def test_iter_sections(google):
     assert len(sections) == 6
     assert sections[0][1].startswith("Example Google")
     assert sections[0][1].endswith("indented text.")
-    assert sections[1][0] == "Examples"
+    assert sections[1][0] == "Example"
     assert sections[1][1].startswith("Examples can be")
     assert sections[1][1].endswith("google.py")
     assert sections[2][1].startswith("Section breaks")
@@ -126,10 +127,21 @@ def test_iter_items_raises(google, get):
 
 def test_parse(google):
     doc = parse(ast.get_docstring(google), "google")  # type: ignore
-    assert doc.text.str == "Example Google style docstrings."
-    assert doc.sections[0].text.str.startswith("This module")  # type: ignore
+    assert doc.text.str
+    assert doc.text.str.startswith("Example Google style docstrings.")
+    assert doc.sections[0].name == "Example"
+
+
+def test_merge(google, get, get_node):
+    a = parse(get(google, "ExampleClass"))
+    b = parse(get(get_node(google, "ExampleClass"), "__init__"))
+    doc = merge(a, b)
+    assert doc.text.str
+    assert doc.text.str.startswith("The summary line")
+    assert doc.text.str.endswith("with it.")
+    assert len(doc.sections) == 3
 
 
 def test_repr(google):
     r = repr(parse(ast.get_docstring(google), "google"))  # type: ignore
-    assert r == "Docstring(num_sections=6)"
+    assert r == "Docstring(sections=5)"

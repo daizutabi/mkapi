@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import mkapi.ast
 from mkapi.ast import is_property
+from mkapi.globals import get_link_from_text, get_link_from_type
 from mkapi.utils import (
     get_by_name,
     join_without_first_indent,
@@ -41,12 +42,27 @@ class Type(Element):
         args = ast.unparse(self.expr) if self.expr else ""
         return f"{self.__class__.__name__}({args})"
 
+    def set_markdown(self, module: str) -> None:
+        """Set Markdown text with link."""
+        is_object = self.kind is TypeKind.OBJECT
+
+        def get_link(name: str) -> str:
+            return get_link_from_type(module, name, is_object=is_object)
+
+        if self.expr and not self.markdown:
+            self.markdown = mkapi.ast.unparse(self.expr, get_link)
+
 
 @dataclass
 class Text(Element):
     """Text class."""
 
     str: str | None = None
+
+    def set_markdown(self, module: str) -> None:
+        """Set Markdown text with link."""
+        if self.str and not self.markdown:
+            self.markdown = get_link_from_text(module, self.str)
 
 
 @dataclass
@@ -63,7 +79,7 @@ class Item:
 
 @dataclass(repr=False)
 class Parameter(Item):
-    """Parameter class for [Class][mkapi.objects.Class] or [Function]."""
+    """Parameter class."""
 
     default: ast.expr | None
     kind: _ParameterKind | None
@@ -72,7 +88,7 @@ class Parameter(Item):
 def iter_parameters(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
 ) -> Iterator[Parameter]:
-    """Yield parameters from the function node."""
+    """Yield [Parameter] instances."""
     for arg, kind, default in mkapi.ast.iter_parameters(node):
         type_ = Type(arg.annotation)
         yield Parameter(arg.arg, type_, Text(None), default, kind)
@@ -80,7 +96,7 @@ def iter_parameters(
 
 @dataclass(repr=False)
 class Raise(Item):
-    """Raise class for [Class] or [Function]."""
+    """Raise class."""
 
 
 def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
@@ -242,7 +258,7 @@ class Returns(Section):
 
 
 def create_returns(name: str, text: str, style: str) -> Returns:
-    """Return a returns  section."""
+    """Return a returns section."""
     type_, text_ = split_without_name(text, style)
     type_ = Type(ast.Constant(type_) if type_ else None)
     text_ = Text(text_ or None)

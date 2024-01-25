@@ -103,7 +103,7 @@ def test_module():
     g = get_globals(name)
     node = get_module_node(name)
     assert node
-    module = create_module(node, name)
+    module = create_module(name, node)
     assert module
     members = module.classes + module.functions + module.attributes
     for member in members:

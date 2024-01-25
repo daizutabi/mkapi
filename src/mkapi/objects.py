@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 import ast
-import re
 from dataclasses import dataclass, field
-from functools import partial
 from typing import TYPE_CHECKING
 
 import mkapi.ast
@@ -29,7 +27,7 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import get_by_name, get_by_type, is_package, iter_parent_module_names
+from mkapi.utils import get_by_name, get_by_type, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -89,6 +87,7 @@ class Attribute(Member):
 
     type: Type
     default: ast.expr | None
+    text: Text = field(default_factory=Text, init=False)
 
     @property
     def kind(self) -> str:
@@ -205,14 +204,14 @@ class Module(Object):
 
     @property
     def kind(self) -> str:
-        """Return the kind."""
+        """Return the kind: package or module."""
         return "package" if is_package(self.name) else "module"
 
 
-def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
+def create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
     """Return a [Module] instance from an [ast.Module] node."""
     doc = docstrings.parse(ast.get_docstring(node))
-    module = Module(name, node, doc, None)
+    module = Module(name, node, doc, source)
     for child in iter_assigns(node):
         module.attributes.append(create_attribute(child, module))
     for child in mkapi.ast.iter_child_nodes(node):
@@ -221,7 +220,21 @@ def create_module(node: ast.Module, name: str = "__mkapi__") -> Module:
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
             module.functions.append(create_function(child, module))
     merge_items(module)
+    set_markdown(module)
     return module
+
+
+def merge_items(module: Module) -> None:
+    """Merge items."""
+    for obj in iter_objects(module):
+        if isinstance(obj, Module | Class | Function):
+            _merge_items(obj)
+
+
+def set_markdown(module: Module) -> None:
+    """Set markdown text with link."""
+    for obj in iter_objects(module):
+        obj.doc.set_markdown(module.name)
 
 
 def _create_empty_module() -> Module:
@@ -314,13 +327,6 @@ def _merge_items(obj: Module | Class | Function) -> None:
         merge_bases(obj)
 
 
-def merge_items(module: Module) -> None:
-    """Merge items."""
-    for obj in iter_objects(module):
-        if isinstance(obj, Module | Class | Function):
-            _merge_items(obj)
-
-
 def iter_objects_with_depth(
     obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
@@ -348,56 +354,3 @@ def iter_objects(
     """Yield [Object] instances."""
     for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
         yield obj_
-
-
-LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
-
-
-def set_markdown(module: Module) -> None:  # noqa: C901
-    """Set markdown with link form."""
-    cache: dict[str, str] = {}
-
-    def _get_link_type(name: str, asname: str) -> str:
-        if name in cache:
-            return cache[name]
-        fullname = get_fullname(module, name)
-        link = f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
-        cache[name] = link
-        return link
-
-    def get_link_type(name: str, kind: TypeKind = TypeKind.REFERENCE) -> str:
-        names = []
-        parents = iter_parent_module_names(name)
-        asnames = name.split(".")
-        for k, (name_, asname) in enumerate(zip(parents, asnames, strict=True)):
-            if kind is TypeKind.OBJECT and k == len(asnames) - 1:
-                names.append(asname)
-            else:
-                names.append(_get_link_type(name_, asname))
-        return ".".join(names)
-
-    def get_link_text(match: re.Match) -> str:
-        name = match.group(1)
-        link = get_link_type(name)
-        if name != link:
-            return link
-        return match.group()
-
-    for type_ in _iter_types(module):
-        if type_.expr:
-            get_link = partial(get_link_type, kind=type_.kind)
-            type_.markdown = mkapi.ast.unparse(type_.expr, get_link)
-
-    for text in _iter_texts(module):
-        if text.str:
-            text.markdown = re.sub(LINK_PATTERN, get_link_text, text.str)
-
-
-def _iter_types(module: Module) -> Iterator[Type]:
-    for obj_ in iter_objects(module):
-        yield from obj_.doc.iter_types()
-
-
-def _iter_texts(module: Module) -> Iterator[Text]:
-    for obj_ in iter_objects(module):
-        yield from obj_.doc.iter_texts()

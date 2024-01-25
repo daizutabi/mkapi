@@ -35,7 +35,7 @@ def test_iter_sections(numpy):
     assert len(sections) == 7
     assert sections[0][1].startswith("Example NumPy")
     assert sections[0][1].endswith("equal length.")
-    assert sections[1][0] == "Examples"
+    assert sections[1][0] == "Example"
     assert sections[1][1].startswith("Examples can be")
     assert sections[1][1].endswith("numpy.py")
     assert sections[2][1].startswith("Section breaks")
