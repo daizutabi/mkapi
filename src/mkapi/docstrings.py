@@ -226,32 +226,15 @@ class Docstring(Item):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
 
-    def __iter__(self) -> Iterator[Item | Attribute]:
-        yield self
-        for section in self.sections:
-            yield section
-            yield from section.items
-
-    def iter_types(self) -> Iterator[Type]:
-        """Yield [Type] instances."""
-        for item in self:
-            if item.type.expr:
-                yield item.type
-
-    def iter_texts(self) -> Iterator[Text]:
-        """Yield [Text] instances."""
-        for item in self:
-            if item.text.str:
-                yield item.text
-
-    def iter_elements(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Type | Text]:
         """Yield [Type] or [Text] instances."""
-        yield from self.iter_types()
-        yield from self.iter_texts()
+        yield from super().__iter__()
+        for section in self.sections:
+            yield from section
 
     def set_markdown(self, module: str) -> None:
         """Set Markdown text with link."""
-        for element in self.iter_elements():
+        for element in self:
             element.set_markdown(module)
 
 

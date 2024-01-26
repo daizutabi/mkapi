@@ -34,16 +34,16 @@ def test_create_parameters():
     assert not args
     args = _get_parameters("def f(x):\n pass")
     assert args[0].type.expr is None
-    assert args[0].default is None
+    assert args[0].default.expr is None
     assert args[0].kind is Parameter.POSITIONAL_OR_KEYWORD
     x = _get_parameters("def f(x=1):\n pass")[0]
-    assert isinstance(x.default, ast.Constant)
+    assert isinstance(x.default.expr, ast.Constant)
     x = _get_parameters("def f(x:str='s'):\n pass")[0]
     assert x.type.expr
     assert isinstance(x.type.expr, ast.Name)
     assert x.type.expr.id == "str"
-    assert isinstance(x.default, ast.Constant)
-    assert x.default.value == "s"
+    assert isinstance(x.default.expr, ast.Constant)
+    assert x.default.expr.value == "s"
     x = _get_parameters("def f(x:'X'='s'):\n pass")[0]
     assert x.type
     assert isinstance(x.type.expr, ast.Constant)
@@ -59,9 +59,9 @@ def test_create_parameters_tuple():
     assert node.value.id == "tuple"
     assert isinstance(node.slice, ast.Name)
     assert node.slice.id == "int"
-    assert isinstance(x.default, ast.Tuple)
-    assert isinstance(x.default.elts[0], ast.Constant)
-    assert x.default.elts[0].value == 1
+    assert isinstance(x.default.expr, ast.Tuple)
+    assert isinstance(x.default.expr.elts[0], ast.Constant)
+    assert x.default.expr.elts[0].value == 1
 
 
 def test_create_parameters_slice():
@@ -74,7 +74,7 @@ def test_create_parameters_slice():
     assert isinstance(node.slice, ast.Tuple)
     assert node.slice.elts[0].id == "int"  # type: ignore
     assert node.slice.elts[1].id == "str"  # type: ignore
-    assert isinstance(x.default, ast.Tuple)
+    assert isinstance(x.default.expr, ast.Tuple)
 
 
 def _get_attributes(source: str):
@@ -88,8 +88,8 @@ def test_get_attributes():
     x = _get_attributes(src)[0]
     assert isinstance(x, Assign)
     assert x.type.expr is None
-    assert isinstance(x.default, ast.Call)
-    assert ast.unparse(x.default.func) == "f.g"
+    assert isinstance(x.default.expr, ast.Call)
+    assert ast.unparse(x.default.expr.func) == "f.g"
     assert x.text.str == "docstring"
     src = "class A:\n x:X\n y:y\n '''docstring\n a'''\n z=0"
     assigns = _get_attributes(src)
@@ -98,11 +98,11 @@ def test_get_attributes():
     assert isinstance(y, Assign)
     assert isinstance(z, Assign)
     assert not x.text.str
-    assert x.default is None
+    assert x.default.expr is None
     assert y.text.str == "docstring\na"
     assert not z.text.str
-    assert isinstance(z.default, ast.Constant)
-    assert z.default.value == 0
+    assert isinstance(z.default.expr, ast.Constant)
+    assert z.default.expr.value == 0
     assert list(assigns) == [x, y, z]
 
 
@@ -151,20 +151,20 @@ def test_create_parameters_google(get):
     x = list(iter_parameters(func))
     assert x[0].name == "param1"
     assert x[0].type.expr is None
-    assert x[0].default is None
+    assert x[0].default.expr is None
     assert x[0].kind is Parameter.POSITIONAL_OR_KEYWORD
     assert x[1].name == "param2"
     assert x[1].type.expr is None
-    assert isinstance(x[1].default, ast.Constant)
-    assert x[1].default.value is None
+    assert isinstance(x[1].default.expr, ast.Constant)
+    assert x[1].default.expr.value is None
     assert x[1].kind is Parameter.POSITIONAL_OR_KEYWORD
     assert x[2].name == "args"
     assert x[2].type.expr is None
-    assert x[2].default is None
+    assert x[2].default.expr is None
     assert x[2].kind is Parameter.VAR_POSITIONAL
     assert x[3].name == "kwargs"
     assert x[3].type.expr is None
-    assert x[3].default is None
+    assert x[3].default.expr is None
     assert x[3].kind is Parameter.VAR_KEYWORD
 
 
@@ -190,16 +190,16 @@ def test_create_attributes(google, get):
     assert x[0].name == "module_level_variable1"
     assert x[0].type.expr is None
     assert x[0].text.str is None
-    assert isinstance(x[0].default, ast.Constant)
-    assert x[0].default.value == 12345
+    assert isinstance(x[0].default.expr, ast.Constant)
+    assert x[0].default.expr.value == 12345
     assert x[1].name == "module_level_variable2"
     assert isinstance(x[1].type.expr, ast.Name)
     assert x[1].type.expr.id == "int"
     assert x[1].text.str
     assert x[1].text.str.startswith("Module level")
     assert x[1].text.str.endswith("by a colon.")
-    assert isinstance(x[1].default, ast.Constant)
-    assert x[1].default.value == 98765
+    assert isinstance(x[1].default.expr, ast.Constant)
+    assert x[1].default.expr.value == 98765
     cls = get("ExamplePEP526Class")
     x = list(iter_assigns(cls))
     assert x[0].name == "attr1"
@@ -258,7 +258,7 @@ def test_iter_merged_items():
     item = next(iter_merged_items(items_ast, items_doc))
     assert item.name == "x"
     assert item.type.expr.id == "int"  # type: ignore
-    assert item.default.value == 0  # type: ignore
+    assert item.default.expr.value == 0  # type: ignore
     assert item.text.str == "parameter."
 
 

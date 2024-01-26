@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from mkdocs.structure.files import File, Files
     from mkdocs.structure.pages import Page as MkDocsPage
-    # from mkdocs.structure.toc import AnchorLink, TableOfContents
+    from mkdocs.structure.toc import AnchorLink, TableOfContents
     # from mkdocs.utils.templates import TemplateContext
     # from mkdocs.structure.nav import Navigation
 
@@ -84,20 +84,19 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         """Convert Markdown source to intermediate version."""
-        # clean_page_title(page)
         abs_src_path = page.file.abs_src_path
         mkapi_page = MkAPIPage(markdown, abs_src_path, self.config.filters)
-        self.config.pages[abs_src_path] = mkapi_page
+        # self.config.pages[abs_src_path] = mkapi_page
         return mkapi_page.convert_markdown()
 
     def on_page_content(self, html: str, page: MkDocsPage, **kwargs) -> str:
         """Merge HTML and MkAPI's object structure."""
-        # if page.title:
-        #     page.title = re.sub(r"<.*?>", "", str(page.title))  # type: ignore
-        mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
+        _replace_toc(page.toc)
+        # mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
         if page.file.src_uri in self.config.api_uris:
             self.bar.update(1)
-        return mkapi_page.convert_html(html)
+        # return mkapi_page.convert_html(html)
+        return html
 
     def on_post_build(self, *, config: MkDocsConfig) -> None:
         self.bar.clear()
@@ -116,7 +115,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     #         pass
     #         # clear_prefix(page.toc, 2)
     #     else:
-    #         mkapi_page: MkAPIPage = self.config.pages[abs_src_path]
+    #         mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
     #         # for level, id_ in mkapi_page.headings:
     #         #     clear_prefix(page.toc, level, id_)
     #     return context
@@ -250,16 +249,10 @@ def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File
     return files
 
 
-# def _clear_prefix(
-#     toc: TableOfContents | list[AnchorLink],
-#     name: str,
-#     level: int,
-# ) -> None:
-#     """Clear prefix."""
-#     for toc_item in toc:
-#         if toc_item.level >= level and (not name or toc_item.title == name):
-#             toc_item.title = toc_item.title.split(".")[-1]
-#         _clear_prefix(toc_item.children, "", level)
+def _replace_toc(toc: TableOfContents | list[AnchorLink]) -> None:
+    for link in toc:
+        link.id = link.id.replace("\0295\03", "_")
+        _replace_toc(link.children)
 
 
 # def _clean_page_title(page: MkDocsPage) -> None:

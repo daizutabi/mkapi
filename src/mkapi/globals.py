@@ -98,6 +98,8 @@ def _resolve(name: str) -> str | None:
     if name in _iter_objects(module):
         return name
     if import_ := get_by_name(_iter_imports(module), name):
+        if name == import_.fullname:
+            return None
         return _resolve(import_.fullname)
     return None
 
@@ -156,10 +158,11 @@ def get_link_from_type(module: str, name: str, *, is_object: bool = False) -> st
     parents = iter_parent_module_names(name)
     asnames = name.split(".")
     for k, (name, asname) in enumerate(zip(parents, asnames, strict=True)):
-        if is_object and k == len(asnames) - 1:
-            names.append(asname)
-        else:
-            names.append(_get_link(module, name, asname))
+        names.append(_get_link(module, name, asname))
+        # if is_object and k == len(asnames) - 1:
+        #     names.append(asname)
+        # else:
+        #     names.append(_get_link(module, name, asname))
     return ".".join(names)
 
 

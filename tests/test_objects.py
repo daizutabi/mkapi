@@ -12,8 +12,6 @@ from mkapi.objects import (
     create_class,
     create_function,
     create_module,
-    get_decorator,
-    is_dataclass,
     iter_objects,
     merge_items,
     objects,
@@ -230,19 +228,6 @@ def test_iter_objects_polars():
     assert get_by_name(x, "product")
 
 
-def test_iter_elements():
-    name = "polars.dataframe.frame"
-    node = get_module_node(name)
-    assert node
-    module = create_module(name, node)
-    assert module
-    obj = get_by_name(module.classes, "DataFrame")
-    assert obj
-    for elm in obj.doc.iter_elements():
-        print(elm)
-    assert 0
-
-
 def test_set_markdown():
     name = "mkapi.plugins"
     node = get_module_node(name)
@@ -280,15 +265,3 @@ def test_set_markdown_polars():
     assert "[polars][__mkapi__.polars].[dataframe]" in m
     assert "[__mkapi__.polars.dataframe].[frame]" in m
     assert "[__mkapi__.polars.dataframe.frame].DataFrame" in m
-
-
-def test_get_decorator():
-    name = "mkapi.objects"
-    node = get_module_node(name)
-    assert node
-    module = create_module(name, node)
-    assert module
-    cls = get_by_name(module.classes, "Member")
-    assert isinstance(cls, Class)
-    assert get_decorator(cls, "dataclasses.dataclass")
-    assert is_dataclass(cls)

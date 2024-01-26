@@ -3,7 +3,7 @@ from pathlib import Path
 from markdown import Markdown
 
 from mkapi.objects import Class
-from mkapi.pages import Page, create_page, object_paths, set_html, split_markdown
+from mkapi.pages import Page, create_page, object_paths, split_markdown
 
 source = """
 # Title
@@ -56,9 +56,9 @@ def test_set_html(tmpdir):
     html = page.convert_html(html, lambda *_: "")
     assert len(page.objects) == 1
     obj = page.objects[0]
-    for elm in obj.doc.iter_elements():
-        print("-----")
-        print(elm)
-        print(elm.markdown)
-        print(elm.html)
-    assert 0
+    assert isinstance(obj, Class)
+    x = obj.doc.type.html
+    assert '<a href="../a.md#polars">polars</a>.' in x
+    assert '<a href="../a.md#polars.dataframe">dataframe</a>' in x
+    assert ".frame.DataFrame" in x
+    object_paths.clear()

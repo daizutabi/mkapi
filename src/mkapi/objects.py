@@ -8,13 +8,12 @@ from typing import TYPE_CHECKING
 import mkapi.ast
 import mkapi.docstrings
 from mkapi import docstrings
-from mkapi.ast import iter_identifiers
 from mkapi.docstrings import Docstring
-from mkapi.globals import get_fullname
 from mkapi.items import (
     Assign,
     Assigns,
     Bases,
+    Default,
     Parameters,
     Raises,
     Returns,
@@ -31,11 +30,7 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import (
-    get_by_name,
-    get_by_type,
-    is_package,
-)
+from mkapi.utils import get_by_name, get_by_type, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -95,8 +90,14 @@ class Attribute(Member):
     """Attribute class."""
 
     type: Type
-    default: ast.expr | None
+    default: Default
     text: Text = field(default_factory=Text, init=False)
+
+    def __iter__(self) -> Iterator[Type | Text]:
+        if self.type.expr:
+            yield self.type
+        if self.default.expr:
+            yield self.default
 
     @property
     def kind(self) -> str:
@@ -351,30 +352,3 @@ def iter_objects(
     """Yield [Object] instances."""
     for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
         yield obj_
-
-
-def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
-    """Return a decorator expr by name."""
-    if not obj.module:
-        return None
-    for deco in obj.node.decorator_list:
-        deco_name = next(iter_identifiers(deco))
-        if get_fullname(obj.module.name, deco_name) == name:
-            return deco
-    return None
-
-
-def is_dataclass(cls: Class) -> bool:
-    """Return True if a [Class] instance is a dataclass."""
-    return get_decorator(cls, "dataclasses.dataclass") is not None
-
-
-# def _iter_decorator_args(deco: ast.expr) -> Iterator[tuple[str, Any]]:
-#     for child in ast.iter_child_nodes(deco):
-#         if isinstance(child, ast.keyword):
-#             if child.arg and isinstance(child.value, ast.Constant):
-#                 yield child.arg, child.value.value
-
-
-# def _get_decorator_args(deco: ast.expr) -> dict[str, Any]:
-#     return dict(_iter_decorator_args(deco))

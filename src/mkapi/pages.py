@@ -66,6 +66,7 @@ class Page:
         callback: Callable[..., str] | None = None,
     ) -> str:
         """Convert HTML."""
+        return html
         if not callback:
             callback = renderers.render
 
@@ -147,10 +148,10 @@ def get_markdown(obj: Object, level: int) -> str:
     """Return a Markdown source."""
     if level:
         fullname = obj.fullname.replace("_", "\\_")
-        markdowns = ["#" * level + f" {fullname} {{: #{fullname}}}"]
+        markdowns = ["#" * level + f" {fullname} {{#{fullname}}}"]
     else:
         markdowns = []
-    for element in obj.doc.iter_elements():
+    for element in obj.doc:
         markdowns.append(element.markdown)
     return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
 
@@ -160,7 +161,7 @@ def set_html(obj: Object, html: str, level: int) -> None:
     htmls = html.split("<!-- mkapi:sep -->")
     if level:
         htmls = htmls[1:]
-    for element, html in zip(obj.doc.iter_elements(), htmls, strict=True):
+    for element, html in zip(obj.doc, htmls, strict=True):
         element.html = html.strip()
         if isinstance(element, Type):
             element.html = delete_ptags(element.html)

@@ -11,12 +11,13 @@ from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
 from mkapi.importlib import get_object
-from mkapi.objects import iter_objects_with_depth
+from mkapi.inspect import get_signature
+from mkapi.objects import Class, Function, iter_objects_with_depth
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mkapi.objects import Attribute, Class, Function, Module
+    from mkapi.objects import Attribute, Module
 
 type Object = Module | Class | Function | Attribute
 
@@ -77,7 +78,7 @@ def render_markdown(
 
 
 def render(obj: Object, level: int, filters: list[str]) -> str:
-    """Return a rendered HTML for Node.
+    """Return a rendered HTML for [Object].
 
     Args:
         obj: Object instance.
@@ -97,7 +98,13 @@ def render(obj: Object, level: int, filters: list[str]) -> str:
 def render_object(obj: Object, level: int, filters: list[str]) -> str:
     """Return a rendered HTML for Object."""
     tag = f"h{level}" if level else "div"
-    return templates["object"].render(object=obj, tag=tag, filters=filters)
+    signature = get_signature(obj) if isinstance(obj, Class | Function) else None
+    return templates["object"].render(
+        object=obj,
+        signature=signature,
+        tag=tag,
+        filters=filters,
+    )
     # context = resolve_object(obj.html)
     # level = context.get("level")
     # if level:

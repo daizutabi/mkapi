@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass, field
 from enum import Enum
+from inspect import _ParameterKind
 from typing import TYPE_CHECKING
 
 import mkapi.ast
@@ -21,7 +22,6 @@ from mkapi.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
-    from inspect import _ParameterKind
 
     from mkapi.objects import Attribute
 
@@ -60,7 +60,15 @@ class Type(Element):
         if isinstance(self.expr, ast.Constant) and isinstance(self.expr.value, str):
             self.markdown = get_link_from_type_string(module, self.expr.value)
         elif self.expr:
-            self.markdown = mkapi.ast.unparse(self.expr, get_link)
+            try:
+                self.markdown = mkapi.ast.unparse(self.expr, get_link)
+            except ValueError:
+                self.markdown = ast.unparse(self.expr)
+
+
+@dataclass(repr=False)
+class Default(Type):
+    """Default class."""
 
 
 @dataclass
@@ -68,6 +76,9 @@ class Text(Element):
     """Text class."""
 
     str: str | None = None
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.str or ''})"
 
     def set_markdown(self, module: str) -> None:
         """Set Markdown text with link."""
@@ -86,13 +97,24 @@ class Item:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
 
+    def __iter__(self) -> Iterator[Type | Text]:
+        if self.type.expr:
+            yield self.type
+        if self.text.str:
+            yield self.text
+
 
 @dataclass(repr=False)
 class Parameter(Item):
     """Parameter class."""
 
-    default: ast.expr | None
-    kind: _ParameterKind | None
+    default: Default
+    kind: _ParameterKind = _ParameterKind.POSITIONAL_OR_KEYWORD
+
+    def __iter__(self) -> Iterator[Type | Text]:
+        yield from super().__iter__()
+        if self.default.expr:
+            yield self.default
 
 
 def iter_parameters(
@@ -101,7 +123,7 @@ def iter_parameters(
     """Yield [Parameter] instances."""
     for arg, kind, default in mkapi.ast.iter_parameters(node):
         type_ = Type(arg.annotation)
-        yield Parameter(arg.arg, type_, Text(), default, kind)
+        yield Parameter(arg.arg, type_, Text(), Default(default), kind)
 
 
 @dataclass(repr=False)
@@ -149,8 +171,13 @@ def iter_bases(node: ast.ClassDef) -> Iterator[Base]:
 class Assign(Item):
     """Assign class for [Module] or [Class]."""
 
-    default: ast.expr | None
+    default: Default
     node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
+
+    def __iter__(self) -> Iterator[Type | Text]:
+        yield from super().__iter__()
+        if self.default.expr:
+            yield self.default
 
 
 def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
@@ -170,14 +197,14 @@ def create_assign(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Assign:
     type_ = mkapi.ast.get_assign_type(node)
     type_, text = _assign_type_text(type_, node.__doc__)
     default = None if isinstance(node, ast.TypeAlias) else node.value
-    return Assign(name, type_, text, default, node)
+    return Assign(name, type_, text, Default(default), node)
 
 
 def create_assign_from_property(node: ast.FunctionDef) -> Assign:
     """Return an [Assign] instance from a property."""
     node.__doc__ = ast.get_docstring(node)
     type_, text = _assign_type_text(node.returns, node.__doc__)
-    return Assign(node.name, type_, text, None, node)
+    return Assign(node.name, type_, text, Default(), node)
 
 
 def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
@@ -229,12 +256,10 @@ class Section(Item):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(items={len(self.items)})"
 
-    def __iter__(self) -> Iterator[Item]:
-        return iter(self.items)
-
-    def get(self, name: str) -> Item | None:
-        """Return an [Item] instance by name."""
-        return get_by_name(self.items, name)
+    def __iter__(self) -> Iterator[Type | Text]:
+        yield from super().__iter__()
+        for item in self.items:
+            yield from item
 
 
 @dataclass(repr=False)
@@ -246,7 +271,7 @@ class Parameters(Section):
 
 def create_parameters(items: Iterable[tuple[str, Type, Text]]) -> Parameters:
     """Return a parameters section."""
-    parameters = [Parameter(*args, None, None) for args in items]
+    parameters = [Parameter(*args, Default()) for args in items]
     return Parameters("Parameters", Type(), Text(), parameters)
 
 
@@ -259,7 +284,7 @@ class Assigns(Section):
 
 def create_assigns(items: Iterable[tuple[str, Type, Text]]) -> Assigns:
     """Return an Assigns section."""
-    assigns = [Assign(*args, None, None) for args in items]
+    assigns = [Assign(*args, Default(), None) for args in items]
     return Assigns("Assigns", Type(), Text(), assigns)
 
 

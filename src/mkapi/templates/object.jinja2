@@ -7,7 +7,13 @@
   <div class="mkapi-object {{ kind_class }} {% if body_tag == 'span' %}plain{% else %}code{% endif %}{{ top }}">
     <div class="mkapi-object-kind {{ kind_class }}{{ top }}">{{ object.kind }}</div>
     <{{tag}} id="{{ object.fullname }}" class="mkapi-object-body {{ kind_class }}{{ top }}">
-      {{ object_body(object, prefix_url, name_url, body_tag, upper, filters) }}
+    <span title="{{ object.fullname }}">{{ object.qualname }}</span>
+    {%- if signature -%}
+    {%- for p in signature -%}
+    {{ p.text|safe }}
+    {%- endfor -%}
+    {%- endif -%}
+      {# {{ object_body(object, prefix_url, name_url, body_tag, upper, filters) }} #}
     </{{tag}}>
   </div>
   {# {% if 'sourcelink' in filters or 'link' in filters or 'apilink' in filters -%}
