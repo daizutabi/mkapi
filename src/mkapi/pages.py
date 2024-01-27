@@ -6,15 +6,14 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mkapi import renderers
 from mkapi.importlib import get_object
+from mkapi.objects import Class, Function, iter_objects_with_depth
 from mkapi.utils import split_filters, update_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
     from mkapi.objects import Attribute, Class, Function, Module
-
 
 object_paths: dict[str, Path] = {}
 
@@ -38,10 +37,38 @@ def create_page(
 
     with path.open("w") as file:
         for name in names:
-            markdown = renderers.render_markdown(name, level, filters, _predicate)
+            markdown = create_markdown(name, level, filters, _predicate)
             file.write(markdown)
             if name != names[-1]:
                 file.write("\n")
+
+
+NAME_PATTERN = re.compile(r"^(.+?)(\.\*+)?$")
+
+
+def create_markdown(
+    name: str,
+    level: int,
+    filters: list[str],
+    predicate: Callable[[Module | Class | Function | Attribute], bool] | None = None,
+) -> str:
+    """Create markdown."""
+    if m := NAME_PATTERN.match(name):
+        name = m.group(1)
+        maxdepth = int(len(m.group(2) or ".")) - 1
+    else:
+        maxdepth = 0
+    filters_str = "|" + "|".join(filters) if filters else ""
+    if not (obj := get_object(name)):
+        return f"!!! failure\n\n    {name!r} not found."
+    markdowns = []
+    for obj_, depth in iter_objects_with_depth(obj, maxdepth):
+        if predicate and not predicate(obj_):
+            continue
+        heading = "#" * (level + depth) + " " if level else ""
+        markdown = f"{heading}::: {obj_.fullname}{filters_str}\n"
+        markdowns.append(markdown)
+    return "\n".join(markdowns)
 
 
 OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.MULTILINE)
@@ -81,7 +108,7 @@ def convert_markdown(source: str, path: str, filters: list[str]) -> str:
 def get_markdown(name: str, level: int, filters: list[str]) -> str:
     """Return a Markdown source."""
     if not (obj := get_object(name)):
-        return f"{name} not found."
+        return f"!!! failure\n\n    {name!r} not found."
     if level:
         fullname = obj.fullname.replace("_", "\\_")
         markdowns = ["#" * level + f" {fullname} {{#{fullname}}}"]
@@ -89,7 +116,7 @@ def get_markdown(name: str, level: int, filters: list[str]) -> str:
         markdowns = []
     for element in obj.doc:
         markdowns.append(element.markdown)
-    return "\n\n<!-- mkapi:sep -->\n\n".join(markdowns)
+    return "\n\n".join(markdowns)
 
 
 LINK_PATTERN = re.compile(r"\[(\S+?)\]\[(\S+?)\]")
