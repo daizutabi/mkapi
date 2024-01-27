@@ -3,10 +3,10 @@ def on_config(config, mkapi):
 
 
 def page_title(name: str, depth: int) -> str:
-    return f"{name}-p{depth}"
+    return name
     # return ".".join(module_name.split(".")[depth:])
 
 
 def section_title(name: str, depth: int) -> str:
-    return f"{name}-s{depth}"
+    return name
     # return ".".join(package_name.split(".")[depth:])

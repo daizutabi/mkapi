@@ -60,9 +60,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         _insert_sys_path(config, self)
         _update_templates(config, self)
         _update_config(config, self)
-        for name in ["admonition", "attr_list"]:
-            if name not in config.markdown_extensions:
-                config.markdown_extensions.append(name)
+        _update_extensions(config, self)
         return _on_config_plugin(config, self)
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
@@ -86,8 +84,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_page_content(self, html: str, page: MkDocsPage, **kwargs) -> str:
         """Merge HTML and MkAPI's object structure."""
-        _replace_toc(page.toc)
         if page.file.src_uri in self.config.api_uris:
+            _replace_toc(page.toc)
             self.bar.update(1)
         return html
 
@@ -140,6 +138,12 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         plugin.config.api_uris = MkAPIPlugin.api_uris
 
 
+def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    for name in ["admonition", "attr_list", "def_list"]:
+        if name not in config.markdown_extensions:
+            config.markdown_extensions.append(name)
+
+
 def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     if not config.nav:
         return
@@ -155,7 +159,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
             logger.warning(msg)
         if not abs_path.parent.exists():
             abs_path.parent.mkdir(parents=True)
-        create_page(f"{name}.**", abs_path, 1, filters)
+        create_page(f"{name}.**", abs_path, filters)
         plugin.config.api_uris.append(path)
         return page(name, depth) if page else name
 
@@ -233,14 +237,8 @@ def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File
 def _replace_toc(toc: TableOfContents | list[AnchorLink]) -> None:
     for link in toc:
         link.id = link.id.replace("\0295\03", "_")
+        link.title = link.title.split(".")[-1]
         _replace_toc(link.children)
-
-
-# def _clean_page_title(page: MkDocsPage) -> None:
-#     """Clean page title."""
-#     title = str(page.title)
-#     if title.startswith("![mkapi]("):
-#         page.title = title[9:-1].split("|")[0]  # type: ignore
 
 
 # def create_source_page(path: Path, module: Module, filters: list[str]) -> None:

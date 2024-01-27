@@ -38,10 +38,11 @@ class Element:
 
 
 @dataclass
-class Type(Element):
+class Type:
     """Type class."""
 
     expr: ast.expr | None = None
+    markdown: str = field(default="", init=False)
     kind: TypeKind = TypeKind.REFERENCE
 
     def __repr__(self) -> str:
@@ -72,10 +73,11 @@ class Default(Type):
 
 
 @dataclass
-class Text(Element):
+class Text:
     """Text class."""
 
     str: str | None = None
+    markdown: str = field(default="", init=False)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.str or ''})"

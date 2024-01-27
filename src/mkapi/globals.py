@@ -159,6 +159,7 @@ def get_fullname(module: str, name: str) -> str | None:
 
 def _get_link(module: str, name: str, asname: str) -> str:
     fullname = get_fullname(module, name)
+    asname = asname.replace("_", "\\_")
     return f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
 
 
