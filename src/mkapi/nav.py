@@ -1,4 +1,4 @@
-"""Navivgation utility functions."""
+"""Navigation utility functions."""
 from __future__ import annotations
 
 import re
@@ -57,7 +57,7 @@ def gen_apinav(
     nav: list,
     depth: int = 0,
 ) -> Generator[tuple[str, bool, int], Any, None]:
-    """Yield tuple of (module name, is_section).
+    """Yield tuple of (module name, is_section, depth).
 
     Sent value is used to modify section names or nav items.
     """
@@ -141,12 +141,17 @@ def update_nav(
     create_page: Callable[[str, str, list[str], int], str | None],
     section: Callable[[str, int], str] | None = None,
     predicate: Callable[[str], bool] | None = None,
+    index_name: str = "README",
 ) -> None:
     """Update navigation."""
 
     def create_apinav(name: str, api_path: str, filters: list[str]) -> list:
         def page(name: str, depth: int) -> str | dict[str, str]:
-            path = f"{api_path}/{name}.md"
+            if is_package(name):
+                path = name.replace(".", "/") + f"/{index_name}.md"
+            else:
+                path = name.replace(".", "/") + ".md"
+            path = f"{api_path}/{path}"
             title = create_page(name, path, filters, depth)
             return {title: path} if title else path
 

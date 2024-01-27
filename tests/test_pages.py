@@ -37,28 +37,3 @@ def test_create_page(tmpdir):
     assert "<!-- mkapi:end -->" in markdown
     assert "[Callable](../a.md#mkapi.objects.Callable)" in markdown
     assert "list[[Base](../a.md#mkapi.items.Base)]" in markdown
-
-
-def test_set_html(tmpdir):
-    object_paths.clear()
-    name = "polars,polars.dataframe"
-    path = Path(tmpdir / "a.md")
-    create_page(name, path, 1, ["f", "g"])
-    name = "polars.datatypes.classes.*"
-    path = Path(tmpdir / "b.md")
-    create_page(name, path, 1, ["f", "g"])
-    path = tmpdir.mkdir("src") / "c.md"
-    page = Page("# Title\n::: polars.dataframe.frame.DataFrame", path)
-    x = page.convert_markdown()
-    assert "[polars](../a.md#polars).[dataframe](../a.md#polars.dataframe).frame" in x
-    assert "[DataType](../b.md#polars.datatypes.classes.DataType)" in x
-    html = Markdown().convert(x)
-    html = page.convert_html(html, lambda *_: "")
-    assert len(page.objects) == 1
-    obj = page.objects[0]
-    assert isinstance(obj, Class)
-    x = obj.doc.type.html
-    assert '<a href="../a.md#polars">polars</a>.' in x
-    assert '<a href="../a.md#polars.dataframe">dataframe</a>' in x
-    assert ".frame.DataFrame" in x
-    object_paths.clear()

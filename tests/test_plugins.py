@@ -42,7 +42,7 @@ def test_mkdocs_config(mkdocs_config: MkDocsConfig):
     assert isinstance(config, MkDocsConfig)
     path = Path(config.config_file_path)
     assert path.as_posix().endswith("mkapi/examples/mkdocs.yml")
-    assert config.site_name == "Doc for CI"
+    assert config.site_name == "MkAPI"
     assert Path(config.docs_dir) == path.parent / "docs"
     assert Path(config.site_dir) == path.parent / "site"
     assert config.nav[0] == "index.md"  # type: ignore

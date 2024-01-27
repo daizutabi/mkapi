@@ -234,12 +234,13 @@ def test_set_markdown():
     assert node
     module = create_module(name, node)
     assert module
-    assert module.doc.type.markdown == "[mkapi][__mkapi__.mkapi].plugins"
+    x = module.doc.type.markdown
+    assert x == "[mkapi][__mkapi__.mkapi]..[plugins][__mkapi__.mkapi.plugins]"
     obj = get_by_name(module.classes, "MkAPIPlugin")
     assert isinstance(obj, Class)
     m = obj.doc.type.markdown
-    assert "[mkapi][__mkapi__.mkapi]." in m
-    assert ".[plugins][__mkapi__.mkapi.plugins].MkAPIPlugin" in m
+    assert "[mkapi][__mkapi__.mkapi].." in m
+    assert "..[plugins][__mkapi__.mkapi.plugins].." in m
     m = obj.bases[0].type.markdown
     assert "[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]" in m
     assert "[[MkAPIConfig][__mkapi__.mkapi.plugins.MkAPIConfig]]" in m
@@ -262,6 +263,6 @@ def test_set_markdown_polars():
     obj = get_by_name(module.classes, "DataFrame")
     assert isinstance(obj, Class)
     m = obj.doc.type.markdown
-    assert "[polars][__mkapi__.polars].[dataframe]" in m
-    assert "[__mkapi__.polars.dataframe].[frame]" in m
-    assert "[__mkapi__.polars.dataframe.frame].DataFrame" in m
+    assert "[polars][__mkapi__.polars]..[dataframe]" in m
+    assert "[__mkapi__.polars.dataframe]..[frame]" in m
+    assert "[__mkapi__.polars.dataframe.frame]" in m

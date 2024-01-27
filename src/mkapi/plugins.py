@@ -24,8 +24,7 @@ from tqdm import tqdm  # type: ignore
 import mkapi
 from mkapi import renderers
 from mkapi.nav import create_nav, update_nav
-from mkapi.pages import Page as MkAPIPage
-from mkapi.pages import create_page
+from mkapi.pages import convert_markdown, create_page
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -33,8 +32,6 @@ if TYPE_CHECKING:
     from mkdocs.structure.files import File, Files
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
-    # from mkdocs.utils.templates import TemplateContext
-    # from mkdocs.structure.nav import Navigation
 
 logger = get_plugin_logger("MkAPI")
 
@@ -48,7 +45,6 @@ class MkAPIConfig(Config):
     page_title = config_options.Type(str, default="")
     section_title = config_options.Type(str, default="")
     on_config = config_options.Type(str, default="")
-    pages = config_options.Type(dict, default={})
     api_dirs = config_options.Type(list, default=[])
     api_uris = config_options.Type(list, default=[])
 
@@ -57,6 +53,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     """MkAPIPlugin class for API generation."""
 
     nav: list | None = None
+    api_dirs: list
+    api_uris: list
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         _insert_sys_path(config, self)
@@ -67,9 +65,6 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
                 config.markdown_extensions.append(name)
         return _on_config_plugin(config, self)
 
-    # def on_pre_build(self, *, config: MkDocsConfig) -> None:
-    #     logger.info(len(self.config.api_uris))
-
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         """Collect plugin CSS/JavaScript and append them to `files`."""
         for file in _collect_theme_files(config, self):
@@ -78,47 +73,26 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_nav(self, *args, **kwargs) -> None:
         total = len(self.config.api_uris)
+        desc = "MkAPI: Building API"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            self.bar = tqdm(desc="Building API", total=total, colour="green")
+            self.bar = tqdm(desc=desc, total=total, leave=False)
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         """Convert Markdown source to intermediate version."""
-        abs_src_path = page.file.abs_src_path
-        mkapi_page = MkAPIPage(markdown, abs_src_path, self.config.filters)
-        # self.config.pages[abs_src_path] = mkapi_page
-        return mkapi_page.convert_markdown()
+        path = page.file.abs_src_path
+        filters = self.config.filters
+        return convert_markdown(markdown, path, filters)
 
     def on_page_content(self, html: str, page: MkDocsPage, **kwargs) -> str:
         """Merge HTML and MkAPI's object structure."""
         _replace_toc(page.toc)
-        # mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
         if page.file.src_uri in self.config.api_uris:
             self.bar.update(1)
-        # return mkapi_page.convert_html(html)
         return html
 
     def on_post_build(self, *, config: MkDocsConfig) -> None:
-        self.bar.clear()
-
-    # def on_page_context(
-    #     self,
-    #     context: TemplateContext,
-    #     page: MkDocsPage,
-    #     config: MkDocsConfig,
-    #     nav: Navigation,
-    #     **kwargs,
-    # ) -> TemplateContext:
-    #     """Clear prefix in toc."""
-    #     src_uri = page.file.src_uri
-    #     if src_uri in self.config.pages:
-    #         pass
-    #         # clear_prefix(page.toc, 2)
-    #     else:
-    #         mkapi_page: MkAPIPage = self.config.pages[page.file.abs_src_path]
-    #         # for level, id_ in mkapi_page.headings:
-    #         #     clear_prefix(page.toc, level, id_)
-    #     return context
+        self.bar.close()
 
     def on_serve(self, server, config: MkDocsConfig, builder, **kwargs):
         for path in ["themes", "templates"]:
@@ -158,8 +132,12 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     if not MkAPIPlugin.nav:
         _update_nav(config, plugin)
         MkAPIPlugin.nav = config.nav
+        MkAPIPlugin.api_dirs = plugin.config.api_dirs
+        MkAPIPlugin.api_uris = plugin.config.api_uris
     else:
         config.nav = MkAPIPlugin.nav
+        plugin.config.api_dirs = MkAPIPlugin.api_dirs
+        plugin.config.api_uris = MkAPIPlugin.api_uris
 
 
 def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
@@ -175,7 +153,8 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         if abs_path.exists():
             msg = f"Duplicated API page: {abs_path.as_posix()!r}"
             logger.warning(msg)
-        # TODO: .**
+        if not abs_path.parent.exists():
+            abs_path.parent.mkdir(parents=True)
         create_page(f"{name}.**", abs_path, 1, filters)
         plugin.config.api_uris.append(path)
         return page(name, depth) if page else name
@@ -190,6 +169,9 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
 
 def _make_api_dir(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    if not config.nav:
+        return
+
     def mkdir(name: str, path: str, fileters: list[str]) -> list:  # noqa: ARG001
         api_dir = Path(config.docs_dir) / path
         if api_dir.exists() and api_dir not in plugin.config.api_dirs:
@@ -203,8 +185,7 @@ def _make_api_dir(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
             plugin.config.api_dirs.append(api_dir)
         return []
 
-    if config.nav:
-        create_nav(config.nav, mkdir)
+    create_nav(config.nav, mkdir)
 
 
 def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:

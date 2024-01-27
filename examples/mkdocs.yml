@@ -1,4 +1,4 @@
-site_name: Doc for CI
+site_name: MkAPI
 site_url: https://daizutabi.github.io/mkapi/
 site_description: API documentation with MkDocs.
 site_author: daizutabi
@@ -6,10 +6,16 @@ repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 theme:
   name: material
-  highlightjs: true
-  hljs_languages:
-    - yaml
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
 plugins:
+  - search:
   - mkapi:
       src_dirs: [.]
       on_config: custom.on_config
@@ -25,7 +31,7 @@ nav:
     - 1.md
     # - <api2>/mkapi.**|nav_filter3
     - 2.md
-  # - MkDocs: <api3>/mkdocs.***|nav_filter4
+  - MkDocs: <api3>/mkdocs.**|nav_filter4
   - Polars: <api4>/polars.***|nav_filter4
 
 

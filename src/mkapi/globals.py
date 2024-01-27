@@ -49,8 +49,19 @@ def _iter_objects(module: str) -> Iterator[str]:
             yield f"{module}.{child.name}"
         elif isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):  # noqa: SIM102
             if assign_name := mkapi.ast.get_assign_name(child):  # noqa: SIM102
+                # if isinstance(child, ast.Assign) and assign_name == "__all__":
+                #     for name in _iter_objects_from_all(child):
+                #         yield f"{module}.{name}"
                 if not assign_name.startswith("__"):
                     yield f"{module}.{assign_name}"
+
+
+def _iter_objects_from_all(node: ast.Assign) -> Iterator[str]:
+    if not isinstance(node.value, ast.List):
+        return
+    for c in node.value.elts:
+        if isinstance(c, ast.Constant) and isinstance(c.value, str):
+            yield c.value
 
 
 def _iter_imports(module: str) -> Iterator[Import]:
@@ -157,18 +168,15 @@ def get_link_from_type(module: str, name: str, *, is_object: bool = False) -> st
     names = []
     parents = iter_parent_module_names(name)
     asnames = name.split(".")
-    for k, (name, asname) in enumerate(zip(parents, asnames, strict=True)):
+    for name, asname in zip(parents, asnames, strict=True):
         names.append(_get_link(module, name, asname))
-        # if is_object and k == len(asnames) - 1:
-        #     names.append(asname)
-        # else:
-        #     names.append(_get_link(module, name, asname))
-    return ".".join(names)
+    return "..".join(names) if is_object else ".".join(names)
 
 
 LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
 
 
+# TODO: [`xxx`] -> [xxx]
 def get_link_from_text(module: str, text: str, *, name_only: bool = False) -> str:
     """Return markdown links from text."""
 

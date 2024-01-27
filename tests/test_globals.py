@@ -173,7 +173,7 @@ def test_get_link_from_type():
     assert get_link_from_type("mkapi.objects", "str") == "str"
     assert get_link_from_type("mkapi.objects", "None") == "None"
     x = get_link_from_type("mkapi.objects", "mkapi.objects", is_object=True)
-    assert x == "[mkapi][__mkapi__.mkapi].objects"
+    assert x == "[mkapi][__mkapi__.mkapi]..[objects][__mkapi__.mkapi.objects]"
 
 
 def test_get_link_from_text():
@@ -204,3 +204,8 @@ def test_get_link_from_type_string():
     x = get_link_from_type_string("mkapi.objects", "1 Object or Class.")
     assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
     assert "or [Class][__mkapi__.mkapi.objects.Class]." in x
+
+
+def test_all():
+    assert get_fullname("polars", "exceptions") != "polars.exceptions"
+    assert get_fullname("polars", "api") == "polars.api"
