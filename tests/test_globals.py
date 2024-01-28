@@ -5,17 +5,17 @@ import re
 import pytest
 
 from mkapi.globals import (
-    LINK_PATTERN,
+    # LINK_PATTERN,
     Global,
-    _iter_identifiers,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
-    _resolve,
     get_fullname,
     get_globals,
-    get_link_from_text,
+    # get_link_from_text,
     get_link_from_type,
     get_link_from_type_string,
+    iter_identifiers,
+    resolve,
 )
 from mkapi.objects import create_module
 from mkapi.utils import get_by_name, get_module_node
@@ -47,15 +47,15 @@ def test_iter_import_asname():
 
 
 def test_resolve():
-    assert _resolve("tqdm.tqdm") == "tqdm.std.tqdm"
-    assert _resolve("logging.Template") == "string.Template"
-    assert _resolve("halo.Halo") == "halo.halo.Halo"
-    assert _resolve("jinja2.Template") == "jinja2.environment.Template"
-    assert _resolve("polars.DataFrame") == "polars.dataframe.frame.DataFrame"
-    assert _resolve("polars.DataType") == "polars.datatypes.classes.DataType"
-    assert _resolve("polars.col") == "polars.functions.col"
-    assert _resolve("polars.row") is None
-    assert _resolve("mkdocs.config.Config") == "mkdocs.config.base.Config"
+    assert resolve("tqdm.tqdm") == "tqdm.std.tqdm"
+    assert resolve("logging.Template") == "string.Template"
+    assert resolve("halo.Halo") == "halo.halo.Halo"
+    assert resolve("jinja2.Template") == "jinja2.environment.Template"
+    assert resolve("polars.DataFrame") == "polars.dataframe.frame.DataFrame"
+    assert resolve("polars.DataType") == "polars.datatypes.classes.DataType"
+    assert resolve("polars.col") == "polars.functions.col"
+    assert resolve("polars.row") is None
+    assert resolve("mkdocs.config.Config") == "mkdocs.config.base.Config"
 
 
 def test_relative_import():
@@ -144,27 +144,6 @@ def test_get_fullname():
     # assert x == "dd"
 
 
-def test_link_pattern():
-    def f(m: re.Match) -> str:
-        name = m.group(1)
-        if name == "abc":
-            return f"[{name}][_{name}]"
-        return m.group()
-
-    assert re.search(LINK_PATTERN, "X[abc]Y")
-    assert not re.search(LINK_PATTERN, "X[ab c]Y")
-    assert re.search(LINK_PATTERN, "X[abc][]Y")
-    assert not re.search(LINK_PATTERN, "X[abc](xyz)Y")
-    assert not re.search(LINK_PATTERN, "X[abc][xyz]Y")
-    assert re.sub(LINK_PATTERN, f, "X[abc]Y") == "X[abc][_abc]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc[abc]]Y") == "X[abc[abc][_abc]]Y"
-    assert re.sub(LINK_PATTERN, f, "X[ab]Y") == "X[ab]Y"
-    assert re.sub(LINK_PATTERN, f, "X[ab c]Y") == "X[ab c]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc] c]Y") == "X[abc][_abc] c]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc][]Y") == "X[abc][_abc]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc](xyz)Y") == "X[abc](xyz)Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc][xyz]Y") == "X[abc][xyz]Y"
-
 
 def test_get_link_from_type():
     x = get_link_from_type("mkapi.objects", "Object")
@@ -184,24 +163,24 @@ def test_get_link_from_type():
     assert x == "[mkapi][__mkapi__.mkapi]..[objects][__mkapi__.mkapi.objects]"
 
 
-def test_get_link_from_text():
-    x = get_link_from_text("mkapi.objects", "# title\n[Object]")
-    assert x == "# title\n[Object][__mkapi__.mkapi.objects.Object]"
-    x = get_link_from_text("mkapi.objects", "# title\n[XXX]")
-    assert x == "# title\n[XXX]"
-    x = get_link_from_text("mkapi.objects", "# title\n[XXX]", name_only=True)
-    assert x == "# title\nXXX"
+# def test_get_link_from_text():
+#     x = get_link_from_text("mkapi.objects", "# title\n[Object]")
+#     assert x == "# title\n[Object][__mkapi__.mkapi.objects.Object]"
+#     x = get_link_from_text("mkapi.objects", "# title\n[XXX]")
+#     assert x == "# title\n[XXX]"
+#     x = get_link_from_text("mkapi.objects", "# title\n[XXX]", name_only=True)
+#     assert x == "# title\nXXX"
 
 
 def test_iter_identifiers():
     x = "1"
-    assert next(_iter_identifiers(x)) == ("1", False)
+    assert next(iter_identifiers(x)) == ("1", False)
     x = "a1"
-    assert next(_iter_identifiers(x)) == ("a1", True)
+    assert next(iter_identifiers(x)) == ("a1", True)
     x = "a,b"
-    assert list(_iter_identifiers(x)) == [("a", True), (",", False), ("b", True)]
+    assert list(iter_identifiers(x)) == [("a", True), (",", False), ("b", True)]
     x = "dict, Sequence, ndarray, 'Series', or pandas.DataFrame."
-    x = list(_iter_identifiers(x))
+    x = list(iter_identifiers(x))
     assert ("dict", True) in x
     assert ("Sequence", True) in x
     assert ("'Series'", False) in x

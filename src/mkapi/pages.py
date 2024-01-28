@@ -6,7 +6,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mkapi.globals import _resolve_with_attribute
+from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object
 from mkapi.objects import is_empty, iter_objects_with_depth
 from mkapi.renderers import render
@@ -131,7 +131,7 @@ def _replace_link(match: re.Match, directory: Path) -> str:
         fullname = fullname[10:]
     else:
         from_mkapi = False
-    if fullname_ := _resolve_with_attribute(fullname):
+    if fullname_ := resolve_with_attribute(fullname):
         fullname = fullname_
     if object_path := object_paths.get(fullname):
         uri = object_path.relative_to(directory, walk_up=True).as_posix()

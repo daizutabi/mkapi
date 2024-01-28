@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import mkapi.ast
 from mkapi.ast import is_property
 from mkapi.globals import (
-    get_link_from_text,
+    # get_link_from_text,
     get_link_from_type,
     get_link_from_type_string,
 )
@@ -75,7 +75,7 @@ class Default(Type):
     # TODO: use module.
     def set_markdown(self, module: str) -> None:
         """Set Markdown text with link."""
-        if self.expr:
+        if self.expr and not self.markdown:
             self.markdown = ast.unparse(self.expr)
 
 
@@ -88,11 +88,6 @@ class Text:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.str or ''})"
-
-    def set_markdown(self, module: str) -> None:
-        """Set Markdown text with link."""
-        if self.str and not self.markdown:
-            self.markdown = get_link_from_text(module, self.str)
 
 
 @dataclass

@@ -13,6 +13,7 @@ from mkapi.utils import (
     get_by_name,
     get_module_node,
     get_module_path,
+    iter_identifiers,
     iter_parent_module_names,
 )
 
@@ -102,7 +103,8 @@ def _iter_imports_from_import_from(
 
 
 @cache
-def _resolve(name: str) -> str | None:
+def resolve(name: str) -> str | None:
+    """Resolve name."""
     if get_module_path(name) or "." not in name:
         return name
     module, _ = name.rsplit(".", maxsplit=1)
@@ -111,16 +113,17 @@ def _resolve(name: str) -> str | None:
     if import_ := get_by_name(_iter_imports(module), name):
         if name == import_.fullname:
             return None
-        return _resolve(import_.fullname)
+        return resolve(import_.fullname)
     return None
 
 
-def _resolve_with_attribute(name: str) -> str | None:
-    if fullname := _resolve(name):
+def resolve_with_attribute(name: str) -> str | None:
+    """Resolve name with attribute."""
+    if fullname := resolve(name):
         return fullname
     if "." in name:
         name_, attr = name.rsplit(".", maxsplit=1)
-        if fullname := _resolve(name_):
+        if fullname := resolve(name_):
             return f"{fullname}.{attr}"
     return None
 
@@ -138,7 +141,7 @@ def _iter_globals(module: str) -> Iterator[Global | Import]:
         yield Global(name[n:], name)
     for import_ in _iter_imports(module):
         name = import_.name[n:]
-        if fullname := _resolve(import_.fullname):
+        if fullname := resolve(import_.fullname):
             yield Import(name, fullname)
         else:
             yield Import(name, import_.fullname)
@@ -165,7 +168,7 @@ def get_fullname(module: str, name: str) -> str | None:
     if isinstance(global_, Global):
         return f"{global_.fullname}.{attr}"
     if isinstance(global_, Import):
-        return _resolve(f"{global_.fullname}.{attr}")
+        return resolve(f"{global_.fullname}.{attr}")
     return name
     # return None
 
@@ -187,27 +190,10 @@ def get_link_from_type(module: str, name: str, *, is_object: bool = False) -> st
     return "..".join(names) if is_object else ".".join(names)
 
 
-LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
-
-
-# TODO: [`xxx`] -> [xxx]
-def get_link_from_text(module: str, text: str, *, name_only: bool = False) -> str:
-    """Return markdown links from text."""
-
-    def replace(match: re.Match) -> str:
-        name = match.group(1)
-        link = get_link_from_type(module, name, is_object=False)
-        if name != link:
-            return link
-        return name if name_only else match.group()
-
-    return re.sub(LINK_PATTERN, replace, text)
-
-
 def get_link_from_type_string(module: str, source: str) -> str:
     """Return markdown links from string-type."""
     strs = []
-    for name, isidentifier in _iter_identifiers(source):
+    for name, isidentifier in iter_identifiers(source):
         if isidentifier:
             strs.append(get_link_from_type(module, name, is_object=False))
         else:
@@ -215,34 +201,17 @@ def get_link_from_type_string(module: str, source: str) -> str:
     return "".join(strs)
 
 
-def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
-    """Yield identifiers as a tuple of (name, isidentifier)."""
-    start = stop = 0
-    while start < len(source):
-        c = source[start]
-        if c.isidentifier():
-            stop = start + 1
-            while stop < len(source):
-                c = source[stop]
-                if c == "." or c.isdigit() or c.isidentifier():
-                    stop += 1
-                else:
-                    break
-            if source[stop - 1] == ".":
-                yield source[start : stop - 1], True
-                yield ".", False
-            else:
-                yield source[start:stop], True
-            start = stop
-        elif c in ['"', "'"]:
-            stop = start + 1
-            while stop < len(source):
-                if source[stop] != source[start]:
-                    stop += 1
-                else:
-                    break
-            yield source[start : stop + 1], False
-            start = stop + 1
-        else:
-            yield c, False
-            start += 1
+# LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
+
+
+# def get_link_from_text(module: str, text: str, *, name_only: bool = False) -> str:
+#     """Return markdown links from text."""
+
+#     def replace(match: re.Match) -> str:
+#         name = match.group(1)
+#         link = get_link_from_type(module, name, is_object=False)
+#         if name != link:
+#             return link
+#         return name if name_only else match.group()
+
+#     return re.sub(LINK_PATTERN, replace, text)

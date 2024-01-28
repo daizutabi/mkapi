@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import ast
+import itertools
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -10,7 +12,7 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
-from mkapi.globals import _iter_identifiers, _resolve_with_attribute, get_fullname
+from mkapi.globals import get_fullname, resolve_with_attribute
 from mkapi.items import (
     Admonition,
     Assign,
@@ -33,7 +35,7 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import get_by_name, get_by_type, is_package
+from mkapi.utils import get_by_name, get_by_type, is_package, iter_identifiers
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -134,6 +136,11 @@ class Function(Callable):
     returns: list[Return]
     raises: list[Raise]
 
+    def __iter__(self) -> Iterator[Type | Text]:
+        """Yield [Type] or [Text] instances."""
+        for item in self.parameters + self.returns:
+            yield from item
+
 
 def create_function(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
@@ -142,16 +149,19 @@ def create_function(
 ) -> Function:
     """Return a [Function] instance."""
     module = module or _create_empty_module()
-    doc = docstrings.parse(ast.get_docstring(node))
+    text = ast.get_docstring(node)
+    doc = docstrings.parse(text)
     parameters = list(iter_parameters(node))
     raises = list(iter_raises(node))
     returns = list(iter_returns(node))
-    func = Function(node.name, node, doc, module, parent, parameters, returns, raises)  # type: ignore
+    func = Function(node.name, node, doc, module, parent, parameters, returns, raises)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
-            func.classes.append(create_class(child, module, func))
+            clss = create_class(child, module, func)
+            func.classes.append(clss)
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-            func.functions.append(create_function(child, module, func))
+            funcs = create_function(child, module, func)
+            func.functions.append(funcs)
     return func
 
 
@@ -165,6 +175,11 @@ class Class(Callable):
     parameters: list[Parameter] = field(default_factory=list, init=False)
     raises: list[Raise] = field(default_factory=list, init=False)
 
+    def __iter__(self) -> Iterator[Type | Text]:
+        """Yield [Type] or [Text] instances."""
+        for item in self.attributes + self.parameters:
+            yield from item
+
 
 def create_class(
     node: ast.ClassDef,
@@ -174,17 +189,21 @@ def create_class(
     """Return a [Class] instance."""
     name = node.name
     module = module or _create_empty_module()
-    doc = docstrings.parse(ast.get_docstring(node))
+    text = ast.get_docstring(node)
+    doc = docstrings.parse(text)
     bases = list(iter_bases(node))
     cls = Class(name, node, doc, module, parent, bases)
     for child in iter_assigns(node):
-        cls.attributes.append(create_attribute(child, module, cls))
+        attrs = create_attribute(child, module, cls)
+        cls.attributes.append(attrs)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
-            cls.classes.append(create_class(child, module, cls))
-        elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):  # noqa: SIM102
+            clss = create_class(child, module, cls)
+            cls.classes.append(clss)
+        elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
             if not get_by_name(cls.attributes, child.name):  # for property
-                cls.functions.append(create_function(child, module, cls))
+                funcs = create_function(child, module, cls)
+                cls.functions.append(funcs)
     return cls
 
 
@@ -202,6 +221,11 @@ class Module(Object):
         self.fullname = self.qualname = self.name
         super().__post_init__()
 
+    def __iter__(self) -> Iterator[Type | Text]:
+        """Yield [Type] or [Text] instances."""
+        for item in self.attributes:
+            yield from item
+
 
 def _create_empty_module() -> Module:
     name = "__mkapi__"
@@ -211,15 +235,19 @@ def _create_empty_module() -> Module:
 
 def create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
     """Return a [Module] instance from an [ast.Module] node."""
-    doc = docstrings.parse(ast.get_docstring(node))
+    text = ast.get_docstring(node)
+    doc = docstrings.parse(text)
     module = Module(name, node, doc, source)
     for child in iter_assigns(node):
-        module.attributes.append(create_attribute(child, module))
+        attrs = create_attribute(child, module)
+        module.attributes.append(attrs)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
-            module.classes.append(create_class(child, module))
+            clss = create_class(child, module)
+            module.classes.append(clss)
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-            module.functions.append(create_function(child, module))
+            funcs = create_function(child, module)
+            module.functions.append(funcs)
     merge_items(module)
     set_markdown(module)
     return module
@@ -228,95 +256,15 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
 def merge_items(module: Module) -> None:
     """Merge items."""
     for obj in iter_objects(module):
-        if isinstance(obj, Module | Class | Function):
-            _merge_items(obj)
-
-
-def _merge_items(obj: Module | Class | Function) -> None:
-    if isinstance(obj, Function | Class):
-        merge_parameters(obj)
-        merge_raises(obj)
-    if isinstance(obj, Function):
-        merge_returns(obj)
-    if isinstance(obj, Module | Class):
-        merge_attributes(obj)
-    if isinstance(obj, Class):
-        merge_bases(obj)
-
-
-def set_markdown(module: Module) -> None:
-    """Set markdown text with link."""
-    for obj in iter_objects(module):
-        _set_markdown(obj)
-        obj.doc.set_markdown(module.name)
-
-
-def _set_markdown(obj: Module | Class | Function | Attribute) -> None:
-    items: list[Attribute | Parameter | Return] = []
-    for section in obj.doc.sections:
-        if isinstance(section, Admonition):
-            _set_str_admonition(section, obj)
-    if isinstance(obj, Module | Class):
-        items.extend(obj.attributes)
-    if isinstance(obj, Class | Function):
-        items.extend(obj.parameters)
-    if isinstance(obj, Function):
-        items.extend(obj.returns)
-    module = obj.name if isinstance(obj, Module) else obj.module.name
-    for item in items:
-        for elem in item:
-            elem.set_markdown(module)
-
-
-def _set_str_admonition(
-    section: Admonition,
-    obj: Module | Class | Function | Attribute,
-) -> None:
-    if not (text := section.text.str):
-        return
-    if isinstance(section, SeeAlso):
-        text = _add_link(obj, text)
-    lines = ["    " + line if line else "" for line in text.split("\n")]
-    lines.insert(0, f'!!! {section.kind} "{section.name}"')
-    section.text.str = "\n".join(lines)
-
-
-def _add_link(obj: Module | Class | Function | Attribute, text: str) -> str:
-    strs = []
-    before_colon = True
-    for name, isidentifier in _iter_identifiers(text):
-        if isidentifier and before_colon:  # noqa: SIM102
-            if fullname := _get_fullname_from_object(obj, name):
-                name_ = name.replace("_", "\\_")
-                strs.append(f"[{name_}][__mkapi__.{fullname}]")
-                continue
-        strs.append(name)
-        if ":" in name:
-            before_colon = False
-        if "\n" in name:
-            before_colon = True
-    return "".join(strs)
-
-
-def _get_fullname_from_object(  # noqa: PLR0911
-    obj: Module | Class | Function | Attribute,
-    name: str,
-) -> str | None:
-    for child in iter_objects(obj, maxdepth=1):
-        if child.name == name:
-            return child.fullname
-    if isinstance(obj, Module):
-        return get_fullname(obj.name, name)
-    if obj.parent and isinstance(obj.parent, Class | Function):
-        return _get_fullname_from_object(obj.parent, name)
-    if "." not in name:
-        if not isinstance(obj, Module):
-            return _get_fullname_from_object(obj.module, name)
-        return None
-    parent, attr = name.rsplit(".", maxsplit=1)
-    if parent == obj.name:
-        return _get_fullname_from_object(obj, attr)
-    return _resolve_with_attribute(name)
+        if isinstance(obj, Function | Class):
+            merge_parameters(obj)
+            merge_raises(obj)
+        if isinstance(obj, Function):
+            merge_returns(obj)
+        if isinstance(obj, Module | Class):
+            merge_attributes(obj)
+        if isinstance(obj, Class):
+            merge_bases(obj)
 
 
 def merge_parameters(obj: Class | Function) -> None:
@@ -331,24 +279,6 @@ def merge_parameters(obj: Class | Function) -> None:
             if not param_doc.default.expr:
                 param_doc.default = param_ast.default
             param_doc.kind = param_ast.kind
-
-
-def merge_attributes(obj: Module | Class) -> None:
-    """Merge attributes."""
-    if not (section := get_by_type(obj.doc.sections, Assigns)):
-        return
-    index = obj.doc.sections.index(section)
-    module = obj if isinstance(obj, Module) else obj.module
-    parent = obj if isinstance(obj, Class) else None
-    attrs = (create_attribute(assign, module, parent) for assign in section.items)
-    section = create_attributes(attrs)
-    obj.doc.sections[index] = section
-    for attr_doc in section.items:
-        if attr_ast := get_by_name(obj.attributes, attr_doc.name):
-            if not attr_doc.type.expr:
-                attr_doc.type = attr_ast.type
-            if not attr_doc.default.expr:
-                attr_doc.default = attr_ast.default
 
 
 def merge_raises(obj: Class | Function) -> None:
@@ -370,12 +300,91 @@ def merge_returns(obj: Function) -> None:
         section.items = list(iter_merged_items(obj.returns, section.items))
 
 
+def merge_attributes(obj: Module | Class) -> None:
+    """Merge attributes."""
+    if not (section := get_by_type(obj.doc.sections, Assigns)):
+        return
+    index = obj.doc.sections.index(section)
+    module = obj if isinstance(obj, Module) else obj.module
+    parent = obj if isinstance(obj, Class) else None
+    attrs = (create_attribute(assign, module, parent) for assign in section.items)
+    section = create_attributes(attrs)
+    obj.doc.sections[index] = section
+    for attr_doc in section.items:
+        if attr_ast := get_by_name(obj.attributes, attr_doc.name):
+            if not attr_doc.type.expr:
+                attr_doc.type = attr_ast.type
+            if not attr_doc.default.expr:
+                attr_doc.default = attr_ast.default
+
+
 def merge_bases(obj: Class) -> None:
     """Merge bases."""
     if not obj.bases:
         return
     section = Bases("Bases", Type(), Text(), obj.bases)
     obj.doc.sections.insert(0, section)
+
+
+def set_markdown(module: Module) -> None:
+    """Set markdown text with link."""
+    for obj in iter_objects(module):
+        for section in obj.doc.sections:
+            if isinstance(section, Admonition):
+                _set_text_admonition(section, obj)
+        for elem in itertools.chain(obj, obj.doc):
+            if isinstance(elem, Type):
+                elem.set_markdown(module.name)
+            elif elem.str and not elem.markdown:
+                elem.markdown = get_link_from_text(obj, elem.str)
+
+
+LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
+
+
+def get_link_from_text(obj: Module | Class | Function | Attribute, text: str) -> str:
+    """Return markdown links from text."""
+
+    def replace(match: re.Match) -> str:
+        name = match.group(1).replace("`", "")
+        if not all(x.isidentifier() for x in name.split(".")):
+            return match.group()
+        if fullname := get_fullname_from_object(obj, name):
+            name_ = name.replace("_", "\\_")
+            return f"[{name_}][__mkapi__.{fullname}]"
+        return match.group()
+
+    return re.sub(LINK_PATTERN, replace, text)
+
+
+def _set_text_admonition(
+    section: Admonition,
+    obj: Module | Class | Function | Attribute,
+) -> None:
+    if not (text := section.text.str):
+        return
+    if isinstance(section, SeeAlso):
+        text = _add_link(obj, text)
+    lines = ["    " + line if line else "" for line in text.split("\n")]
+    lines.insert(0, f'!!! {section.kind} "{section.name}"')
+    section.text.str = "\n".join(lines)
+
+
+def _add_link(obj: Module | Class | Function | Attribute, text: str) -> str:
+    strs = []
+    before_colon = True
+    for name, isidentifier in iter_identifiers(text):
+        if isidentifier and before_colon:  # noqa: SIM102
+            if fullname := get_fullname_from_object(obj, name):
+                name_ = name.replace("_", "\\_")
+                strs.append(f"[{name_}][__mkapi__.{fullname}]")
+                continue
+        strs.append(name)
+        if ":" in name:
+            before_colon = False
+        if "\n" in name:
+            before_colon = True
+    return "".join(strs)
 
 
 def iter_objects_with_depth(
@@ -387,15 +396,15 @@ def iter_objects_with_depth(
     yield obj, depth
     if depth == maxdepth or isinstance(obj, Attribute):
         return
-    if isinstance(obj, Module | Class):
-        for attr in obj.attributes:
-            yield attr, depth + 1
     for cls in obj.classes:
         if isinstance(obj, Module) or cls.module is obj.module:
             yield from iter_objects_with_depth(cls, maxdepth, depth + 1)
     for func in obj.functions:
         if isinstance(obj, Module) or func.module is obj.module:
             yield from iter_objects_with_depth(func, maxdepth, depth + 1)
+    if isinstance(obj, Module | Class):
+        for attr in obj.attributes:
+            yield attr, depth + 1
 
 
 def iter_objects(
@@ -405,6 +414,28 @@ def iter_objects(
     """Yield [Object] instances."""
     for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
         yield obj_
+
+
+def get_fullname_from_object(  # noqa: PLR0911
+    obj: Module | Class | Function | Attribute,
+    name: str,
+) -> str | None:
+    """Return fullname from object."""
+    for child in iter_objects(obj, maxdepth=1):
+        if child.name == name:
+            return child.fullname
+    if isinstance(obj, Module):
+        return get_fullname(obj.name, name)
+    if obj.parent and isinstance(obj.parent, Class | Function):
+        return get_fullname_from_object(obj.parent, name)
+    if "." not in name:
+        if not isinstance(obj, Module):
+            return get_fullname_from_object(obj.module, name)
+        return None
+    parent, attr = name.rsplit(".", maxsplit=1)
+    if parent == obj.name:
+        return get_fullname_from_object(obj, attr)
+    return resolve_with_attribute(name)
 
 
 def get_kind(obj: Object) -> str:  # noqa: PLR0911

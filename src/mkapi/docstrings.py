@@ -228,11 +228,6 @@ class Docstring(Item):
         for section in self.sections:
             yield from section
 
-    def set_markdown(self, module: str) -> None:
-        """Set Markdown text with link."""
-        for element in self:
-            element.set_markdown(module)
-
 
 def parse(doc: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
@@ -252,7 +247,8 @@ def parse(doc: str | None, style: Style | None = None) -> Docstring:
 
 
 LINK_PATTERN = re.compile(r"`(.+?)\s+?<(.+?)>`_")
-FIELD_LINK_PATTERN = re.compile(r":.+?:`(.+?)\s+?<(.+?)>`")
+FIELD_LINK_PATTERN = re.compile(r":\S+?:`(.+?)\s+?<(.+?)>`")
+FIELD_PATTERN = re.compile(r":\S+?:`(\S+?)`")
 DOCTEST_PATTERN = re.compile(r"\s*?#\s*?doctest:.*?$", re.MULTILINE)
 
 
@@ -261,6 +257,7 @@ def preprocess(doc: str) -> str:
     # doc = add_fence(doc)
     doc = re.sub(LINK_PATTERN, r"[\1](\2)", doc)
     doc = re.sub(FIELD_LINK_PATTERN, r"[\1][__mkapi__.\2]", doc)
+    doc = re.sub(FIELD_PATTERN, r"[\1][]", doc)
     doc = re.sub(DOCTEST_PATTERN, "", doc)
     return doc  # noqa: RET504
 

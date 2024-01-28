@@ -236,3 +236,36 @@ def join_without_first_indent(
         return join_without_first_indent(lines.split("\n"))
     indent = get_indent(lines[start])
     return "\n".join(line[indent:] for line in lines[start:stop]).strip()
+
+
+def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
+    """Yield identifiers as a tuple of (name, isidentifier)."""
+    start = stop = 0
+    while start < len(source):
+        c = source[start]
+        if c.isidentifier():
+            stop = start + 1
+            while stop < len(source):
+                c = source[stop]
+                if c == "." or c.isdigit() or c.isidentifier():
+                    stop += 1
+                else:
+                    break
+            if source[stop - 1] == ".":
+                yield source[start : stop - 1], True
+                yield ".", False
+            else:
+                yield source[start:stop], True
+            start = stop
+        elif c in ['"', "'"]:
+            stop = start + 1
+            while stop < len(source):
+                if source[stop] != source[start]:
+                    stop += 1
+                else:
+                    break
+            yield source[start : stop + 1], False
+            start = stop + 1
+        else:
+            yield c, False
+            start += 1

@@ -1,5 +1,6 @@
 import ast
 import inspect
+import re
 import sys
 from pathlib import Path
 
@@ -8,6 +9,7 @@ import pytest
 from mkapi.ast import iter_child_nodes
 from mkapi.items import Parameters, SeeAlso
 from mkapi.objects import (
+    LINK_PATTERN,
     Attribute,
     Class,
     Function,
@@ -204,11 +206,13 @@ def test_iter_objects():
     assert cls.fullname == "x.A.f.B"
     objs = iter_objects(module)
     assert next(objs).name == "x"
+    assert next(objs).name == "A"
+    assert next(objs).name == "f"
+    assert next(objs).name == "B"
+    assert next(objs).name == "c"
+    assert next(objs).name == "a"
     assert next(objs).name == "m"
     assert next(objs).name == "n"
-    assert next(objs).name == "A"
-    assert next(objs).name == "a"
-    assert next(objs).name == "f"
     merge_items(module)
 
 
@@ -225,6 +229,28 @@ def test_iter_objects_polars():
     x = list(iter_objects(module, 2))
     assert get_by_name(x, "DataFrame")
     assert get_by_name(x, "product")
+
+
+def test_link_pattern():
+    def f(m: re.Match) -> str:
+        name = m.group(1)
+        if name == "abc":
+            return f"[{name}][_{name}]"
+        return m.group()
+
+    assert re.search(LINK_PATTERN, "X[abc]Y")
+    assert not re.search(LINK_PATTERN, "X[ab c]Y")
+    assert re.search(LINK_PATTERN, "X[abc][]Y")
+    assert not re.search(LINK_PATTERN, "X[abc](xyz)Y")
+    assert not re.search(LINK_PATTERN, "X[abc][xyz]Y")
+    assert re.sub(LINK_PATTERN, f, "X[abc]Y") == "X[abc][_abc]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc[abc]]Y") == "X[abc[abc][_abc]]Y"
+    assert re.sub(LINK_PATTERN, f, "X[ab]Y") == "X[ab]Y"
+    assert re.sub(LINK_PATTERN, f, "X[ab c]Y") == "X[ab c]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc] c]Y") == "X[abc][_abc] c]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc][]Y") == "X[abc][_abc]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc](xyz)Y") == "X[abc](xyz)Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc][xyz]Y") == "X[abc][xyz]Y"
 
 
 def test_set_markdown():
@@ -357,3 +383,6 @@ def test_see_also_text():
     assert see
     m = see.text.markdown
     assert "[__mkapi__.polars.io.csv.functions.scan_csv]" in m
+
+
+# TODO: polars.config.Config.set_tbl_cell_alignment parameters list
