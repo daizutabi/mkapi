@@ -15,7 +15,7 @@
 {% endif %}
 
 {% for section in doc.sections %}
-{% if section.name and not section.text.markdown.startswith("!!!") %}
+{% if section.name and not section.kind %}
 <div class="mkapi-section-name mkapi-section-{{ section.name|lower }}">
 {{ section.name }}
 </div>

@@ -6,8 +6,10 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.items import Parameters
+from mkapi.globals import _resolve
+from mkapi.items import Parameters, SeeAlso
 from mkapi.objects import (
+    Attribute,
     Class,
     Function,
     create_class,
@@ -275,6 +277,12 @@ def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
     assert "[Workbook][__mkapi__.xlsxwriter.Workbook]" in p.type.markdown
 
 
+def test_set_markdown_object(DataFrame: Class):  # noqa: N803
+    attr = get_by_name(DataFrame.attributes, "width")
+    assert isinstance(attr, Attribute)
+    assert attr.type.markdown == "int"
+
+
 def test_iter_merged_parameters(DataFrame: Class):  # noqa: N803
     func = get_by_name(DataFrame.functions, "pipe")
     assert isinstance(func, Function)
@@ -287,3 +295,31 @@ def test_iter_merged_parameters(DataFrame: Class):  # noqa: N803
     assert "[P][__mkapi_" in x[1].type.markdown
     assert x[2].name == "**kwargs"
     assert "frame.P].[kwargs][__" in x[2].type.markdown
+
+
+def test_see_also(DataFrame: Class):  # noqa: N803
+    func = get_by_name(DataFrame.functions, "head")
+    assert isinstance(func, Function)
+    see = get_by_type(func.doc.sections, SeeAlso)
+    assert see
+    assert "[tail][polars.dataframe.frame.DataFrame.tail]" in see.text.markdown
+    func = get_by_name(DataFrame.functions, "_read_csv")
+    assert isinstance(func, Function)
+    see = get_by_type(func.doc.sections, SeeAlso)
+    assert see
+    assert "[polars.io.csv.functions.read_csv]" in see.text.markdown
+
+
+def test_a(DataFrame: Class):  # noqa: N803
+    func = get_by_name(DataFrame.functions, "lazy")
+    assert isinstance(func, Function)
+    print(func.doc.text.str)
+    # print(_resolve("polars.LazyFrame"))
+    # name = "polars.lazyframe.frame"
+    # node = get_module_node(name)
+    # assert node
+    # module = create_module(name, node)
+    # assert module
+    # cls = get_by_name(module.classes, "LazyFrame")
+    # assert isinstance(cls, Class)
+    # assert get_by_name(cls.functions, "describe_plan")

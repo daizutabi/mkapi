@@ -261,6 +261,7 @@ class Section(Item):
     """Section class of docstring."""
 
     items: list[Item]
+    kind: str | None = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(items={len(self.items)})"
@@ -345,3 +346,41 @@ class Bases(Section):
     """Bases section."""
 
     items: list[Base]
+
+
+@dataclass(repr=False)
+class Admonition(Section):
+    """Admonition section."""
+
+    kind: str
+
+
+@dataclass(repr=False)
+class Notes(Admonition):
+    """Notes section."""
+
+
+@dataclass(repr=False)
+class Warnings(Admonition):
+    """Warnings section."""
+
+
+@dataclass(repr=False)
+class SeeAlso(Admonition):
+    """SeeAlso section."""
+
+
+def create_admonition(name: str, markdown: str) -> Admonition:
+    """Create admonition."""
+    if name.startswith("Note"):
+        cls = Notes
+        kind = "note"
+    elif name.startswith("Warning"):
+        cls = Warnings
+        kind = "warning"
+    elif name.startswith("See Also"):
+        cls = SeeAlso
+        kind = "info"
+    else:
+        raise NotImplementedError
+    return cls(name, Type(), Text(markdown), [], kind)

@@ -172,7 +172,6 @@ def test_create_raises(get):
     func = get("module_level_function")
     x = next(iter_raises(func))
     assert x.name == "ValueError"
-    assert x.text.str is None
     assert isinstance(x.type.expr, ast.Name)
     assert x.type.expr.id == "ValueError"
 

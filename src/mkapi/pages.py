@@ -6,8 +6,9 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from mkapi.globals import _resolve_with_attribute
 from mkapi.importlib import get_object
-from mkapi.objects import iter_objects_with_depth
+from mkapi.objects import is_empty, iter_objects_with_depth
 from mkapi.renderers import render
 from mkapi.utils import split_filters, update_filters
 
@@ -62,7 +63,8 @@ def _create_page(
     filters_str = "|" + "|".join(filters) if filters else ""
     for obj_, depth in iter_objects_with_depth(obj, maxdepth):
         name = obj_.fullname
-        # TODO: skip obj without doc.
+        if is_empty(obj_):
+            continue
         if predicate and not predicate(name):
             continue
         heading = "#" * (depth + 1)
@@ -129,6 +131,8 @@ def _replace_link(match: re.Match, directory: Path) -> str:
         fullname = fullname[10:]
     else:
         from_mkapi = False
+    if fullname_ := _resolve_with_attribute(fullname):
+        fullname = fullname_
     if object_path := object_paths.get(fullname):
         uri = object_path.relative_to(directory, walk_up=True).as_posix()
         return f'[{asname}]({uri}#{fullname} "{fullname}")'

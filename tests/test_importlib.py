@@ -89,8 +89,9 @@ def test_iter_dataclass_parameters():
     cls = get_object("mkapi.items.Parameters")
     assert isinstance(cls, Class)
     p = cls.parameters
-    assert len(p) == 4
+    assert len(p) == 5
     assert p[0].name == "name"
     assert p[1].name == "type"
     assert p[2].name == "text"
     assert p[3].name == "items"
+    assert p[4].name == "kind"

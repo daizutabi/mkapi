@@ -115,6 +115,16 @@ def _resolve(name: str) -> str | None:
     return None
 
 
+def _resolve_with_attribute(name: str) -> str | None:
+    if fullname := _resolve(name):
+        return fullname
+    if "." in name:
+        name_, attr = name.rsplit(".", maxsplit=1)
+        if fullname := _resolve(name_):
+            return f"{fullname}.{attr}"
+    return None
+
+
 @dataclass(repr=False)
 class Globals:
     """Globals class."""

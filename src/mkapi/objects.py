@@ -10,7 +10,9 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
+from mkapi.globals import _iter_identifiers, _resolve_with_attribute, get_fullname
 from mkapi.items import (
+    Admonition,
     Assign,
     Assigns,
     Bases,
@@ -18,11 +20,11 @@ from mkapi.items import (
     Parameters,
     Raises,
     Returns,
+    SeeAlso,
     Text,
     Type,
     TypeKind,
     create_attributes,
-    # create_parameters,
     create_raises,
     iter_assigns,
     iter_bases,
@@ -65,9 +67,6 @@ class Object:
 
     def __repr__(self) -> str:
         return f"{self.kind.title()}({self.name!r})"
-
-    def set_markdown(self) -> None:
-        """Set Markdown text with link."""
 
 
 @dataclass(repr=False)
@@ -135,12 +134,6 @@ class Function(Callable):
     returns: list[Return]
     raises: list[Raise]
 
-    def set_markdown(self) -> None:
-        """Set Markdown text with link."""
-        for sig in self.parameters + self.returns:
-            for elem in sig:
-                elem.set_markdown(self.module.name)
-
 
 def create_function(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
@@ -171,12 +164,6 @@ class Class(Callable):
     attributes: list[Attribute] = field(default_factory=list, init=False)
     parameters: list[Parameter] = field(default_factory=list, init=False)
     raises: list[Raise] = field(default_factory=list, init=False)
-
-    def set_markdown(self) -> None:
-        """Set Markdown text with link."""
-        for param in self.parameters:
-            for elem in param:
-                elem.set_markdown(self.module.name)
 
 
 def create_class(
@@ -260,47 +247,94 @@ def _merge_items(obj: Module | Class | Function) -> None:
 def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
     for obj in iter_objects(module):
-        obj.set_markdown()
+        _set_markdown(obj)
         obj.doc.set_markdown(module.name)
+
+
+def _set_markdown(obj: Module | Class | Function | Attribute) -> None:
+    items: list[Attribute | Parameter | Return] = []
+    for section in obj.doc.sections:
+        if isinstance(section, Admonition):
+            _set_str_admonition(section, obj)
+    if isinstance(obj, Module | Class):
+        items.extend(obj.attributes)
+    if isinstance(obj, Class | Function):
+        items.extend(obj.parameters)
+    if isinstance(obj, Function):
+        items.extend(obj.returns)
+    module = obj.name if isinstance(obj, Module) else obj.module.name
+    for item in items:
+        for elem in item:
+            elem.set_markdown(module)
+
+
+def _set_str_admonition(
+    section: Admonition,
+    obj: Module | Class | Function | Attribute,
+) -> None:
+    if not (text := section.text.str):
+        return
+    if isinstance(section, SeeAlso):
+        text = _add_link(obj, text)
+    lines = ["    " + line if line else "" for line in text.split("\n")]
+    lines.insert(0, f'!!! {section.kind} "{section.name}"')
+    section.text.str = "\n".join(lines)
+
+
+def _add_link(obj: Module | Class | Function | Attribute, text: str) -> str:
+    strs = []
+    for name, isidentifier in _iter_identifiers(text):
+        if isidentifier and (fullname := _get_fullname_from_object(obj, name)):
+            strs.append(f"[{name}][{fullname}]")
+        else:
+            strs.append(name)
+    return "".join(strs)
+
+
+def _get_fullname_from_object(
+    obj: Module | Class | Function | Attribute,
+    name: str,
+) -> str | None:
+    for child in iter_objects(obj, maxdepth=1):
+        if child.name == name:
+            return child.fullname
+    if isinstance(obj, Module):
+        return get_fullname(obj.name, name)
+    if obj.parent and isinstance(obj.parent, Class | Function):
+        return _get_fullname_from_object(obj.parent, name)
+    return _resolve_with_attribute(name)
 
 
 def merge_parameters(obj: Class | Function) -> None:
     """Merge parameters."""
-    if section := get_by_type(obj.doc.sections, Parameters):
-        items = _iter_merged_parameters(obj.parameters, section.items)
-        section.items = list(items)
-
-
-def _iter_merged_parameters(
-    params_ast: list[Parameter],
-    params_doc: list[Parameter],
-) -> Iterator[Parameter]:
-    for param_doc in params_doc:
+    if not (section := get_by_type(obj.doc.sections, Parameters)):
+        return
+    for param_doc in section.items:
         name = param_doc.name.replace("*", "")
-        if param_ast := get_by_name(params_ast, name):
+        if param_ast := get_by_name(obj.parameters, name):
             if not param_doc.type.expr:
                 param_doc.type = param_ast.type
             if not param_doc.default.expr:
                 param_doc.default = param_ast.default
             param_doc.kind = param_ast.kind
-        yield param_doc
 
 
 def merge_attributes(obj: Module | Class) -> None:
     """Merge attributes."""
-    if section := get_by_type(obj.doc.sections, Assigns):
-        index = obj.doc.sections.index(section)
-        module = obj if isinstance(obj, Module) else obj.module
-        parent = obj if isinstance(obj, Class) else None
-        attrs = (create_attribute(assign, module, parent) for assign in section.items)
-        section = create_attributes(attrs)
-        obj.doc.sections[index] = section
-    else:
-        if not obj.attributes:
-            return
-        section = create_attributes([])
-        obj.doc.sections.append(section)
-    section.items = list(iter_merged_items(obj.attributes, section.items))
+    if not (section := get_by_type(obj.doc.sections, Assigns)):
+        return
+    index = obj.doc.sections.index(section)
+    module = obj if isinstance(obj, Module) else obj.module
+    parent = obj if isinstance(obj, Class) else None
+    attrs = (create_attribute(assign, module, parent) for assign in section.items)
+    section = create_attributes(attrs)
+    obj.doc.sections[index] = section
+    for attr_doc in section.items:
+        if attr_ast := get_by_name(obj.attributes, attr_doc.name):
+            if not attr_doc.type.expr:
+                attr_doc.type = attr_ast.type
+            if not attr_doc.default.expr:
+                attr_doc.default = attr_ast.default
 
 
 def merge_raises(obj: Class | Function) -> None:
@@ -312,6 +346,8 @@ def merge_raises(obj: Class | Function) -> None:
         section = create_raises([])
         obj.doc.sections.append(section)
     section.items = list(iter_merged_items(obj.raises, section.items))
+    for item in section.items:
+        item.name = ""
 
 
 def merge_returns(obj: Function) -> None:
@@ -372,3 +408,14 @@ def get_kind(obj: Object) -> str:  # noqa: PLR0911
     if isinstance(obj, Attribute):
         return "property" if isinstance(obj.node, ast.FunctionDef) else "attribute"
     return "unknown"
+
+
+def is_empty(obj: Object) -> bool:
+    """Return True if a [Object] instance is empty."""
+    if not docstrings.is_empty(obj.doc):
+        return False
+    if isinstance(obj, Attribute):
+        return True
+    if isinstance(obj, Function) and obj.name.startswith("_"):
+        return True
+    return False

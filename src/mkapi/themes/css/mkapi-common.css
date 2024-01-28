@@ -37,13 +37,16 @@
 .mkapi-section-name {
   color: #555;
 }
-code {
-  font-family: monospace;
+.mkapi-section-item {
+  font-size: 90%;
 }
-
 .mkapi-item-name {
   font-weight: 700;
 }
-.mkapi-item-type {
+.mkapi-item-type,.mkapi-object-type {
   color: #777;
+}
+
+.mkapi-object-body code {
+  font-family: monospace;
 }

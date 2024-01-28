@@ -209,7 +209,8 @@ def test_iter_identifiers():
 
 
 def test_get_link_from_type_string():
-    x = get_link_from_type_string("mkapi.objects", "1 Object or Class.")
+    f = get_link_from_type_string
+    x = f("mkapi.objects", "1 Object or Class.")
     assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
     assert "or [Class][__mkapi__.mkapi.objects.Class]." in x
 

@@ -11,13 +11,13 @@ from mkapi.items import (
     Section,
     Text,
     Type,
+    create_admonition,
     create_assigns,
     create_parameters,
     create_raises,
     create_returns,
     iter_merged_items,
 )
-from mkapi.markdown import add_admonition, preprocess
 from mkapi.utils import (
     get_by_name,
     join_without_first_indent,
@@ -199,8 +199,8 @@ def _create_section_items(name: str, text: str, style: Style) -> Section:
 
 
 def _create_section(name: str, text: str) -> Section:
-    if name in ["Note", "Notes", "Warning", "Warnings"]:
-        text = add_admonition(name, text)
+    if name in ["Note", "Notes", "Warning", "Warnings", "See Also"]:
+        return create_admonition(name, text)
     return Section(name, Type(), Text(text), [])
 
 
@@ -251,6 +251,20 @@ def parse(doc: str | None, style: Style | None = None) -> Docstring:
     return Docstring("Docstring", type_, text, sections)
 
 
+LINK_PATTERN = re.compile(r"`(.+?)\s+?<(.+?)>`_")
+FIELD_LINK_PATTERN = re.compile(r":.+?:`(.+?)\s+?<(.+?)>`")
+DOCTEST_PATTERN = re.compile(r"\s*?#\s*?doctest:.*?$", re.MULTILINE)
+
+
+def preprocess(doc: str) -> str:
+    """Preprocess."""
+    # doc = add_fence(doc)
+    doc = re.sub(LINK_PATTERN, r"[\1](\2)", doc)
+    doc = re.sub(FIELD_LINK_PATTERN, r"[\1][__mkapi__.\2]", doc)
+    doc = re.sub(DOCTEST_PATTERN, "", doc)
+    return doc  # noqa: RET504
+
+
 def merge_sections(a: Section, b: Section) -> Section:
     """Merge two [Section] instances into one [Section] instance."""
     if a.name != b.name:
@@ -293,3 +307,10 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
     text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
     text.markdown = f"{a.text.markdown}\n\n{b.text.markdown}".strip()
     return Docstring("Docstring", type_, text, sections)
+
+
+def is_empty(doc: Docstring) -> bool:
+    """Return True if a [Docstring] instance is empty."""
+    if doc.text.str or doc.sections:
+        return False
+    return True
