@@ -330,8 +330,10 @@ def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
     for obj in iter_objects(module):
         for section in obj.doc.sections:
+            if isinstance(section, SeeAlso) and section.text.str:
+                section.text.str = _add_link(section.text.str)
             if isinstance(section, Admonition):
-                _set_text_admonition(section, obj)
+                _set_text_admonition(section)
         for elem in itertools.chain(obj, obj.doc):
             if isinstance(elem, Type):
                 elem.set_markdown(module.name)
@@ -357,34 +359,27 @@ def get_link_from_text(obj: Module | Class | Function | Attribute, text: str) ->
     return re.sub(LINK_PATTERN, replace, text)
 
 
-def _set_text_admonition(
-    section: Admonition,
-    obj: Module | Class | Function | Attribute,
-) -> None:
-    if not (text := section.text.str):
-        return
-    if isinstance(section, SeeAlso):
-        text = _add_link(obj, text)
-    lines = ["    " + line if line else "" for line in text.split("\n")]
-    lines.insert(0, f'!!! {section.kind} "{section.name}"')
-    section.text.str = "\n".join(lines)
-
-
-def _add_link(obj: Module | Class | Function | Attribute, text: str) -> str:
+def _add_link(text: str) -> str:
     strs = []
     before_colon = True
     for name, isidentifier in iter_identifiers(text):
-        if isidentifier and before_colon:  # noqa: SIM102
-            if fullname := get_fullname_from_object(obj, name):
-                name_ = name.replace("_", "\\_")
-                strs.append(f"[{name_}][__mkapi__.{fullname}]")
-                continue
-        strs.append(name)
-        if ":" in name:
-            before_colon = False
-        if "\n" in name:
-            before_colon = True
+        if isidentifier and before_colon:
+            strs.append(f"[{name}][]")
+        else:
+            strs.append(name)
+            if ":" in name:
+                before_colon = False
+            if "\n" in name:
+                before_colon = True
     return "".join(strs)
+
+
+def _set_text_admonition(section: Admonition) -> None:
+    if not (text := section.text.str):
+        return
+    lines = ["    " + line if line else "" for line in text.split("\n")]
+    lines.insert(0, f'!!! {section.kind} "{section.name}"')
+    section.text.str = "\n".join(lines)
 
 
 def iter_objects_with_depth(
