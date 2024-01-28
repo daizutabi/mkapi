@@ -287,7 +287,8 @@ def _add_link(obj: Module | Class | Function | Attribute, text: str) -> str:
     for name, isidentifier in _iter_identifiers(text):
         if isidentifier and before_colon:  # noqa: SIM102
             if fullname := _get_fullname_from_object(obj, name):
-                strs.append(f"[{name}][__mkapi__.{fullname}]")
+                name_ = name.replace("_", "\\_")
+                strs.append(f"[{name_}][__mkapi__.{fullname}]")
                 continue
         strs.append(name)
         if ":" in name:

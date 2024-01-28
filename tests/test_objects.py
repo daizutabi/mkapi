@@ -330,6 +330,21 @@ def test_see_also_text():
     assert see
     m = see.text.markdown
     assert "[__mkapi__.polars.lazyframe.frame.LazyFrame.serialize]" in m
+    func = get_by_name(cls.functions[::-1], "collect")  # TODO: overload
+    assert func
+    print(func)
+    print(func.doc.sections)
+    print(func.doc.text.str)
+    see = get_by_type(func.doc.sections, SeeAlso)
+    assert see
+    m = see.text.markdown  # TODO: markdown list
+    print(m)
+    p = get_by_type(func.doc.sections, Parameters)
+    assert p
+    for i in p.items:
+        m = i.text.markdown  # TODO: admonition in section.
+        print(m)  # TODO: :func:`name` -> link
+    assert 0
 
     name = "polars.io.csv.functions"
     node = get_module_node(name)
