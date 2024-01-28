@@ -219,8 +219,14 @@ def iter_identifiers(node: ast.AST) -> Iterator[str]:
             yield code
 
 
-def _unparse(node: ast.AST, callback: Callable[[str], str]) -> Iterator[str]:
-    source = StringTransformer().unparse(node)
+def _unparse(
+    node: ast.AST,
+    callback: Callable[[str], str],
+    *,
+    is_type: bool = True,
+) -> Iterator[str]:
+    trans = StringTransformer() if is_type else Transformer()
+    source = trans.unparse(node)
     for code, isidentifier in _iter_identifiers(source):
         if isidentifier:
             yield callback(code)
@@ -228,6 +234,11 @@ def _unparse(node: ast.AST, callback: Callable[[str], str]) -> Iterator[str]:
             yield code
 
 
-def unparse(node: ast.AST, callback: Callable[[str], str]) -> str:
+def unparse(
+    node: ast.AST,
+    callback: Callable[[str], str],
+    *,
+    is_type: bool = True,
+) -> str:
     """Unparse the AST node with a callback function."""
-    return "".join(_unparse(node, callback))
+    return "".join(_unparse(node, callback, is_type=is_type))

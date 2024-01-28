@@ -21,3 +21,8 @@ def test_link():
     name = "__a__"
     h = markdown.markdown(f"[abc](ref#{name})")
     assert h == '<p><a href="ref#__a__">abc</a></p>'
+
+
+def test_span():
+    x = markdown.markdown('<span class="c">[a](b)</span>')
+    assert x == '<p><span class="c"><a href="b">a</a></span></p>'

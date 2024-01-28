@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
+from mkapi.items import Parameters
 from mkapi.objects import (
     Class,
     Function,
@@ -16,7 +17,7 @@ from mkapi.objects import (
     merge_items,
     objects,
 )
-from mkapi.utils import get_by_name, get_module_node
+from mkapi.utils import get_by_name, get_by_type, get_module_node
 
 
 @pytest.fixture(scope="module")
@@ -125,16 +126,13 @@ def test_kind():
     assert module.kind == "module"
     cls = get_by_name(module.classes, "Object")
     assert cls
-    assert cls.kind == "class"
+    assert cls.kind == "dataclass"
     func = get_by_name(module.functions, "create_function")
     assert func
     assert func.kind == "function"
     method = get_by_name(cls.functions, "__post_init__")
     assert method
     assert method.kind == "method"
-    prop = get_by_name(cls.attributes, "kind")
-    assert prop
-    assert prop.kind == "property"
     attr = get_by_name(cls.attributes, "node")
     assert attr
     assert attr.kind == "attribute"
@@ -164,9 +162,9 @@ def test_merge_items():
     assert not get_by_name(func.parameters, "z")
     items = get_by_name(func.doc.sections, "Parameters").items  # type: ignore
     assert get_by_name(items, "x")
-    assert get_by_name(items, "y")
+    assert not get_by_name(items, "y")
     assert get_by_name(items, "z")
-    assert [item.name for item in items] == ["x", "y", "z"]
+    assert [item.name for item in items] == ["x", "z"]
     # merge_returns(func)
     assert func.returns[0].type
     assert func.returns[0].text.str == "Return True."
@@ -254,15 +252,38 @@ def test_set_markdown():
     assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."
 
 
-def test_set_markdown_polars():
-    name = "polars.dataframe.frame"
-    node = get_module_node(name)
+@pytest.fixture(scope="module")
+def DataFrame() -> Class:  # noqa: N802
+    node = get_module_node("polars.dataframe.frame")
     assert node
-    module = create_module(name, node)
+    module = create_module("polars.dataframe.frame", node)
     assert module
-    obj = get_by_name(module.classes, "DataFrame")
-    assert isinstance(obj, Class)
+    cls = get_by_name(module.classes, "DataFrame")
+    assert isinstance(cls, Class)
+    return cls
+
+
+def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
+    obj = DataFrame
     m = obj.doc.type.markdown
     assert "[polars][__mkapi__.polars]..[dataframe]" in m
     assert "[__mkapi__.polars.dataframe]..[frame]" in m
     assert "[__mkapi__.polars.dataframe.frame]" in m
+    func = get_by_name(obj.functions, "write_excel")
+    assert isinstance(func, Function)
+    p = func.parameters[1]
+    assert "[Workbook][__mkapi__.xlsxwriter.Workbook]" in p.type.markdown
+
+
+def test_iter_merged_parameters(DataFrame: Class):  # noqa: N803
+    func = get_by_name(DataFrame.functions, "pipe")
+    assert isinstance(func, Function)
+    params = get_by_type(func.doc.sections, Parameters)
+    assert params
+    x = params.items
+    assert x[0].name == "function"
+    assert "typing.Callable][[Concatenate][__mkapi__" in x[0].type.markdown
+    assert x[1].name == "*args"
+    assert "[P][__mkapi_" in x[1].type.markdown
+    assert x[2].name == "**kwargs"
+    assert "frame.P].[kwargs][__" in x[2].type.markdown

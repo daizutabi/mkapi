@@ -11,7 +11,7 @@ import sys
 import warnings
 from pathlib import Path
 from shutil import rmtree
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import yaml
 from halo import Halo
@@ -19,7 +19,7 @@ from mkdocs.config import Config, config_options
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import Files, get_files
-from tqdm import tqdm  # type: ignore
+from tqdm.std import tqdm
 
 import mkapi
 from mkapi import renderers
@@ -44,24 +44,25 @@ class MkAPIConfig(Config):
     exclude = config_options.Type(list, default=[])
     page_title = config_options.Type(str, default="")
     section_title = config_options.Type(str, default="")
-    on_config = config_options.Type(str, default="")
-    api_dirs = config_options.Type(list, default=[])
-    api_uris = config_options.Type(list, default=[])
+    # on_config = config_options.Type(str, default="")
+    # api_dirs = config_options.Type(list, default=[])
+    # api_uris = config_options.Type(list, default=[])
 
 
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     """MkAPIPlugin class for API generation."""
 
-    nav: list | None = None
-    api_dirs: list
-    api_uris: list
+    nav: ClassVar[list | None] = None
+    api_dirs: ClassVar[list] = []
+    api_uris: ClassVar[list] = []
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         _insert_sys_path(config, self)
         _update_templates(config, self)
         _update_config(config, self)
         _update_extensions(config, self)
-        return _on_config_plugin(config, self)
+        return config
+        # return _on_config_plugin(config, self)
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         """Collect plugin CSS/JavaScript and append them to `files`."""
@@ -70,7 +71,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         return files
 
     def on_nav(self, *args, **kwargs) -> None:
-        total = len(self.config.api_uris)
+        total = len(MkAPIPlugin.api_uris)
         desc = "MkAPI: Building API"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -84,7 +85,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_page_content(self, html: str, page: MkDocsPage, **kwargs) -> str:
         """Merge HTML and MkAPI's object structure."""
-        if page.file.src_uri in self.config.api_uris:
+        if page.file.src_uri in MkAPIPlugin.api_uris:
             _replace_toc(page.toc)
             self.bar.update(1)
         return html
@@ -99,7 +100,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         return server
 
     def on_shutdown(self) -> None:
-        for path in self.config.api_dirs:
+        for path in MkAPIPlugin.api_dirs:
             if path.exists():
                 msg = f"Deleting API directory: {path}"
                 logger.info(msg)
@@ -130,16 +131,22 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     if not MkAPIPlugin.nav:
         _update_nav(config, plugin)
         MkAPIPlugin.nav = config.nav
-        MkAPIPlugin.api_dirs = plugin.config.api_dirs
-        MkAPIPlugin.api_uris = plugin.config.api_uris
+        # MkAPIPlugin.api_dirs = plugin.config.api_dirs
+        # MkAPIPlugin.api_uris = plugin.config.api_uris
     else:
         config.nav = MkAPIPlugin.nav
-        plugin.config.api_dirs = MkAPIPlugin.api_dirs
-        plugin.config.api_uris = MkAPIPlugin.api_uris
+        # plugin.config.api_dirs = MkAPIPlugin.api_dirs
+        # plugin.config.api_uris = MkAPIPlugin.api_uris
 
 
 def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
-    for name in ["admonition", "attr_list", "def_list"]:
+    for name in [
+        "admonition",
+        "attr_list",
+        "def_list",
+        "md_in_html",
+        "pymdownx.superfences",
+    ]:
         if name not in config.markdown_extensions:
             config.markdown_extensions.append(name)
 
@@ -160,7 +167,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         if not abs_path.parent.exists():
             abs_path.parent.mkdir(parents=True)
         create_page(f"{name}.**", abs_path, filters)
-        plugin.config.api_uris.append(path)
+        MkAPIPlugin.api_uris.append(path)
         return page(name, depth) if page else name
 
     def predicate(name: str) -> bool:
@@ -178,7 +185,7 @@ def _make_api_dir(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
     def mkdir(name: str, path: str, fileters: list[str]) -> list:  # noqa: ARG001
         api_dir = Path(config.docs_dir) / path
-        if api_dir.exists() and api_dir not in plugin.config.api_dirs:
+        if api_dir.exists() and api_dir not in MkAPIPlugin.api_dirs:
             msg = f"API directory exists: {api_dir}"
             logger.error(msg)
             sys.exit()
@@ -186,20 +193,20 @@ def _make_api_dir(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
             msg = f"Creating API directory: {api_dir}"
             logger.info(msg)
             api_dir.mkdir()
-            plugin.config.api_dirs.append(api_dir)
+            MkAPIPlugin.api_dirs.append(api_dir)
         return []
 
     create_nav(config.nav, mkdir)
 
 
-def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
-    if func := _get_function("on_config", plugin):
-        msg = f"Calling {plugin.config.on_config!r}"
-        logger.info(msg)
-        config_ = func(config, plugin)
-        if isinstance(config_, MkDocsConfig):
-            return config_
-    return config
+# def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
+#     if func := _get_function("on_config", plugin):
+#         msg = f"Calling {plugin.config.on_config!r}"
+#         logger.info(msg)
+#         config_ = func(config, plugin)
+#         if isinstance(config_, MkDocsConfig):
+#             return config_
+#     return config
 
 
 def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:

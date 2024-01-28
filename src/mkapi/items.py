@@ -61,8 +61,9 @@ class Type:
         if isinstance(self.expr, ast.Constant) and isinstance(self.expr.value, str):
             self.markdown = get_link_from_type_string(module, self.expr.value)
         elif self.expr:
+            is_type = self.__class__.__name__ == "Type"
             try:
-                self.markdown = mkapi.ast.unparse(self.expr, get_link)
+                self.markdown = mkapi.ast.unparse(self.expr, get_link, is_type=is_type)
             except ValueError:
                 self.markdown = ast.unparse(self.expr)
 
@@ -70,6 +71,12 @@ class Type:
 @dataclass(repr=False)
 class Default(Type):
     """Default class."""
+
+    # TODO: use module.
+    def set_markdown(self, module: str) -> None:
+        """Set Markdown text with link."""
+        if self.expr:
+            self.markdown = ast.unparse(self.expr)
 
 
 @dataclass

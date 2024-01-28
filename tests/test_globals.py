@@ -92,6 +92,12 @@ def test_get_globals(name, fullname):
     assert n.fullname == fullname
 
 
+def test_get_globals_polars():
+    x = get_globals("polars.dataframe.frame")
+    n = get_by_name(x.names, "Workbook")
+    assert n
+
+
 def test_get_globals_cache():
     a = get_globals("mkapi.plugins")
     b = get_globals("mkapi.plugins")
@@ -134,6 +140,8 @@ def test_get_fullname():
     assert x == "mkapi.objects.Object"
     x = get_fullname("polars.dataframe.frame", "DataType")
     assert x == "polars.datatypes.classes.DataType"
+    x = get_fullname("polars.dataframe.frame", "Workbook")
+    # assert x == "dd"
 
 
 def test_link_pattern():
@@ -162,7 +170,7 @@ def test_get_link_from_type():
     x = get_link_from_type("mkapi.objects", "Object")
     assert x == "[Object][__mkapi__.mkapi.objects.Object]"
     x = get_link_from_type("mkapi.objects", "Object.__repr__")
-    assert ".[__repr__][__mkapi__.mkapi.objects.Object.__repr__]" in x
+    assert r".[\_\_repr\_\_][__mkapi__.mkapi.objects.Object.__repr__]" in x
     x = get_link_from_type("mkapi.plugins", "MkDocsPage")
     assert x == "[MkDocsPage][__mkapi__.mkdocs.structure.pages.Page]"
     x = get_link_from_type("mkdocs.plugins", "jinja2.Template")

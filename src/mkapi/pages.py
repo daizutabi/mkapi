@@ -116,7 +116,7 @@ def create_markdown(name: str, level: int, filters: list[str]) -> str:
     fullname = ".".join(prefix[:-1] + [self])
     id_ = obj.fullname.replace("_", "\\_")
     content = render(obj, filters)
-    return f"{heading}{fullname} {{#{id_}}}\n\n{content}"
+    return f"{heading}{fullname} {{#{id_} .mkapi-object-heading}}\n\n{content}"
 
 
 LINK_PATTERN = re.compile(r"\[(\S+?)\]\[(\S+?)\]")
@@ -131,5 +131,7 @@ def _replace_link(match: re.Match, directory: Path) -> str:
         from_mkapi = False
     if object_path := object_paths.get(fullname):
         uri = object_path.relative_to(directory, walk_up=True).as_posix()
-        return f"[{asname}]({uri}#{fullname})"
-    return asname if from_mkapi else match.group()
+        return f'[{asname}]({uri}#{fullname} "{fullname}")'
+    if from_mkapi:
+        return f'<span class="tooltip" title="{fullname}">{asname}</span>'
+    return match.group()

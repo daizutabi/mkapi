@@ -1,0 +1,24 @@
+{% from 'macros.jinja2' import object_body -%}
+
+{% set body_tag = 'span' if 'plain' in filters else 'code' -%}
+{% set top = ' top' if '.' not in object.qualname else '' -%}
+{% set kind_class = object.kind.replace(' ', '-') -%}
+<div class='mkapi-object-container'>
+  <div class="mkapi-object {{ kind_class }} {% if body_tag == 'span' %}plain{% else %}code{% endif %}{{ top }}">
+    <div class="mkapi-object-kind {{ kind_class }}{{ top }}">{{ object.kind }}</div>
+    <{{tag}} id="{{ object.fullname }}" class="mkapi-object-body {{ kind_class }}{{ top }}">
+    <span title="{{ object.fullname }}">{{ object.qualname }}</span>
+    {%- if signature -%}
+    {%- for p in signature -%}
+    {{ p.text|safe }}
+    {%- endfor -%}
+    {%- endif -%}
+      {# {{ object_body(object, prefix_url, name_url, body_tag, upper, filters) }} #}
+    </{{tag}}>
+  </div>
+  {# {% if 'sourcelink' in filters or 'link' in filters or 'apilink' in filters -%}
+  <div class="mkapi-src-link">
+    <a class="mkapi-src-link" href="../source/{{ object.module }}/#{{ object.id }}" title="Source for {{ object.id }}">&lt;/&gt;</a>
+  </div>
+  {%- endif %} #}
+</div>

@@ -17,9 +17,8 @@ from mkapi.items import (
     create_returns,
     iter_merged_items,
 )
+from mkapi.markdown import add_admonition, preprocess
 from mkapi.utils import (
-    add_admonition,
-    add_fence,
     get_by_name,
     join_without_first_indent,
     unique_names,
@@ -27,8 +26,6 @@ from mkapi.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
-    from mkapi.objects import Attribute
 
 
 type Style = Literal["google", "numpy"]
@@ -83,7 +80,6 @@ def iter_items(section: str, style: Style) -> Iterator[tuple[str, Type, Text]]:
     """Yield tuples of (name, type, text)."""
     for item in _iter_items(section):
         name, type_, text = split_item(item, style)
-        name = name.replace("*", "")  # *args -> args, **kwargs -> kwargs
         type_ = ast.Constant(type_) if type_ else None
         yield name, Type(type_), Text(text)
 
@@ -242,7 +238,7 @@ def parse(doc: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
     if not doc:
         return Docstring("Docstring", Type(), Text(), [])
-    doc = add_fence(doc)
+    doc = preprocess(doc)
     style = style or get_style(doc)
     sections = list(iter_sections(doc, style))
     if sections and not sections[0].name:
@@ -280,10 +276,6 @@ def iter_merge_sections(a: list[Section], b: list[Section]) -> Iterator[Section]
 
 def merge(a: Docstring, b: Docstring) -> Docstring:
     """Merge two [Docstring] instances into one [Docstring] instance."""
-    if not a.sections:
-        return b
-    if not b.sections:
-        return a
     sections: list[Section] = []
     for ai in a.sections:
         if ai.name:
@@ -297,7 +289,7 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
         elif is_named_section:
             sections.append(section)
     sections.extend(s for s in b.sections if not s.name)
-    type_ = a.type if a.type.expr else b.type
+    type_ = a.type  # if a.type.expr else b.type
     text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
     text.markdown = f"{a.text.markdown}\n\n{b.text.markdown}".strip()
     return Docstring("Docstring", type_, text, sections)

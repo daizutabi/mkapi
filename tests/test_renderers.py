@@ -1,11 +1,6 @@
 import pytest
 
-from mkapi.renderers import (
-    _split_name_depth,
-    load_templates,
-    render_markdown,
-    templates,
-)
+from mkapi.renderers import load_templates, templates
 
 
 def test_load_templates():
@@ -24,30 +19,6 @@ def test_load_templates():
 def template():
     load_templates()
     return templates["module"]
-
-
-def test_split_name_depth():
-    assert _split_name_depth("a.b.c") == ("a.b.c", 0)
-    assert _split_name_depth("a.b.c.*") == ("a.b.c", 1)
-    assert _split_name_depth("a.b.c.**") == ("a.b.c", 2)
-
-
-def test_render_markdown():
-    x = render_markdown("polars.dataframe", 0, [])
-    assert x == "::: polars.dataframe\n"
-    x = render_markdown("polars.dataframe", 1, ["a", "b"])
-    assert x == "# ::: polars.dataframe|a|b\n"
-    x = render_markdown("polars.dataframe.frame.*", 1, ["a", "b"])
-    assert "# ::: polars.dataframe.frame|a|b\n" in x
-    assert "## ::: polars.dataframe.frame.DataFrame|a|b" in x
-
-    def predicate(obj):
-        return not obj.name.startswith("_")
-
-    name = "polars.dataframe.frame.**"
-    x = render_markdown(name, 2, [], predicate)
-    assert "#### ::: polars.dataframe.frame.DataFrame.item\n" in x
-    assert "#### ::: polars.dataframe.frame.DataFrame._replace\n" not in x
 
 
 # def test_render_module(google):

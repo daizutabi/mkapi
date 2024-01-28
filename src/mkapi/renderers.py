@@ -3,17 +3,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
 from mkapi.inspect import get_signature
-from mkapi.objects import Class, Function
-
-if TYPE_CHECKING:
-    from mkapi.objects import Attribute, Module
-
+from mkapi.objects import Attribute, Class, Function, Module
 
 templates: dict[str, Template] = {}
 
@@ -30,7 +25,11 @@ def load_templates(path: Path | None = None) -> None:
 
 def render(obj: Module | Class | Function | Attribute, filters: list[str]) -> str:
     """Return a rendered Markdown."""
-    return "abc"
+    context = {"obj": obj, "doc": obj.doc, "filters": filters}
+    if isinstance(obj, Class | Function):
+        context["signature"] = get_signature(obj).markdown
+    return templates["object"].render(context)
+
     # obj_str = render_object(obj, filters)
     # return obj_str
     # doc_str = render_docstring(obj.doc, filters=filters)

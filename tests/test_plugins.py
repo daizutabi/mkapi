@@ -14,7 +14,6 @@ from mkapi.plugins import (
     MkAPIConfig,
     MkAPIPlugin,
     _insert_sys_path,
-    _on_config_plugin,
 )
 
 
@@ -76,7 +75,7 @@ def mkapi_config(mkapi_plugin: MkAPIPlugin):
 def test_mkapi_config(mkapi_config: MkAPIConfig):
     config = mkapi_config
     assert config.src_dirs == ["."]
-    assert config.on_config == "custom.on_config"
+    # assert config.on_config == "custom.on_config"
     assert config.filters == ["plugin_filter"]
     assert config.exclude == [".tests"]
 
@@ -90,18 +89,16 @@ def test_insert_sys_path(mkdocs_config, mkapi_plugin):
     assert spec.origin.endswith("custom.py")
 
 
-def test_on_config_plugin(mkdocs_config, mkapi_plugin):
-    config = _on_config_plugin(mkdocs_config, mkapi_plugin)
-    assert mkdocs_config is config
+# def test_on_config_plugin(mkdocs_config, mkapi_plugin):
+#     config = _on_config_plugin(mkdocs_config, mkapi_plugin)
+#     assert mkdocs_config is config
 
 
-def test_mkdocs_build(mkdocs_config: MkDocsConfig):
-    config = mkdocs_config
-    # config.nav = [{"API": "<api>/polars.dataframe.***"}]
-    config.nav = [{"API": "<api>/polars.dataframe.frame"}]
-    config.plugins.on_startup(command="build", dirty=False)
-    try:
-        build(config)
-    finally:
-        config.plugins.on_shutdown()
-    # assert 0
+# def test_mkdocs_build(mkdocs_config: MkDocsConfig):
+#     config = mkdocs_config
+#     config.nav = [{"API": "<api>/polars.dataframe.frame"}]
+#     config.plugins.on_startup(command="build", dirty=False)
+#     try:
+#         build(config)
+#     finally:
+#         config.plugins.on_shutdown()

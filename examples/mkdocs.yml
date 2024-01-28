@@ -7,22 +7,23 @@ edit_uri: ""
 theme:
   name: material
   features:
-    - navigation.instant
-    - navigation.tracking
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.sections
+    - content.tooltips
     - navigation.expand
     - navigation.indexes
+    - navigation.instant
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.tracking
 plugins:
   - search:
   - mkapi:
       src_dirs: [.]
-      on_config: custom.on_config
       filters: [plugin_filter]
       exclude: [.tests]
       page_title: custom.page_title
       section_title: custom.section_title
+      # on_config: custom.on_config
 
 nav:
   - index.md
@@ -31,9 +32,9 @@ nav:
     - 1.md
     # - <api2>/mkapi.**|nav_filter3
     - 2.md
-  - Polars: <api4>/polars.dataframe.***|nav_filter4
   # - MkDocs: <api3>/mkdocs.**|nav_filter4
-  # - Polars: <api4>/polars.***|nav_filter4
+  # - Polars: <api4>/polars.dataframe.***|nav_filter4
+  - Polars: <api4>/polars.dataframe.***|nav_filter4
 
 
 extra_css:

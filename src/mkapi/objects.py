@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import mkapi.ast
 import mkapi.docstrings
+import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
 from mkapi.items import (
@@ -21,7 +22,7 @@ from mkapi.items import (
     Type,
     TypeKind,
     create_attributes,
-    create_parameters,
+    # create_parameters,
     create_raises,
     iter_assigns,
     iter_bases,
@@ -51,6 +52,7 @@ class Object:
     doc: Docstring
     qualname: str = field(init=False)
     fullname: str = field(init=False)
+    kind: str = field(init=False)
 
     def __post_init__(self) -> None:
         self.doc.name = self.fullname
@@ -58,15 +60,14 @@ class Object:
         if isinstance(expr, ast.Expr):
             self.doc.type.expr = expr.value
             self.doc.type.kind = TypeKind.OBJECT
+        self.kind = get_kind(self)
         objects[self.fullname] = self  # type:ignore
 
     def __repr__(self) -> str:
         return f"{self.kind.title()}({self.name!r})"
 
-    @property
-    def kind(self) -> str:
-        """Return the kind."""
-        return self.__class__.__name__.lower()
+    def set_markdown(self) -> None:
+        """Set Markdown text with link."""
 
 
 @dataclass(repr=False)
@@ -98,11 +99,6 @@ class Attribute(Member):
             yield self.type
         if self.default.expr:
             yield self.default
-
-    @property
-    def kind(self) -> str:
-        """Return the kind."""
-        return "property" if isinstance(self.node, ast.FunctionDef) else "attribute"
 
 
 def create_attribute(
@@ -139,10 +135,11 @@ class Function(Callable):
     returns: list[Return]
     raises: list[Raise]
 
-    @property
-    def kind(self) -> str:
-        """Return the kind."""
-        return "method" if "." in self.qualname else "function"
+    def set_markdown(self) -> None:
+        """Set Markdown text with link."""
+        for sig in self.parameters + self.returns:
+            for elem in sig:
+                elem.set_markdown(self.module.name)
 
 
 def create_function(
@@ -174,6 +171,12 @@ class Class(Callable):
     attributes: list[Attribute] = field(default_factory=list, init=False)
     parameters: list[Parameter] = field(default_factory=list, init=False)
     raises: list[Raise] = field(default_factory=list, init=False)
+
+    def set_markdown(self) -> None:
+        """Set Markdown text with link."""
+        for param in self.parameters:
+            for elem in param:
+                elem.set_markdown(self.module.name)
 
 
 def create_class(
@@ -211,11 +214,6 @@ class Module(Object):
     def __post_init__(self) -> None:
         self.fullname = self.qualname = self.name
         super().__post_init__()
-
-    @property
-    def kind(self) -> str:
-        """Return the kind: package or module."""
-        return "package" if is_package(self.name) else "module"
 
 
 def _create_empty_module() -> Module:
@@ -262,19 +260,30 @@ def _merge_items(obj: Module | Class | Function) -> None:
 def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
     for obj in iter_objects(module):
+        obj.set_markdown()
         obj.doc.set_markdown(module.name)
 
 
 def merge_parameters(obj: Class | Function) -> None:
     """Merge parameters."""
-    section = get_by_type(obj.doc.sections, Parameters)
-    if not section:
-        if not obj.parameters:
-            return
-        section = create_parameters([])
-        obj.doc.sections.append(section)
-    # TODO: *args, **kwargs
-    section.items = list(iter_merged_items(obj.parameters, section.items))
+    if section := get_by_type(obj.doc.sections, Parameters):
+        items = _iter_merged_parameters(obj.parameters, section.items)
+        section.items = list(items)
+
+
+def _iter_merged_parameters(
+    params_ast: list[Parameter],
+    params_doc: list[Parameter],
+) -> Iterator[Parameter]:
+    for param_doc in params_doc:
+        name = param_doc.name.replace("*", "")
+        if param_ast := get_by_name(params_ast, name):
+            if not param_doc.type.expr:
+                param_doc.type = param_ast.type
+            if not param_doc.default.expr:
+                param_doc.default = param_ast.default
+            param_doc.kind = param_ast.kind
+        yield param_doc
 
 
 def merge_attributes(obj: Module | Class) -> None:
@@ -307,14 +316,8 @@ def merge_raises(obj: Class | Function) -> None:
 
 def merge_returns(obj: Function) -> None:
     """Merge returns."""
-    section = get_by_type(obj.doc.sections, Returns)
-    if not section:
-        if not obj.returns:
-            return
-        # TODO: yields
-        section = Returns("Returns", Type(), Text(), [])
-        obj.doc.sections.append(section)
-    section.items = list(iter_merged_items(obj.returns, section.items))
+    if section := get_by_type(obj.doc.sections, Returns):
+        section.items = list(iter_merged_items(obj.returns, section.items))
 
 
 def merge_bases(obj: Class) -> None:
@@ -352,3 +355,20 @@ def iter_objects(
     """Yield [Object] instances."""
     for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
         yield obj_
+
+
+def get_kind(obj: Object) -> str:  # noqa: PLR0911
+    """Return object kind."""
+    if isinstance(obj, Module):
+        return "package" if is_package(obj.name) else "module"
+    if isinstance(obj, Class):
+        return "dataclass" if mkapi.inspect.is_dataclass(obj) else "class"
+    if isinstance(obj, Function):
+        if mkapi.inspect.is_classmethod(obj):
+            return "classmethod"
+        if mkapi.inspect.is_staticmethod(obj):
+            return "staticmethod"
+        return "method" if "." in obj.qualname else "function"
+    if isinstance(obj, Attribute):
+        return "property" if isinstance(obj.node, ast.FunctionDef) else "attribute"
+    return "unknown"

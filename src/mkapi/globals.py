@@ -130,6 +130,8 @@ def _iter_globals(module: str) -> Iterator[Global | Import]:
         name = import_.name[n:]
         if fullname := _resolve(import_.fullname):
             yield Import(name, fullname)
+        else:
+            yield Import(name, import_.fullname)
 
 
 @cache
@@ -148,13 +150,14 @@ def get_fullname(module: str, name: str) -> str | None:
         return global_.fullname
     if "." not in name:
         return None
-    name, attr = name.rsplit(".", maxsplit=1)
-    global_ = get_by_name(names, name)
+    name_, attr = name.rsplit(".", maxsplit=1)
+    global_ = get_by_name(names, name_)
     if isinstance(global_, Global):
         return f"{global_.fullname}.{attr}"
     if isinstance(global_, Import):
         return _resolve(f"{global_.fullname}.{attr}")
-    return None
+    return name
+    # return None
 
 
 def _get_link(module: str, name: str, asname: str) -> str:

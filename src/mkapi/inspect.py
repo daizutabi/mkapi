@@ -10,14 +10,25 @@ import mkapi.ast
 from mkapi.ast import PARAMETER_KIND_ATTRIBUTE
 from mkapi.globals import get_fullname
 from mkapi.items import Parameter
-from mkapi.objects import Class
 from mkapi.utils import get_by_name
 
 if TYPE_CHECKING:
     import ast
     from collections.abc import Iterator
 
-    from mkapi.objects import Function
+    from mkapi.objects import Class, Function
+
+
+def iter_decorator_names(obj: Class | Function) -> Iterator[str]:
+    """Yield decorator_names."""
+    if not obj.module:
+        return
+    for deco in obj.node.decorator_list:
+        deco_name = next(mkapi.ast.iter_identifiers(deco))
+        if name := get_fullname(obj.module.name, deco_name):
+            yield name
+        else:
+            yield deco_name
 
 
 def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
@@ -28,12 +39,24 @@ def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
         deco_name = next(mkapi.ast.iter_identifiers(deco))
         if get_fullname(obj.module.name, deco_name) == name:
             return deco
+        if deco_name == name:
+            return deco
     return None
 
 
 def is_dataclass(cls: Class) -> bool:
-    """Return True if a [Class] instance is a dataclass."""
+    """Return True if the [Class] instance is a dataclass."""
     return get_decorator(cls, "dataclasses.dataclass") is not None
+
+
+def is_classmethod(func: Function) -> bool:
+    """Return True if the [Function] instance is a classmethod."""
+    return get_decorator(func, "classmethod") is not None
+
+
+def is_staticmethod(func: Function) -> bool:
+    """Return True if the [Function] instance is a staticmethod."""
+    return get_decorator(func, "staticmethod") is not None
 
 
 # def _iter_decorator_args(deco: ast.expr) -> Iterator[tuple[str, Any]]:
@@ -83,28 +106,37 @@ class Signature:
     def __iter__(self) -> Iterator[Part]:
         return iter(self.parts)
 
+    def __repr__(self) -> str:
+        return self.markdown
+
+    @property
+    def markdown(self) -> str:
+        """Return Markdown of signature."""
+        markdowns = [f'<span class="{p.kind}">{p.text}</span>' for p in self]
+        return "".join(markdowns)
+
 
 def _iter_sep(kind: str | None, prev_kind: str | None) -> Iterator[tuple[str, str]]:
     if prev_kind == "posonlyargs" and kind != prev_kind:
         yield "/", "sep"
         yield ", ", "comma"
     if kind == "kwonlyargs" and prev_kind not in [kind, "vararg"]:
-        yield "*", "sep"
+        yield "\\*", "sep"
         yield ", ", "comma"
     if kind == "vararg":
-        yield "*", "star"
+        yield "\\*", "star"
     if kind == "kwarg":
-        yield "**", "star"
+        yield "\\*\\*", "star"
 
 
-def _iter_param(param: Parameter, kind: str) -> Iterator[tuple[str, str]]:
-    yield param.name, kind
+def _iter_param(param: Parameter) -> Iterator[tuple[str, str]]:
     if param.type.expr:
-        yield ":", "colon"
-        yield param.type.html, "ann"
+        yield ": ", "colon"
+        yield param.type.markdown, "ann"
     if param.default.expr:
-        yield "=", "eq"
-        yield param.default.html, "default"
+        eq = " = " if param.type.expr else "="
+        yield eq, "eq"
+        yield param.default.markdown, "default"
 
 
 def iter_signature(obj: Class | Function) -> Iterator[tuple[str, str]]:
@@ -115,7 +147,9 @@ def iter_signature(obj: Class | Function) -> Iterator[tuple[str, str]]:
     for k, param in enumerate(obj.parameters):
         kind = PARAMETER_KIND_ATTRIBUTE[param.kind]
         yield from _iter_sep(kind, prev_kind)
-        yield from _iter_param(param, kind)
+        kind_ = "self" if k == 0 and obj.kind in ["method", "classmethod"] else kind
+        yield param.name.replace("_", "\\_"), kind_
+        yield from _iter_param(param)
         if k < n - 1:
             yield ", ", "comma"
         prev_kind = kind
@@ -123,10 +157,10 @@ def iter_signature(obj: Class | Function) -> Iterator[tuple[str, str]]:
         yield ", ", "comma"
         yield "/", "sep"
     yield ")", "paren"
-    if isinstance(obj, Class) or not obj.returns:
+    if not hasattr(obj, "returns") or not obj.returns:  # type: ignore
         return
-    yield "→", "arrow"
-    yield obj.returns[0].type.html, "return"
+    yield " → ", "arrow"
+    yield obj.returns[0].type.markdown, "return"  # type: ignore
 
 
 def get_signature(obj: Class | Function) -> Signature:
