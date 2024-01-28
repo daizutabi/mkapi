@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.globals import _resolve
 from mkapi.items import Parameters, SeeAlso
 from mkapi.objects import (
     Attribute,
@@ -302,24 +301,44 @@ def test_see_also(DataFrame: Class):  # noqa: N803
     assert isinstance(func, Function)
     see = get_by_type(func.doc.sections, SeeAlso)
     assert see
-    assert "[tail][polars.dataframe.frame.DataFrame.tail]" in see.text.markdown
+    assert "[__mkapi__.polars.dataframe.frame.DataFrame.tail]" in see.text.markdown
     func = get_by_name(DataFrame.functions, "_read_csv")
     assert isinstance(func, Function)
     see = get_by_type(func.doc.sections, SeeAlso)
     assert see
-    assert "[polars.io.csv.functions.read_csv]" in see.text.markdown
+    assert "[__mkapi__.polars.io.csv.functions.read_csv]" in see.text.markdown
 
 
-def test_a(DataFrame: Class):  # noqa: N803
-    func = get_by_name(DataFrame.functions, "lazy")
-    assert isinstance(func, Function)
-    print(func.doc.text.str)
-    # print(_resolve("polars.LazyFrame"))
-    # name = "polars.lazyframe.frame"
-    # node = get_module_node(name)
-    # assert node
-    # module = create_module(name, node)
-    # assert module
-    # cls = get_by_name(module.classes, "LazyFrame")
-    # assert isinstance(cls, Class)
-    # assert get_by_name(cls.functions, "describe_plan")
+def test_see_also_text():
+    name = "polars.lazyframe.frame"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    assert module
+    cls = get_by_name(module.classes, "LazyFrame")
+    assert isinstance(cls, Class)
+    attr = get_by_name(cls.attributes, "dtypes")
+    assert attr
+    see = get_by_type(attr.doc.sections, SeeAlso)
+    assert see
+    m = see.text.markdown
+    assert "[schema][__mkapi__.polars.lazyframe.frame.LazyFrame.schema]" in m
+    assert "Returns a" in m
+    func = get_by_name(cls.functions, "deserialize")
+    assert func
+    see = get_by_type(func.doc.sections, SeeAlso)
+    assert see
+    m = see.text.markdown
+    assert "[__mkapi__.polars.lazyframe.frame.LazyFrame.serialize]" in m
+
+    name = "polars.io.csv.functions"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    assert module
+    func = get_by_name(module.functions, "read_csv")
+    assert func
+    see = get_by_type(func.doc.sections, SeeAlso)
+    assert see
+    m = see.text.markdown
+    assert "[__mkapi__.polars.io.csv.functions.scan_csv]" in m

@@ -283,15 +283,21 @@ def _set_str_admonition(
 
 def _add_link(obj: Module | Class | Function | Attribute, text: str) -> str:
     strs = []
+    before_colon = True
     for name, isidentifier in _iter_identifiers(text):
-        if isidentifier and (fullname := _get_fullname_from_object(obj, name)):
-            strs.append(f"[{name}][{fullname}]")
-        else:
-            strs.append(name)
+        if isidentifier and before_colon:  # noqa: SIM102
+            if fullname := _get_fullname_from_object(obj, name):
+                strs.append(f"[{name}][__mkapi__.{fullname}]")
+                continue
+        strs.append(name)
+        if ":" in name:
+            before_colon = False
+        if "\n" in name:
+            before_colon = True
     return "".join(strs)
 
 
-def _get_fullname_from_object(
+def _get_fullname_from_object(  # noqa: PLR0911
     obj: Module | Class | Function | Attribute,
     name: str,
 ) -> str | None:
@@ -302,6 +308,13 @@ def _get_fullname_from_object(
         return get_fullname(obj.name, name)
     if obj.parent and isinstance(obj.parent, Class | Function):
         return _get_fullname_from_object(obj.parent, name)
+    if "." not in name:
+        if not isinstance(obj, Module):
+            return _get_fullname_from_object(obj.module, name)
+        return None
+    parent, attr = name.rsplit(".", maxsplit=1)
+    if parent == obj.name:
+        return _get_fullname_from_object(obj, attr)
     return _resolve_with_attribute(name)
 
 
