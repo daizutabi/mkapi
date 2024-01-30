@@ -135,7 +135,7 @@ def _iter_param(param: Parameter) -> Iterator[tuple[str, str]]:
         yield param.type.markdown, "ann"
     if param.default.expr:
         eq = " = " if param.type.expr else "="
-        yield eq, "eq"
+        yield eq, "equal"
         yield param.default.markdown, "default"
 
 
@@ -145,10 +145,11 @@ def iter_signature(obj: Class | Function) -> Iterator[tuple[str, str]]:
     n = len(obj.parameters)
     prev_kind = kind = None
     for k, param in enumerate(obj.parameters):
+        if k == 0 and obj.kind in ["class", "method", "classmethod"]:
+            continue
         kind = PARAMETER_KIND_ATTRIBUTE[param.kind]
         yield from _iter_sep(kind, prev_kind)
-        kind_ = "self" if k == 0 and obj.kind in ["method", "classmethod"] else kind
-        yield param.name.replace("_", "\\_"), kind_
+        yield param.name.replace("_", "\\_"), "arg"
         yield from _iter_param(param)
         if k < n - 1:
             yield ", ", "comma"

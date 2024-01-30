@@ -12,6 +12,7 @@ from mkapi.items import (
     Item,
     Text,
     Type,
+    create_admonition,
     iter_assigns,
     iter_bases,
     iter_merged_items,
@@ -278,3 +279,10 @@ def test_iter_merged_items_():
     assert c[1].type.expr.value == "int"  # type: ignore
     assert c[2].name == "c"
     assert c[2].type.expr.value == "list"  # type: ignore
+
+
+def test_create_admonition():
+    a = create_admonition("See Also", "a: b\nc: d")
+    print(a.text.str)
+    x = '!!! info "See Also"\n    * [__mkapi__.a][]: b\n    * [__mkapi__.c][]: d'
+    assert a.text.str == x

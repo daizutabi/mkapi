@@ -14,7 +14,6 @@ from mkapi import docstrings
 from mkapi.docstrings import Docstring
 from mkapi.globals import get_fullname, resolve_with_attribute
 from mkapi.items import (
-    Admonition,
     Assign,
     Assigns,
     Bases,
@@ -22,7 +21,6 @@ from mkapi.items import (
     Parameters,
     Raises,
     Returns,
-    SeeAlso,
     Text,
     Type,
     TypeKind,
@@ -35,7 +33,7 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import get_by_name, get_by_type, is_package, iter_identifiers
+from mkapi.utils import get_by_name, get_by_type, is_identifier, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -329,11 +327,12 @@ def merge_bases(obj: Class) -> None:
 def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
     for obj in iter_objects(module):
-        for section in obj.doc.sections:
-            if isinstance(section, SeeAlso) and section.text.str:
-                section.text.str = _add_link(section.text.str)
-            if isinstance(section, Admonition):
-                _set_text_admonition(section)
+        # TODO: move to docstrings module.
+        # for section in obj.doc.sections:
+        #     if isinstance(section, SeeAlso) and section.text.str:
+        #         section.text.str = _add_link(section.text.str)
+        #     if isinstance(section, Admonition):
+        #         _set_text_admonition(section)
         for elem in itertools.chain(obj, obj.doc):
             if isinstance(elem, Type):
                 elem.set_markdown(module.name)
@@ -348,38 +347,22 @@ def get_link_from_text(obj: Module | Class | Function | Attribute, text: str) ->
     """Return markdown links from text."""
 
     def replace(match: re.Match) -> str:
-        name = match.group(1).replace("`", "")
-        if not all(x.isidentifier() for x in name.split(".")):
-            return match.group()
-        if fullname := get_fullname_from_object(obj, name):
+        name = match.group(1)
+        if not isinstance(name, str):
+            return match.group(1)
+        if name.startswith("__mkapi__."):
+            from_mkapi = True
+            name = name[10:]
+        else:
+            from_mkapi = False
+        if is_identifier(name) and (fullname := get_fullname_from_object(obj, name)):
             name_ = name.replace("_", "\\_")
             return f"[{name_}][__mkapi__.{fullname}]"
+        if from_mkapi:
+            return name
         return match.group()
 
     return re.sub(LINK_PATTERN, replace, text)
-
-
-def _add_link(text: str) -> str:
-    strs = []
-    before_colon = True
-    for name, isidentifier in iter_identifiers(text):
-        if isidentifier and before_colon:
-            strs.append(f"[{name}][]")
-        else:
-            strs.append(name)
-            if ":" in name:
-                before_colon = False
-            if "\n" in name:
-                before_colon = True
-    return "".join(strs)
-
-
-def _set_text_admonition(section: Admonition) -> None:
-    if not (text := section.text.str):
-        return
-    lines = ["    " + line if line else "" for line in text.split("\n")]
-    lines.insert(0, f'!!! {section.kind} "{section.name}"')
-    section.text.str = "\n".join(lines)
 
 
 def iter_objects_with_depth(

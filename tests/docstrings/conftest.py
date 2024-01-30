@@ -5,18 +5,14 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.utils import get_module_path
+from mkapi.utils import get_module_node
 
 
 def load_module(name):
     path = str(Path(__file__).parent.parent)
     if path not in sys.path:
         sys.path.insert(0, str(path))
-    path = get_module_path(name)
-    assert path
-    with path.open("r", encoding="utf-8") as f:
-        source = f.read()
-    return ast.parse(source)
+    return get_module_node(name)
 
 
 @pytest.fixture(scope="module")

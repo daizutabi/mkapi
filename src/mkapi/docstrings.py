@@ -18,11 +18,12 @@ from mkapi.items import (
     create_returns,
     iter_merged_items,
 )
-from mkapi.utils import (
-    get_by_name,
+from mkapi.markdown import (
     join_without_first_indent,
-    unique_names,
+    replace_directives,
+    replace_examples,
 )
+from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -56,7 +57,9 @@ def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
         type_ = ""
     else:
         name, type_, text = lines[0], "", ""
-    return name, type_, "\n".join([text.strip(), *lines[1:]])
+    rest = "\n".join(lines[1:])
+    rest = join_without_first_indent(rest)
+    return name, type_, f"{text.strip()}\n{rest}".strip()
 
 
 def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:
@@ -65,21 +68,27 @@ def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:
         name, type_ = lines[0].split(":", maxsplit=1)
     else:
         name, type_ = lines[0], ""
-    return name.strip(), type_.strip(), "\n".join(lines[1:])
+    text = "\n".join(lines[1:])
+    text = join_without_first_indent(text)
+    return name.strip(), type_.strip(), text
 
 
 def split_item(item: str, style: Style) -> tuple[str, str, str]:
     """Split an item into a tuple of (name, type, text)."""
-    lines = [line.strip() for line in item.split("\n")]
+    lines = item.split("\n")
     if style == "google":
         return _split_item_google(lines)
     return _split_item_numpy(lines)
+
+
+TYPE_STRING_PATTERN = re.compile(r"\[__mkapi__.(\S+?)\]\[\]")
 
 
 def iter_items(section: str, style: Style) -> Iterator[tuple[str, Type, Text]]:
     """Yield tuples of (name, type, text)."""
     for item in _iter_items(section):
         name, type_, text = split_item(item, style)
+        type_ = TYPE_STRING_PATTERN.sub(r"\1", type_)
         type_ = ast.Constant(type_) if type_ else None
         yield name, Type(type_), Text(text)
 
@@ -243,12 +252,18 @@ def parse(doc: str | None, style: Style | None = None) -> Docstring:
     else:
         type_ = Type()
         text = Text()
-    return Docstring("Docstring", type_, text, sections)
+    doc_ = Docstring("Docstring", type_, text, sections)
+    for elem in doc_:
+        if isinstance(elem, Text) and elem.str and "\n" in elem.str:
+            elem.str = postprocess(elem.str)
+    return doc_
 
 
 LINK_PATTERN = re.compile(r"`(.+?)\s+?<(.+?)>`_")
-FIELD_LINK_PATTERN = re.compile(r":\S+?:`(.+?)\s+?<(.+?)>`")
-FIELD_PATTERN = re.compile(r":\S+?:`(\S+?)`")
+_url = r'\s(https?://[\w!?/+\-_~=;.,*&@#$%()"\[\]]+?)([.,;]?(\s|$))'
+URL_PATTERN = re.compile(_url)
+INTERNAL_LINK_PATTERN = re.compile(r":\S+?:`(.+?)\s+?<(.+?)>`")
+REFERENCE_PATTERN = re.compile(r":\S+?:`(\S+?)`")
 DOCTEST_PATTERN = re.compile(r"\s*?#\s*?doctest:.*?$", re.MULTILINE)
 
 
@@ -256,10 +271,16 @@ def preprocess(doc: str) -> str:
     """Preprocess."""
     # doc = add_fence(doc)
     doc = re.sub(LINK_PATTERN, r"[\1](\2)", doc)
-    doc = re.sub(FIELD_LINK_PATTERN, r"[\1][__mkapi__.\2]", doc)
-    doc = re.sub(FIELD_PATTERN, r"[\1][]", doc)
-    doc = re.sub(DOCTEST_PATTERN, "", doc)
-    return doc  # noqa: RET504
+    doc = re.sub(URL_PATTERN, r"<\1>\2", doc)
+    doc = re.sub(INTERNAL_LINK_PATTERN, r"[\1][__mkapi__.\2]", doc)
+    doc = re.sub(REFERENCE_PATTERN, r"[__mkapi__.\1][]", doc)
+    return re.sub(DOCTEST_PATTERN, "", doc)
+
+
+def postprocess(text: str) -> str:
+    """Postprocess."""
+    text = replace_directives(text)
+    return replace_examples(text)
 
 
 def merge_sections(a: Section, b: Section) -> Section:

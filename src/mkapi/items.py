@@ -10,15 +10,11 @@ from typing import TYPE_CHECKING
 import mkapi.ast
 from mkapi.ast import is_property
 from mkapi.globals import (
-    # get_link_from_text,
     get_link_from_type,
     get_link_from_type_string,
 )
-from mkapi.utils import (
-    get_by_name,
-    join_without_first_indent,
-    unique_names,
-)
+from mkapi.markdown import add_link, join_without_first_indent, replace_directives
+from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -51,21 +47,22 @@ class Type:
 
     def set_markdown(self, module: str) -> None:
         """Set Markdown text with link."""
+        if not self.expr or self.markdown:
+            return
+
         is_object = self.kind is TypeKind.OBJECT
 
         def get_link(name: str) -> str:
             return get_link_from_type(module, name, is_object=is_object)
 
-        if self.markdown:
-            return
         if isinstance(self.expr, ast.Constant) and isinstance(self.expr.value, str):
             self.markdown = get_link_from_type_string(module, self.expr.value)
-        elif self.expr:
-            is_type = self.__class__.__name__ == "Type"
-            try:
-                self.markdown = mkapi.ast.unparse(self.expr, get_link, is_type=is_type)
-            except ValueError:
-                self.markdown = ast.unparse(self.expr)
+            return
+
+        try:
+            self.markdown = mkapi.ast.unparse(self.expr, get_link)
+        except ValueError:
+            self.markdown = ast.unparse(self.expr)
 
 
 @dataclass(repr=False)
@@ -87,7 +84,8 @@ class Text:
     markdown: str = field(default="", init=False)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.str or ''})"
+        text = self.str or ""
+        return f"{self.__class__.__name__}({text!r})"
 
 
 @dataclass
@@ -376,6 +374,12 @@ def create_admonition(name: str, markdown: str) -> Admonition:
     elif name.startswith("See Also"):
         cls = SeeAlso
         kind = "info"
+        markdown = add_link(markdown)
     else:
         raise NotImplementedError
+
+    # markdown = replace_directives(markdown)
+    lines = ["    " + line if line else "" for line in markdown.split("\n")]
+    lines.insert(0, f'!!! {kind} "{name}"')
+    markdown = "\n".join(lines)
     return cls(name, Type(), Text(markdown), [], kind)

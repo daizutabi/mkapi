@@ -8,8 +8,8 @@
   font-style: italic;
 }
 
-.mkapi-signature .paren,.comma,.collon,.eq {
-  color: #777;
+.mkapi-signature .arg {
+  font-style: italic;
 }
 .mkapi-signature .default {
   color: #777;
@@ -17,21 +17,14 @@
 .mkapi-signature .ann {
   color: #777;
 }
-.mkapi-signature .star {
-  color: #d51a1a;
+.mkapi-signature .return {
+  color: #777;
 }
-.mkapi-signature .sep {
-  color: #d51a1a;
+.mkapi-signature .paren,.comma,.colon,.equal {
+  color: #999;
 }
-.mkapi-signature .arrow {
-  color: #d51a1a;
-}
-.mkapi-signature .posonlyargs,.args,.vararg,.kwonlyargs,.kwarg {
-  font-style: italic;
-}
-.mkapi-signature .self {
-  font-style: italic;
-  color: #d51a1a;
+.mkapi-signature .star,.sep,.arrow {
+  color: #999;
 }
 
 .mkapi-section-name {
@@ -49,4 +42,19 @@
 
 .mkapi-object-body code {
   font-family: monospace;
+}
+
+.md-typeset .admonition.deprecated,
+.md-typeset details.deprecated {
+  border-color: #ff5252;
+}
+.md-typeset .deprecated > .admonition-title,
+.md-typeset .deprecated > summary {
+  background-color: #ff52521a;
+}
+.md-typeset .deprecated > .admonition-title::before,
+.md-typeset .deprecated > summary::before {
+  background-color: #ff5252;
+  -webkit-mask-image: var(--md-admonition-icon--info);
+          mask-image: var(--md-admonition-icon--info);
 }

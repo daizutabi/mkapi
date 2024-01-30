@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import doctest
 import re
 from functools import cache
 from importlib.util import find_spec
@@ -179,63 +180,9 @@ def update_filters(org: list[str], update: list[str]) -> list[str]:
     return filters
 
 
-def delete_ptags(html: str) -> str:
-    """Return HTML without <p> tag.
-
-    Examples:
-        >>> delete_ptags("<p>para1</p><p>para2</p>")
-        'para1<br>para2'
-    """
-    html = html.replace("<p>", "").replace("</p>", "<br>")
-    if html.endswith("<br>"):
-        html = html[:-4]
-    return html
-
-
-def get_indent(line: str) -> int:
-    """Return the number of indent of a line.
-
-    Examples:
-        >>> get_indent("abc")
-        0
-        >>> get_indent("  abc")
-        2
-        >>> get_indent("")
-        -1
-    """
-    for k, x in enumerate(line):
-        if x != " ":
-            return k
-    return -1
-
-
-def join_without_first_indent(
-    lines: list[str] | str,
-    start: int = 0,
-    stop: int | None = None,
-) -> str:
-    r"""Return a joint string without first indent.
-
-    Examples:
-        >>> join_without_first_indent(["abc", "def"])
-        'abc\ndef'
-        >>> join_without_first_indent(["  abc", "  def"])
-        'abc\ndef'
-        >>> join_without_first_indent(["  abc", "    def  ", ""])
-        'abc\n  def'
-        >>> join_without_first_indent(["  abc", "    def", "    ghi"])
-        'abc\n  def\n  ghi'
-        >>> join_without_first_indent(["  abc", "    def", "    ghi"], stop=2)
-        'abc\n  def'
-        >>> join_without_first_indent([])
-        ''
-    """
-    if not lines:
-        return ""
-    if isinstance(lines, str):
-        return join_without_first_indent(lines.split("\n"))
-    indent = get_indent(lines[start])
-    return "\n".join(line[indent:] for line in lines[start:stop]).strip()
+def is_identifier(name: str) -> bool:
+    """Return True if name is identifier with dot."""
+    return name != "" and all(x.isidentifier() for x in name.split("."))
 
 
 def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
