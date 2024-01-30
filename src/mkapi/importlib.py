@@ -50,11 +50,11 @@ def get_source(
     """Return the source code of an object."""
     if isinstance(obj, Module):
         if obj.source:
-            return "\n".join(obj.source.split("\n")[:maxline])
+            return "\n".join(obj.source.splitlines()[:maxline])
         return None
     if (module := obj.module) and (source := module.source):
         start, stop = obj.node.lineno - 1, obj.node.end_lineno
-        return "\n".join(source.split("\n")[start:stop][:maxline])
+        return "\n".join(source.splitlines()[start:stop][:maxline])
     return None
 
 

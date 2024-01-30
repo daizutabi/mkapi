@@ -30,7 +30,7 @@ def template():
 
 # def test_module_empty_filters():
 #     module = load_module("mkapi.core.base")
-#     m = renderer.render_module(module).split("\n")
+#     m = renderer.render_module(module).splitlines()
 #     assert m[0] == "# ![mkapi](mkapi.core.base|plain|link|sourcelink)"
 #     assert m[2] == "## ![mkapi](mkapi.core.base.Base||link|sourcelink)"
 #     assert m[3] == "## ![mkapi](mkapi.core.base.Inline||link|sourcelink)"

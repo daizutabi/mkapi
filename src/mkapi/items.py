@@ -2,18 +2,20 @@
 from __future__ import annotations
 
 import ast
+import textwrap
 from dataclasses import dataclass, field
 from enum import Enum
 from inspect import _ParameterKind
 from typing import TYPE_CHECKING
 
 import mkapi.ast
+import mkapi.markdown
 from mkapi.ast import is_property
 from mkapi.globals import (
     get_link_from_type,
     get_link_from_type_string,
 )
-from mkapi.markdown import add_link, join_without_first_indent, replace_directives
+from mkapi.markdown import add_link, replace_directives
 from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
@@ -222,12 +224,13 @@ def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, T
 
 def split_without_name(text: str, style: str) -> tuple[str, str]:
     """Return a tuple of (type, text) for Returns or Yields section."""
-    lines = text.split("\n")
+    lines = text.splitlines()
     if style == "google" and ":" in lines[0]:
         type_, text_ = lines[0].split(":", maxsplit=1)
         return type_.strip(), "\n".join([text_.strip(), *lines[1:]])
     if style == "numpy" and len(lines) > 1 and lines[1].startswith(" "):
-        return lines[0], join_without_first_indent(lines[1:])
+        text_ = textwrap.dedent("\n".join(lines[1:]))
+        return lines[0], text_
     return "", text
 
 
@@ -363,7 +366,7 @@ class SeeAlso(Admonition):
     """SeeAlso section."""
 
 
-def create_admonition(name: str, markdown: str) -> Admonition:
+def create_admonition(name: str, text: str) -> Admonition:
     """Create admonition."""
     if name.startswith("Note"):
         cls = Notes
@@ -374,12 +377,8 @@ def create_admonition(name: str, markdown: str) -> Admonition:
     elif name.startswith("See Also"):
         cls = SeeAlso
         kind = "info"
-        markdown = add_link(markdown)
+        text = mkapi.markdown.add_link(text)
     else:
         raise NotImplementedError
-
-    # markdown = replace_directives(markdown)
-    lines = ["    " + line if line else "" for line in markdown.split("\n")]
-    lines.insert(0, f'!!! {kind} "{name}"')
-    markdown = "\n".join(lines)
-    return cls(name, Type(), Text(markdown), [], kind)
+    text = mkapi.markdown.get_admonition(kind, name, text)
+    return cls(name, Type(), Text(text), [], kind)

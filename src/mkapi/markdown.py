@@ -11,57 +11,11 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-def get_indent(line: str) -> int:
-    """Return the number of indent of a line.
-
-    Examples:
-        >>> get_indent("abc")
-        0
-        >>> get_indent("  abc")
-        2
-        >>> get_indent("")
-        -1
-    """
-    for k, x in enumerate(line):
-        if x != " ":
-            return k
-    return -1
-
-
-def join_without_first_indent(
-    lines: list[str] | str,
-    start: int = 0,
-    stop: int | None = None,
-) -> str:
-    r"""Return a joint string without first indent.
-
-    Examples:
-        >>> join_without_first_indent(["abc", "def"])
-        'abc\ndef'
-        >>> join_without_first_indent(["  abc", "  def"])
-        'abc\ndef'
-        >>> join_without_first_indent(["  abc", "    def  ", ""])
-        'abc\n  def'
-        >>> join_without_first_indent(["  abc", "    def", "    ghi"])
-        'abc\n  def\n  ghi'
-        >>> join_without_first_indent(["  abc", "    def", "    ghi"], stop=2)
-        'abc\n  def'
-        >>> join_without_first_indent([])
-        ''
-    """
-    if not lines:
-        return ""
-    if isinstance(lines, str):
-        return join_without_first_indent(lines.split("\n"))
-    indent = get_indent(lines[start])
-    return "\n".join(line[indent:] for line in lines[start:stop]).strip()
-
-
 def add_link(text: str) -> str:
     """Add link for a "See Also" section."""
     if ":" in text:
         text = re.sub(r"\n\s+", " ", text)
-        text = "\n".join(f"* {line}" for line in text.split("\n"))
+        text = "\n".join(f"* {line}" for line in text.splitlines())
     strs = []
     before_colon = True
     for name, isidentifier in iter_identifiers(text):
@@ -76,6 +30,34 @@ def add_link(text: str) -> str:
     return "".join(strs)
 
 
+LINK_PATTERN = re.compile(r"`(.+?)\s+?<(.+?)>`_")
+INTERNAL_LINK_PATTERN = re.compile(r":\S+?:`(.+?)\s+?<(.+?)>`")
+REFERENCE_PATTERN = re.compile(r":\S+?:`(\S+?)`")
+DOCTEST_PATTERN = re.compile(r"\s*?#\s*?doctest:.*?$", re.MULTILINE)
+
+
+def preprocess(text: str) -> str:
+    """Preprocess."""
+    text = re.sub(LINK_PATTERN, r"[\1](\2)", text)
+    text = re.sub(INTERNAL_LINK_PATTERN, r"[\1][__mkapi__.\2]", text)
+    text = re.sub(REFERENCE_PATTERN, r"[__mkapi__.\1][]", text)
+    return re.sub(DOCTEST_PATTERN, "", text)
+
+
+def postprocess(text: str) -> str:
+    """Postprocess."""
+    text = replace_directives(text)
+    return replace_examples(text)
+
+
+def get_admonition(name: str, title: str, text: str) -> str:
+    """Return an admonition markdown."""
+    text = replace_directives(text)
+    lines = ["    " + line if line else "" for line in text.splitlines()]
+    lines.insert(0, f'!!! {name} "{title}"')
+    return "\n".join(lines)
+
+
 def replace_directives(text: str) -> str:
     """Replace directives."""
     return "\n".join(_split_directives(text))
@@ -86,7 +68,7 @@ def _split_directives(text: str) -> Iterator[str]:
     title = ""
     bufs = []
     in_directive = False
-    lines = text.split("\n")
+    lines = text.splitlines()
     n = len(lines)
     for k, line in enumerate(lines):
         if line.startswith(".. ") and "::" in line:
@@ -117,7 +99,7 @@ def _get_directive(name: str, title: str, body: str) -> Iterator[str]:
         yield "```"
     else:
         yield f'!!! {name} "{title}"' if title else f"!!! {name}"
-        for buf in body.split("\n"):
+        for buf in body.splitlines():
             yield f"    {buf}"
 
 
@@ -139,7 +121,7 @@ def replace_examples(text: str) -> str:
 
 
 def _split_examples(text: str, examples: list[doctest.Example]) -> Iterator[str]:
-    lines = text.split("\n")
+    lines = text.splitlines()
     want = "dummy"
     lineno = 0
     n = len(examples)

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import re
+import textwrap
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
@@ -18,11 +19,7 @@ from mkapi.items import (
     create_returns,
     iter_merged_items,
 )
-from mkapi.markdown import (
-    join_without_first_indent,
-    replace_directives,
-    replace_examples,
-)
+from mkapi.markdown import postprocess, preprocess
 from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
@@ -58,7 +55,7 @@ def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
     else:
         name, type_, text = lines[0], "", ""
     rest = "\n".join(lines[1:])
-    rest = join_without_first_indent(rest)
+    rest = textwrap.dedent(rest)
     return name, type_, f"{text.strip()}\n{rest}".strip()
 
 
@@ -69,13 +66,13 @@ def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:
     else:
         name, type_ = lines[0], ""
     text = "\n".join(lines[1:])
-    text = join_without_first_indent(text)
+    text = textwrap.dedent(text)
     return name.strip(), type_.strip(), text
 
 
 def split_item(item: str, style: Style) -> tuple[str, str, str]:
     """Split an item into a tuple of (name, type, text)."""
-    lines = item.split("\n")
+    lines = item.splitlines()
     if style == "google":
         return _split_item_google(lines)
     return _split_item_numpy(lines)
@@ -115,7 +112,7 @@ def _split_sections(doc: str, style: Style) -> Iterator[str]:
 # In Numpy style, if a section is indented, then a section break is
 # created by resuming unindented text.
 def _subsplit(doc: str, style: Style) -> list[str]:
-    if style == "google" or len(lines := doc.split("\n")) < 3:
+    if style == "google" or len(lines := doc.splitlines()) < 3:
         return [doc]
     if not lines[2].startswith(" "):  # 2 == after '----' line.
         return [doc]
@@ -164,13 +161,15 @@ def _rename_section(section_name: str) -> str:
 
 def split_section(section: str, style: Style) -> tuple[str, str]:
     """Return a section name and its text."""
-    lines = section.split("\n")
+    lines = section.splitlines()
     if len(lines) < 2:
         return "", section
     if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
-        return lines[0][:-1], join_without_first_indent(lines[1:])
+        text = textwrap.dedent("\n".join(lines[1:]))
+        return lines[0][:-1], text
     if style == "numpy" and re.match(r"^-+?$", lines[1]):
-        return lines[0], join_without_first_indent(lines[2:])
+        text = textwrap.dedent("\n".join(lines[2:]))
+        return lines[0], text
     return "", section
 
 
@@ -257,30 +256,6 @@ def parse(doc: str | None, style: Style | None = None) -> Docstring:
         if isinstance(elem, Text) and elem.str and "\n" in elem.str:
             elem.str = postprocess(elem.str)
     return doc_
-
-
-LINK_PATTERN = re.compile(r"`(.+?)\s+?<(.+?)>`_")
-_url = r'\s(https?://[\w!?/+\-_~=;.,*&@#$%()"\[\]]+?)([.,;]?(\s|$))'
-URL_PATTERN = re.compile(_url)
-INTERNAL_LINK_PATTERN = re.compile(r":\S+?:`(.+?)\s+?<(.+?)>`")
-REFERENCE_PATTERN = re.compile(r":\S+?:`(\S+?)`")
-DOCTEST_PATTERN = re.compile(r"\s*?#\s*?doctest:.*?$", re.MULTILINE)
-
-
-def preprocess(doc: str) -> str:
-    """Preprocess."""
-    # doc = add_fence(doc)
-    doc = re.sub(LINK_PATTERN, r"[\1](\2)", doc)
-    doc = re.sub(URL_PATTERN, r"<\1>\2", doc)
-    doc = re.sub(INTERNAL_LINK_PATTERN, r"[\1][__mkapi__.\2]", doc)
-    doc = re.sub(REFERENCE_PATTERN, r"[__mkapi__.\1][]", doc)
-    return re.sub(DOCTEST_PATTERN, "", doc)
-
-
-def postprocess(text: str) -> str:
-    """Postprocess."""
-    text = replace_directives(text)
-    return replace_examples(text)
 
 
 def merge_sections(a: Section, b: Section) -> Section:

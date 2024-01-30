@@ -1,37 +1,7 @@
 import ast
-import inspect
-import re
 
-from mkapi.docstrings import URL_PATTERN, parse, preprocess
+from mkapi.docstrings import parse
 from mkapi.utils import get_by_name, get_module_node
-
-
-def test_url_pattern():
-    def f(x):
-        return re.sub(URL_PATTERN, r" <\1>\2", x)
-
-    x = " https://a.b.c"
-    assert f(x) == " <https://a.b.c>"
-    x = "a https://a.b.c."
-    assert f(x) == "a <https://a.b.c>."
-    x = "a https://a.b.c. b"
-    assert f(x) == "a <https://a.b.c>. b"
-
-
-def test_preprocess():
-    src = """
-    `abc <def>`_
-    :func:`ghi <jkl>`
-    :func:`mno`
-    abc  # doctest: XYZ
-    def
-    """
-    src = inspect.cleandoc(src)
-    lines = preprocess(src).split("\n")
-    assert lines[0] == "[abc](def)"
-    assert lines[1] == "[ghi][__mkapi__.jkl]"
-    assert lines[2] == "[__mkapi__.mno][]"
-    assert lines[3] == "abc"
 
 
 def get(module: str, n1: str, n2: str | None) -> str:
@@ -80,4 +50,7 @@ def test_polars_a():
     print(src)
     doc = parse(src)
     print(doc.sections[-2].text.str)
-    assert 0
+    # assert 0
+
+
+# polars.dataframe.frame.DataFrame.write_delta  `here_`
