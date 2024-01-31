@@ -1,6 +1,7 @@
 import ast
 
 from mkapi.docstrings import parse
+from mkapi.markdown import convert
 from mkapi.utils import get_by_name, get_module_node
 
 
@@ -25,12 +26,14 @@ def get(module: str, n1: str, n2: str | None) -> str:
 
 def test_polars_collect():
     src = get("polars.lazyframe.frame", "LazyFrame", "collect")
+    print(src)
     doc = parse(src)
     s = get_by_name(doc.sections, "Parameters")
     assert s
     i = get_by_name(s.items, "streaming")
     assert i
     assert i.text.str
+    print(i.text.str)
     assert "!!! warning\n    This functionality" in i.text.str
 
 
@@ -48,9 +51,15 @@ def test_polars_from_numpy():
 def test_polars_a():
     src = get("polars.dataframe.frame", "DataFrame", "group_by_dynamic")
     print(src)
+    m = convert(src)
+    print(m)
     doc = parse(src)
-    print(doc.sections[-2].text.str)
-    # assert 0
+    for s in doc.sections:
+        print("--" * 40)
+        print(s.text.str)
+        print("--" * 40)
+    assert 0
 
 
 # polars.dataframe.frame.DataFrame.write_delta  `here_`
+# polars.dataframe.frame.DataFrame.map_rows

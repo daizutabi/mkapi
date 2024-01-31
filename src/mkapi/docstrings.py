@@ -7,6 +7,7 @@ import textwrap
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
+import mkapi.markdown
 from mkapi.items import (
     Item,
     Section,
@@ -19,7 +20,6 @@ from mkapi.items import (
     create_returns,
     iter_merged_items,
 )
-from mkapi.markdown import postprocess, preprocess
 from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ def iter_items(section: str, style: Style) -> Iterator[tuple[str, Type, Text]]:
 
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
     "google": re.compile(r"\n\n\S"),
-    "numpy": re.compile(r"\n\n\n|\n\n.+?\n-+\n"),
+    "numpy": re.compile(r"\n\n\n\S|\n\n.+?\n-+\n"),
 }
 
 
@@ -237,25 +237,21 @@ class Docstring(Item):
             yield from section
 
 
-def parse(doc: str | None, style: Style | None = None) -> Docstring:
+def parse(text: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
-    if not doc:
+    if not text:
         return Docstring("Docstring", Type(), Text(), [])
-    doc = preprocess(doc)
-    style = style or get_style(doc)
-    sections = list(iter_sections(doc, style))
+    text = mkapi.markdown.convert(text)
+    style = style or get_style(text)
+    sections = list(iter_sections(text, style))
     if sections and not sections[0].name:
         type_ = sections[0].type
-        text = sections[0].text
+        text_ = sections[0].text
         del sections[0]
     else:
         type_ = Type()
-        text = Text()
-    doc_ = Docstring("Docstring", type_, text, sections)
-    for elem in doc_:
-        if isinstance(elem, Text) and elem.str and "\n" in elem.str:
-            elem.str = postprocess(elem.str)
-    return doc_
+        text_ = Text()
+    return Docstring("Docstring", type_, text_, sections)
 
 
 def merge_sections(a: Section, b: Section) -> Section:

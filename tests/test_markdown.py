@@ -1,13 +1,12 @@
 import inspect
-import re
 
 import markdown
 
 from mkapi.markdown import (
     add_link,
-    preprocess,
     replace_directives,
     replace_examples,
+    replace_link,
 )
 
 
@@ -38,20 +37,17 @@ def test_span():
     assert x == '<p><span class="c"><a href="b">a</a></span></p>'
 
 
-def test_preprocess():
+def test_replace_link():
     src = """
     `abc <def>`_
     :func:`ghi <jkl>`
     :func:`mno`
-    abc  # doctest: XYZ
-    def
     """
     src = inspect.cleandoc(src)
-    lines = preprocess(src).splitlines()
+    lines = replace_link(src).splitlines()
     assert lines[0] == "[abc](def)"
     assert lines[1] == "[ghi][__mkapi__.jkl]"
     assert lines[2] == "[__mkapi__.mno][]"
-    assert lines[3] == "abc"
 
 
 def test_add_link():
@@ -81,63 +77,36 @@ def test_add_link_items():
     assert lines[2] == "* [__mkapi__.pqr][]: stu"
 
 
-def test_replace_directives():
-    src = """
-    abc
-
-    .. note::
-     a b c
-     d e f.
-
-    def
-    """
-    src = inspect.cleandoc(src)
-    text = replace_directives(src)
-    print(text)
-    assert text == "abc\n\n!!! note\n    a b c\n    d e f.\n\ndef"
-    src = """
-    abc
-
-    .. deprecated:: 1.0
-     a b c
-     d e f.
-
-    def
-    """
-    src = inspect.cleandoc(src)
-    text = replace_directives(src)
-    assert '!!! deprecated "Deprecated since version 1.0"\n' in text
-
-
-def convert(text: str) -> str:
+def c(text: str) -> str:
     text = inspect.cleandoc(text)
-    e = ["admonition", "pymdownx.superfences", "attr_list"]
+    e = ["admonition", "pymdownx.superfences", "attr_list", "md_in_html"]
     return markdown.markdown(text, extensions=e)
 
 
 def test_replace_examples():
     src = """
-    abc
+    !!! Note
 
-    >>> a = 1
-    >>> print(a)
-    1
+        abc
 
-    def
+        >>> a = 1
+        >>> print(a)
+        1
 
-    >>> def f():
-    ...    pass
+        def
 
-    ghi
+         >>> def f():
+         ...    pass
+
+        ghi
+
+    jkl
     """
     src = inspect.cleandoc(src)
     text = replace_examples(src)
-    assert "abc\n\n" in text
-    assert "```{.python .mkapi-example-input}\na = 1\nprint" in text
-    assert "```\n```{.text" in text
-    assert "```\n\nghi" in text
-    m = convert(text)
-    assert "<p>abc</p>" in m
+    m = c(text)
+    assert '<div class="admonition note">' in m
+    assert '<p><div class="mkapi-example" mkarkdown="1">' in m
     assert '<div class="mkapi-example-input highlight">' in m
     assert '<div class="mkapi-example-output highlight">' in m
 
@@ -152,31 +121,73 @@ def test_replace_examples_prompt_only():
     """
     src = inspect.cleandoc(src)
     text = replace_examples(src)
-    assert "\n\n```{.python .mkapi-example-input}\na = 1\n\nb = 1" in text
+    assert "\n```{.python .mkapi-example-input}\na = 1\n\nb = 1" in text
 
 
-def test_next():
+def test_replace_directives():
     src = """
-    !!! note
+    abc
 
-        abc
+    .. note::
+        a b c
 
-         ```python
-         a
-         ```
+        d e f.
 
-        a
     def
     """
     src = inspect.cleandoc(src)
-    print(src)
-    m = convert(src)
+    text = replace_directives(src)
+    m = c(text)
+    assert '<p class="admonition-title">Note</p>' in m
+    assert "<p>a b c</p>" in m
+    assert "<p>d e f.</p>\n</div>" in m
+
+
+def test_replace_directives_deprecated():
+    src = """
+    abc
+
+    .. deprecated:: 1.0
+        xyz
+
+    def
+    """
+    src = inspect.cleandoc(src)
+    text = replace_directives(src)
+    m = c(text)
+    assert '<p class="admonition-title">Deprecated since version 1.0</p>' in m
+
+
+def test_replace_directives_codeblock():
+    src = """
+    abc
+
+    .. note::
+        a b c
+
+          .. code-block:: python
+
+          a = 1
+
+          b = 1
+
+        d e f
+
+    .. note::
+        a b c
+
+           .. code-block:: python
+
+             a = 1
+
+             b = 1
+
+        d e f
+
+    """
+    src = inspect.cleandoc(src)
+    text = replace_directives(src)
+    print(text)
+    m = c(text)
     print(m)
-    assert 0
-
-
-def test_dedent():
-    import textwrap
-
-    print(repr(textwrap.dedent(" a\n  b")))
     assert 0
