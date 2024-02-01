@@ -6,6 +6,22 @@ repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
 theme:
   name: material
+  font:
+    text: Fira Sans
+    code: Fira Code
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: black
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
   features:
     - content.tooltips
     - navigation.expand

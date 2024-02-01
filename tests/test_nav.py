@@ -1,11 +1,11 @@
 import yaml
 
 from mkapi.nav import (
-    create_nav,
+    create,
+    create_apinav,
     gen_apinav,
     get_apinav,
-    update_apinav,
-    update_nav,
+    update,
 )
 from mkapi.utils import is_package
 
@@ -50,11 +50,11 @@ def test_update_apinav():
         return {name: f"api{depth}/{name}.md"}
 
     nav = get_apinav("mkdocs.**")
-    update_apinav(nav, page)
+    create_apinav(nav, page)
     assert "MKDOCS.COMMANDS.md" in nav
     assert {"mkdocs.config.base": "api0/mkdocs.config.base.md"} in nav
     nav = get_apinav("mkdocs.***")
-    update_apinav(nav, page, section)
+    create_apinav(nav, page, section)
     assert "MKDOCS.md" in nav[0]["mkdocs"][0]
     assert "mkdocs-commands" in nav[0]["mkdocs"][1]
 
@@ -78,7 +78,7 @@ def test_nav_empty():
         return []
 
     nav = yaml.safe_load(src)
-    nav = create_nav(nav, create_apinav)
+    nav = create(nav, create_apinav)
     assert nav == ["index.md", {"A": ["1.md", "2.md", "3.md"]}, {"B": []}, {"C": []}]
 
 
@@ -87,7 +87,7 @@ def test_nav_single():
         return ["a.md"]
 
     nav = yaml.safe_load(src)
-    nav = create_nav(nav, create_apinav)
+    nav = create(nav, create_apinav)
     assert nav[:2] == ["index.md", "a.md"]
     assert nav[2] == {"A": ["1.md", "a.md", "2.md", "a.md", "3.md"]}
     assert nav[3] == {"B": "a.md"}
@@ -99,7 +99,7 @@ def test_nav_dict():
         return ["m.md", {"X": "x.md"}, "n.md"]
 
     nav = yaml.safe_load(src)
-    nav = create_nav(nav, create_apinav)
+    nav = create(nav, create_apinav)
     assert {"C": ["m.md", {"X": "x.md"}, "n.md"]} in nav
 
 
@@ -108,5 +108,5 @@ def test_update_nav():
         return name.upper() + ".".join(filters) + path + f".{depth}"
 
     nav = yaml.safe_load(src)
-    update_nav(nav, create_page)
+    update(nav, create_page)
     assert "MKAPI.OBJECTSf1.f2api1/mkapi/objects.md.0" in nav[1]

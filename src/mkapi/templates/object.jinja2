@@ -1,12 +1,13 @@
 <div class="mkapi-object-body" markdown="1">
 <span class="mkapi-object-kind">{{ obj.kind }}</span>
-<span class="mkapi-object-name">{{ obj.qualname.replace("_", "\\_") }}</span>
+<span class="mkapi-object-name mkapi-object-{{ obj.kind }}">{{ obj.qualname.replace("_", "\\_") }}</span>
 {%- if signature -%}
 <span class="mkapi-signature">{{ signature|safe }}</span>
 {%- endif -%}
 {%- if obj.kind in ["attribute", "property"] %}:
 <span class="mkapi-object-type">{{ obj.type.markdown }}</span>
-{% endif %}
+{%- endif -%}
+<span class="mkapi-source-link">[[source]][__mkapi__.__source__.{{ obj.fullname }}]</span>
 
 {% if doc.text.markdown %}
 <div class="mkapi-doc-text" markdown="1">

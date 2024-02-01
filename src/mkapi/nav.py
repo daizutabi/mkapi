@@ -75,7 +75,7 @@ def gen_apinav(
             yield from gen_apinav(pages, depth + 1)
 
 
-def update_apinav(
+def create_apinav(
     nav: list,
     page: Callable[[str, int], str | dict[str, str]],
     section: Callable[[str, int], str] | None = None,
@@ -97,7 +97,7 @@ def update_apinav(
             break
 
 
-def create_nav(nav: list, create_apinav: Callable[[str, str, list[str]], list]) -> list:
+def create(nav: list, create_apinav: Callable[[str, str, list[str]], list]) -> list:
     """Create navigation."""
     nav_ = []
     for item in nav:
@@ -114,7 +114,7 @@ def create_nav(nav: list, create_apinav: Callable[[str, str, list[str]], list]) 
                 elif len(value) == 1 and isinstance(value[0], dict):
                     value = next(iter(value[0].values()))
             elif isinstance(value, list):
-                value = create_nav(value, create_apinav)
+                value = create(value, create_apinav)
             nav_.append({key: value})
         else:
             nav_.append(item)
@@ -136,7 +136,7 @@ def _split_name_path_filters(match: re.Match) -> tuple[str, str, list[str]]:
     return name, path, filters
 
 
-def update_nav(
+def update(
     nav: list,
     create_page: Callable[[str, str, list[str], int], str | None],
     section: Callable[[str, int], str] | None = None,
@@ -145,7 +145,7 @@ def update_nav(
 ) -> None:
     """Update navigation."""
 
-    def create_apinav(name: str, api_path: str, filters: list[str]) -> list:
+    def _create_apinav(name: str, api_path: str, filters: list[str]) -> list:
         def page(name: str, depth: int) -> str | dict[str, str]:
             if is_package(name):
                 path = name.replace(".", "/") + f"/{index_name}.md"
@@ -156,7 +156,7 @@ def update_nav(
             return {title: path} if title else path
 
         nav = get_apinav(name, predicate)
-        update_apinav(nav, page, section)
+        create_apinav(nav, page, section)
         return nav
 
-    nav[:] = create_nav(nav, create_apinav)
+    nav[:] = create(nav, _create_apinav)

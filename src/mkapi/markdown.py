@@ -50,6 +50,15 @@ def replace_link(text: str) -> str:
     return re.sub(REFERENCE_PATTERN, r"[__mkapi__.\1][]", text)
 
 
+def convert(text: str) -> str:
+    """Convert markdown."""
+    text = replace_link(text)
+    if "\n" not in text:
+        return text
+    text = replace_examples(text)
+    return replace_directives(text)
+
+
 DOCTEST_PATTERN = re.compile(r"\s*?#\s*?doctest:.*?$", re.MULTILINE)
 PROMPT_ONLY = re.compile(r"\>\>\>\s*?$", re.MULTILINE)
 
@@ -182,12 +191,3 @@ def _get_code_block(codes: list[str], lang: str, indent: int) -> Iterator[str]:
     # yield f"{prefix}~~~"
     for k in range(stop + 1, len(codes)):
         yield codes[k]
-
-
-def convert(text: str) -> str:
-    """Convert markdown."""
-    text = replace_link(text)
-    if "\n" not in text:
-        return text
-    text = replace_examples(text)
-    return replace_directives(text)

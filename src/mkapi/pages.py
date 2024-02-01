@@ -6,71 +6,105 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object
-from mkapi.objects import is_empty, iter_objects_with_depth
-from mkapi.renderers import render
+from mkapi.objects import Module, is_empty, iter_objects, iter_objects_with_depth
 from mkapi.utils import split_filters, update_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
+NAME_PATTERN = re.compile(r"^(.+?)(\.\*+)?$")
 
-object_paths: dict[str, Path] = {}
+
+def _split_name_maxdepth(name: str) -> tuple[str, int]:
+    if m := NAME_PATTERN.match(name):
+        name = m.group(1)
+        maxdepth = int(len(m.group(2) or ".")) - 1
+    else:
+        maxdepth = 0
+    return name, maxdepth
 
 
-def create_page(
+def create_object_page(
     name: str,
     path: Path,
     filters: list[str],
     predicate: Callable[[str], bool] | None = None,
 ) -> None:
     """Create API page."""
-
-    def _predicate(name: str) -> bool:
-        if predicate and not predicate(name):
-            return False
-        object_paths.setdefault(name, path)
-        return True
-
-    names = [x.strip() for x in name.split(",")]
-
     with path.open("w") as file:
-        for name in names:
-            markdown = _create_page(name, filters, _predicate)
-            file.write(markdown)
-            if name != names[-1]:
-                file.write("\n")
+        markdown = _create_object_page(name, path, filters, predicate)
+        file.write(markdown)
 
 
-NAME_PATTERN = re.compile(r"^(.+?)(\.\*+)?$")
+object_paths: dict[str, Path] = {}
 
 
-def _create_page(
+def _create_object_page(
     name: str,
+    path: Path,
     filters: list[str],
     predicate: Callable[[str], bool] | None = None,
 ) -> str:
     """Create markdown."""
-    if m := NAME_PATTERN.match(name):
-        name = m.group(1)
-        maxdepth = int(len(m.group(2) or ".")) - 1
-    else:
-        maxdepth = 0
+    name, maxdepth = _split_name_maxdepth(name)
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
+
     markdowns = []
     filters_str = "|" + "|".join(filters) if filters else ""
-    for obj_, depth in iter_objects_with_depth(obj, maxdepth):
-        name = obj_.fullname
-        if is_empty(obj_):
+    for child, depth in iter_objects_with_depth(obj, maxdepth):
+        if is_empty(child):
             continue
-        if predicate and not predicate(name):
+        if predicate and not predicate(child.fullname):
             continue
+        object_paths.setdefault(child.fullname, path)
         heading = "#" * (depth + 1)
-        markdown = f"{heading} ::: {name}{filters_str}\n"
+        markdown = f"{heading} ::: {child.fullname}{filters_str}\n"
         markdowns.append(markdown)
     return "\n".join(markdowns)
+
+
+source_paths: dict[str, Path] = {}
+
+
+def create_source_page(
+    name: str,
+    path: Path,
+    filters: list[str],
+    predicate: Callable[[str], bool] | None = None,
+) -> None:
+    """Create source page."""
+    with path.open("w") as file:
+        markdown = _create_source_page(name, path, filters, predicate)
+        file.write(markdown)
+
+
+def _create_source_page(
+    name: str,
+    path: Path,
+    filters: list[str],
+    predicate: Callable[[str], bool] | None = None,
+) -> str:
+    name, maxdepth = _split_name_maxdepth(name)
+    if not (obj := get_object(name)) or not isinstance(obj, Module):
+        return f"!!! failure\n\n    module {name!r} not found.\n"
+
+    objects = []
+    for child in iter_objects(obj, maxdepth):
+        if isinstance(child, Module) or not child.node:
+            continue
+        if predicate and not predicate(child.fullname):
+            continue
+        if obj.name != child.module.name:
+            continue
+        objects.append(f"__mkapi__:{child.fullname}={child.node.lineno-1}")
+        source_paths.setdefault(child.fullname, path)
+
+    filters_str = "|" + "|".join([*filters, "source", *objects])
+    return f"# ::: {name}{filters_str}\n"
 
 
 OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.MULTILINE)
@@ -116,9 +150,10 @@ def create_markdown(name: str, level: int, filters: list[str]) -> str:
     prefix = obj.doc.type.markdown.split("..")
     self = obj.name.split(".")[-1].replace("_", "\\_")
     fullname = ".".join(prefix[:-1] + [self])
+    content = mkapi.renderers.render(obj, filters)
     id_ = obj.fullname.replace("_", "\\_")
-    content = render(obj, filters)
-    return f"{heading}{fullname} {{#{id_} .mkapi-object-heading}}\n\n{content}"
+    cls = "mkapi-source-heading" if "source" in filters else "mkapi-object-heading"
+    return f"{heading}{fullname} {{#{id_} .{cls}}}\n\n{content}"
 
 
 LINK_PATTERN = re.compile(r"\[(\S+?)\]\[(\S+?)\]")
@@ -126,6 +161,13 @@ LINK_PATTERN = re.compile(r"\[(\S+?)\]\[(\S+?)\]")
 
 def _replace_link(match: re.Match, directory: Path) -> str:
     asname, fullname = match.groups()
+    if fullname.startswith("__mkapi__.__source__."):
+        fullname = fullname[21:]
+        if source_path := source_paths.get(fullname):
+            uri = source_path.relative_to(directory, walk_up=True).as_posix()
+            return f'[{asname}]({uri}#{fullname} "{fullname}")'
+        return ""
+
     if fullname.startswith("__mkapi__."):
         from_mkapi = True
         fullname = fullname[10:]
@@ -137,5 +179,28 @@ def _replace_link(match: re.Match, directory: Path) -> str:
         uri = object_path.relative_to(directory, walk_up=True).as_posix()
         return f'[{asname}]({uri}#{fullname} "{fullname}")'
     if from_mkapi:
-        return f'<span class="tooltip" title="{fullname}">{asname}</span>'
+        return f'<span class="mkapi-tooltip" title="{fullname}">{asname}</span>'
     return match.group()
+
+
+SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
+
+
+def convert_source(html: str, path: Path) -> str:
+    """Convert HTML for source files."""
+
+    def replace(match: re.Match) -> str:
+        open_tag, name, close_tag = match.groups()
+        if object_path := object_paths.get(name):
+            uri = object_path.relative_to(path, walk_up=True).as_posix()
+            uri = uri[:-3]  # Remove `.md`
+            href = f"{uri}/#{name}"
+            id_ = f'<span id="{name}"></span>'
+            link = f'{id_}<a href="{href}" class="mkapi-docs-link">[docs]</a>'
+        else:
+            link = ""
+        if open_tag.endswith(">"):
+            return link
+        return f"{open_tag}{close_tag}{link}"
+
+    return SOURCE_LINK_PATTERN.sub(replace, html)

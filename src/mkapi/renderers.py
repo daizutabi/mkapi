@@ -7,8 +7,9 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
+from mkapi.importlib import get_source
 from mkapi.inspect import get_signature
-from mkapi.objects import Attribute, Class, Function, Module
+from mkapi.objects import Attribute, Class, Function, Module, iter_objects
 
 templates: dict[str, Template] = {}
 
@@ -25,11 +26,27 @@ def load_templates(path: Path | None = None) -> None:
 
 def render(obj: Module | Class | Function | Attribute, filters: list[str]) -> str:
     """Return a rendered Markdown."""
+    if isinstance(obj, Module) and "source" in filters:
+        return render_source(obj, filters)
     context = {"obj": obj, "doc": obj.doc, "filters": filters}
     if isinstance(obj, Class | Function):
         context["signature"] = get_signature(obj).markdown
     return templates["object"].render(context)
 
+
+def render_source(obj: Module, filters: list[str]) -> str:
+    """Return a rendered source."""
+    if not (source := get_source(obj)):
+        return ""
+    lines = source.splitlines()
+    for f in filters:
+        if f.startswith("__mkapi__:"):
+            name, index_str = f[10:].split("=")
+            index = int(index_str)
+            lines[index] = f"{lines[index]}## __mkapi__.{name}"
+
+    source = "\n".join(lines)
+    return f"``` {{.python .mkapi-source}}\n{source.strip()}\n```"
     # obj_str = render_object(obj, filters)
     # return obj_str
     # doc_str = render_docstring(obj.doc, filters=filters)

@@ -74,7 +74,7 @@ class Member(Object):
     """Member class."""
 
     module: Module
-    parent: Callable | None
+    parent: Class | Function | None
 
     def __post_init__(self) -> None:
         if self.parent:
@@ -89,6 +89,7 @@ class Member(Object):
 class Attribute(Member):
     """Attribute class."""
 
+    node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
     type: Type
     default: Default
     text: Text = field(default_factory=Text, init=False)
@@ -143,15 +144,15 @@ class Function(Callable):
 def create_function(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
     module: Module | None = None,
-    parent: Callable | None = None,
+    parent: Class | Function | None = None,
 ) -> Function:
     """Return a [Function] instance."""
     module = module or _create_empty_module()
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
     parameters = list(iter_parameters(node))
-    raises = list(iter_raises(node))
     returns = list(iter_returns(node))
+    raises = list(iter_raises(node))
     func = Function(node.name, node, doc, module, parent, parameters, returns, raises)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
@@ -182,7 +183,7 @@ class Class(Callable):
 def create_class(
     node: ast.ClassDef,
     module: Module | None = None,
-    parent: Callable | None = None,
+    parent: Class | Function | None = None,
 ) -> Class:
     """Return a [Class] instance."""
     name = node.name

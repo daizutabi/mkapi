@@ -1,49 +1,113 @@
+h1.mkapi-object-heading,
+h2.mkapi-object-heading,
+h3.mkapi-object-heading,
+h4.mkapi-object-heading,
+h5.mkapi-object-heading {
+  color: var(--md-default-fg-color--light);
+  font-size: 90%;
+  font-weight: 300;
+}
 .mkapi-object-heading a {
   color: unset;
 }
-
 .mkapi-object-kind {
-  color: #888;
+  color: var(--md-code-hl-comment-color);
   font-size: 90%;
   font-style: italic;
 }
-
+.mkapi-object-package,
+.mkapi-object-module,
+.mkapi-object-class,
+.mkapi-object-dataclass,
+.mkapi-object-function,
+.mkapi-object-method,
+.mkapi-object-classmethod,
+.mkapi-object-staticmethod,
+.mkapi-object-property {
+  color: var(--md-code-hl-name-color);
+  font-weight: 600;
+  font-size: 1.1em;
+  font-kerning: none;
+}
 .mkapi-signature .arg {
+  color: var(--md-code-hl-name-color);
+  font-weight: 400;
   font-style: italic;
 }
-.mkapi-signature .default {
-  color: #777;
+.mkapi-signature .default, .ann, .return, .star {
+  color: var(--md-code-hl-variable-color);
 }
-.mkapi-signature .ann {
-  color: #777;
+.mkapi-signature .paren {
+  color: var(--md-code-hl-punctuation-color);
+  margin-left: 2px;
+  margin-right: 2px;
 }
-.mkapi-signature .return {
-  color: #777;
+.mkapi-signature .sep {
+  color: var(--md-code-hl-punctuation-color);
+  margin-left: 0px;
+  margin-right: 2px;
 }
-.mkapi-signature .paren,.comma,.colon,.equal {
-  color: #999;
+.mkapi-signature .comma, .colon {
+  color: var(--md-code-hl-punctuation-color);
+  margin-left: 2px;
+  margin-right: 0px;
 }
-.mkapi-signature .star,.sep,.arrow {
-  color: #999;
+.mkapi-signature .equal, .arrow {
+  color: var(--md-code-hl-punctuation-color);
+  margin-left: 0px;
+  margin-right: 0px;
 }
-
 .mkapi-section-name {
-  color: #555;
+  color: var(--md-default-fg-color--light);
+  border-bottom: thin solid var(--md-default-fg-color--light);
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-top: 16px;
 }
-.mkapi-section-item {
-  font-size: 90%;
+ul.mkapi-section-items {
+  margin-top: 6pt;
 }
 .mkapi-item-name {
-  font-weight: 700;
+  font-weight: 600;
 }
 .mkapi-item-type,.mkapi-object-type {
-  color: #777;
+  color: var(--md-code-hl-variable-color);
 }
-
-.mkapi-object-body code {
+li.mkapi-section-item li {
+  margin-bottom: 2px;
+}
+.mkapi-example-input pre {
+  margin-bottom: 0px;
+}
+.mkapi-example-output pre {
+  margin-top: 0px;
+}
+.mkapi-example-input code {
+  font-size: 85%;
+  background-color: var(--md-default-fg-color--lightest);
+}
+.mkapi-example-output code {
+  font-size: 85%;
   font-family: monospace;
+  background-color: var(--md-code-bg-color);
 }
-
+.mkapi-source code {
+  font-family: monospace;
+  font-size: 85%;
+}
+.mkapi-source-link {
+  display: block;
+  float: right;
+  color: var(--md-primary-fg-color--light);
+}
+.mkapi-docs-link {
+  display: block;
+  float: right;
+  color: var(--md-primary-fg-color--light);
+}
+.mkapi-tooltip {
+  border-bottom: thin solid var(--md-default-fg-color--lighter);
+}
 .md-typeset .admonition.deprecated,
 .md-typeset details.deprecated {
   border-color: #ff5252;
