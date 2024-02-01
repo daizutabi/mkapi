@@ -255,3 +255,6 @@ def test_polars_a():
 
 # polars.dataframe.frame.DataFrame.write_delta  `here_`
 # polars.dataframe.frame.DataFrame.map_rows
+# polars.expr.datetime.ExprDateTimeNameSpace.round deprecated
+# DataFrame.to_arrow()  list
+# DataFrame.to_init_repr See also list

@@ -34,13 +34,14 @@ theme:
 plugins:
   - search:
   - mkapi:
-      src_dirs: [.]
-      filters: [plugin_filter]
       exclude: [.tests]
+      filters: [plugin_filter]
       page_title: custom.page_title
       section_title: custom.section_title
       # on_config: custom.on_config
-
+markdown_extensions:
+  - pymdownx.arithmatex
+  - pymdownx.magiclink
 nav:
   - index.md
   # - <api>/mkapi.objects|nav_filter1|nav_filter2
@@ -51,12 +52,3 @@ nav:
   # - MkDocs: <api3>/mkdocs.**|nav_filter4
   # - Polars: <api4>/polars.dataframe.***|nav_filter4
   - Polars: <api4>/polars.***|nav_filter4
-
-
-extra_css:
-  - custom.css
-extra_javascript:
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
-markdown_extensions:
-  - pymdownx.arithmatex
-  - pymdownx.magiclink

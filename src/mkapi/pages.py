@@ -94,13 +94,15 @@ def _create_source_page(
 
     objects = []
     for child in iter_objects(obj, maxdepth):
-        if isinstance(child, Module) or not child.node:
-            continue
         if predicate and not predicate(child.fullname):
             continue
-        if obj.name != child.module.name:
+        if isinstance(child, Module):
+            obj_ = f"__mkapi__:{child.fullname}=0"
+        elif obj.name == child.module.name and child.node:
+            obj_ = f"__mkapi__:{child.fullname}={child.node.lineno-1}"
+        else:
             continue
-        objects.append(f"__mkapi__:{child.fullname}={child.node.lineno-1}")
+        objects.append(obj_)
         source_paths.setdefault(child.fullname, path)
 
     filters_str = "|" + "|".join([*filters, "source", *objects])
@@ -146,17 +148,10 @@ def create_markdown(name: str, level: int, filters: list[str]) -> str:
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    heading = "#" * level + " " if level else ""
-    prefix = obj.doc.type.markdown.split("..")
-    self = obj.name.split(".")[-1].replace("_", "\\_")
-    fullname = ".".join(prefix[:-1] + [self])
-    content = mkapi.renderers.render(obj, filters)
-    id_ = obj.fullname.replace("_", "\\_")
-    cls = "mkapi-source-heading" if "source" in filters else "mkapi-object-heading"
-    return f"{heading}{fullname} {{#{id_} .{cls}}}\n\n{content}"
+    return mkapi.renderers.render(obj, level, filters)
 
 
-LINK_PATTERN = re.compile(r"\[(\S+?)\]\[(\S+?)\]")
+LINK_PATTERN = re.compile(r"\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
 
 
 def _replace_link(match: re.Match, directory: Path) -> str:
@@ -186,17 +181,18 @@ def _replace_link(match: re.Match, directory: Path) -> str:
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
 
 
-def convert_source(html: str, path: Path) -> str:
-    """Convert HTML for source files."""
+def convert_source(html: str, path: Path, anchor: str = "docs") -> str:
+    """Convert HTML for source pages."""
 
     def replace(match: re.Match) -> str:
         open_tag, name, close_tag = match.groups()
         if object_path := object_paths.get(name):
             uri = object_path.relative_to(path, walk_up=True).as_posix()
             uri = uri[:-3]  # Remove `.md`
+            uri = uri.replace("/README", "")  # Remove `/README`
             href = f"{uri}/#{name}"
-            id_ = f'<span id="{name}"></span>'
-            link = f'{id_}<a href="{href}" class="mkapi-docs-link">[docs]</a>'
+            link = f'<a href="{href}">{anchor}</a>'
+            link = f'<span id="{name}" class="mkapi-docs-link">[{link}]</span>'
         else:
             link = ""
         if open_tag.endswith(">"):

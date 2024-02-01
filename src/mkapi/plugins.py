@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import re
 import shutil
 import sys
 import warnings
@@ -44,15 +45,14 @@ logger = get_plugin_logger("MkAPI")
 class MkAPIConfig(Config):
     """Specify the config schema."""
 
-    src_dirs = config_options.Type(list, default=[])
-    filters = config_options.Type(list, default=[])
+    docs_anchor = config_options.Type(str, default="docs")
     exclude = config_options.Type(list, default=[])
+    filters = config_options.Type(list, default=[])
     page_title = config_options.Type(str, default="")
     section_title = config_options.Type(str, default="")
-    source_dir = config_options.Type(str, default="src")
+    src_anchor = config_options.Type(str, default="source")
+    src_dir = config_options.Type(str, default="src")
     # on_config = config_options.Type(str, default="")
-    # api_dirs = config_options.Type(list, default=[])
-    # api_uris = config_options.Type(list, default=[])
 
 
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
@@ -74,7 +74,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         """Collect plugin CSS/JavaScript and append them to `files`."""
         for file in files:
-            if file.src_uri.startswith(f"{self.config.source_dir}/"):
+            if file.src_uri.startswith(f"{self.config.src_dir}/"):
                 file.inclusion = InclusionLevel.NOT_IN_NAV
         for file in _collect_theme_files(config, self):
             files.append(file)
@@ -106,7 +106,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             self.bar.update(1)
         if page.file.src_uri in MkAPIPlugin.api_srcs:
             path = Path(config.docs_dir) / page.file.src_uri
-            html = convert_source(html, path)
+            html = convert_source(html, path, self.config.docs_anchor)
             self.bar.update(1)
         return html
 
@@ -137,10 +137,9 @@ def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
 
 def _insert_sys_path(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     config_dir = Path(config.config_file_path).parent
-    for src_dir in plugin.config.src_dirs:
-        path = os.path.normpath(config_dir / src_dir)
-        if path not in sys.path:
-            sys.path.insert(0, path)
+    path = os.path.normpath(config_dir)
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 
 def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
@@ -186,7 +185,7 @@ def _create_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         return []
 
     mkapi.nav.create(config.nav, lambda *args: mkdir(args[1]))
-    mkdir(plugin.config.source_dir)
+    mkdir(plugin.config.src_dir)
 
 
 def _check_path(path: Path):
@@ -208,9 +207,10 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         MkAPIPlugin.api_uris.append(path)
         abs_path = Path(config.docs_dir) / path
         _check_path(abs_path)
-        create_object_page(f"{name}.**", abs_path, filters)
+        filters_ = [*filters, "sourcelink", f"anchor={plugin.config.src_anchor}"]
+        create_object_page(f"{name}.**", abs_path, filters_)
 
-        path = plugin.config.source_dir + "/" + name.replace(".", "/") + ".md"
+        path = plugin.config.src_dir + "/" + name.replace(".", "/") + ".md"
         MkAPIPlugin.api_srcs.append(path)
         abs_path = Path(config.docs_dir) / path
         _check_path(abs_path)
@@ -272,5 +272,6 @@ def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File
 def _replace_toc(toc: TableOfContents | list[AnchorLink]) -> None:
     for link in toc:
         link.id = link.id.replace("\0295\03", "_")
-        link.title = link.title.split(".")[-1]
+        link.title = re.sub(r"\s+\[.+?\]", "", link.title)  # Remove source link.
+        link.title = link.title.split(".")[-1]  # Remove prefix.
         _replace_toc(link.children)

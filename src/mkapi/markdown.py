@@ -38,7 +38,7 @@ def get_admonition(name: str, title: str, text: str) -> str:
     return "\n".join(lines)
 
 
-LINK_PATTERN = re.compile(r"`(.+?)\s+?<(\S+?)>`_")
+LINK_PATTERN = re.compile(r"`(.+?)\s+?<(\S+?)>`_+")
 INTERNAL_LINK_PATTERN = re.compile(r":\S+?:`(.+?)\s+?<(\S+?)>`")
 REFERENCE_PATTERN = re.compile(r":\S+?:`(\S+?)`")
 

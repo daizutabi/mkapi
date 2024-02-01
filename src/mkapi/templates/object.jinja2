@@ -1,13 +1,26 @@
-<div class="mkapi-object-body" markdown="1">
+<div class="mkapi-body" markdown="1">>
+{% if heading %}{{ heading }}{% endif -%}
+{{ fullname|safe }}
+{%- if "sourcelink" in filters %} <span class="mkapi-source-link">[[{{ anchor }}][__mkapi__.__source__.{{ obj.fullname }}]]</span>
+{%- endif %} {% raw %}{{% endraw %}#{{ id }} .mkapi-heading{% raw %}}{% endraw %}
+
 <span class="mkapi-object-kind">{{ obj.kind }}</span>
-<span class="mkapi-object-name mkapi-object-{{ obj.kind }}">{{ obj.qualname.replace("_", "\\_") }}</span>
+<span class="mkapi-object-name">
+{%- for name, kind in qualnames -%}
+<span class="{{ kind }}">{{ name }}</span>
+{%- if not loop.last %}<span class="dot">.</span>{% endif -%}
+{%- endfor -%}
+</span>
 {%- if signature -%}
 <span class="mkapi-signature">{{ signature|safe }}</span>
 {%- endif -%}
-{%- if obj.kind in ["attribute", "property"] %}:
-<span class="mkapi-object-type">{{ obj.type.markdown }}</span>
-{%- endif -%}
-<span class="mkapi-source-link">[[source]][__mkapi__.__source__.{{ obj.fullname }}]</span>
+{%- if obj.kind in ["attribute", "property"] %} :
+<span class="mkapi-object-type">{{ obj.type.markdown|safe }}</span>
+{%- endif %}
+
+{# {% if obj.kind in ["class"] and obj.bases %}
+Bases: {% for base in obj.bases %}{{ base.type.markdown|safe }}{% endfor %}
+{% endif %} #}
 
 {% if doc.text.markdown %}
 <div class="mkapi-doc-text" markdown="1">
@@ -16,6 +29,7 @@
 {% endif %}
 
 {% for section in doc.sections %}
+
 {% if section.name and not section.kind %}
 <div class="mkapi-section-name mkapi-section-{{ section.name|lower }}">
 {{ section.name }}
@@ -23,7 +37,7 @@
 {% endif %}
 
 {% if section.text.markdown %}
-<div class="mkapi-section-text mkapi-section-{{ section.name|lower }}" markdown="1">
+<div class="mkapi-section-text{% if section.name %} mkapi-section-{{ section.name|lower }}{% endif %}" markdown="1">
 {{ section.text.markdown|safe }}
 </div>
 {% endif %}
@@ -35,7 +49,7 @@
 {%- if item.name -%}
 <span class="mkapi-item-name">{{ item.name }}</span>
 {%- endif -%}
-{%- if item.name and item.type.markdown %}: {% endif %}
+{%- if item.name and item.type.markdown %} : {% endif %}
 {%- if item.type.markdown -%}
 <span class="mkapi-item-type">{{ item.type.markdown|safe }}</span>
 {%- endif -%}

@@ -1,0 +1,14 @@
+<div class="mkapi-body" markdown="1">
+{% if heading %}{{ heading }}{% endif -%}
+{{ fullname|safe }} {% raw %}{{% endraw %}#{{ id }} .mkapi-heading{% raw %}}{% endraw %}
+<span class="mkapi-object-kind">{{ obj.kind }}</span>
+<span class="mkapi-object-name">
+{%- for name, kind in qualnames -%}
+<span class="{{ kind }}">{{ name }}</span>
+{%- if not loop.last %}<span class="dot">.</span>{% endif -%}
+{%- endfor -%}
+</span>
+
+``` {.python .mkapi-source}
+{{ source|safe }}
+```

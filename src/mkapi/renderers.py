@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
 from mkapi.importlib import get_source
 from mkapi.inspect import get_signature
-from mkapi.objects import Attribute, Class, Function, Module, iter_objects
+from mkapi.objects import Attribute, Class, Function, Module
 
 templates: dict[str, Template] = {}
 
@@ -24,46 +25,63 @@ def load_templates(path: Path | None = None) -> None:
         templates[Path(name).stem] = env.get_template(name)
 
 
-def render(obj: Module | Class | Function | Attribute, filters: list[str]) -> str:
+def render(
+    obj: Module | Class | Function | Attribute,
+    level: int,
+    filters: list[str],
+) -> str:
     """Return a rendered Markdown."""
+    heading = "#" * level + " " if level else ""
+    prefix = obj.doc.type.markdown.split("..")
+    self = obj.name.split(".")[-1].replace("_", "\\_")
+    fullname = ".".join(prefix[:-1] + [self])
+    id_ = obj.fullname.replace("_", "\\_")
+    names = [x.replace("_", "\\_") for x in obj.qualname.split(".")]
+    if isinstance(obj, Module):
+        qualnames = [[x, "name"] for x in names]
+    else:
+        qualnames = [[x, "prefix"] for x in names]
+        qualnames[-1][1] = "name"
+    context = {
+        "heading": heading,
+        "id": id_,
+        "fullname": fullname,
+        "qualnames": qualnames,
+        "obj": obj,
+        "doc": obj.doc,
+        "filters": filters,
+    }
     if isinstance(obj, Module) and "source" in filters:
-        return render_source(obj, filters)
-    context = {"obj": obj, "doc": obj.doc, "filters": filters}
+        return _render_source(obj, context, filters)
+    return _render_object(obj, context, filters)
+
+
+def _render_object(
+    obj: Module | Class | Function | Attribute,
+    context: dict[str, Any],
+    filters: list[str],
+) -> str:
+    context["anchor"] = "source"
+    for filter_ in filters:
+        if filter_.startswith("anchor="):
+            context["anchor"] = filter_[7:]
+            break
     if isinstance(obj, Class | Function):
         context["signature"] = get_signature(obj).markdown
     return templates["object"].render(context)
 
 
-def render_source(obj: Module, filters: list[str]) -> str:
-    """Return a rendered source."""
-    if not (source := get_source(obj)):
-        return ""
-    lines = source.splitlines()
-    for f in filters:
-        if f.startswith("__mkapi__:"):
-            name, index_str = f[10:].split("=")
-            index = int(index_str)
-            lines[index] = f"{lines[index]}## __mkapi__.{name}"
-
-    source = "\n".join(lines)
-    return f"``` {{.python .mkapi-source}}\n{source.strip()}\n```"
-    # obj_str = render_object(obj, filters)
-    # return obj_str
-    # doc_str = render_docstring(obj.doc, filters=filters)
-    # members = []
-    # for member in obj.classes + obj.functions:
-    #     member_str = render(member, level + 1, filters)
-    #     members.append(member_str)
-    # return templates["node"].render(obj=obj_str, doc=doc_str, members=members)
-
-
-# def render_object(obj: Object, level: int, filters: list[str]) -> str:
-#     """Return a rendered HTML for Object."""
-#     tag = f"h{level}" if level else "div"
-#     signature = get_signature(obj) if isinstance(obj, Class | Function) else None
-#     return templates["object"].render(
-#         object=obj,
-#         signature=signature,
-#         tag=tag,
-#         filters=filters,
-#     )
+def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> str:
+    if source := get_source(obj):
+        lines = source.splitlines()
+        for filter_ in filters:
+            if filter_.startswith("__mkapi__:"):
+                name, index_str = filter_[10:].split("=")
+                index = int(index_str)
+                if "## __mkapi__." not in lines[index]:
+                    lines[index] = f"{lines[index]}## __mkapi__.{name}"
+        source = "\n".join(lines)
+    else:
+        source = ""
+    context["source"] = source
+    return templates["source"].render(context)

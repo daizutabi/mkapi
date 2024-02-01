@@ -1,13 +1,18 @@
-h1.mkapi-object-heading,
-h2.mkapi-object-heading,
-h3.mkapi-object-heading,
-h4.mkapi-object-heading,
-h5.mkapi-object-heading {
-  color: var(--md-default-fg-color--light);
-  font-size: 90%;
-  font-weight: 300;
+.mkapi-heading + p {
+  margin-block-start: 0px;
 }
-.mkapi-object-heading a {
+h1.mkapi-heading,
+h2.mkapi-heading,
+h3.mkapi-heading,
+h4.mkapi-heading,
+h5.mkapi-heading {
+  color: var(--md-default-fg-color--light);
+  font-size: 85%;
+  font-weight: 300;
+  text-align-last: justify;
+  margin-bottom: 0px;
+}
+.mkapi-heading a {
   color: unset;
 }
 .mkapi-object-kind {
@@ -15,19 +20,17 @@ h5.mkapi-object-heading {
   font-size: 90%;
   font-style: italic;
 }
-.mkapi-object-package,
-.mkapi-object-module,
-.mkapi-object-class,
-.mkapi-object-dataclass,
-.mkapi-object-function,
-.mkapi-object-method,
-.mkapi-object-classmethod,
-.mkapi-object-staticmethod,
-.mkapi-object-property {
+.mkapi-object-name {
   color: var(--md-code-hl-name-color);
   font-weight: 600;
-  font-size: 1.1em;
+  font-size: 1.2em;
   font-kerning: none;
+}
+.mkapi-object-name .prefix {
+  color: var(--md-code-hl-comment-color);
+}
+.mkapi-object-name .dot {
+  color: var(--md-code-hl-comment-color);
 }
 .mkapi-signature .arg {
   color: var(--md-code-hl-name-color);
@@ -96,9 +99,8 @@ li.mkapi-section-item li {
   font-size: 85%;
 }
 .mkapi-source-link {
-  display: block;
-  float: right;
   color: var(--md-primary-fg-color--light);
+  font-size: 85%;
 }
 .mkapi-docs-link {
   display: block;
