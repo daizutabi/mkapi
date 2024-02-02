@@ -91,7 +91,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Convert Markdown source to intermediate version."""
         path = page.file.abs_src_path
         filters = self.config.filters
-        return convert_markdown(markdown, path, filters)
+        return convert_markdown(markdown, path, filters, self.config.src_anchor)
 
     def on_page_content(
         self,
@@ -207,8 +207,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         MkAPIPlugin.api_uris.append(path)
         abs_path = Path(config.docs_dir) / path
         _check_path(abs_path)
-        filters_ = [*filters, "sourcelink", f"anchor={plugin.config.src_anchor}"]
-        create_object_page(f"{name}.**", abs_path, filters_)
+        create_object_page(f"{name}.**", abs_path, [*filters, "sourcelink"])
 
         path = plugin.config.src_dir + "/" + name.replace(".", "/") + ".md"
         MkAPIPlugin.api_srcs.append(path)

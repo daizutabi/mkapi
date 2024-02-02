@@ -53,19 +53,13 @@ def render(
     }
     if isinstance(obj, Module) and "source" in filters:
         return _render_source(obj, context, filters)
-    return _render_object(obj, context, filters)
+    return _render_object(obj, context)
 
 
 def _render_object(
     obj: Module | Class | Function | Attribute,
     context: dict[str, Any],
-    filters: list[str],
 ) -> str:
-    context["anchor"] = "source"
-    for filter_ in filters:
-        if filter_.startswith("anchor="):
-            context["anchor"] = filter_[7:]
-            break
     if isinstance(obj, Class | Function):
         context["signature"] = get_signature(obj).markdown
     return templates["object"].render(context)

@@ -1,19 +1,22 @@
-.mkapi-heading + p {
-  margin-block-start: 0px;
-}
 h1.mkapi-heading,
 h2.mkapi-heading,
 h3.mkapi-heading,
 h4.mkapi-heading,
 h5.mkapi-heading {
-  color: var(--md-default-fg-color--light);
   font-size: 85%;
-  font-weight: 300;
+  font-weight: 400;
   text-align-last: justify;
   margin-bottom: 0px;
 }
-.mkapi-heading a {
+.mkapi-heading-name {
+  color: var(--md-default-fg-color--lighter);
+}
+.mkapi-heading-name a {
   color: unset;
+}
+p.mkapi-object {
+  margin-block-start: 0px;
+  margin-block-end: 0px;
 }
 .mkapi-object-kind {
   color: var(--md-code-hl-comment-color);
@@ -23,8 +26,7 @@ h5.mkapi-heading {
 .mkapi-object-name {
   color: var(--md-code-hl-name-color);
   font-weight: 600;
-  font-size: 1.2em;
-  font-kerning: none;
+  font-size: 1.1em;
 }
 .mkapi-object-name .prefix {
   color: var(--md-code-hl-comment-color);
@@ -34,7 +36,6 @@ h5.mkapi-heading {
 }
 .mkapi-signature .arg {
   color: var(--md-code-hl-name-color);
-  font-weight: 400;
   font-style: italic;
 }
 .mkapi-signature .default, .ann, .return, .star {
@@ -59,6 +60,11 @@ h5.mkapi-heading {
   color: var(--md-code-hl-punctuation-color);
   margin-left: 0px;
   margin-right: 0px;
+}
+p.mkapi-object-bases {
+  color: var(--md-default-fg-color--light);
+  font-size: 85%;
+  margin-block-start: 0px;
 }
 .mkapi-section-name {
   color: var(--md-default-fg-color--light);
@@ -98,14 +104,9 @@ li.mkapi-section-item li {
   font-family: monospace;
   font-size: 85%;
 }
-.mkapi-source-link {
-  color: var(--md-primary-fg-color--light);
-  font-size: 85%;
-}
 .mkapi-docs-link {
   display: block;
   float: right;
-  color: var(--md-primary-fg-color--light);
 }
 .mkapi-tooltip {
   border-bottom: thin solid var(--md-default-fg-color--lighter);

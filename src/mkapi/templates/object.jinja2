@@ -1,9 +1,12 @@
 <div class="mkapi-body" markdown="1">>
 {% if heading %}{{ heading }}{% endif -%}
-{{ fullname|safe }}
-{%- if "sourcelink" in filters %} <span class="mkapi-source-link">[[{{ anchor }}][__mkapi__.__source__.{{ obj.fullname }}]]</span>
+<span class="mkapi-heading-name">{{ fullname|safe }}</span>
+{%- if "sourcelink" in filters %} <span class="mkapi-source-link">[source][__mkapi__.__source__.{{ obj.fullname }}]</span>
 {%- endif %} {% raw %}{{% endraw %}#{{ id }} .mkapi-heading{% raw %}}{% endraw %}
 
+<h2>XXXX</h2>
+
+<p class="mkapi-object" markdown="1">
 <span class="mkapi-object-kind">{{ obj.kind }}</span>
 <span class="mkapi-object-name">
 {%- for name, kind in qualnames -%}
@@ -16,11 +19,16 @@
 {%- endif -%}
 {%- if obj.kind in ["attribute", "property"] %} :
 <span class="mkapi-object-type">{{ obj.type.markdown|safe }}</span>
-{%- endif %}
+{%- endif -%}
+</p>
 
-{# {% if obj.kind in ["class"] and obj.bases %}
-Bases: {% for base in obj.bases %}{{ base.type.markdown|safe }}{% endfor %}
-{% endif %} #}
+{% if obj.kind in ["class"] and obj.bases %}
+<p class="mkapi-object-bases" markdown="1">Bases :
+{% for base in obj.bases %}<span class="mkapi-object-base">{{ base.type.markdown|safe }}<span>
+{%- if not loop.last %}<span class="comma">, </span>{% endif -%}
+{%- endfor -%}
+</p>
+{% endif %}
 
 {% if doc.text.markdown %}
 <div class="mkapi-doc-text" markdown="1">
@@ -28,7 +36,7 @@ Bases: {% for base in obj.bases %}{{ base.type.markdown|safe }}{% endfor %}
 </div>
 {% endif %}
 
-{% for section in doc.sections %}
+{% for section in doc.sections if section.name != "Bases" %}
 
 {% if section.name and not section.kind %}
 <div class="mkapi-section-name mkapi-section-{{ section.name|lower }}">

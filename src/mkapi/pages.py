@@ -128,7 +128,7 @@ def _split_markdown(source: str) -> Iterator[tuple[str, int, list[str]]]:
         yield markdown, -1, []
 
 
-def convert_markdown(source: str, path: str, filters: list[str]) -> str:
+def convert_markdown(source: str, path: str, filters: list[str], anchor: str) -> str:
     """Return converted markdown."""
     markdowns = []
     for name, level, filters_ in _split_markdown(source):
@@ -139,7 +139,7 @@ def convert_markdown(source: str, path: str, filters: list[str]) -> str:
             markdown = create_markdown(name, level, updated_filters)
             markdowns.append(markdown)
     markdown = "\n\n".join(markdowns)
-    replace = partial(_replace_link, directory=Path(path).parent)
+    replace = partial(_replace_link, directory=Path(path).parent, anchor=anchor)
     return re.sub(LINK_PATTERN, replace, markdown)
 
 
@@ -154,13 +154,13 @@ def create_markdown(name: str, level: int, filters: list[str]) -> str:
 LINK_PATTERN = re.compile(r"\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
 
 
-def _replace_link(match: re.Match, directory: Path) -> str:
+def _replace_link(match: re.Match, directory: Path, anchor: str = "source") -> str:
     asname, fullname = match.groups()
     if fullname.startswith("__mkapi__.__source__."):
         fullname = fullname[21:]
         if source_path := source_paths.get(fullname):
             uri = source_path.relative_to(directory, walk_up=True).as_posix()
-            return f'[{asname}]({uri}#{fullname} "{fullname}")'
+            return f'[[{anchor}]]({uri}#{fullname} "{fullname}")'
         return ""
 
     if fullname.startswith("__mkapi__."):
@@ -191,8 +191,8 @@ def convert_source(html: str, path: Path, anchor: str = "docs") -> str:
             uri = uri[:-3]  # Remove `.md`
             uri = uri.replace("/README", "")  # Remove `/README`
             href = f"{uri}/#{name}"
-            link = f'<a href="{href}">{anchor}</a>'
-            link = f'<span id="{name}" class="mkapi-docs-link">[{link}]</span>'
+            link = f'<a href="{href}">[{anchor}]</a>'
+            link = f'<span id="{name}" class="mkapi-docs-link">{link}</span>'
         else:
             link = ""
         if open_tag.endswith(">"):
