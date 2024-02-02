@@ -1,47 +1,20 @@
-import pytest
+import markdown
 
-from mkapi.renderers import load_templates, templates
+from mkapi.importlib import get_object
+from mkapi.renderers import load_templates, render, templates
 
 
 def test_load_templates():
     load_templates()
-    assert "bases" in templates
-    assert "code" in templates
-    assert "docstring" in templates
-    assert "items" in templates
-    assert "macros" in templates
-    assert "member" in templates
-    assert "node" in templates
     assert "object" in templates
+    assert "source" in templates
 
 
-@pytest.fixture(scope="module")
-def template():
-    load_templates()
-    return templates["module"]
-
-
-# def test_render_module(google):
-#     markdown = renderer.render_module(google)
-#     assert "# ![mkapi](examples.styles.example_google" in markdown
-#     assert "## ![mkapi](examples.styles.example_google.ExampleClass" in markdown
-#     assert "## ![mkapi](examples.styles.example_google.example_generator" in markdown
-
-
-# def test_module_empty_filters():
-#     module = load_module("mkapi.core.base")
-#     m = renderer.render_module(module).splitlines()
-#     assert m[0] == "# ![mkapi](mkapi.core.base|plain|link|sourcelink)"
-#     assert m[2] == "## ![mkapi](mkapi.core.base.Base||link|sourcelink)"
-#     assert m[3] == "## ![mkapi](mkapi.core.base.Inline||link|sourcelink)"
-#     assert m[4] == "## ![mkapi](mkapi.core.base.Type||link|sourcelink)"
-#     assert m[5] == "## ![mkapi](mkapi.core.base.Item||link|sourcelink)"
-
-
-# def test_code_empty_filters():
-#     code = get_code("mkapi.core.base")
-#     m = renderer.render_code(code)
-#     assert '<span class="mkapi-object-prefix">mkapi.core.</span>' in m
-#     assert '<span class="mkapi-object-name">base</span>' in m
-#     assert '<span id="mkapi.core.base"></span>' in m
-#     assert '<a class="mkapi-docs-link" href="../../mkapi.core.base">DOCS</a>' in m
+def test_render():
+    obj = get_object("polars.dataframe.frame")
+    assert obj
+    m = render(obj, 1, [])
+    print(m)
+    print("-" * 100)
+    h = markdown.markdown(m, extensions=["md_in_html"])
+    print(h)

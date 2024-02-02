@@ -49,19 +49,27 @@ def _iter_objects(module: str) -> Iterator[str]:
             yield f"{module}.{child.name}"
         elif isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):  # noqa: SIM102
             if assign_name := mkapi.ast.get_assign_name(child):  # noqa: SIM102
-                # if isinstance(child, ast.Assign) and assign_name == "__all__":
-                #     for name in _iter_objects_from_all(child):
-                #         yield f"{module}.{name}"
                 if not assign_name.startswith("__"):
                     yield f"{module}.{assign_name}"
 
 
-def _iter_objects_from_all(node: ast.Assign) -> Iterator[str]:
-    if not isinstance(node.value, ast.List):
+def _iter_all(node: ast.AST) -> Iterator[str]:
+    if isinstance(node, ast.Assign):  # noqa: SIM102
+        if mkapi.ast.get_assign_name(node) == "__all__":  # noqa: SIM102
+            if isinstance(node.value, ast.List):
+                for c in node.value.elts:
+                    if isinstance(c, ast.Constant) and isinstance(c.value, str):
+                        yield c.value
+
+
+def _iter_objects_from_all(module: str) -> Iterator[str]:
+    if not (node := get_module_node(module)):
         return
-    for c in node.value.elts:
-        if isinstance(c, ast.Constant) and isinstance(c.value, str):
-            yield c.value
+    for child in ast.iter_child_nodes(node):
+        if names := list(_iter_all(child)):
+            for name in names:
+                yield f"{module}.{name}"
+            return
 
 
 def _iter_imports(module: str) -> Iterator[Import]:
@@ -125,6 +133,16 @@ def resolve_with_attribute(name: str) -> str | None:
         if fullname := resolve(name_):
             return f"{fullname}.{attr}"
     return None
+
+
+def get_all(module: str) -> dict[str, str]:
+    """Return name dictonary of __all__."""
+    names = {}
+    n = len(module) + 1
+    for name in _iter_objects_from_all(module):
+        if fullname := resolve(name):
+            names[name[n:]] = fullname
+    return names
 
 
 @dataclass(repr=False)

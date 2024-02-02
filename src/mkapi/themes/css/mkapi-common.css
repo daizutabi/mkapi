@@ -17,6 +17,7 @@ h5.mkapi-heading {
 p.mkapi-object {
   margin-block-start: 0px;
   margin-block-end: 0px;
+  border-top: 2px solid var(--md-default-fg-color--light);
 }
 .mkapi-object-kind {
   color: var(--md-code-hl-comment-color);
@@ -25,11 +26,12 @@ p.mkapi-object {
 }
 .mkapi-object-name {
   color: var(--md-code-hl-name-color);
+  font-family: var(--md-code-font-family);
   font-weight: 600;
   font-size: 1.1em;
 }
 .mkapi-object-name .prefix {
-  color: var(--md-code-hl-comment-color);
+  color: var(--md-code-hl-name-color);
 }
 .mkapi-object-name .dot {
   color: var(--md-code-hl-comment-color);
@@ -69,8 +71,8 @@ p.mkapi-object-bases {
 .mkapi-section-name {
   color: var(--md-default-fg-color--light);
   border-bottom: thin solid var(--md-default-fg-color--light);
-  font-size: 1.1em;
-  font-weight: 600;
+  font-size: 1.05em;
+  font-weight: 400;
   margin-top: 16px;
 }
 ul.mkapi-section-items {
@@ -107,9 +109,6 @@ li.mkapi-section-item li {
 .mkapi-docs-link {
   display: block;
   float: right;
-}
-.mkapi-tooltip {
-  border-bottom: thin solid var(--md-default-fg-color--lighter);
 }
 .md-typeset .admonition.deprecated,
 .md-typeset details.deprecated {

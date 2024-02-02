@@ -258,3 +258,4 @@ def test_polars_a():
 # polars.expr.datetime.ExprDateTimeNameSpace.round deprecated
 # DataFrame.to_arrow()  list
 # DataFrame.to_init_repr See also list
+# polars.config.Config.set_tbl_cell_alignment parameters list

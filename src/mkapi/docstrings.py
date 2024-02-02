@@ -300,6 +300,12 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
 
 def is_empty(doc: Docstring) -> bool:
     """Return True if a [Docstring] instance is empty."""
-    if doc.text.str or doc.sections:
+    if doc.text.str:
         return False
+    for section in doc.sections:
+        if section.text.str:
+            return False
+        for item in section.items:
+            if item.text.str:
+                return False
     return True

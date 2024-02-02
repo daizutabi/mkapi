@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 def add_link(text: str) -> str:
     """Add link for a "See Also" section."""
-    if ":" in text:
+    if "\n" in text:
         text = re.sub(r"\n\s+", " ", text)
         text = textwrap.indent(text, "* ")
     strs = []

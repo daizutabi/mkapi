@@ -47,8 +47,8 @@ nav:
   # - <api>/mkapi.objects|nav_filter1|nav_filter2
   - Section:
     - 1.md
-    # - <api2>/mkapi.**|nav_filter3
+    # - <api>/mkapi.**|nav_filter3
     - 2.md
-  # - MkDocs: <api3>/mkdocs.**|nav_filter4
-  # - Polars: <api4>/polars.dataframe.***|nav_filter4
-  - Polars: <api4>/polars.***|nav_filter4
+  # - MkDocs: <api>/mkdocs.**|nav_filter4
+  # - Polars: <api>/polars.dataframe.***|nav_filter4
+  - Polars: <api>/polars.***|nav_filter4

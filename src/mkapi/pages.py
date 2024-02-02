@@ -55,7 +55,7 @@ def _create_object_page(
 
     markdowns = []
     filters_str = "|" + "|".join(filters) if filters else ""
-    for child, depth in iter_objects_with_depth(obj, maxdepth):
+    for child, depth in iter_objects_with_depth(obj, maxdepth, member_only=True):
         if is_empty(child):
             continue
         if predicate and not predicate(child.fullname):

@@ -20,8 +20,9 @@ from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
+    from typing import Self
 
-    from mkapi.objects import Attribute
+    from mkapi.objects import Attribute, Function
 
 
 TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
@@ -46,6 +47,12 @@ class Type:
     def __repr__(self) -> str:
         args = ast.unparse(self.expr) if self.expr else ""
         return f"{self.__class__.__name__}({args})"
+
+    def copy(self) -> Self:  # noqa: D102
+        type_ = self.__class__(self.expr)
+        type_.markdown = self.markdown
+        type_.kind = self.kind
+        return type_
 
     def set_markdown(self, module: str) -> None:
         """Set Markdown text with link."""
@@ -88,6 +95,11 @@ class Text:
     def __repr__(self) -> str:
         text = self.str or ""
         return f"{self.__class__.__name__}({text!r})"
+
+    def copy(self) -> Self:  # noqa: D102
+        text = self.__class__(self.str)
+        text.markdown = self.markdown
+        return text
 
 
 @dataclass

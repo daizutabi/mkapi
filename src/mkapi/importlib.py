@@ -6,20 +6,29 @@ from typing import TYPE_CHECKING
 
 import mkapi.ast
 import mkapi.docstrings
-from mkapi.globals import get_fullname
+from mkapi.globals import get_all, get_fullname
 from mkapi.inspect import is_dataclass, iter_dataclass_parameters
-from mkapi.objects import Class, Module, create_module, objects
+from mkapi.items import Attributes, Item, Section, Text, Type
+from mkapi.objects import (
+    Attribute,
+    Class,
+    Function,
+    Module,
+    create_module,
+    is_empty,
+    iter_objects,
+    objects,
+)
 from mkapi.utils import (
     del_by_name,
     get_by_name,
+    get_by_type,
     get_module_node_source,
     iter_parent_module_names,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from mkapi.objects import Attribute, Function
+    from collections.abc import Iterable, Iterator
 
 
 @cache
@@ -63,6 +72,8 @@ def _postprocess(obj: Module | Class) -> None:
         _postprocess_class(obj)
     for cls in obj.classes:
         _postprocess(cls)
+    if isinstance(obj, Module):
+        add_sections(obj)
 
 
 def _postprocess_class(cls: Class) -> None:
@@ -103,3 +114,85 @@ def inherit_base_classes(cls: Class) -> None:
         for member in getattr(cls, name):
             members[member.name] = member
         setattr(cls, name, list(members.values()))
+
+
+def add_sections(module: Module) -> None:
+    """Add sections."""
+    for obj in iter_objects(module):
+        if isinstance(obj, Module | Class):
+            add_classes(obj)
+        if isinstance(obj, Module | Class | Function):
+            add_functions(obj)
+        if isinstance(obj, Module | Class):
+            add_attributes(obj)
+    # if module.kind == "package":
+    #     add_sections_package(module)
+
+
+def add_classes(obj: Module | Class) -> None:
+    """Add classes section."""
+    if items := list(_iter_items(obj.classes)):
+        section = Section("Classes", Type(), Text(), items)
+        obj.doc.sections.append(section)
+
+
+def add_functions(obj: Module | Class | Function) -> None:
+    """Add functions section."""
+    if items := list(_iter_items(obj.functions)):
+        name = "Methods" if isinstance(obj, Class) else "Functions"
+        section = Section(name, Type(), Text(), items)
+        obj.doc.sections.append(section)
+
+
+def add_attributes(obj: Module | Class) -> None:
+    """Add attributes section."""
+    if get_by_type(obj.doc.sections, Attributes):
+        return
+    if items := list(_iter_items(obj.attributes)):
+        section = Section("Attributes", Type(), Text(), items)
+        obj.doc.sections.append(section)
+
+
+def _iter_items(objs: Iterable[Function | Class | Attribute]) -> Iterator[Item]:
+    for obj in objs:
+        if is_empty(obj):
+            continue
+        type_ = obj.doc.type.copy()
+        text = obj.doc.text.copy()
+        type_.markdown = type_.markdown.split("..")[-1]
+        text.markdown = text.markdown.split("\n\n")[0]
+        yield Item("", type_, text)
+
+
+def add_sections_package(module: Module) -> None:
+    """Add __all__ members for a package."""
+    names = get_all(module.name)
+    modules = []
+    classes = []
+    functions = []
+    attributes = []
+    for name, fullname in names.items():
+        if obj := get_object(fullname):
+            type_ = obj.doc.type.copy()
+            text = obj.doc.text.copy()
+            type_.markdown = ".".join(type_.markdown.split(".."))
+            text.markdown = text.markdown.split("\n\n")[0]
+        item = Item(name, type_, text)
+        if isinstance(obj, Module):
+            modules.append(item)
+        elif isinstance(obj, Class):
+            classes.append(item)
+        elif isinstance(obj, Function):
+            functions.append(item)
+        elif isinstance(obj, Attribute):
+            attributes.append(item)
+    it = [
+        (modules, "Modules"),
+        (classes, "Classes"),
+        (functions, "Functions"),
+        (attributes, "Attributes"),
+    ]
+    for items, name in it:
+        if items:
+            section = Section(name, Type(), Text(), items)
+            module.doc.sections.append(section)

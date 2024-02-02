@@ -1,17 +1,16 @@
 import ast
 import inspect
-import re
 
 import pytest
 
 from mkapi.globals import (
-    # LINK_PATTERN,
     Global,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
+    _iter_objects_from_all,
+    get_all,
     get_fullname,
     get_globals,
-    # get_link_from_text,
     get_link_from_type,
     get_link_from_type_string,
     iter_identifiers,
@@ -144,7 +143,6 @@ def test_get_fullname():
     # assert x == "dd"
 
 
-
 def test_get_link_from_type():
     x = get_link_from_type("mkapi.objects", "Object")
     assert x == "[Object][__mkapi__.mkapi.objects.Object]"
@@ -161,15 +159,6 @@ def test_get_link_from_type():
     assert get_link_from_type("mkapi.objects", "None") == "None"
     x = get_link_from_type("mkapi.objects", "mkapi.objects", is_object=True)
     assert x == "[mkapi][__mkapi__.mkapi]..[objects][__mkapi__.mkapi.objects]"
-
-
-# def test_get_link_from_text():
-#     x = get_link_from_text("mkapi.objects", "# title\n[Object]")
-#     assert x == "# title\n[Object][__mkapi__.mkapi.objects.Object]"
-#     x = get_link_from_text("mkapi.objects", "# title\n[XXX]")
-#     assert x == "# title\n[XXX]"
-#     x = get_link_from_text("mkapi.objects", "# title\n[XXX]", name_only=True)
-#     assert x == "# title\nXXX"
 
 
 def test_iter_identifiers():
@@ -197,3 +186,15 @@ def test_get_link_from_type_string():
 def test_all():
     assert get_fullname("polars", "exceptions") != "polars.exceptions"
     assert get_fullname("polars", "api") == "polars.api"
+
+
+def test_iter_objects_from_all():
+    x = list(_iter_objects_from_all("polars"))
+    assert "polars.DataFrame" in x
+    assert "polars.first" in x
+
+
+def test_get_all():
+    x = get_all("polars")
+    assert x["api"] == "polars.api"
+    assert x["ArrowError"] == "polars.exceptions.ArrowError"

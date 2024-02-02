@@ -18,9 +18,11 @@ from mkapi.items import (
     Assigns,
     Bases,
     Default,
+    Item,
     Parameters,
     Raises,
     Returns,
+    Section,
     Text,
     Type,
     TypeKind,
@@ -315,6 +317,8 @@ def merge_attributes(obj: Module | Class) -> None:
                 attr_doc.type = attr_ast.type
             if not attr_doc.default.expr:
                 attr_doc.default = attr_ast.default
+            if not attr_ast.text.str:
+                attr_ast.text.str = attr_doc.text.str
 
 
 def merge_bases(obj: Class) -> None:
@@ -328,12 +332,6 @@ def merge_bases(obj: Class) -> None:
 def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
     for obj in iter_objects(module):
-        # TODO: move to docstrings module.
-        # for section in obj.doc.sections:
-        #     if isinstance(section, SeeAlso) and section.text.str:
-        #         section.text.str = _add_link(section.text.str)
-        #     if isinstance(section, Admonition):
-        #         _set_text_admonition(section)
         for elem in itertools.chain(obj, obj.doc):
             if isinstance(elem, Type):
                 elem.set_markdown(module.name)
@@ -366,21 +364,38 @@ def get_link_from_text(obj: Module | Class | Function | Attribute, text: str) ->
     return re.sub(LINK_PATTERN, replace, text)
 
 
+def _predicate(
+    child: Class | Function,
+    obj: Module | Class | Function,
+    *,
+    member_only: bool,
+) -> bool:
+    if isinstance(obj, Module):
+        return True
+    if member_only and child.parent is not obj:
+        return False
+    return child.module is obj.module  # correct ?
+
+
 def iter_objects_with_depth(
     obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
     depth: int = 0,
+    *,
+    member_only: bool = False,
 ) -> Iterator[tuple[Module | Class | Function | Attribute, int]]:
     """Yield [Object] instances and depth."""
     yield obj, depth
     if depth == maxdepth or isinstance(obj, Attribute):
         return
-    for cls in obj.classes:
-        if isinstance(obj, Module) or cls.module is obj.module:
-            yield from iter_objects_with_depth(cls, maxdepth, depth + 1)
-    for func in obj.functions:
-        if isinstance(obj, Module) or func.module is obj.module:
-            yield from iter_objects_with_depth(func, maxdepth, depth + 1)
+    for child in obj.classes + obj.functions:
+        if _predicate(child, obj, member_only=member_only):
+            yield from iter_objects_with_depth(
+                child,
+                maxdepth,
+                depth + 1,
+                member_only=member_only,
+            )
     if isinstance(obj, Module | Class):
         for attr in obj.attributes:
             yield attr, depth + 1
@@ -389,9 +404,11 @@ def iter_objects_with_depth(
 def iter_objects(
     obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
+    *,
+    member_only: bool = False,
 ) -> Iterator[Module | Class | Function | Attribute]:
     """Yield [Object] instances."""
-    for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0):
+    for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0, member_only=member_only):
         yield obj_
 
 
