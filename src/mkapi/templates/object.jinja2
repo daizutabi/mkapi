@@ -62,8 +62,9 @@ Bases :
 <span class="mkapi-item-type">{{ item.type.markdown|safe }}</span>
 {%- endif -%}
 {%- if item.text.markdown %}
- &mdash; {{ item.text.markdown|safe}}
-{%- endif -%}
+ &mdash;
+{{ item.text.markdown|safe}}
+{%- endif %}
 </li>
 {% endfor %}
 

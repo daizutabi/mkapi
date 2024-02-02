@@ -25,7 +25,7 @@ from mkapi.utils import get_by_name, get_by_type, get_module_node
 
 @pytest.fixture(scope="module")
 def google():
-    path = str(Path(__file__).parent.parent)
+    path = str(Path(__file__).parent)
     if path not in sys.path:
         sys.path.insert(0, str(path))
     return get_module_node("examples.styles.example_google")

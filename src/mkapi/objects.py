@@ -18,11 +18,9 @@ from mkapi.items import (
     Assigns,
     Bases,
     Default,
-    Item,
     Parameters,
     Raises,
     Returns,
-    Section,
     Text,
     Type,
     TypeKind,
@@ -336,7 +334,15 @@ def set_markdown(module: Module) -> None:
             if isinstance(elem, Type):
                 elem.set_markdown(module.name)
             elif elem.str and not elem.markdown:
-                elem.markdown = get_link_from_text(obj, elem.str)
+                text = _replace(elem.str)
+                elem.markdown = get_link_from_text(obj, text)
+
+
+def _replace(text: str) -> str:
+    for c in ["*", "+", "-"]:
+        if text.startswith(f"{c} ") and f"\n{c} " in text:
+            text = f"\n{text}"
+    return text
 
 
 LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")

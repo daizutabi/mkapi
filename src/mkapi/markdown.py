@@ -61,6 +61,7 @@ def convert(text: str) -> str:
 
 DOCTEST_PATTERN = re.compile(r"\s*?#\s*?doctest:.*?$", re.MULTILINE)
 PROMPT_ONLY = re.compile(r"\>\>\>\s*?$", re.MULTILINE)
+COMMENT_ONLY = re.compile(r"\>\>\> (#.*?)$", re.MULTILINE)
 
 
 def replace_examples(text: str) -> str:
@@ -68,6 +69,8 @@ def replace_examples(text: str) -> str:
     if "\n" not in text:
         return text
     text_ = PROMPT_ONLY.sub(">>> MKAPI_BLANK_LINE", text)
+    text_ = COMMENT_ONLY.sub(r">>> __mkapi__\1", text_)
+    text_ = DOCTEST_PATTERN.sub("", text_)
     try:
         examples = doctest.DocTestParser().get_examples(text_)
     except ValueError:
@@ -97,7 +100,7 @@ def _iter_examples(text: str, examples: list[doctest.Example]) -> Iterator[str]:
             # yield f'{prefix}<div class="mkapi-example" mkarkdown="1">'
             yield f"{prefix}```{{.python .mkapi-example-input}}"
         source = example.source[:-1].replace("MKAPI_BLANK_LINE", "")
-        source = DOCTEST_PATTERN.sub("", source)
+        source = source.replace("__mkapi__", "")
         yield textwrap.indent(source, prefix)
         if example.want:
             yield f"{prefix}```"

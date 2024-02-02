@@ -11,10 +11,12 @@ def test_load_templates():
 
 
 def test_render():
-    obj = get_object("polars.dataframe.frame")
+    name = "polars.config.Config.set_tbl_cell_alignment"
+    obj = get_object(name)
     assert obj
     m = render(obj, 1, [])
     print(m)
     print("-" * 100)
     h = markdown.markdown(m, extensions=["md_in_html"])
     print(h)
+    # assert 0

@@ -15,14 +15,13 @@ from mkapi.globals import (
     get_link_from_type,
     get_link_from_type_string,
 )
-from mkapi.markdown import add_link, replace_directives
 from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from typing import Self
 
-    from mkapi.objects import Attribute, Function
+    from mkapi.objects import Attribute
 
 
 TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
@@ -78,8 +77,7 @@ class Type:
 class Default(Type):
     """Default class."""
 
-    # TODO: use module.
-    def set_markdown(self, module: str) -> None:
+    def set_markdown(self, module: str) -> None:  # noqa: ARG002
         """Set Markdown text with link."""
         if self.expr and not self.markdown:
             self.markdown = ast.unparse(self.expr)

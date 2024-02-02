@@ -81,40 +81,6 @@ def test_add_link_items():
     assert lines[2] == "* [__mkapi__.pqr][]: stu"
 
 
-def c(text: str) -> str:
-    text = inspect.cleandoc(text)
-    e = ["admonition", "pymdownx.superfences", "attr_list", "md_in_html"]
-    return markdown.markdown(text, extensions=e)
-
-
-def test_replace_examples():
-    src = """
-    !!! Note
-
-        abc
-
-        >>> a = 1
-        >>> print(a)
-        1
-
-        def
-
-         >>> def f():
-         ...    pass
-
-        ghi
-
-    jkl
-    """
-    src = inspect.cleandoc(src)
-    text = replace_examples(src)
-    m = c(text)
-    assert '<div class="admonition note">' in m
-    assert '<p><div class="mkapi-example" mkarkdown="1">' in m
-    assert '<div class="mkapi-example-input highlight">' in m
-    assert '<div class="mkapi-example-output highlight">' in m
-
-
 def test_replace_examples_prompt_only():
     src = """
     abc
@@ -126,6 +92,12 @@ def test_replace_examples_prompt_only():
     src = inspect.cleandoc(src)
     text = replace_examples(src)
     assert "\n```{.python .mkapi-example-input}\na = 1\n\nb = 1" in text
+
+
+def c(text: str) -> str:
+    text = inspect.cleandoc(text)
+    e = ["admonition", "pymdownx.superfences", "attr_list", "md_in_html"]
+    return markdown.markdown(text, extensions=e)
 
 
 def test_replace_directives():
@@ -162,6 +134,35 @@ def test_replace_directives_deprecated():
     assert '<p class="admonition-title">Deprecated since version 1.0</p>' in m
 
 
+def test_replace_examples():
+    src = """
+    !!! Note
+
+        abc
+
+        >>> a = 1
+        >>> print(a)
+        1
+
+        def
+
+         >>> def f():
+         ...    pass
+
+        ghi
+
+    jkl
+    """
+    src = inspect.cleandoc(src)
+    text = replace_examples(src)
+    m = c(text)
+    print(m)
+    assert '<div class="admonition note">' in m
+    assert '<div class="mkapi-example-input highlight">' in m
+    assert '<div class="mkapi-example-output highlight">' in m
+    assert "```" not in m
+
+
 def test_replace_directives_codeblock():
     src = """
     abc
@@ -171,30 +172,17 @@ def test_replace_directives_codeblock():
 
           .. code-block:: python
 
-          a = 1
+            a = 1
 
-          b = 1
-
-        d e f
-
-    .. note::
-        a b c
-
-           .. code-block:: python
-
-             a = 1
-
-             b = 1
+            b = 1
 
         d e f
-
     """
     src = inspect.cleandoc(src)
     text = replace_directives(src)
-    print(text)
     m = c(text)
-    print(m)
-    assert 0
+    assert '<div class="admonition note">' in m
+    assert "<p>a b c</p>\n<pre><code>a = 1\n\nb = 1\n</code></pre>" in m
 
 
 def get(module: str, n1: str, n2: str | None = None) -> str:
@@ -218,14 +206,12 @@ def get(module: str, n1: str, n2: str | None = None) -> str:
 
 def test_polars_collect():
     src = get("polars.lazyframe.frame", "LazyFrame", "collect")
-    print(src)
     doc = parse(src)
     s = get_by_name(doc.sections, "Parameters")
     assert s
     i = get_by_name(s.items, "streaming")
     assert i
     assert i.text.str
-    print(i.text.str)
     assert "!!! warning\n    This functionality" in i.text.str
 
 
@@ -241,21 +227,16 @@ def test_polars_from_numpy():
 
 
 def test_polars_a():
-    src = get("polars.dataframe.frame", "DataFrame", "group_by_dynamic")
+    # src = get("polars.dataframe.frame", "DataFrame", "map_rows")
+    src = get("polars.config", "Config")
     print(src)
     m = convert(src)
     print(m)
-    doc = parse(src)
-    for s in doc.sections:
-        print("--" * 40)
-        print(s.text.str)
-        print("--" * 40)
-    assert 0
+    # doc = parse(src)
+    # for i in doc.sections[0].items:
+    #     print("--" * 40)
+    #     print(i.text)
+    #     print("--" * 40)
+    # import markdown
 
-
-# polars.dataframe.frame.DataFrame.write_delta  `here_`
-# polars.dataframe.frame.DataFrame.map_rows
-# polars.expr.datetime.ExprDateTimeNameSpace.round deprecated
-# DataFrame.to_arrow()  list
-# DataFrame.to_init_repr See also list
-# polars.config.Config.set_tbl_cell_alignment parameters list
+    # print(markdown.markdown(i.text.str))
