@@ -181,8 +181,8 @@ def _iter_code_block(it: Iterable[str], lang: str) -> Iterator[str]:
     yield from _get_code_block(codes, lang, indent)
 
 
-def _get_code_block(codes: list[str], lang: str, indent: int) -> Iterator[str]:
-    prefix = " " * indent
+def _get_code_block(codes: list[str], lang: str, indent: int) -> Iterator[str]:  # noqa: ARG001
+    prefix = " " * indent  # noqa: F841
     # yield f"{prefix}```{{.{lang} .mkapi-example}}"
     # yield f"{prefix}~~~{lang}"
     for stop in range(len(codes) - 1, 0, -1):

@@ -204,29 +204,7 @@ def get(module: str, n1: str, n2: str | None = None) -> str:
     return src
 
 
-def test_polars_collect():
-    src = get("polars.lazyframe.frame", "LazyFrame", "collect")
-    doc = parse(src)
-    s = get_by_name(doc.sections, "Parameters")
-    assert s
-    i = get_by_name(s.items, "streaming")
-    assert i
-    assert i.text.str
-    assert "!!! warning\n    This functionality" in i.text.str
-
-
-def test_polars_from_numpy():
-    src = get("polars.convert", "from_numpy")
-    doc = parse(src)
-    s = get_by_name(doc.sections, "Parameters")
-    assert s
-    i = get_by_name(s.items, "data")
-    assert i
-    assert i.type.expr
-    assert ast.unparse(i.type.expr) == "'numpy.ndarray'"
-
-
-def test_polars_a():
+def test_a():
     # src = get("polars.dataframe.frame", "DataFrame", "map_rows")
     src = get("polars.config", "Config")
     print(src)

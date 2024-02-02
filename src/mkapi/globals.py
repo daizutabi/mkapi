@@ -12,6 +12,7 @@ from mkapi.utils import (
     get_by_name,
     get_module_node,
     get_module_path,
+    is_package,
     iter_identifiers,
     iter_parent_module_names,
 )
@@ -101,7 +102,10 @@ def _iter_imports_from_import_from(
         module = parent
     elif node.level:
         names = parent.split(".")
-        prefix = ".".join(names[: len(names) - node.level + 1])
+        if is_package(parent):
+            prefix = ".".join(names[: len(names) - node.level + 1])
+        else:
+            prefix = ".".join(names[: -node.level])
         module = f"{prefix}.{node.module}"
     else:
         module = node.module

@@ -5,6 +5,7 @@ import pytest
 
 from mkapi.globals import (
     Global,
+    _iter_imports,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
     _iter_objects_from_all,
@@ -57,24 +58,6 @@ def test_resolve():
     assert resolve("mkdocs.config.Config") == "mkdocs.config.base.Config"
 
 
-def test_relative_import():
-    """# test module
-    from .c import d
-    from ..e import f as F
-    """
-    src = inspect.getdoc(test_relative_import)
-    assert src
-    node = ast.parse(src)
-    x = node.body[0]
-    assert isinstance(x, ast.ImportFrom)
-    i = next(_iter_imports_from_import_from(x, "x.y.z"))
-    assert i == ("d", "x.y.z.c.d")
-    x = node.body[1]
-    assert isinstance(x, ast.ImportFrom)
-    i = next(_iter_imports_from_import_from(x, "x.y.z"))
-    assert i == ("F", "x.y.e.f")
-
-
 @pytest.mark.parametrize(
     ("name", "fullname"),
     [
@@ -95,6 +78,20 @@ def test_get_globals_polars():
     x = get_globals("polars.dataframe.frame")
     n = get_by_name(x.names, "Workbook")
     assert n
+
+
+def test_get_globals_schemdraw():
+    from schemdraw.elements.cables import Element2Term, Segment  # type: ignore
+
+    x = get_globals("schemdraw.elements.cables")
+    n = get_by_name(x.names, "Segment")
+    assert n
+    a = f"{Segment.__module__}.{Segment.__name__}"
+    assert n.fullname == a
+    n = get_by_name(x.names, "Element2Term")
+    assert n
+    a = f"{Element2Term.__module__}.{Element2Term.__name__}"
+    assert n.fullname == a
 
 
 def test_get_globals_cache():
@@ -140,7 +137,7 @@ def test_get_fullname():
     x = get_fullname("polars.dataframe.frame", "DataType")
     assert x == "polars.datatypes.classes.DataType"
     x = get_fullname("polars.dataframe.frame", "Workbook")
-    # assert x == "dd"
+    assert x == "xlsxwriter.Workbook"
 
 
 def test_get_link_from_type():

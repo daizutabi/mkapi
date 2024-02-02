@@ -1,50 +1,56 @@
 site_name: MkAPI
-site_url: https://mkapi.daizutabi.net/
+site_url: https://daizutabi.github.io/mkapi/
 site_description: API documentation with MkDocs.
 site_author: daizutabi
-site_dir: ../mkapi-site/site
-
 repo_url: https://github.com/daizutabi/mkapi/
 edit_uri: ""
-
 theme:
   name: material
-  highlightjs: true
-  hljs_languages:
-    - yaml
-
-extra_css:
-  - custom.css
-
+  font:
+    text: Fira Sans
+    code: Fira Code
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: black
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+  features:
+    - content.tooltips
+    - navigation.expand
+    - navigation.indexes
+    - navigation.instant
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.tracking
 plugins:
-  - search
+  - search:
   - mkapi:
-      src_dirs: [examples]
-      on_config: custom.on_config
-
-nav:
-  - index.md
-  - Examples:
-    - examples/google_style.md
-    - examples/numpy_style.md
-  - Advanced Usage:
-    - usage/module.md
-    - usage/inherit.md
-    - usage/page.md
-    - usage/filter.md
-    - usage/library.py
-    - usage/custom.md
-  - Appendix:
-    - appendix/type.py
-    - appendix/method.md
-    - appendix/inherit.md
-    - appendix/order.md
-    - appendix/decorator.md
-  - API: mkapi/api/mkapi|upper|strict
-
+      exclude: [.tests]
+      filters: [plugin_filter]
+      page_title: custom.page_title
+      section_title: custom.section_title
+      # on_config: custom.on_config
 markdown_extensions:
   - pymdownx.arithmatex
-
-extra_javascript:
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
-  # - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML
+  - pymdownx.magiclink
+nav:
+  - index.md
+  # - <api>/mkapi.objects|nav_filter1|nav_filter2
+  - Section:
+    - 1.md
+    # - <api>/mkapi.**|nav_filter3
+    - 2.md
+  # - MkDocs: <api>/mkdocs.**|nav_filter4
+  # - Polars: <api>/polars.dataframe.***|nav_filter4
+  - SchemDraw: <api>/schemdraw.***
+  - Polars: <api>/polars.***
+  # - Altair: <api>/altair.***

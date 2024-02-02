@@ -104,7 +104,7 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
 
 def inherit_base_classes(cls: Class) -> None:
     """Inherit objects from base classes."""
-    # TODO: fix InitVar, ClassVar for dataclasses.
+    # TODO(daizutabi): fix InitVar, ClassVar for dataclasses.
     bases = list(iter_base_classes(cls))
     for name in ["attributes", "functions", "classes"]:
         members = {}

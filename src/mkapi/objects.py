@@ -39,7 +39,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from mkapi.items import Base, Parameter, Raise, Return
-    from mkapi.objects import Attribute, Function
 
 
 objects: dict[str, Module | Class | Function | Attribute | None] = {}
@@ -90,7 +89,7 @@ class Attribute(Member):
     """Attribute class."""
 
     node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
-    type: Type
+    type: Type  # noqa: A003, RUF100
     default: Default
     text: Text = field(default_factory=Text, init=False)
 

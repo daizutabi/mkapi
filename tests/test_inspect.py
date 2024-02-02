@@ -88,13 +88,7 @@ def test_markdown_polars(DataFrame):  # noqa: N803
     assert isinstance(func, Function)
     sig = get_signature(func)
     m = sig.markdown
-    assert r'<span class="star">\*</span>' in m
-    # func = get_by_name(cls.functions, "write_csv")
-    # assert isinstance(func, Function)
-    # sig = get_signature(func)
-    # m = sig.markdown
-    # print(m)
-    # assert 0
+    assert r'<span class="sep">\*</span>' in m
 
 
 def test_method(DataFrame):  # noqa: N803

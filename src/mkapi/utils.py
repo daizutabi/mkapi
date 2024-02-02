@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import ast
-import doctest
 import re
 from functools import cache
 from importlib.util import find_spec
@@ -162,13 +161,13 @@ def update_filters(org: list[str], update: list[str]) -> list[str]:
     """Update filters.
 
     Examples:
-        >>> update_filters(['upper'], ['lower'])
+        >>> update_filters(["upper"], ["lower"])
         ['lower']
-        >>> update_filters(['lower'], ['upper'])
+        >>> update_filters(["lower"], ["upper"])
         ['upper']
-        >>> update_filters(['long'], ['short'])
+        >>> update_filters(["long"], ["short"])
         ['short']
-        >>> update_filters(['short'], ['long'])
+        >>> update_filters(["short"], ["long"])
         ['long']
     """
     filters = org + update

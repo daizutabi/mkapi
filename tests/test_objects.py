@@ -7,10 +7,8 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.items import Parameters, SeeAlso
 from mkapi.objects import (
     LINK_PATTERN,
-    Attribute,
     Class,
     Function,
     create_class,
@@ -20,7 +18,7 @@ from mkapi.objects import (
     merge_items,
     objects,
 )
-from mkapi.utils import get_by_name, get_by_type, get_module_node
+from mkapi.utils import get_by_name, get_module_node
 
 
 @pytest.fixture(scope="module")

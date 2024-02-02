@@ -11,22 +11,18 @@ authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Framework :: MkDocs",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Topic :: Documentation",
   "Topic :: Software Development :: Documentation",
 ]
 dynamic = ["version"]
 requires-python = ">=3.12"
-dependencies = ["jinja2", "mkdocs", "halo", "tqdm"]
+dependencies = ["jinja2", "mkdocs", "halo", "tqdm", "mkdocs-material"]
 
 [project.urls]
 Documentation = "https://github.com/daizutabi/mkapi#readme" # FIXME
 Source = "https://github.com/daizutabi/mkapi"
 Issues = "https://github.com/daizutabi/mkapi/issues"
-
-[project.scripts]
-mkapi = "mkapi.main:cli"
 
 [project.entry-points."mkdocs.plugins"]
 mkapi = "mkapi.plugins:MkAPIPlugin"
@@ -43,7 +39,14 @@ packages = ["src/mkapi"]
 python = ["3.12"]
 
 [tool.hatch.envs.default]
-dependencies = ["pytest-cov", "mkdocs-material", "polars", "markdown"]
+dependencies = [
+  "mkdocs",
+  "mkdocs-material",
+  "polars",
+  "altair",
+  "schemdraw",
+  "pyparsing",
+]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests src/mkapi}"
 
@@ -58,6 +61,7 @@ addopts = [
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
 filterwarnings = [
   'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated:DeprecationWarning',
+  'ignore:\nPyarrow will become a required dependency:DeprecationWarning',
 ]
 
 [tool.coverage.run]
@@ -67,7 +71,14 @@ omit = ["src/mkapi/__about__.py"]
 exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
 
 [tool.hatch.envs.docs]
-dependencies = ["mkdocs", "mkdocs-material", 'polars']
+dependencies = [
+  "mkdocs",
+  "mkdocs-material",
+  "polars",
+  "altair",
+  "schemdraw",
+  "pyparsing",
+]
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict {args}"
 serve = "mkdocs serve --dev-addr localhost:8000 {args}"
@@ -87,9 +98,13 @@ ignore = [
   "D407",
   "EM102",
   "ERA001",
+  "FIX002",
+  "ISC001",
+  "COM812",
   "N812",
   "PGH003",
   "PLR2004",
+  "TD003",
   "TRY003",
 ]
 exclude = ["examples"]

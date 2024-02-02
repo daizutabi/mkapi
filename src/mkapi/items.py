@@ -47,7 +47,8 @@ class Type:
         args = ast.unparse(self.expr) if self.expr else ""
         return f"{self.__class__.__name__}({args})"
 
-    def copy(self) -> Self:  # noqa: D102
+    def copy(self) -> Self:
+        """Copy an instance."""
         type_ = self.__class__(self.expr)
         type_.markdown = self.markdown
         type_.kind = self.kind
@@ -87,14 +88,15 @@ class Default(Type):
 class Text:
     """Text class."""
 
-    str: str | None = None
+    str: str | None = None  # noqa: A003, RUF100
     markdown: str = field(default="", init=False)
 
     def __repr__(self) -> str:
         text = self.str or ""
         return f"{self.__class__.__name__}({text!r})"
 
-    def copy(self) -> Self:  # noqa: D102
+    def copy(self) -> Self:
+        """Copy an instance."""
         text = self.__class__(self.str)
         text.markdown = self.markdown
         return text
@@ -105,7 +107,7 @@ class Item:
     """Element class."""
 
     name: str
-    type: Type
+    type: Type  # noqa: A003, RUF100
     text: Text
 
     def __repr__(self) -> str:

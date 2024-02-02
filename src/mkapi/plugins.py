@@ -18,7 +18,7 @@ import yaml
 from halo import Halo
 from mkdocs.config import Config, config_options
 from mkdocs.plugins import BasePlugin, get_plugin_logger
-from mkdocs.structure.files import Files, InclusionLevel, get_files
+from mkdocs.structure.files import InclusionLevel, get_files
 from tqdm.std import tqdm
 
 import mkapi
@@ -135,14 +135,14 @@ def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
     return None
 
 
-def _insert_sys_path(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _insert_sys_path(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
     config_dir = Path(config.config_file_path).parent
     path = os.path.normpath(config_dir)
     if path not in sys.path:
         sys.path.insert(0, path)
 
 
-def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
     renderers.load_templates()
 
 
@@ -155,7 +155,7 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         config.nav = MkAPIPlugin.nav
 
 
-def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
     for name in [
         "admonition",
         "attr_list",
@@ -236,7 +236,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 #     return config
 
 
-def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:
+def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:  # noqa: ARG001
     root = Path(mkapi.__file__).parent / "themes"
     docs_dir = config.docs_dir
     config.docs_dir = root.as_posix()
