@@ -24,6 +24,7 @@ from mkapi.items import (
     Text,
     Type,
     TypeKind,
+    _assign_type_text,
     create_attributes,
     create_raises,
     iter_assigns,
@@ -136,7 +137,7 @@ class Function(Callable):
 
     def __iter__(self) -> Iterator[Type | Text]:
         """Yield [Type] or [Text] instances."""
-        for item in self.parameters + self.returns:
+        for item in itertools.chain(self.parameters, self.returns):
             yield from item
 
 
@@ -149,10 +150,10 @@ def create_function(
     module = module or _create_empty_module()
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
-    parameters = list(iter_parameters(node))
+    params = list(iter_parameters(node))
     returns = list(iter_returns(node))
     raises = list(iter_raises(node))
-    func = Function(node.name, node, doc, module, parent, parameters, returns, raises)
+    func = Function(node.name, node, doc, module, parent, params, returns, raises)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             clss = create_class(child, module, func)
@@ -175,7 +176,7 @@ class Class(Callable):
 
     def __iter__(self) -> Iterator[Type | Text]:
         """Yield [Type] or [Text] instances."""
-        for item in self.attributes + self.parameters:
+        for item in itertools.chain(self.attributes, self.parameters):
             yield from item
 
 
@@ -226,9 +227,8 @@ class Module(Object):
 
 
 def _create_empty_module() -> Module:
-    name = "__mkapi__"
     doc = Docstring("Docstring", Type(), Text(), [])
-    return Module(name, ast.Module(), doc, None)
+    return Module("__mkapi__", ast.Module(), doc, None)
 
 
 def create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
@@ -260,9 +260,30 @@ def merge_items(module: Module) -> None:
         if isinstance(obj, Function):
             merge_returns(obj)
         if isinstance(obj, Module | Class):
+            _add_doc_comments(obj.attributes, module.source)
             merge_attributes(obj)
         if isinstance(obj, Class):
             merge_bases(obj)
+
+
+def _add_doc_comments(attrs: list[Attribute], source: str | None = None) -> None:
+    if not source:
+        return
+    lines = source.splitlines()
+    for attr in attrs:
+        if attr.doc.text.str or not (node := attr.node):
+            continue
+        line = lines[node.lineno - 1][node.end_col_offset :].strip()
+        if line.startswith("#:"):
+            _add_doc_comment(attr, line[2:].strip())
+        elif node.lineno > 1:
+            line = lines[node.lineno - 2][node.col_offset :]
+            if line.startswith("#:"):
+                _add_doc_comment(attr, line[2:].strip())
+
+
+def _add_doc_comment(attr: Attribute, text: str) -> None:
+    attr.type, attr.doc.text = _assign_type_text(attr.type.expr, text)
 
 
 def merge_parameters(obj: Class | Function) -> None:
@@ -301,6 +322,10 @@ def merge_returns(obj: Function) -> None:
 def merge_attributes(obj: Module | Class) -> None:
     """Merge attributes."""
     if not (section := get_by_type(obj.doc.sections, Assigns)):
+        # attrs = [attr for attr in obj.attributes if attr.doc.text.str]
+        # if attrs:
+        #     section = create_attributes(attrs)
+        #     obj.doc.sections.append(section)
         return
     index = obj.doc.sections.index(section)
     module = obj if isinstance(obj, Module) else obj.module
@@ -314,8 +339,13 @@ def merge_attributes(obj: Module | Class) -> None:
                 attr_doc.type = attr_ast.type
             if not attr_doc.default.expr:
                 attr_doc.default = attr_ast.default
-            if not attr_ast.text.str:
-                attr_ast.text.str = attr_doc.text.str
+            if not attr_doc.doc.text.str:
+                attr_doc.doc.text.str = attr_ast.doc.text.str
+            # if not attr_ast.text.str:
+            #     attr_ast.text.str = attr_doc.text.str
+    for attr_ast in obj.attributes:
+        if not get_by_name(section.items, attr_ast.name):
+            section.items.append(attr_ast)
 
 
 def merge_bases(obj: Class) -> None:

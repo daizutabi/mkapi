@@ -141,14 +141,13 @@ def update(
     create_page: Callable[[str, str, list[str], int], str | None],
     section: Callable[[str, int], str] | None = None,
     predicate: Callable[[str], bool] | None = None,
-    index_name: str = "README",
 ) -> None:
     """Update navigation."""
 
     def _create_apinav(name: str, api_path: str, filters: list[str]) -> list:
         def page(name: str, depth: int) -> str | dict[str, str]:
             if is_package(name):
-                path = name.replace(".", "/") + f"/{index_name}.md"
+                path = name.replace(".", "/") + "/README.md"
             else:
                 path = name.replace(".", "/") + ".md"
             path = f"{api_path}/{path}"

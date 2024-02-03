@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
+from mkapi.items import Attributes
 from mkapi.objects import (
     LINK_PATTERN,
     Class,
@@ -18,7 +19,7 @@ from mkapi.objects import (
     merge_items,
     objects,
 )
-from mkapi.utils import get_by_name, get_module_node
+from mkapi.utils import get_by_name, get_by_type, get_module_node
 
 
 @pytest.fixture(scope="module")
@@ -137,6 +138,51 @@ def test_kind():
     attr = get_by_name(cls.attributes, "node")
     assert attr
     assert attr.kind == "attribute"
+
+
+def test_attribute_comment():
+    src = '''
+    """Module.
+
+    Attributes:
+        a
+        b
+    """
+    a: float  #: Doc comment *inline* with attribute.
+    c: int  #: C
+    class A:
+        attr0: int  #: Doc comment *inline* with attribute.
+        #: list(str): Doc comment *before* attribute, with type specified.
+        attr1: list[str]
+        attr2 = 1
+        attr3 = [1]  #: list(int): Doc comment *inline* with attribute.
+        attr4: str
+        """Docstring *after* attribute, with type specified."""
+        attr5: float
+    '''
+    src = inspect.cleandoc(src)
+    node = ast.parse(src)
+    module = create_module("a", node, src)
+    t = module.attributes[0].doc.text.str
+    assert t == "Doc comment *inline* with attribute."
+    a = module.classes[0].attributes
+    assert a[0].doc.text.str == "Doc comment *inline* with attribute."
+    assert a[1].doc.text.str
+    assert a[1].doc.text.str.startswith("Doc comment *before* attribute, with")
+    assert isinstance(a[1].type.expr, ast.Subscript)
+    assert a[2].doc.text.str is None
+    assert a[3].doc.text.str == "Doc comment *inline* with attribute."
+    assert isinstance(a[3].type.expr, ast.Subscript)
+    assert a[4].doc.text.str == "Docstring *after* attribute, with type specified."
+    assert a[5].doc.text.str is None
+    section = get_by_type(module.doc.sections, Attributes)
+    assert section
+    a = section.items[0]
+    assert a.name == "a"
+    assert a.doc.text.str == "Doc comment *inline* with attribute."
+    a = section.items[2]
+    assert a.name == "c"
+    assert a.doc.text.str == "C"
 
 
 def test_merge_items():

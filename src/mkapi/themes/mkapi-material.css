@@ -107,6 +107,7 @@ li.mkapi-section-item li {
   font-size: 85%;
 }
 .mkapi-docs-link {
+  font-family: var(--md-text-font-family);
   display: block;
   float: right;
 }

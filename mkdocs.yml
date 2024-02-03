@@ -34,10 +34,12 @@ theme:
 plugins:
   - search:
   - mkapi:
-      exclude: [altair.vegalite]
-      filters: [plugin_filter]
-      page_title: custom.page_title
-      section_title: custom.section_title
+      config: config.py
+      exclude:
+        - altair.vegalite
+      # filters: [plugin_filter]
+      # page_title: custom.page_title
+      # section_title: custom.section_title
       debug: true
       # on_config: custom.on_config
 markdown_extensions:

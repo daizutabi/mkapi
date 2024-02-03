@@ -46,15 +46,13 @@ logger = get_plugin_logger("MkAPI")
 class MkAPIConfig(Config):
     """Specify the config schema."""
 
+    config = config_options.Type(str, default="")
+    debug = config_options.Type(bool, default=False)
     docs_anchor = config_options.Type(str, default="docs")
     exclude = config_options.Type(list, default=[])
     filters = config_options.Type(list, default=[])
-    page_title = config_options.Type(str, default="")
-    section_title = config_options.Type(str, default="")
     src_anchor = config_options.Type(str, default="source")
     src_dir = config_options.Type(str, default="src")
-    debug = config_options.Type(bool, default=False)
-    # on_config = config_options.Type(str, default="")
 
 
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
@@ -67,12 +65,12 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     api_uri_width: ClassVar[int] = 0
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
-        _insert_sys_path(config, self)
         _update_templates(config, self)
         _update_config(config, self)
         _update_extensions(config, self)
+        if on_config := _get_function("on_config", self):
+            on_config(config, self)
         return config
-        # return _on_config_plugin(config, self)
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         """Collect plugin CSS/JavaScript and append them to `files`."""
@@ -112,8 +110,9 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         **kwargs,
     ) -> str:
         """Merge HTML and MkAPI's object structure."""
+        toc_title = _get_function("toc_title", self)
         if page.file.src_uri in MkAPIPlugin.api_uris:
-            _replace_toc(page.toc)
+            _replace_toc(page.toc, toc_title)
             self._update_bar(page.file.src_uri)
         if page.file.src_uri in MkAPIPlugin.api_srcs:
             path = Path(config.docs_dir) / page.file.src_uri
@@ -147,18 +146,19 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
 
 def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
-    if fullname := plugin.config.get(name, None):
-        module_name, func_name = fullname.rsplit(".", maxsplit=1)
-        module = importlib.import_module(module_name)
-        return getattr(module, func_name)
-    return None
-
-
-def _insert_sys_path(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
-    config_dir = Path(config.config_file_path).parent
-    path = os.path.normpath(config_dir)
-    if path not in sys.path:
-        sys.path.insert(0, path)
+    if not (path_str := plugin.config.config):
+        return None
+    if not path_str.endswith(".py"):
+        module = importlib.import_module(path_str)
+    else:
+        path = Path(path_str)
+        if not path.is_absolute():
+            path = Path(plugin.config.config_file_path).parent / path
+        directory = os.path.normpath(path.parent)
+        sys.path.insert(0, directory)
+        module = importlib.import_module(path.stem)
+        del sys.path[0]
+    return getattr(module, name, None)
 
 
 def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
@@ -177,13 +177,7 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
 
 def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
-    for name in [
-        "admonition",
-        "attr_list",
-        "def_list",
-        "md_in_html",
-        "pymdownx.superfences",
-    ]:
+    for name in ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]:
         if name not in config.markdown_extensions:
             config.markdown_extensions.append(name)
 
@@ -221,10 +215,11 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     if not config.nav:
         return
 
-    page = _get_function("page_title", plugin)
-    section = _get_function("section_title", plugin)
+    page_title = _get_function("page_title", plugin)
+    section_title = _get_function("section_title", plugin)
 
     def _create_page(name: str, path: str, filters: list[str], depth: int) -> str:
+        spinner.text = f"Updating nav...: {name}"
         MkAPIPlugin.api_uris.append(path)
         abs_path = Path(config.docs_dir) / path
         _check_path(abs_path)
@@ -236,25 +231,17 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         _check_path(abs_path)
         create_source_page(f"{name}.**", abs_path, filters)
 
-        return page(name, depth) if page else name
+        return page_title(name, depth) if page_title else name
 
     def predicate(name: str) -> bool:
         return any(ex not in name for ex in plugin.config.exclude)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        with Halo(text="Updating nav...", spinner="dots"):
-            mkapi.nav.update(config.nav, _create_page, section, predicate)
-
-
-# def _on_config_plugin(config: MkDocsConfig, plugin: MkAPIPlugin) -> MkDocsConfig:
-#     if func := _get_function("on_config", plugin):
-#         msg = f"Calling {plugin.config.on_config!r}"
-#         logger.info(msg)
-#         config_ = func(config, plugin)
-#         if isinstance(config_, MkDocsConfig):
-#             return config_
-#     return config
+        spinner = Halo()
+        spinner.start()
+        mkapi.nav.update(config.nav, _create_page, section_title, predicate)
+        spinner.stop()
 
 
 def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:  # noqa: ARG001
@@ -289,9 +276,16 @@ def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File
     return files
 
 
-def _replace_toc(toc: TableOfContents | list[AnchorLink]) -> None:
+def _replace_toc(
+    toc: TableOfContents | list[AnchorLink],
+    title: Callable[[str, int], str] | None = None,
+    depth: int = 0,
+) -> None:
     for link in toc:
-        link.id = link.id.replace("\0295\03", "_")
+        # link.id = link.id.replace("\0295\03", "_")
         link.title = re.sub(r"\s+\[.+?\]", "", link.title)  # Remove source link.
-        link.title = link.title.split(".")[-1]  # Remove prefix.
-        _replace_toc(link.children)
+        if title:
+            link.title = title(link.title, depth)
+        else:
+            link.title = link.title.split(".")[-1]  # Remove prefix.
+        _replace_toc(link.children, title, depth + 1)
