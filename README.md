@@ -46,9 +46,9 @@ plugins:
 ## Usage
 
 MkAPI provides two modes to generate API documentation:
-Embedding mode and Page mode.
+Object mode and Page mode.
 
-### Embedding Mode
+### Object Mode
 
 To generate the API documentation in a Markdown source,
 add three colons + object full name.

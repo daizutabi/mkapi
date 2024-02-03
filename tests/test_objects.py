@@ -176,13 +176,13 @@ def test_attribute_comment():
     assert a[4].doc.text.str == "Docstring *after* attribute, with type specified."
     assert a[5].doc.text.str is None
     section = get_by_type(module.doc.sections, Attributes)
-    assert section
-    a = section.items[0]
-    assert a.name == "a"
-    assert a.doc.text.str == "Doc comment *inline* with attribute."
-    a = section.items[2]
-    assert a.name == "c"
-    assert a.doc.text.str == "C"
+    assert not section
+    # a = section.items[0]
+    # assert a.name == "a"
+    # assert a.doc.text.str == "Doc comment *inline* with attribute."
+    # a = section.items[2]
+    # assert a.name == "c"
+    # assert a.doc.text.str == "C"
 
 
 def test_merge_items():

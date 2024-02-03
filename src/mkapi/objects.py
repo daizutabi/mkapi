@@ -112,6 +112,10 @@ def create_attribute(
     module = module or _create_empty_module()
     if assign.node and assign.node.__doc__:
         doc = docstrings.parse(assign.node.__doc__)
+        if doc.text.str and (lines := doc.text.str.splitlines()):  # noqa: SIM102
+            if ":" in lines[0]:
+                _, lines[0] = lines[0].split(":", maxsplit=1)
+                doc.text.str = "\n".join(lines)
     else:
         doc = Docstring("", Type(), Text(), [])
     return Attribute(name, node, doc, module, parent, type_, default)
@@ -328,24 +332,32 @@ def merge_attributes(obj: Module | Class) -> None:
         #     obj.doc.sections.append(section)
         return
     index = obj.doc.sections.index(section)
+    del obj.doc.sections[index]
     module = obj if isinstance(obj, Module) else obj.module
     parent = obj if isinstance(obj, Class) else None
-    attrs = (create_attribute(assign, module, parent) for assign in section.items)
-    section = create_attributes(attrs)
-    obj.doc.sections[index] = section
-    for attr_doc in section.items:
-        if attr_ast := get_by_name(obj.attributes, attr_doc.name):
-            if not attr_doc.type.expr:
-                attr_doc.type = attr_ast.type
-            if not attr_doc.default.expr:
-                attr_doc.default = attr_ast.default
-            if not attr_doc.doc.text.str:
-                attr_doc.doc.text.str = attr_ast.doc.text.str
+    # attrs = (create_attribute(assign, module, parent) for assign in section.items)
+    # section = create_attributes(attrs)
+    # obj.doc.sections[index] = section
+    for assign in section.items:
+        if attr := get_by_name(obj.attributes, assign.name):
+            if not attr.doc.text.str:
+                attr.doc.text.str = assign.text.str
+            if not attr.type.expr:
+                attr.type.expr = assign.type.expr
+        else:
+            attr = create_attribute(assign, module, parent)
+            obj.attributes.append(attr)
+            # if not attr_doc.type.expr:
+            #     attr_doc.type = attr_ast.type
+            # if not attr_doc.default.expr:
+            #     attr_doc.default = attr_ast.default
+            # if not attr_doc.doc.text.str:
+            #     attr_doc.doc.text.str = attr_ast.doc.text.str
             # if not attr_ast.text.str:
             #     attr_ast.text.str = attr_doc.text.str
-    for attr_ast in obj.attributes:
-        if not get_by_name(section.items, attr_ast.name):
-            section.items.append(attr_ast)
+    # for attr_ast in obj.attributes:
+    #     if not get_by_name(section.items, attr_ast.name):
+    #         section.items.append(attr_ast)
 
 
 def merge_bases(obj: Class) -> None:

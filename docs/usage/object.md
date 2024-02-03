@@ -1,6 +1,6 @@
-# Embedding mode
+# Object mode
 
-## Example package
+## `examples` package
 
 <style type="text/css">
 .mkapi-container {
@@ -40,11 +40,11 @@ examples/
 
 ::: examples|source|bare
 
+## Package with `__all__`
+
 ```markdown
 ::: __mkapi__.examples.styles
 ```
-
-## Package with \_\_all\_\_
 
 ::: examples.styles
 
@@ -57,3 +57,36 @@ examples/
 ```
 
 ::: examples.styles.example_google
+
+!!! warning
+    MkAPI doesn't support reStructuredText formatting.
+
+## Module members
+
+### Class
+
+```markdown
+::: __mkapi__.examples.styles.example_google.ExampleClass
+```
+
+::: examples.styles.example_google.ExampleClass
+
+!!! warning
+    "\_\_init\_\_" should be written in a inline code (\`\_\_init\_\_\`)
+    or escaped (\\\_\\\_init\\\_\\\_).
+
+### Function
+
+```markdown
+::: __mkapi__.examples.styles.example_google.module_level_function
+```
+
+::: examples.styles.example_google.module_level_function
+
+### Attribute
+
+```markdown
+::: __mkapi__.examples.styles.example_google.module_level_variable2|sourcelink
+```
+
+::: examples.styles.example_google.module_level_variable2|sourcelink

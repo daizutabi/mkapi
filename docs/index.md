@@ -1,15 +1,13 @@
 # Home
 
-[![PyPI version][pypi-image]][pypi-link]
-[![Python versions][pyversions-image]][pyversions-link]
-[![Code style: black][black-image]][black-link]
-
 MkAPI plugin for [MkDocs](https://www.mkdocs.org/) generates
 API documentation for Python code.
 
 MkAPI supports two styles of docstrings:
 [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and
 [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
+See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/) documentations for
+details.
 
 Features of MkAPI are:
 
@@ -46,9 +44,9 @@ plugins:
 ## Usage
 
 MkAPI provides two modes to generate API documentation:
-Embedding mode and Page mode.
+Object mode and Page mode.
 
-### Embedding Mode
+### Object Mode
 
 To generate the API documentation in a Markdown source,
 add three colons + object full name.
@@ -65,10 +63,8 @@ You can combine this syntax with Markdown heading.
 ```
 
 The embedding mode is useful to embed an object interface
-in an arbitrary position of a Markdown source. For more details, see:
-
-* [Google style examples](https://mkapi.daizutabi.net/examples/google_style)
-* [NumPy style examples](https://mkapi.daizutabi.net/examples/numpy_style)
+in an arbitrary position of a Markdown source. For more details, see
+[Object mode](usage/object.md).
 
 ### Page Mode
 
@@ -79,15 +75,7 @@ You can get this powerful feature by just one line:
 ```yaml
 nav:
   - index.md
-  - API: <api>/mkapi.***
+  - API: <api>/package.***
 ```
 
-For more details, see
-[Page mode and internal links](https://mkapi.daizutabi.net/usage/page)
-
-[pypi-image]: https://badge.fury.io/py/mkapi.svg
-[pypi-link]: https://pypi.org/project/mkapi
-[black-image]: https://img.shields.io/badge/code%20style-black-000000.svg
-[black-link]: https://github.com/ambv/black
-[pyversions-image]: https://img.shields.io/pypi/pyversions/mkapi.svg
-[pyversions-link]: https://pypi.org/project/mkapi
+For more details, see [Page mode](usage/page.md).

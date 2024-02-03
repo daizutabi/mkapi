@@ -42,11 +42,8 @@ plugins:
       config: config.py
       exclude:
         - altair.vegalite
-      # filters: [plugin_filter]
-      # page_title: custom.page_title
-      # section_title: custom.section_title
       debug: true
-      # on_config: custom.on_config
+      # filters: [plugin_filter]
 markdown_extensions:
   - pymdownx.magiclink
   - pymdownx.highlight:
@@ -55,9 +52,10 @@ markdown_extensions:
   - pymdownx.superfences
 nav:
   - index.md
-  - Getting started:
-    - usage/styles.md
-    - usage/embed.md
-  - Schemdraw: <api>/schemdraw.logic.***
+  - Usage:
+    - usage/object.md
+    - usage/page.md
+  - Examples: <api>/examples.**
+  # - Schemdraw: <api>/schemdraw.***
   # - Polars: <api>/polars.***
   # - Altair: <api>/altair.***
