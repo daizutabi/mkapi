@@ -17,7 +17,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.12"
-dependencies = ["jinja2", "mkdocs", "halo", "tqdm", "mkdocs-material"]
+dependencies = ["halo", "jinja2", "mkdocs", "mkdocs-material", "tqdm"]
 
 [project.urls]
 Documentation = "https://github.com/daizutabi/mkapi#readme" # FIXME
@@ -39,14 +39,7 @@ packages = ["src/mkapi"]
 python = ["3.12"]
 
 [tool.hatch.envs.default]
-dependencies = [
-  "mkdocs",
-  "mkdocs-material",
-  "polars",
-  "altair",
-  "schemdraw",
-  "pyparsing",
-]
+dependencies = ["polars", "pytest-cov", "schemdraw"]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests src/mkapi}"
 
@@ -71,14 +64,7 @@ omit = ["src/mkapi/__about__.py"]
 exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
 
 [tool.hatch.envs.docs]
-dependencies = [
-  "mkdocs",
-  "mkdocs-material",
-  "polars",
-  "altair",
-  "schemdraw",
-  "pyparsing",
-]
+dependencies = ["altair", "polars", "pyparsing", "schemdraw"]
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict {args}"
 serve = "mkdocs serve --dev-addr localhost:8000 {args}"

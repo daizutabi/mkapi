@@ -34,10 +34,11 @@ theme:
 plugins:
   - search:
   - mkapi:
-      exclude: [.tests]
+      exclude: [altair.vegalite]
       filters: [plugin_filter]
       page_title: custom.page_title
       section_title: custom.section_title
+      debug: true
       # on_config: custom.on_config
 markdown_extensions:
   - pymdownx.arithmatex
@@ -49,8 +50,6 @@ nav:
     - 1.md
     # - <api>/mkapi.**|nav_filter3
     - 2.md
-  # - MkDocs: <api>/mkdocs.**|nav_filter4
-  # - Polars: <api>/polars.dataframe.***|nav_filter4
-  - SchemDraw: <api>/schemdraw.***
+  - Schemdraw: <api>/schemdraw.***
   - Polars: <api>/polars.***
-  # - Altair: <api>/altair.***
+  - Altair: <api>/altair.***

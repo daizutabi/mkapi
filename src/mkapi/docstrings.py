@@ -40,9 +40,11 @@ def _iter_items(section: str) -> Iterator[str]:
     """
     start = 0
     for m in SPLIT_ITEM_PATTERN.finditer(section):
-        yield section[start : m.start()].strip()
+        if item := section[start : m.start()].strip():
+            yield item
         start = m.start()
-    yield section[start:].strip()
+    if item := section[start:].strip():
+        yield item
 
 
 def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
@@ -92,7 +94,7 @@ def iter_items(section: str, style: Style) -> Iterator[tuple[str, Type, Text]]:
 
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
     "google": re.compile(r"\n\n\S"),
-    "numpy": re.compile(r"\n\n\n\S|\n\n.+?\n-+\n"),
+    "numpy": re.compile(r"\n\n\n\S|\n\n.+?\n[\-=]+\n"),
 }
 
 
@@ -145,7 +147,7 @@ def get_style(doc: str) -> Style:
     """
     for names in SECTION_NAMES:
         for name in names:
-            if f"\n\n{name}\n----" in doc:
+            if f"\n\n{name}\n----" in doc or f"\n\n{name}\n====" in doc:
                 CURRENT_DOCSTRING_STYLE[0] = "numpy"
                 return "numpy"
     CURRENT_DOCSTRING_STYLE[0] = "google"
@@ -167,7 +169,7 @@ def split_section(section: str, style: Style) -> tuple[str, str]:
     if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
         text = textwrap.dedent("\n".join(lines[1:]))
         return lines[0][:-1], text
-    if style == "numpy" and re.match(r"^-+?$", lines[1]):
+    if style == "numpy" and re.match(r"^[\-=]+?$", lines[1]):
         text = textwrap.dedent("\n".join(lines[2:]))
         return lines[0], text
     return "", section

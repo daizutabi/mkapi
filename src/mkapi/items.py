@@ -343,9 +343,12 @@ class Returns(Section):
 def create_returns(name: str, text: str, style: str) -> Returns:
     """Return a returns section."""
     type_, text_ = split_without_name(text, style)
+    name_ = ""
+    if ":" in type_:
+        name_, type_ = type_.split(":", maxsplit=1)
     type_ = Type(ast.Constant(type_) if type_ else None)
     text_ = Text(text_ or None)
-    returns = [Return("", type_, text_)]
+    returns = [Return(name_, type_, text_)]
     return Returns(name, Type(), Text(), returns)
 
 

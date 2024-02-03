@@ -6,6 +6,7 @@ from Docstring.
 from __future__ import annotations
 
 import importlib
+import itertools
 import os
 import re
 import shutil
@@ -52,6 +53,7 @@ class MkAPIConfig(Config):
     section_title = config_options.Type(str, default="")
     src_anchor = config_options.Type(str, default="source")
     src_dir = config_options.Type(str, default="src")
+    debug = config_options.Type(bool, default=False)
     # on_config = config_options.Type(str, default="")
 
 
@@ -62,6 +64,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     api_dirs: ClassVar[list] = []
     api_uris: ClassVar[list] = []
     api_srcs: ClassVar[list] = []
+    api_uri_width: ClassVar[int] = 0
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         _insert_sys_path(config, self)
@@ -91,7 +94,15 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Convert Markdown source to intermediate version."""
         path = page.file.abs_src_path
         filters = self.config.filters
-        return convert_markdown(markdown, path, filters, self.config.src_anchor)
+        anchor = self.config.src_anchor
+        try:
+            return convert_markdown(markdown, path, filters, anchor)
+        except Exception as e:  # noqa: BLE001
+            if self.config.debug:
+                raise
+            msg = f"{page.file.src_uri}:{type(e).__name__}: {e}"
+            logger.warning(msg)
+            return markdown
 
     def on_page_content(
         self,
@@ -103,20 +114,28 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Merge HTML and MkAPI's object structure."""
         if page.file.src_uri in MkAPIPlugin.api_uris:
             _replace_toc(page.toc)
-            self.bar.update(1)
+            self._update_bar(page.file.src_uri)
         if page.file.src_uri in MkAPIPlugin.api_srcs:
             path = Path(config.docs_dir) / page.file.src_uri
             html = convert_source(html, path, self.config.docs_anchor)
-            self.bar.update(1)
+            self._update_bar(page.file.src_uri)
         return html
+
+    def _update_bar(self, uri: str) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            uri = uri.ljust(MkAPIPlugin.api_uri_width)
+            self.bar.set_postfix_str(uri, refresh=False)
+        self.bar.update(1)
 
     def on_post_build(self, *, config: MkDocsConfig) -> None:
         self.bar.close()
 
     def on_serve(self, server, config: MkDocsConfig, builder, **kwargs):
-        for path in ["themes", "templates"]:
-            path_str = (Path(mkapi.__file__).parent / path).as_posix()
-            server.watch(path_str, builder)
+        if self.config.debug:
+            for path in ["themes", "templates"]:
+                path_str = (Path(mkapi.__file__).parent / path).as_posix()
+                server.watch(path_str, builder)
         return server
 
     def on_shutdown(self) -> None:
@@ -151,6 +170,8 @@ def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         _create_nav(config, plugin)
         _update_nav(config, plugin)
         MkAPIPlugin.nav = config.nav
+        uris = itertools.chain(MkAPIPlugin.api_uris, MkAPIPlugin.api_srcs)
+        MkAPIPlugin.api_uri_width = max(len(uri) for uri in uris)
     else:
         config.nav = MkAPIPlugin.nav
 

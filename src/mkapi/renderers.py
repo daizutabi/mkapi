@@ -8,7 +8,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.importlib import add_sections_package, get_source
+from mkapi.importlib import add_sections_for_package, get_source
 from mkapi.inspect import get_signature
 from mkapi.objects import Attribute, Class, Function, Module
 
@@ -43,7 +43,7 @@ def render(
         qualnames = [[x, "prefix"] for x in names]
         qualnames[-1][1] = "name"
     if isinstance(obj, Module) and obj.kind == "package":
-        add_sections_package(obj)
+        add_sections_for_package(obj)
     context = {
         "heading": heading,
         "id": id_,
@@ -81,6 +81,3 @@ def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> 
         source = ""
     context["source"] = source
     return templates["source"].render(context)
-
-    # if module.kind == "package":
-    #     add_sections_package(module)

@@ -1,11 +1,9 @@
 import ast
-import inspect
 
 import pytest
 
 from mkapi.globals import (
     Global,
-    _iter_imports,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
     _iter_objects_from_all,

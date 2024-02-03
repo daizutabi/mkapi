@@ -1,6 +1,7 @@
 """importlib module."""
 from __future__ import annotations
 
+import re
 from functools import cache
 from typing import TYPE_CHECKING
 
@@ -125,8 +126,6 @@ def add_sections(module: Module) -> None:
             add_functions(obj)
         if isinstance(obj, Module | Class):
             add_attributes(obj)
-    # if module.kind == "package":
-    #     add_sections_package(module)
 
 
 def add_classes(obj: Module | Class) -> None:
@@ -153,39 +152,28 @@ def add_attributes(obj: Module | Class) -> None:
         obj.doc.sections.append(section)
 
 
-def _iter_items(objs: Iterable[Function | Class | Attribute]) -> Iterator[Item]:
-    for obj in objs:
-        if is_empty(obj):
-            continue
-        type_ = obj.doc.type.copy()
-        text = obj.doc.text.copy()
-        type_.markdown = type_.markdown.split("..")[-1]
-        text.markdown = text.markdown.split("\n\n")[0]
-        yield Item("", type_, text)
+ASNAME_PATTERN = re.compile(r"^\[.+?\]\[(__mkapi__\..+?)\]$")
 
 
-def add_sections_package(module: Module) -> None:
+def add_sections_for_package(module: Module) -> None:
     """Add __all__ members for a package."""
-    names = get_all(module.name)
     modules = []
     classes = []
     functions = []
     attributes = []
-    for name, fullname in names.items():
+    for name, fullname in get_all(module.name).items():
         if obj := get_object(fullname):
-            type_ = obj.doc.type.copy()
-            text = obj.doc.text.copy()
-            type_.markdown = ".".join(type_.markdown.split(".."))
-            text.markdown = text.markdown.split("\n\n")[0]
-        item = Item(name, type_, text)
-        if isinstance(obj, Module):
-            modules.append(item)
-        elif isinstance(obj, Class):
-            classes.append(item)
-        elif isinstance(obj, Function):
-            functions.append(item)
-        elif isinstance(obj, Attribute):
-            attributes.append(item)
+            item = _get_item(obj)
+            asname = f"[{name}][\\1]"
+            item.type.markdown = ASNAME_PATTERN.sub(asname, item.type.markdown)
+            if isinstance(obj, Module):
+                modules.append(item)
+            elif isinstance(obj, Class):
+                classes.append(item)
+            elif isinstance(obj, Function):
+                functions.append(item)
+            elif isinstance(obj, Attribute):
+                attributes.append(item)
     it = [
         (modules, "Modules"),
         (classes, "Classes"),
@@ -196,3 +184,18 @@ def add_sections_package(module: Module) -> None:
         if items:
             section = Section(name, Type(), Text(), items)
             module.doc.sections.append(section)
+
+
+def _iter_items(objs: Iterable[Function | Class | Attribute]) -> Iterator[Item]:
+    for obj in objs:
+        if is_empty(obj):
+            continue
+        yield _get_item(obj)
+
+
+def _get_item(obj: Module | Class | Function | Attribute) -> Item:
+    type_ = obj.doc.type.copy()
+    text = obj.doc.text.copy()
+    type_.markdown = type_.markdown.split("..")[-1]
+    text.markdown = text.markdown.split("\n\n")[0]
+    return Item("", type_, text)
