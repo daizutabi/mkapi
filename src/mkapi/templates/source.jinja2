@@ -1,3 +1,5 @@
+<div class="mkapi-container" markdown="1">
+{% if "bare" not in filters %}
 {% if heading %}<{{ heading }} id="{{ obj.fullname }}" class="mkapi-heading" markdown="1">{% endif %}
 <span class="mkapi-heading-name">{{ fullname|safe }}</span>
 {%- if heading %}</{{ heading }}>{% endif %}
@@ -11,7 +13,10 @@
 {%- endfor -%}
 </span>
 </p>
+{% endif %}
 
 ``` {.python .mkapi-source}
 {{ source|safe }}
 ```
+
+</div>

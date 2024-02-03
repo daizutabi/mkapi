@@ -130,6 +130,8 @@ def add_sections(module: Module) -> None:
 
 def add_classes(obj: Module | Class) -> None:
     """Add classes section."""
+    if get_by_name(obj.doc.sections, "Classes"):
+        return
     if items := list(_iter_items(obj.classes)):
         section = Section("Classes", Type(), Text(), items)
         obj.doc.sections.append(section)
@@ -137,6 +139,8 @@ def add_classes(obj: Module | Class) -> None:
 
 def add_functions(obj: Module | Class | Function) -> None:
     """Add functions section."""
+    if get_by_name(obj.doc.sections, "Functions"):
+        return
     if items := list(_iter_items(obj.functions)):
         name = "Methods" if isinstance(obj, Class) else "Functions"
         section = Section(name, Type(), Text(), items)
@@ -146,6 +150,8 @@ def add_functions(obj: Module | Class | Function) -> None:
 def add_attributes(obj: Module | Class) -> None:
     """Add attributes section."""
     if get_by_type(obj.doc.sections, Attributes):
+        return
+    if get_by_name(obj.doc.sections, "Attributes"):
         return
     if items := list(_iter_items(obj.attributes)):
         section = Section("Attributes", Type(), Text(), items)
@@ -181,6 +187,8 @@ def add_sections_for_package(module: Module) -> None:
         (attributes, "Attributes"),
     ]
     for items, name in it:
+        if get_by_name(module.doc.sections, name):
+            continue
         if items:
             section = Section(name, Type(), Text(), items)
             module.doc.sections.append(section)

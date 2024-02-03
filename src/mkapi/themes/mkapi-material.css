@@ -2,7 +2,8 @@ h1.mkapi-heading,
 h2.mkapi-heading,
 h3.mkapi-heading,
 h4.mkapi-heading,
-h5.mkapi-heading {
+h5.mkapi-heading,
+p.mkapi-heading {
   font-size: 85%;
   font-weight: 400;
   text-align-last: justify;

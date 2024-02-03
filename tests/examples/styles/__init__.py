@@ -1,4 +1,5 @@
-""""
-http://ja.dochub.org/sphinx/usage/extensions/example_google.html#example-google
-http://ja.dochub.org/sphinx/usage/extensions/example_numpy.html#example-numpy
-"""
+"""Example module for MkAPI test."""
+from .example_google import ExampleClass as ExampleClassGoogle
+from .example_numpy import ExampleClass as ExampleClassNumPy
+
+__all__ = ["ExampleClassGoogle", "ExampleClassNumPy"]

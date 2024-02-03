@@ -1,3 +1,4 @@
+<div class="mkapi-container" markdown="1">
 {% if heading %}<{{ heading }} id="{{ obj.fullname }}" class="mkapi-heading" markdown="1">{% endif %}
 <span class="mkapi-heading-name">{{ fullname|safe }}</span>
 {%- if "sourcelink" in filters %}
@@ -71,3 +72,4 @@ Bases :
 {% if section.items %}</ul>{% endif %}
 
 {% endfor %}
+</div>

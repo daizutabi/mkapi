@@ -121,6 +121,9 @@ def _split_markdown(source: str) -> Iterator[tuple[str, int, list[str]]]:
             yield markdown, -1, []
         cursor = end
         heading, name = match.groups()
+        if name.startswith("__mkapi__."):
+            yield match.group().replace("__mkapi__.", ""), -1, []
+            continue
         level = len(heading)
         name, filters = split_filters(name)
         yield name, level, filters

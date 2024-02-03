@@ -65,11 +65,13 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     api_uri_width: ClassVar[int] = 0
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
+        if before_on_config := _get_function("before_on_config", self):
+            before_on_config(config, self)
         _update_templates(config, self)
         _update_config(config, self)
         _update_extensions(config, self)
-        if on_config := _get_function("on_config", self):
-            on_config(config, self)
+        if after_on_config := _get_function("after_on_config", self):
+            after_on_config(config, self)
         return config
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:

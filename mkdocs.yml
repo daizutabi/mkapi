@@ -3,12 +3,15 @@ site_url: https://daizutabi.github.io/mkapi/
 site_description: API documentation with MkDocs.
 site_author: daizutabi
 repo_url: https://github.com/daizutabi/mkapi/
-edit_uri: ""
+repo_name: daizutabi/mkapi
+edit_uri: edit/main/docs/
 theme:
   name: material
   font:
     text: Fira Sans
     code: Fira Code
+  icon:
+      repo: fontawesome/brands/github
   palette:
     - scheme: default
       primary: indigo
@@ -24,7 +27,9 @@ theme:
         name: Switch to light mode
   features:
     - content.tooltips
+    - header.autohide
     - navigation.expand
+    - navigation.footer
     - navigation.indexes
     - navigation.instant
     - navigation.sections
@@ -43,15 +48,16 @@ plugins:
       debug: true
       # on_config: custom.on_config
 markdown_extensions:
-  - pymdownx.arithmatex
   - pymdownx.magiclink
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
 nav:
   - index.md
-  # - <api>/mkapi.objects|nav_filter1|nav_filter2
-  - Section:
-    - 1.md
-    # - <api>/mkapi.**|nav_filter3
-    - 2.md
-  - Schemdraw: <api>/schemdraw.***
-  - Polars: <api>/polars.***
-  - Altair: <api>/altair.***
+  - Getting started:
+    - usage/styles.md
+    - usage/embed.md
+  - Schemdraw: <api>/schemdraw.logic.***
+  # - Polars: <api>/polars.***
+  # - Altair: <api>/altair.***

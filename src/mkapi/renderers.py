@@ -31,7 +31,7 @@ def render(
     filters: list[str],
 ) -> str:
     """Return a rendered Markdown."""
-    heading = f"h{level}" if level else ""
+    heading = f"h{level}" if level else "p"
     prefix = obj.doc.type.markdown.split("..")
     self = obj.name.split(".")[-1].replace("_", "\\_")
     fullname = ".".join(prefix[:-1] + [self])
