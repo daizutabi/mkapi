@@ -21,8 +21,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from typing import Self
 
-    from mkapi.objects import Attribute
-
 
 TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
 

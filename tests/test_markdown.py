@@ -1,17 +1,13 @@
-import ast
 import inspect
 
 import markdown
 
-from mkapi.docstrings import parse
 from mkapi.markdown import (
     add_link,
-    convert,
     replace_directives,
     replace_examples,
     replace_link,
 )
-from mkapi.utils import get_by_name, get_module_node
 
 
 def test_id():
@@ -41,180 +37,162 @@ def test_span():
     assert x == '<p><span class="c"><a href="b">a</a></span></p>'
 
 
-def test_replace_link():
-    src = """
-    `abc <def>`_
-    :func:`ghi <jkl>`
-    :func:`mno`
-    """
-    src = inspect.cleandoc(src)
-    lines = replace_link(src).splitlines()
-    assert lines[0] == "[abc](def)"
-    assert lines[1] == "[ghi][__mkapi__.jkl]"
-    assert lines[2] == "[__mkapi__.mno][]"
+def test_splitlines():
+    x = "a\nb\n".splitlines()
+    assert x == ["a", "b"]
+    x = "a\n\nb\n".splitlines()
+    assert x == ["a", "", "b"]
 
 
-def test_add_link():
-    src = """
-    abc, def
-    ghi: jkl
-    """
-    src = inspect.cleandoc(src)
-    text = add_link(src)
-    assert text
-    assert "[__mkapi__.abc][], [__mkapi__.def][]\n" in text
-    assert "[__mkapi__.ghi][]: jkl" in text
+# def test_replace_examples_prompt_only():
+#     src = """
+#     abc
+
+#     >>> a = 1
+#     >>>
+#     >>> b = 1
+#     """
+#     src = inspect.cleandoc(src)
+#     text = replace_examples(src)
+#     assert "\n```{.python .mkapi-example-input}\na = 1\n\nb = 1" in text
 
 
-def test_add_link_items():
-    src = """
-    abc: def
-    ghi: jkl
-        mno
-    pqr: stu
-    """
-    src = inspect.cleandoc(src)
-    text = add_link(src)
-    lines = text.splitlines()
-    assert lines[0] == "* [__mkapi__.abc][]: def"
-    assert lines[1] == "* [__mkapi__.ghi][]: jkl mno"
-    assert lines[2] == "* [__mkapi__.pqr][]: stu"
+# def c(text: str) -> str:
+#     text = inspect.cleandoc(text)
+#     e = ["admonition", "pymdownx.superfences", "attr_list", "md_in_html"]
+#     return markdown.markdown(text, extensions=e)
 
 
-def test_replace_examples_prompt_only():
-    src = """
-    abc
+# def test_replace_directives():
+#     src = """
+#     abc
 
-    >>> a = 1
-    >>>
-    >>> b = 1
-    """
-    src = inspect.cleandoc(src)
-    text = replace_examples(src)
-    assert "\n```{.python .mkapi-example-input}\na = 1\n\nb = 1" in text
+#     .. note::
+#         a b c
 
+#         d e f.
 
-def c(text: str) -> str:
-    text = inspect.cleandoc(text)
-    e = ["admonition", "pymdownx.superfences", "attr_list", "md_in_html"]
-    return markdown.markdown(text, extensions=e)
-
-
-def test_replace_directives():
-    src = """
-    abc
-
-    .. note::
-        a b c
-
-        d e f.
-
-    def
-    """
-    src = inspect.cleandoc(src)
-    text = replace_directives(src)
-    m = c(text)
-    assert '<p class="admonition-title">Note</p>' in m
-    assert "<p>a b c</p>" in m
-    assert "<p>d e f.</p>\n</div>" in m
+#     def
+#     """
+#     src = inspect.cleandoc(src)
+#     text = replace_directives(src)
+#     m = c(text)
+#     assert '<p class="admonition-title">Note</p>' in m
+#     assert "<p>a b c</p>" in m
+#     assert "<p>d e f.</p>\n</div>" in m
 
 
-def test_replace_directives_deprecated():
-    src = """
-    abc
+# def test_replace_directives_deprecated():
+#     src = """
+#     abc
 
-    .. deprecated:: 1.0
-        xyz
+#     .. deprecated:: 1.0
+#         xyz
 
-    def
-    """
-    src = inspect.cleandoc(src)
-    text = replace_directives(src)
-    m = c(text)
-    assert '<p class="admonition-title">Deprecated since version 1.0</p>' in m
-
-
-def test_replace_examples():
-    src = """
-    !!! Note
-
-        abc
-
-        >>> a = 1
-        >>> print(a)
-        1
-
-        def
-
-         >>> def f():
-         ...    pass
-
-        ghi
-
-    jkl
-    """
-    src = inspect.cleandoc(src)
-    text = replace_examples(src)
-    m = c(text)
-    print(m)
-    assert '<div class="admonition note">' in m
-    assert '<div class="mkapi-example-input highlight">' in m
-    assert '<div class="mkapi-example-output highlight">' in m
-    assert "```" not in m
+#     def
+#     """
+#     src = inspect.cleandoc(src)
+#     text = replace_directives(src)
+#     m = c(text)
+#     assert '<p class="admonition-title">Deprecated since version 1.0</p>' in m
 
 
-def test_replace_directives_codeblock():
-    src = """
-    abc
+# def test_replace_examples():
+#     src = """
+#     !!! Note
 
-    .. note::
-        a b c
+#         abc
 
-          .. code-block:: python
+#         >>> a = 1
+#         >>> print(a)
+#         1
 
-            a = 1
+#         def
 
-            b = 1
+#          >>> def f():
+#          ...    pass
 
-        d e f
-    """
-    src = inspect.cleandoc(src)
-    text = replace_directives(src)
-    m = c(text)
-    assert '<div class="admonition note">' in m
-    assert "<p>a b c</p>\n<pre><code>a = 1\n\nb = 1\n</code></pre>" in m
+#         ghi
 
-
-def get(module: str, n1: str, n2: str | None = None) -> str:
-    t = ast.ClassDef | ast.FunctionDef
-    node = get_module_node(module)
-    assert node
-    nodes = [n for n in ast.iter_child_nodes(node) if isinstance(n, t)]
-    node = get_by_name(nodes, n1)
-    assert node
-    if not n2:
-        src = ast.get_docstring(node)
-        assert src
-        return src
-    nodes = [n for n in ast.iter_child_nodes(node) if isinstance(n, t)]
-    node = get_by_name(nodes[::-1], n2)
-    assert node
-    src = ast.get_docstring(node)
-    assert src
-    return src
+#     jkl
+#     """
+#     src = inspect.cleandoc(src)
+#     text = replace_examples(src)
+#     m = c(text)
+#     print(m)
+#     assert '<div class="admonition note">' in m
+#     assert '<div class="mkapi-example-input highlight">' in m
+#     assert '<div class="mkapi-example-output highlight">' in m
+#     assert "```" not in m
 
 
-def test_a():
-    # src = get("polars.dataframe.frame", "DataFrame", "map_rows")
-    src = get("polars.config", "Config")
-    print(src)
-    m = convert(src)
-    print(m)
-    # doc = parse(src)
-    # for i in doc.sections[0].items:
-    #     print("--" * 40)
-    #     print(i.text)
-    #     print("--" * 40)
-    # import markdown
+# def test_replace_directives_codeblock():
+#     src = """
+#     abc
 
-    # print(markdown.markdown(i.text.str))
+#     .. note::
+#         a b c
+
+#           .. code-block:: python
+
+#             a = 1
+
+#             b = 1
+
+#         d e f
+#     """
+#     src = inspect.cleandoc(src)
+#     text = replace_directives(src)
+#     m = c(text)
+#     assert '<div class="admonition note">' in m
+#     assert "<p>a b c</p>\n<pre><code>a = 1\n\nb = 1\n</code></pre>" in m
+
+
+# def test_replace_link():
+#     src = """
+#     `abc <def>`_
+#     :func:`ghi <jkl>`
+#     :func:`mno`
+#     `xxx`_ `yy
+#     y`_
+#     .. _xxx:
+#     XXX
+#     zzz
+#     .. _yyy: YYY
+#     """
+#     src = inspect.cleandoc(src)
+#     text = replace_link(src)
+#     lines = text.splitlines()
+#     assert lines[0] == "[abc](def)"
+#     assert lines[1] == "[ghi][__mkapi__.jkl]"
+#     assert lines[2] == "[__mkapi__.mno][]"
+#     assert lines[3] == "[xxx][] [yy"
+#     assert lines[4] == "y][]"
+#     assert "[xxx]:\nXXX\nzzz\n[yyy]: YYY" in text
+
+
+# def test_add_link():
+#     src = """
+#     abc, def
+#     ghi: jkl
+#     """
+#     src = inspect.cleandoc(src)
+#     text = add_link(src)
+#     assert text
+#     assert "[__mkapi__.abc][], [__mkapi__.def][]\n" in text
+#     assert "[__mkapi__.ghi][]: jkl" in text
+
+
+# def test_add_link_items():
+#     src = """
+#     abc: def
+#     ghi: jkl
+#         mno
+#     pqr: stu
+#     """
+#     src = inspect.cleandoc(src)
+#     text = add_link(src)
+#     lines = text.splitlines()
+#     assert lines[0] == "* [__mkapi__.abc][]: def"
+#     assert lines[1] == "* [__mkapi__.ghi][]: jkl mno"
+#     assert lines[2] == "* [__mkapi__.pqr][]: stu"

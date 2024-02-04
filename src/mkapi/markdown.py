@@ -12,47 +12,9 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
 
-def add_link(text: str) -> str:
-    """Add link for a "See Also" section."""
-    if "\n" in text:
-        text = re.sub(r"\n\s+", " ", text)
-        text = textwrap.indent(text, "* ")
-    strs = []
-    before_colon = True
-    for name, isidentifier in iter_identifiers(text):
-        if isidentifier and before_colon:
-            strs.append(f"[__mkapi__.{name}][]")
-        else:
-            strs.append(name)
-            if ":" in name:
-                before_colon = False
-            if "\n" in name:
-                before_colon = True
-    return "".join(strs)
-
-
-def get_admonition(name: str, title: str, text: str) -> str:
-    """Return an admonition markdown."""
-    lines = [f'!!! {name} "{title}"']
-    lines.extend("    " + line if line else "" for line in text.splitlines())
-    return "\n".join(lines)
-
-
-LINK_PATTERN = re.compile(r"`(.+?)\s+?<(\S+?)>`_+")
-INTERNAL_LINK_PATTERN = re.compile(r":\S+?:`(.+?)\s+?<(\S+?)>`")
-REFERENCE_PATTERN = re.compile(r":\S+?:`(\S+?)`")
-
-
-def replace_link(text: str) -> str:
-    """Replace link of reStructuredText."""
-    text = re.sub(LINK_PATTERN, r"[\1](\2)", text)
-    text = re.sub(INTERNAL_LINK_PATTERN, r"[\1][__mkapi__.\2]", text)
-    return re.sub(REFERENCE_PATTERN, r"[__mkapi__.\1][]", text)
-
-
 def convert(text: str) -> str:
     """Convert markdown."""
-    text = replace_link(text)
+    # text = replace_link(text)
     if "\n" not in text:
         return text
     text = replace_examples(text)
@@ -194,3 +156,47 @@ def _get_code_block(codes: list[str], lang: str, indent: int) -> Iterator[str]: 
     # yield f"{prefix}~~~"
     for k in range(stop + 1, len(codes)):
         yield codes[k]
+
+
+INTERNAL_LINK_PATTERN = re.compile(r":\w+?:`(?P<name>.+?)\s+?<(?P<href>\S+?)>`")
+INTERNAL_LINK_WITHOUT_HREF_PATTERN = re.compile(r":\w+?:`(?P<name>\S+?)`")
+LINK_PATTERN = re.compile(r"`(?P<name>[^<].+?)\s+?<(?P<href>\S+?)>`_+", re.DOTALL)
+LINK_WITHOUT_HREF_PATTERN = re.compile(r"`(?P<name>.+?)`_+", re.DOTALL)
+_ = r"..\s+_(?P<name>.+?)(?P<sep>:\s+)(?P<href>\S+?)"
+REFERENCE_PATTERN = re.compile(_, re.DOTALL)
+
+
+def replace_link(text: str) -> str:
+    """Replace link of reStructuredText."""
+    text = re.sub(INTERNAL_LINK_PATTERN, r"[\g<name>][__mkapi__.\g<href>]", text)
+    text = re.sub(INTERNAL_LINK_WITHOUT_HREF_PATTERN, r"[__mkapi__.\g<name>][]", text)
+    text = re.sub(LINK_PATTERN, r"[\g<name>](\g<href>)", text)
+    text = re.sub(LINK_WITHOUT_HREF_PATTERN, r"[\g<name>][]", text)
+    text = re.sub(REFERENCE_PATTERN, r"[\g<name>]\g<sep>\g<href>", text)
+    return text
+
+
+def add_link(text: str) -> str:
+    """Add link for a "See Also" section."""
+    if "\n" in text:
+        text = re.sub(r"\n\s+", " ", text)
+        text = textwrap.indent(text, "* ")
+    strs = []
+    before_colon = True
+    for name, isidentifier in iter_identifiers(text):
+        if isidentifier and before_colon:
+            strs.append(f"[__mkapi__.{name}][]")
+        else:
+            strs.append(name)
+            if ":" in name:
+                before_colon = False
+            if "\n" in name:
+                before_colon = True
+    return "".join(strs)
+
+
+def get_admonition(name: str, title: str, text: str) -> str:
+    """Return an admonition markdown for a Notes or Warnings section."""
+    lines = [f'!!! {name} "{title}"']
+    lines.extend("    " + line if line else "" for line in text.splitlines())
+    return "\n".join(lines)
