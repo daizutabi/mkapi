@@ -307,18 +307,6 @@ def create_assigns(items: Iterable[tuple[str, Type, Text]]) -> Assigns:
 
 
 @dataclass(repr=False)
-class Attributes(Section):
-    """Attributes section."""
-
-    items: list[Attribute]
-
-
-def create_attributes(items: Iterable[Attribute]) -> Attributes:
-    """Return an Attributes section."""
-    return Attributes("Attributes", Type(), Text(), list(items))
-
-
-@dataclass(repr=False)
 class Raises(Section):
     """Raises section."""
 

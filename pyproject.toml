@@ -17,7 +17,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.12"
-dependencies = ["halo", "jinja2", "mkdocs", "mkdocs-material", "tqdm"]
+dependencies = ["halo", "jinja2", "mkdocs-material", "tqdm"]
 
 [project.urls]
 Documentation = "https://github.com/daizutabi/mkapi#readme" # FIXME

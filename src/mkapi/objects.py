@@ -25,7 +25,6 @@ from mkapi.items import (
     Type,
     TypeKind,
     _assign_type_text,
-    create_attributes,
     create_raises,
     iter_assigns,
     iter_bases,
@@ -326,18 +325,11 @@ def merge_returns(obj: Function) -> None:
 def merge_attributes(obj: Module | Class) -> None:
     """Merge attributes."""
     if not (section := get_by_type(obj.doc.sections, Assigns)):
-        # attrs = [attr for attr in obj.attributes if attr.doc.text.str]
-        # if attrs:
-        #     section = create_attributes(attrs)
-        #     obj.doc.sections.append(section)
         return
     index = obj.doc.sections.index(section)
     del obj.doc.sections[index]
     module = obj if isinstance(obj, Module) else obj.module
     parent = obj if isinstance(obj, Class) else None
-    # attrs = (create_attribute(assign, module, parent) for assign in section.items)
-    # section = create_attributes(attrs)
-    # obj.doc.sections[index] = section
     for assign in section.items:
         if attr := get_by_name(obj.attributes, assign.name):
             if not attr.doc.text.str:
@@ -347,17 +339,6 @@ def merge_attributes(obj: Module | Class) -> None:
         else:
             attr = create_attribute(assign, module, parent)
             obj.attributes.append(attr)
-            # if not attr_doc.type.expr:
-            #     attr_doc.type = attr_ast.type
-            # if not attr_doc.default.expr:
-            #     attr_doc.default = attr_ast.default
-            # if not attr_doc.doc.text.str:
-            #     attr_doc.doc.text.str = attr_ast.doc.text.str
-            # if not attr_ast.text.str:
-            #     attr_ast.text.str = attr_doc.text.str
-    # for attr_ast in obj.attributes:
-    #     if not get_by_name(section.items, attr_ast.name):
-    #         section.items.append(attr_ast)
 
 
 def merge_bases(obj: Class) -> None:

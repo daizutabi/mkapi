@@ -185,7 +185,7 @@ def test_create_returns(get):
     assert x.type.expr.id == "bool"
 
 
-def test_create_attributes(google, get):
+def test_create_assings(google, get):
     x = list(iter_assigns(google))
     assert x[0].name == "module_level_variable1"
     assert x[0].type.expr is None
@@ -210,7 +210,7 @@ def test_create_attributes(google, get):
     assert x[1].type.expr.id == "int"
 
 
-def test_create_attributes_from_property(get):
+def test_create_assigns_from_property(get):
     cls = get("ExampleClass")
     x = list(iter_assigns(cls))
     assert x[0].name == "readonly_property"

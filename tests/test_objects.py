@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.items import Attributes
 from mkapi.objects import (
     LINK_PATTERN,
     Class,
@@ -19,7 +18,7 @@ from mkapi.objects import (
     merge_items,
     objects,
 )
-from mkapi.utils import get_by_name, get_by_type, get_module_node
+from mkapi.utils import get_by_name, get_module_node
 
 
 @pytest.fixture(scope="module")
@@ -175,14 +174,6 @@ def test_attribute_comment():
     assert isinstance(a[3].type.expr, ast.Subscript)
     assert a[4].doc.text.str == "Docstring *after* attribute, with type specified."
     assert a[5].doc.text.str is None
-    section = get_by_type(module.doc.sections, Attributes)
-    assert not section
-    # a = section.items[0]
-    # assert a.name == "a"
-    # assert a.doc.text.str == "Doc comment *inline* with attribute."
-    # a = section.items[2]
-    # assert a.name == "c"
-    # assert a.doc.text.str == "C"
 
 
 def test_merge_items():

@@ -9,7 +9,7 @@ import mkapi.ast
 import mkapi.docstrings
 from mkapi.globals import get_all, get_fullname
 from mkapi.inspect import is_dataclass, iter_dataclass_parameters
-from mkapi.items import Attributes, Item, Section, Text, Type
+from mkapi.items import Item, Section, Text, Type
 from mkapi.objects import (
     Attribute,
     Class,
@@ -23,7 +23,6 @@ from mkapi.objects import (
 from mkapi.utils import (
     del_by_name,
     get_by_name,
-    get_by_type,
     get_module_node_source,
     iter_parent_module_names,
 )
@@ -53,18 +52,13 @@ def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     return None
 
 
-def get_source(
-    obj: Module | Class | Function,
-    maxline: int | None = None,
-) -> str | None:
+def get_source(obj: Module | Class | Function) -> str | None:
     """Return the source code of an object."""
     if isinstance(obj, Module):
-        if obj.source:
-            return "\n".join(obj.source.splitlines()[:maxline])
-        return None
+        return obj.source
     if (module := obj.module) and (source := module.source):
         start, stop = obj.node.lineno - 1, obj.node.end_lineno
-        return "\n".join(source.splitlines()[start:stop][:maxline])
+        return "\n".join(source.splitlines()[start:stop])
     return None
 
 
@@ -121,40 +115,24 @@ def add_sections(module: Module) -> None:
     """Add sections."""
     for obj in iter_objects(module):
         if isinstance(obj, Module | Class):
-            add_classes(obj)
+            add_section(obj, obj.classes, "Classes")
         if isinstance(obj, Module | Class | Function):
-            add_functions(obj)
+            name = "Methods" if isinstance(obj, Class) else "Functions"
+            add_section(obj, obj.functions, name)
         if isinstance(obj, Module | Class):
-            add_attributes(obj)
+            add_section(obj, obj.attributes, "Attributes")
 
 
-def add_classes(obj: Module | Class) -> None:
-    """Add classes section."""
-    if get_by_name(obj.doc.sections, "Classes"):
+def add_section(
+    obj: Module | Class | Function,
+    children: Iterable[Class | Function | Attribute],
+    name: str,
+) -> None:
+    """Add Section."""
+    if get_by_name(obj.doc.sections, name):
         return
-    if items := list(_iter_items(obj.classes)):
-        section = Section("Classes", Type(), Text(), items)
-        obj.doc.sections.append(section)
-
-
-def add_functions(obj: Module | Class | Function) -> None:
-    """Add functions section."""
-    if get_by_name(obj.doc.sections, "Functions"):
-        return
-    if items := list(_iter_items(obj.functions)):
-        name = "Methods" if isinstance(obj, Class) else "Functions"
+    if items := [_get_item(child) for child in children if not is_empty(child)]:
         section = Section(name, Type(), Text(), items)
-        obj.doc.sections.append(section)
-
-
-def add_attributes(obj: Module | Class) -> None:
-    """Add attributes section."""
-    if get_by_type(obj.doc.sections, Attributes):
-        return
-    if get_by_name(obj.doc.sections, "Attributes"):
-        return
-    if items := list(_iter_items(obj.attributes)):
-        section = Section("Attributes", Type(), Text(), items)
         obj.doc.sections.append(section)
 
 
@@ -192,13 +170,6 @@ def add_sections_for_package(module: Module) -> None:
         if items:
             section = Section(name, Type(), Text(), items)
             module.doc.sections.append(section)
-
-
-def _iter_items(objs: Iterable[Function | Class | Attribute]) -> Iterator[Item]:
-    for obj in objs:
-        if is_empty(obj):
-            continue
-        yield _get_item(obj)
 
 
 def _get_item(obj: Module | Class | Function | Attribute) -> Item:
