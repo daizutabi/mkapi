@@ -95,7 +95,6 @@ ignore = [
   "TD",
   "TRY003",
 ]
-exclude = ["examples"]
 
 
 [tool.ruff.extend-per-file-ignores]

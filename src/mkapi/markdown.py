@@ -9,78 +9,153 @@ from typing import TYPE_CHECKING
 from mkapi.utils import iter_identifiers
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
+
+
+def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
+    cursor = 0
+    for match in pattern.finditer(text):
+        start, end = match.start(), match.end()
+        if cursor < start:
+            yield text[cursor:start]
+        yield match
+        cursor = end
+    if cursor < len(text):
+        yield text[cursor:]
+
+
+FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*^(?P=pre)\n?", re.M | re.S)
+
+
+def _iter_fenced_code(text: str) -> Iterator[re.Match | str]:
+    return _iter(FENCED_CODE, text)
+
+
+DOCTEST = re.compile(r" *#+ *doctest:.*$", re.M)
+PROMPT_ONLY = re.compile(r"^(?P<pre> *\>\>\> *)$", re.M)
+COMMENT_ONLY = re.compile(r"^(?P<pre> *\>\>\> )(?P<comment>#.*)$", re.M)
+
+
+def _add_example_escape(text: str) -> str:
+    text = PROMPT_ONLY.sub(r"\g<pre> MKAPI_BLANK_LINE", text)
+    text = COMMENT_ONLY.sub(r"\g<pre>__mkapi__\g<comment>", text)
+    return DOCTEST.sub("", text)
+
+
+def _delete_example_excape(text: str) -> str:
+    text = text.replace("MKAPI_BLANK_LINE", "")
+    return text.replace("__mkapi__", "")
+
+
+def _iter_example(text: str) -> Iterator[doctest.Example | str]:
+    if "\n" not in text:
+        yield text
+        return
+    text = _add_example_escape(text)
+    try:
+        examples = doctest.DocTestParser().get_examples(text)
+    except ValueError:
+        yield _delete_example_excape(text)
+        return
+    lines = text.splitlines()
+    current = 0
+    for example in examples:
+        if example.lineno > current:
+            text_ = "\n".join(lines[current : example.lineno]) + "\n"
+            yield _delete_example_excape(text_)
+        example.source = _delete_example_excape(example.source)
+        yield example
+        current = example.lineno
+        current += example.source.count("\n")
+        current += example.want.count("\n")
+    if current < len(lines) - 1:
+        text_ = "\n".join(lines[current:]) + ("\n" if text.endswith("\n") else "")
+        yield _delete_example_excape(text_)
+
+
+def _iter_examples(text: str) -> Iterator[list[doctest.Example] | str]:
+    examples: list[doctest.Example] = []
+    for example in _iter_example(text):
+        if isinstance(example, str):
+            if examples:
+                yield examples
+                examples = []
+            yield example
+        else:
+            if examples and examples[-1].indent != example.indent:
+                yield examples
+                examples = []
+            examples.append(example)
+            if example.want:
+                yield examples
+                examples = []
+    if examples:
+        yield examples
+
+
+def _convert_examples(examples: list[doctest.Example]) -> str:
+    attr = ".python .mkapi-example-"
+    prefix = " " * examples[0].indent
+    lines = [f"{prefix}```{{{attr}input}}"]
+    lines.extend(textwrap.indent(e.source.rstrip(), prefix) for e in examples)
+    lines.append(f"{prefix}```\n")
+    if want := examples[-1].want:
+        want = textwrap.indent(want.rstrip(), prefix)
+        output = f"{prefix}```{{{attr}output}}\n"
+        output = f"{output}{want}\n{prefix}```\n"
+        lines.append(output)
+    return "\n".join(lines)
+
+
+def _split(text: str) -> Iterator[tuple[str, bool]]:
+    for match in _iter_fenced_code(text):
+        if isinstance(match, re.Match):
+            yield match.group(), False
+        else:
+            for examples in _iter_examples(match):
+                if isinstance(examples, list):
+                    yield _convert_examples(examples), False
+                else:
+                    yield examples, True
+
+
+def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
+    """Yield strings or match objects from a markdown text."""
+    for sub, is_text in _split(text):
+        if is_text:
+            yield from _iter(pattern, sub)
+        else:
+            yield sub
+
+
+def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:
+    """Replace a markdown text."""
+    subs = (m if isinstance(m, str) else rel(m) for m in finditer(pattern, text))
+    return "".join(subs)
 
 
 def convert(text: str) -> str:
     """Convert markdown."""
-    # text = replace_link(text)
-    if "\n" not in text:
-        return text
-    text = replace_examples(text)
-    return replace_directives(text)
+    subs = []
+    it = _split(text)
+    for sub, is_text in it:
+        if is_text:
+            subs.extend(_convert(sub, it))
+        else:
+            subs.append(sub)
+    return "".join(subs)
 
 
-DOCTEST_PATTERN = re.compile(r"\s*?#\s*?doctest:.*?$", re.MULTILINE)
-PROMPT_ONLY = re.compile(r"\>\>\>\s*?$", re.MULTILINE)
-COMMENT_ONLY = re.compile(r"\>\>\> (#.*?)$", re.MULTILINE)
+DIRECTIVE = re.compile(r"^(?P<pre> *).. *(?P<name>\w+):: *(?P<attr>.*)$", re.M)
 
 
-def replace_examples(text: str) -> str:
-    """Replace examples with fenced code."""
-    if "\n" not in text:
-        return text
-    text_ = PROMPT_ONLY.sub(">>> MKAPI_BLANK_LINE", text)
-    text_ = COMMENT_ONLY.sub(r">>> __mkapi__\1", text_)
-    text_ = DOCTEST_PATTERN.sub("", text_)
-    try:
-        examples = doctest.DocTestParser().get_examples(text_)
-    except ValueError:
-        return text
-    if not examples:
-        return text
-    return "\n".join(_iter_examples(text_, examples))
+def _convert(text: str, it: Iterator[tuple[str, bool]]) -> Iterator[str]:
+    text = replace_link(text)
+    for match in _iter(DIRECTIVE, text):
+        if isinstance(match, str):
+            yield match
 
-
-def _iter_examples(text: str, examples: list[doctest.Example]) -> Iterator[str]:
-    n = len(examples)
-    lines = text.splitlines()
-    lineno = 0
-    want = "dummy"
-    prefix = ""
-    in_example = False
-    for k, example in enumerate(examples):
-        if example.lineno > lineno:
-            if in_example:
-                yield f"{prefix}```"
-                # yield f"{prefix}</div>"
-                in_example = False
-            yield "\n".join(lines[lineno : example.lineno])
-        if want or not in_example:
-            prefix = " " * example.indent
-            in_example = True
-            # yield f'{prefix}<div class="mkapi-example" mkarkdown="1">'
-            yield f"{prefix}```{{.python .mkapi-example-input}}"
-        source = example.source[:-1].replace("MKAPI_BLANK_LINE", "")
-        source = source.replace("__mkapi__", "")
-        yield textwrap.indent(source, prefix)
-        if example.want:
-            yield f"{prefix}```"
-            yield f"{prefix}```{{.text .mkapi-example-output}}"
-            yield textwrap.indent(example.want[:-1], prefix)
-        if example.want or k == n - 1:
-            yield f"{prefix}```"
-            # yield f"{prefix}</div>"
-            in_example = False
-        lineno = example.lineno
-        lineno += example.source.count("\n")
-        lineno += example.want.count("\n")
-        want = example.want
-    if lineno < len(lines) - 1:
-        if in_example:
-            yield f"{prefix}```"
-            # yield f"{prefix}</div>"
-        yield "\n".join(lines[lineno:])
+    yield "d"
 
 
 def replace_directives(text: str) -> str:
