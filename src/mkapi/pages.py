@@ -131,7 +131,7 @@ def _split_markdown(source: str) -> Iterator[tuple[str, int, list[str]]]:
         yield markdown, -1, []
 
 
-def convert_markdown(source: str, path: str, filters: list[str], anchor: str) -> str:
+def convert_markdown(source: str, path: str, anchor: str, filters: list[str]) -> str:
     """Return converted markdown."""
     markdowns = []
     for name, level, filters_ in _split_markdown(source):
@@ -184,7 +184,7 @@ def _replace_link(match: re.Match, directory: Path, anchor: str = "source") -> s
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
 
 
-def convert_source(html: str, path: Path, anchor: str = "docs") -> str:
+def convert_source(html: str, path: Path, anchor: str) -> str:
     """Convert HTML for source pages."""
 
     def replace(match: re.Match) -> str:

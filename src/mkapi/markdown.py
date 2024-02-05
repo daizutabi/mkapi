@@ -137,55 +137,69 @@ def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:
 def convert(text: str) -> str:
     """Convert markdown."""
     subs = []
-    it = _split(text)
-    for sub, is_text in it:
+    for sub, is_text in _split(text):
         if is_text:
-            subs.extend(_convert(sub, it))
+            subs.extend(_convert_text(sub))
         else:
             subs.append(sub)
     return "".join(subs)
 
 
-DIRECTIVE = re.compile(r"^(?P<pre> *).. *(?P<name>\w+):: *(?P<attr>.*)$", re.M)
+DIRECTIVE = re.compile(r"^(?P<pre> *).. *(?P<name>[\w\-_]+):: *(?P<attr>.*)$", re.M)
 
 
-def _convert(text: str, it: Iterator[tuple[str, bool]]) -> Iterator[str]:
-    text = replace_link(text)
-    for match in _iter(DIRECTIVE, text):
-        if isinstance(match, str):
-            yield match
-
-    yield "d"
-
-
-def replace_directives(text: str) -> str:
-    """Replace directives with admonition or fenced code."""
-    if "\n" not in text:
-        return text
-    return "\n".join(_iter_directives(text))
-
-
-DIRECTIVE_PATTERN = re.compile(r"(^\s*?).. (\S+?)::\s*?(\S*?)$", re.MULTILINE)
-
-
-def _iter_directives(text: str) -> Iterator[str]:
-    lines = text.splitlines()
-    name = ""
-    title = ""
-    it = iter(lines)
-    for line in it:
-        if match := DIRECTIVE_PATTERN.match(line):
-            prefix, name, suffix = match.groups()
-            if name == "deprecated" and suffix:
-                title = f"Deprecated since version {suffix.strip()}"
-                yield f'{prefix}!!! {name} "{title}"'
-            elif name in ["deprecated", "warning", "note"]:
-                yield f"{prefix}!!! {name}"
-            elif name == "code-block":
-                # yield f"{prefix}!!! {name}"
-                yield from _iter_code_block(it, suffix.strip())
+def _convert_text(text: str) -> Iterator[str]:
+    it = _iter(DIRECTIVE, text)
+    for m in it:
+        if isinstance(m, str):
+            yield _convert_inline(m)
         else:
-            yield line
+            yield from _convert_directive(m, it)
+
+
+def _convert_directive(m: re.Match, it: Iterator[re.Match | str]) -> Iterator[str]:
+    prefix, name, attr = m.groups()
+    match name:
+        case "deprecated" if attr:
+            if " " not in attr:
+                attr = f"Deprecated since version {attr}"
+            yield f'{prefix}!!! {name} "{attr}"'
+        case "deprecated" | "warning" | "note":
+            yield f"{prefix}!!! {name}"
+        case "code-block":
+            try:
+                code = next(it)
+            except StopIteration:
+                code = ""
+            if isinstance(code, str):
+                yield from _convert_code_block(attr, prefix, code)
+            else:
+                yield m.group()
+                yield code.group()
+        case _:
+            yield m.group()
+
+
+def _convert_code_block(lang: str, prefix: str, code: str) -> Iterator[str]:
+    yield f"{prefix}```{lang}"
+    indent = -1
+    lines = code.splitlines()
+    rests = []
+    for k, line in enumerate(lines):
+        if not line:
+            rests.append("\n")
+            continue
+        current_indent = _get_indent(line)
+        if indent == -1:
+            indent = current_indent
+        elif current_indent < indent:
+            rests.extend(f"{line}\n" for line in lines[k:])
+            break
+        yield from rests
+        rests.clear()
+        yield f"{prefix}{line[indent:]}\n"
+    yield f"{prefix}```\n"
+    yield _convert_inline("".join(rests))
 
 
 def _get_indent(line: str) -> int:
@@ -195,42 +209,8 @@ def _get_indent(line: str) -> int:
     return -1
 
 
-def _iter_code_block(it: Iterable[str], lang: str) -> Iterator[str]:
-    codes = []
-    indent = -1
-    for code in it:
-        if not (blank := code.strip()):
-            if not codes:
-                yield blank
-            else:
-                codes.append(blank)
-        if code:
-            current_indent = _get_indent(code)
-            if not codes:
-                indent = current_indent
-                codes.append(code)
-            elif current_indent >= indent:
-                codes.append(code)
-            else:
-                yield from _get_code_block(codes, lang, indent)
-                yield code
-                return
-    yield from _get_code_block(codes, lang, indent)
-
-
-def _get_code_block(codes: list[str], lang: str, indent: int) -> Iterator[str]:  # noqa: ARG001
-    prefix = " " * indent  # noqa: F841
-    # yield f"{prefix}```{{.{lang} .mkapi-example}}"
-    # yield f"{prefix}~~~{lang}"
-    for stop in range(len(codes) - 1, 0, -1):
-        if codes[stop]:
-            break
-    for k in range(stop + 1):
-        yield codes[k]
-    # yield f"{prefix}```"
-    # yield f"{prefix}~~~"
-    for k in range(stop + 1, len(codes)):
-        yield codes[k]
+def _convert_inline(text: str) -> str:
+    return replace_link(text)
 
 
 INTERNAL_LINK_PATTERN = re.compile(r":\w+?:`(?P<name>.+?)\s+?<(?P<href>\S+?)>`")

@@ -11,6 +11,7 @@ from mkapi.markdown import (
     _iter_examples,
     _iter_fenced_code,
     add_link,
+    convert,
     finditer,
     replace_link,
     sub,
@@ -49,6 +50,8 @@ def test_splitlines():
     assert x == ["a", "b"]
     x = "a\n\nb\n".splitlines()
     assert x == ["a", "", "b"]
+    x = "".splitlines()
+    assert x == []
 
 
 def test_split():
@@ -213,60 +216,96 @@ def c(text: str) -> str:
     return markdown.markdown(text, extensions=e)
 
 
-# def test_replace_directives():
-#     src = """
-#     abc
+def test_convert_directives():
+    src = """
+    abc
 
-#     .. note::
-#         a b c
+    .. note::
+        a b c
 
-#         d e f.
+        d e f.
 
-#     def
-#     """
-#     src = inspect.cleandoc(src)
-#     text = replace_directives(src)
-#     m = c(text)
-#     assert '<p class="admonition-title">Note</p>' in m
-#     assert "<p>a b c</p>" in m
-#     assert "<p>d e f.</p>\n</div>" in m
-
-
-# def test_replace_directives_deprecated():
-#     src = """
-#     abc
-
-#     .. deprecated:: 1.0
-#         xyz
-
-#     def
-#     """
-#     src = inspect.cleandoc(src)
-#     text = replace_directives(src)
-#     m = c(text)
-#     assert '<p class="admonition-title">Deprecated since version 1.0</p>' in m
+    def
+    ```
+    .. note::
+    ```
+    """
+    src = inspect.cleandoc(src)
+    m = c(convert(src))
+    assert m.startswith('<p>abc</p>\n<div class="admonition note">')
+    assert '<p class="admonition-title">Note</p>' in m
+    assert "<p>a b c</p>" in m
+    assert "<p>d e f.</p>\n</div>\n" in m
+    assert '<div class="highlight"><pre><span></span>' in m
+    assert m.endswith("<code>.. note::\n</code></pre></div></p>")
 
 
-# def test_replace_directives_codeblock():
-#     src = """
-#     abc
+def test_convert_directives_deprecated():
+    src = """
+    abc
 
-#     .. note::
-#         a b c
+    .. deprecated:: 1.0
+        xyz
 
-#           .. code-block:: python
+    def
+    """
+    src = inspect.cleandoc(src)
+    m = c(convert(src))
+    x = '<p class="admonition-title">Deprecated since version 1.0</p>'
+    assert x in m
 
-#             a = 1
 
-#             b = 1
+def test_convert_directives_other():
+    src = """
+    abc
 
-#         d e f
-#     """
-#     src = inspect.cleandoc(src)
-#     text = replace_directives(src)
-#     m = c(text)
-#     assert '<div class="admonition note">' in m
-#     assert "<p>a b c</p>\n<pre><code>a = 1\n\nb = 1\n</code></pre>" in m
+    .. xxx:: 1.0
+        xyz
+
+    def
+    """
+    src = inspect.cleandoc(src)
+    assert convert(src) == src
+
+
+def test_convert_code_block():
+    src = """
+    abc
+    .. note::
+        def
+        .. code-block:: python
+
+          a = 1
+
+          `a`_
+        `b`_
+    `c`_
+    ```m
+    .. code-block:: python
+      `d`_
+    ```
+    """
+    src = inspect.cleandoc(src)
+    m = convert(src)
+    assert "    ```python\n\n    a = 1\n\n    `a`_\n    ```\n" in m
+    assert "    ```\n    [b][]\n[c][]\n```m\n.. code-block::" in m
+    assert "python\n  `d`_\n```" in m
+    h = c(m)
+    assert "```" not in h
+
+
+def test_convert_invalid():
+    src = """.. code-block:: python"""
+    m = convert(src)
+    assert m == "```python```\n"
+    h = c(m)
+    assert h == "<p><code>python</code></p>"
+    src = """.. code-block:: python\n a"""
+    m = convert(src)
+    assert m == "```python\na\n```\n"
+    src = """.. code-block:: python\n a\nb"""
+    m = convert(src)
+    assert m == "```python\na\n```\nb\n"
 
 
 def test_replace_link():

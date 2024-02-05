@@ -93,10 +93,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         """Convert Markdown source to intermediate version."""
         path = page.file.abs_src_path
-        filters = self.config.filters
         anchor = self.config.src_anchor
+        filters = self.config.filters
         try:
-            return convert_markdown(markdown, path, filters, anchor)
+            return convert_markdown(markdown, path, anchor, filters)
         except Exception as e:  # noqa: BLE001
             if self.config.debug:
                 raise
