@@ -106,8 +106,7 @@ def create_attribute(
     parent: Class | None = None,
 ) -> Attribute:
     """Return an [Attribute] instance."""
-    node, name = assign.node, assign.name
-    type_, default = assign.type, assign.default
+    node = assign.node
     module = module or _create_empty_module()
     if assign.node and assign.node.__doc__:
         doc = docstrings.parse(assign.node.__doc__)
@@ -117,6 +116,7 @@ def create_attribute(
                 doc.text.str = "\n".join(lines)
     else:
         doc = Docstring("", Type(), Text(), [])
+    name, type_, default = assign.name, assign.type, assign.default
     return Attribute(name, node, doc, module, parent, type_, default)
 
 

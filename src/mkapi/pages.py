@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import mkapi.markdown
 import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object
@@ -15,13 +16,13 @@ from mkapi.utils import split_filters, update_filters
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-NAME_PATTERN = re.compile(r"^(.+?)(\.\*+)?$")
+NAME_PATTERN = re.compile(r"^(?P<name>.+?)(?P<maxdepth>\.\*+)?$")
 
 
 def _split_name_maxdepth(name: str) -> tuple[str, int]:
     if m := NAME_PATTERN.match(name):
-        name = m.group(1)
-        maxdepth = int(len(m.group(2) or ".")) - 1
+        name = m.group("name")
+        maxdepth = int(len(m.group("maxdepth") or ".")) - 1
     else:
         maxdepth = 0
     return name, maxdepth
@@ -109,26 +110,36 @@ def _create_source_page(
     return f"# ::: {name}{filters_str}\n"
 
 
-OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.MULTILINE)
+OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
 
 
 def _split_markdown(source: str) -> Iterator[tuple[str, int, list[str]]]:
     """Yield tuples of (text, level, filters)."""
-    cursor = 0
-    for match in OBJECT_PATTERN.finditer(source):
-        start, end = match.start(), match.end()
-        if cursor < start and (markdown := source[cursor:start].strip()):
-            yield markdown, -1, []
-        cursor = end
-        heading, name = match.groups()
-        if name.startswith("__mkapi__."):
-            yield match.group().replace("__mkapi__.", ""), -1, []
-            continue
-        level = len(heading)
-        name, filters = split_filters(name)
-        yield name, level, filters
-    if cursor < len(source) and (markdown := source[cursor:].strip()):
-        yield markdown, -1, []
+    for match in mkapi.markdown.finditer(OBJECT_PATTERN, source):
+        if isinstance(match, str):
+            yield match, -1, []
+        else:
+            heading, name = match.groups("heading"), match.group("name")
+            level = len(heading)
+            name, filters = split_filters(name)
+            yield name, level, filters
+
+    # cursor = 0
+    # for match in OBJECT_PATTERN.finditer(source):
+    #     print(match)
+    #     start, end = match.start(), match.end()
+    #     if cursor < start and (markdown := source[cursor:start].strip()):
+    #         yield markdown, -1, []
+    #     cursor = end
+    #     heading, name = match.groups()
+    #     if name.startswith("__mkapi__."):
+    #         yield match.group().replace("__mkapi__.", ""), -1, []
+    #         continue
+    #     level = len(heading)
+    #     name, filters = split_filters(name)
+    #     yield name, level, filters
+    # if cursor < len(source) and (markdown := source[cursor:].strip()):
+    #     yield markdown, -1, []
 
 
 def convert_markdown(source: str, path: str, anchor: str, filters: list[str]) -> str:

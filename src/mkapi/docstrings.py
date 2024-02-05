@@ -185,7 +185,7 @@ def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
         if not text:
             continue
         name = _rename_section(name)
-        if prev_name == name == "":  # continuous 'plain' section.
+        if prev_name == name == "":  # successive 'plain' section.
             prev_text = f"{prev_text}\n\n{text}" if prev_text else text
             continue
         elif prev_name == "" and name != "" and prev_text:
@@ -243,8 +243,8 @@ def parse(text: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
     if not text:
         return Docstring("Docstring", Type(), Text(), [])
-    text = mkapi.markdown.convert(text)
     style = style or get_style(text)
+    text = mkapi.markdown.convert(text)
     sections = list(iter_sections(text, style))
     if sections and not sections[0].name:
         type_ = sections[0].type

@@ -7,9 +7,10 @@ import markdown
 from mkapi.markdown import (
     _convert_examples,
     _iter,
-    _iter_example,
+    _iter_example_lists,
     _iter_examples,
-    _iter_fenced_code,
+    _iter_fenced_codes,
+    _split,
     add_link,
     convert,
     finditer,
@@ -54,32 +55,42 @@ def test_splitlines():
     assert x == []
 
 
-def test_split():
+def test_iter():
+    pattern = re.compile("X")
     text = "abcXdef"
-    x = list(_iter(re.compile("X"), text))
+    x = list(_iter(pattern, text))
     assert x[0] == "abc"
     assert x[2] == "def"
     text = "XabcXdefX"
-    x = list(_iter(re.compile("X"), text))
+    x = list(_iter(pattern, text))
     assert len(x) == 5
     assert x[1] == "abc"
     assert x[3] == "def"
+    text = "abc\n"
+    x = list(_iter(pattern, text))
+    assert x == ["abc\n"]
+    text = "X"
+    x = list(_iter(pattern, text))
+    assert len(x) == 1
 
 
-def test_split_fenced_code():
+def test_iter_fenced_codes():
     text = "abc\n  ~~~~x\n  ```\n  x\n  ```\n  ~~~~\ndef\n"
-    x = list(_iter_fenced_code(text))
+    x = list(_iter_fenced_codes(text))
     assert len(x) == 3
     assert x[0] == "abc\n"
     assert x[2] == "def\n"
     for y in ["", "\n"]:
         text = f"abc\n  ~~~~x\n  ```\n  x\n  ```\n  ~~~~{y}"
-        x = list(_iter_fenced_code(text))
+        x = list(_iter_fenced_codes(text))
         assert len(x) == 2
         assert x[0] == "abc\n"
+    text = "abc\n"
+    x = list(_iter_fenced_codes(text))
+    assert x == ["abc\n"]
 
 
-def test_split_example():
+def test_iter_examples():
     text = """
     X
       >>> a = 1
@@ -97,7 +108,7 @@ def test_split_example():
     Z
     """
     text = inspect.cleandoc(text)
-    x = list(_iter_example(text))
+    x = list(_iter_examples(text))
     assert len(x) == 10
     assert x[0] == "X\n"
     assert isinstance(x[1], doctest.Example)
@@ -120,14 +131,17 @@ def test_split_example():
     assert x[8].source == "a\n"
     assert x[8].want == "1\n"
     assert x[9] == "\nZ"
-    for t in ["abc\ndef\n", "abc\ndef", ">>> abc"]:
-        assert list(_iter_example(t)) == [t]
+    x = list(_iter_example_lists(text))
+    assert len(x) == 8
     t = ">>> abc\n"
-    x = list(_iter_example(t))
+    x = list(_iter_examples(t))
     assert len(x) == 1
     assert isinstance(x[0], doctest.Example)
-    x = list(_iter_examples(text))
-    assert len(x) == 8
+
+
+def test_iter_examples_empty():
+    for t in ["a", "a\n", "abc\ndef\n", "abc\ndef", ">>> abc"]:
+        assert list(_iter_examples(t)) == [t]
 
 
 def test_convert_examples():
@@ -140,7 +154,7 @@ def test_convert_examples():
     >>> a = 3
     """
     src = inspect.cleandoc(src)
-    x = list(_iter_examples(src))
+    x = list(_iter_example_lists(src))
     assert len(x) == 3
     assert isinstance(x[0], list)
     m = _convert_examples(x[0])
@@ -182,6 +196,15 @@ def test_finditer():
     assert x[6] == "\n"
     assert isinstance(x[7], re.Match)
     assert x[8] == "\nf"
+    src = "# ::: a"
+    x = list(finditer(pattern, src))
+    assert len(x) == 1
+    assert isinstance(x[0], re.Match)
+    src = "# ::: a\n"
+    x = list(finditer(pattern, src))
+    assert len(x) == 2
+    assert isinstance(x[0], re.Match)
+    assert x[1] == "\n"
 
 
 def test_sub():

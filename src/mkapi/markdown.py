@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from mkapi.utils import iter_identifiers
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator
+    from collections.abc import Callable, Iterator
 
 
 def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
@@ -27,7 +27,7 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
 FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*^(?P=pre)\n?", re.M | re.S)
 
 
-def _iter_fenced_code(text: str) -> Iterator[re.Match | str]:
+def _iter_fenced_codes(text: str) -> Iterator[re.Match | str]:
     return _iter(FENCED_CODE, text)
 
 
@@ -42,12 +42,12 @@ def _add_example_escape(text: str) -> str:
     return DOCTEST.sub("", text)
 
 
-def _delete_example_excape(text: str) -> str:
+def _delete_example_escape(text: str) -> str:
     text = text.replace("MKAPI_BLANK_LINE", "")
     return text.replace("__mkapi__", "")
 
 
-def _iter_example(text: str) -> Iterator[doctest.Example | str]:
+def _iter_examples(text: str) -> Iterator[doctest.Example | str]:
     if "\n" not in text:
         yield text
         return
@@ -55,27 +55,30 @@ def _iter_example(text: str) -> Iterator[doctest.Example | str]:
     try:
         examples = doctest.DocTestParser().get_examples(text)
     except ValueError:
-        yield _delete_example_excape(text)
+        yield _delete_example_escape(text)
+        return
+    if not examples:
+        yield _delete_example_escape(text)
         return
     lines = text.splitlines()
     current = 0
     for example in examples:
         if example.lineno > current:
             text_ = "\n".join(lines[current : example.lineno]) + "\n"
-            yield _delete_example_excape(text_)
-        example.source = _delete_example_excape(example.source)
+            yield _delete_example_escape(text_)
+        example.source = _delete_example_escape(example.source)
         yield example
         current = example.lineno
         current += example.source.count("\n")
         current += example.want.count("\n")
     if current < len(lines) - 1:
         text_ = "\n".join(lines[current:]) + ("\n" if text.endswith("\n") else "")
-        yield _delete_example_excape(text_)
+        yield _delete_example_escape(text_)
 
 
-def _iter_examples(text: str) -> Iterator[list[doctest.Example] | str]:
+def _iter_example_lists(text: str) -> Iterator[list[doctest.Example] | str]:
     examples: list[doctest.Example] = []
-    for example in _iter_example(text):
+    for example in _iter_examples(text):
         if isinstance(example, str):
             if examples:
                 yield examples
@@ -108,11 +111,11 @@ def _convert_examples(examples: list[doctest.Example]) -> str:
 
 
 def _split(text: str) -> Iterator[tuple[str, bool]]:
-    for match in _iter_fenced_code(text):
+    for match in _iter_fenced_codes(text):
         if isinstance(match, re.Match):
             yield match.group(), False
         else:
-            for examples in _iter_examples(match):
+            for examples in _iter_example_lists(match):
                 if isinstance(examples, list):
                     yield _convert_examples(examples), False
                 else:
@@ -210,6 +213,7 @@ def _get_indent(line: str) -> int:
 
 
 def _convert_inline(text: str) -> str:
+    # return text
     return replace_link(text)
 
 

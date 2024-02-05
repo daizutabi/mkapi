@@ -147,8 +147,8 @@ class Raise(Item):
 
 def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
     """Yield [Raise] instances."""
-    for ret in mkapi.ast.iter_raises(node):
-        if type_ := ret.exc:
+    for raise_ in mkapi.ast.iter_raises(node):
+        if type_ := raise_.exc:
             if isinstance(type_, ast.Call):
                 type_ = type_.func
             name = ast.unparse(type_)
@@ -172,7 +172,7 @@ class Base(Item):
 
 
 def iter_bases(node: ast.ClassDef) -> Iterator[Base]:
-    """Yield [Raise] instances."""
+    """Yield [Base] instances."""
     for base in node.bases:
         if isinstance(base, ast.Subscript):
             name = ast.unparse(base.value)

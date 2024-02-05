@@ -220,19 +220,3 @@ def get_link_from_type_string(module: str, source: str) -> str:
         else:
             strs.append(name)
     return "".join(strs)
-
-
-# LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
-
-
-# def get_link_from_text(module: str, text: str, *, name_only: bool = False) -> str:
-#     """Return markdown links from text."""
-
-#     def replace(match: re.Match) -> str:
-#         name = match.group(1)
-#         link = get_link_from_type(module, name, is_object=False)
-#         if name != link:
-#             return link
-#         return name if name_only else match.group()
-
-#     return re.sub(LINK_PATTERN, replace, text)
