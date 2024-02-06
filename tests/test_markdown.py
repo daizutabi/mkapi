@@ -5,16 +5,18 @@ import re
 import markdown
 
 from mkapi.markdown import (
+    _convert_code_block,
     _convert_examples,
     _iter,
     _iter_example_lists,
     _iter_examples,
     _iter_fenced_codes,
-    _split,
+    _iter_literal_block,
+    _replace,
+    _split_block,
     add_link,
     convert,
     finditer,
-    replace_link,
     sub,
 )
 
@@ -46,6 +48,43 @@ def test_span():
     assert x == '<p><span class="c"><a href="b">a</a></span></p>'
 
 
+def test_list():
+    s = "a\n\n    b"
+    x = markdown.markdown(s)
+    assert "<pre><code>b" in x
+    s = "a\n\n    * b\n    * c\n"
+    x = markdown.markdown(s)
+    assert "<pre><code>* b" in x
+
+
+def c(text: str) -> str:
+    return markdown.markdown(text, extensions=["admonition"])
+
+
+def test_code():
+    x = c("a b\n    c")
+    assert x == "<p>a b\n    c</p>"
+    x = c("a b\n\n    c")
+    assert x == "<p>a b</p>\n<pre><code>c\n</code></pre>"
+    x = c("a b\n\n    c\n\n    d")
+    assert "<code>c\n\nd\n</code>" in x
+    x = c("a b\n\n    c\n\n    d\ne")
+    assert "<code>c\n\nd\n</code>" in x
+
+
+def test_fenced_code():
+    x = c("```\na\n```")
+    assert x == "<p><code>a</code></p>"
+    x = c("    ```\n    a\n    ```")
+    assert "```" in x
+    x = c("  ```\na\n  ```")
+    assert x == "<p><code>a</code></p>"
+    x = c("!!! note\n    ```\n    a\n    ```")
+    assert '<p class="admonition-title">Note</p>\n<p><code>a</code></p>' in x
+    x = c("!!! note\n  ```\n  a\n  ```")
+    assert '<p class="admonition-title">Note</p>\n</div>' in x
+
+
 def test_splitlines():
     x = "a\nb\n".splitlines()
     assert x == ["a", "b"]
@@ -75,13 +114,13 @@ def test_iter():
 
 
 def test_iter_fenced_codes():
-    text = "abc\n  ~~~~x\n  ```\n  x\n  ```\n  ~~~~\ndef\n"
+    text = "abc\n~~~~x\n```\nx\n```\n~~~~\ndef\n"
     x = list(_iter_fenced_codes(text))
     assert len(x) == 3
     assert x[0] == "abc\n"
     assert x[2] == "def\n"
     for y in ["", "\n"]:
-        text = f"abc\n  ~~~~x\n  ```\n  x\n  ```\n  ~~~~{y}"
+        text = f"abc\n~~~~x\n```\nx\n```\n~~~~{y}"
         x = list(_iter_fenced_codes(text))
         assert len(x) == 2
         assert x[0] == "abc\n"
@@ -169,6 +208,114 @@ def test_convert_examples():
     assert m.endswith("input}\na = 3\n```\n")
 
 
+def test_split_block():
+    src = "\n a\n b\n\n c\nd\n"
+    x, y = _split_block(src, 0)
+    assert x == "\n a\n b\n\n c\n"
+    assert f"{x}{y}" == src
+    src = "\n a\n b\n\n c\n"
+    x, y = _split_block(src, 0)
+    assert (x, y) == (src, "")
+    src = "a\nb\n"
+    x, y = _split_block(src, 0)
+    assert (x, y) == ("", src)
+
+
+def test_iter_literal_block():
+    src = " x\n a\n\n\n     b\n\n     c\n\nd\n"
+    x = "".join(list(_iter_literal_block(src)))
+    assert x == " x\n a\n\n\n ```\n b\n\n c\n ```\n\nd\n"
+
+
+def test_convert_code_block():
+    src = """
+    ```
+    ab
+
+        d
+    x
+    ```
+      x
+
+          x
+
+          y
+
+      >>> 1
+      1
+    """
+    src = inspect.cleandoc(src)
+    m = _convert_code_block(src)
+    assert "```\nab\n\n    d\nx\n```\n" in m
+    assert "  x\n\n  ```\n  x\n\n  y\n  ```\n" in m
+    assert "\n  ```{.python" in m
+
+
+def test_convert_literal_block_with_directive():
+    src = """
+    a
+      .. code-block:: python
+
+          a
+      d
+      .. note::
+
+          a
+      d
+
+          b
+    """
+    src = inspect.cleandoc(src)
+    m = _convert_code_block(src)
+    assert m.startswith("a\n  ```python\n  a\n  ```\n  d\n")
+    assert "  .. note::\n\n      a" in m
+    assert m.endswith("  d\n\n  ```\n  b\n  ```\n")
+
+
+def test_convert():
+    src = """
+    ```
+    .. note::
+    ```
+    .. note::
+        abc
+
+            d
+        .. note::
+
+            def
+    .. note::
+        x
+    """
+    src = inspect.cleandoc(src)
+    m = convert(src)
+    h = c(m)
+    assert "<p><code>.. note::</code></p>" in h
+    assert "Note</p>\n<p>abc</p>\n<p><code>d</code></p>" in h
+    assert "<p>def</p>\n</div>\n</div>" in h
+
+
+def test_convert_example_new_line():
+    src1 = """
+    a
+      >>> 1
+      1
+
+      >>> 2
+      2
+    """
+    src2 = """
+    a
+      >>> 1
+      1
+      >>> 2
+      2
+    """
+    src1 = inspect.cleandoc(src1)
+    src2 = inspect.cleandoc(src2)
+    assert convert(src1) == convert(src2)
+
+
 def test_finditer():
     pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.M)
     src = """
@@ -180,31 +327,16 @@ def test_finditer():
     >>> "::: d"
     ::: d
 
-    ::: e
+    a
+
+        ::: e
     f
     """
     src = inspect.cleandoc(src)
+    src = convert(src)
     x = list(finditer(pattern, src))
-    assert len(x) == 9
-    assert x[0] == "```\n# ::: a\n```\n"
     assert isinstance(x[1], re.Match)
-    assert x[2] == "\n"
     assert isinstance(x[3], re.Match)
-    assert x[4] == "\n"
-    assert isinstance(x[5], str)
-    assert x[5].startswith("```{.python")
-    assert x[6] == "\n"
-    assert isinstance(x[7], re.Match)
-    assert x[8] == "\nf"
-    src = "# ::: a"
-    x = list(finditer(pattern, src))
-    assert len(x) == 1
-    assert isinstance(x[0], re.Match)
-    src = "# ::: a\n"
-    x = list(finditer(pattern, src))
-    assert len(x) == 2
-    assert isinstance(x[0], re.Match)
-    assert x[1] == "\n"
 
 
 def test_sub():
@@ -222,6 +354,7 @@ def test_sub():
     f
     """
     src = inspect.cleandoc(src)
+    src = convert(src)
 
     def rel(m: re.Match):
         name = m.group("name")
@@ -233,105 +366,7 @@ def test_sub():
     assert m.endswith("output}\n::: d\n```\n\nxxx::: exxx\nf")
 
 
-def c(text: str) -> str:
-    text = inspect.cleandoc(text)
-    e = ["admonition", "pymdownx.superfences", "attr_list", "md_in_html"]
-    return markdown.markdown(text, extensions=e)
-
-
-def test_convert_directives():
-    src = """
-    abc
-
-    .. note::
-        a b c
-
-        d e f.
-
-    def
-    ```
-    .. note::
-    ```
-    """
-    src = inspect.cleandoc(src)
-    m = c(convert(src))
-    assert m.startswith('<p>abc</p>\n<div class="admonition note">')
-    assert '<p class="admonition-title">Note</p>' in m
-    assert "<p>a b c</p>" in m
-    assert "<p>d e f.</p>\n</div>\n" in m
-    assert '<div class="highlight"><pre><span></span>' in m
-    assert m.endswith("<code>.. note::\n</code></pre></div></p>")
-
-
-def test_convert_directives_deprecated():
-    src = """
-    abc
-
-    .. deprecated:: 1.0
-        xyz
-
-    def
-    """
-    src = inspect.cleandoc(src)
-    m = c(convert(src))
-    x = '<p class="admonition-title">Deprecated since version 1.0</p>'
-    assert x in m
-
-
-def test_convert_directives_other():
-    src = """
-    abc
-
-    .. xxx:: 1.0
-        xyz
-
-    def
-    """
-    src = inspect.cleandoc(src)
-    assert convert(src) == src
-
-
-def test_convert_code_block():
-    src = """
-    abc
-    .. note::
-        def
-        .. code-block:: python
-
-          a = 1
-
-          `a`_
-        `b`_
-    `c`_
-    ```m
-    .. code-block:: python
-      `d`_
-    ```
-    """
-    src = inspect.cleandoc(src)
-    m = convert(src)
-    assert "    ```python\n\n    a = 1\n\n    `a`_\n    ```\n" in m
-    assert "    ```\n    [b][]\n[c][]\n```m\n.. code-block::" in m
-    assert "python\n  `d`_\n```" in m
-    h = c(m)
-    assert "```" not in h
-
-
-def test_convert_invalid():
-    src = """.. code-block:: python"""
-    m = convert(src)
-    assert m == "```python```\n"
-    h = c(m)
-    assert h == "<p><code>python</code></p>"
-    src = """.. code-block:: python\n a"""
-    m = convert(src)
-    assert m == "```python\na\n```\n"
-    src = """.. code-block:: python\n a\nb"""
-    m = convert(src)
-    assert m == "```python\na\n```\nb\n"
-
-
-def test_replace_link():
+def test_replace():
     src = """
     `abc <def>`_
     :func:`ghi <jkl>`
@@ -344,7 +379,7 @@ def test_replace_link():
     .. _yyy: YYY
     """
     src = inspect.cleandoc(src)
-    text = replace_link(src)
+    text = _replace(src)
     lines = text.splitlines()
     assert lines[0] == "[abc](def)"
     assert lines[1] == "[ghi][__mkapi__.jkl]"

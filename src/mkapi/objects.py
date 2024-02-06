@@ -356,27 +356,25 @@ def set_markdown(module: Module) -> None:
             if isinstance(elem, Type):
                 elem.set_markdown(module.name)
             elif elem.str and not elem.markdown:
-                text = _replace(elem.str)
+                text = _add_new_line(elem.str)
                 elem.markdown = get_link_from_text(obj, text)
 
 
-def _replace(text: str) -> str:
+def _add_new_line(text: str) -> str:
     for c in ["*", "+", "-"]:
         if text.startswith(f"{c} ") and f"\n{c} " in text:
             text = f"\n{text}"
     return text
 
 
-LINK_PATTERN = re.compile(r"(?<!\])\[([^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
+LINK_PATTERN = re.compile(r"(?<!\])\[(?P<name>[^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
 
 
 def get_link_from_text(obj: Module | Class | Function | Attribute, text: str) -> str:
     """Return markdown links from text."""
 
     def replace(match: re.Match) -> str:
-        name = match.group(1)
-        if not isinstance(name, str):
-            return match.group(1)
+        name = match.group("name")
         if name.startswith("__mkapi__."):
             from_mkapi = True
             name = name[10:]

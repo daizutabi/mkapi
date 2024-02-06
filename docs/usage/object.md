@@ -24,7 +24,7 @@ examples/
 ## Package
 
 ```markdown
-::: __mkapi__.examples
+::: examples
 ```
 
 ::: examples
@@ -35,7 +35,7 @@ examples/
     by MkAPI.
 
 ```markdown
-::: __mkapi__.examples|source|bare
+::: examples|source|bare
 ```
 
 ::: examples|source|bare
@@ -43,7 +43,7 @@ examples/
 ## Package with `__all__`
 
 ```markdown
-::: __mkapi__.examples.styles
+::: examples.styles
 ```
 
 ::: examples.styles
@@ -53,7 +53,7 @@ examples/
 ## Module
 
 ```markdown
-::: __mkapi__.examples.styles.example_google
+::: examples.styles.example_google
 ```
 
 ::: examples.styles.example_google
@@ -66,7 +66,7 @@ examples/
 ### Class
 
 ```markdown
-::: __mkapi__.examples.styles.example_google.ExampleClass
+::: examples.styles.example_google.ExampleClass
 ```
 
 ::: examples.styles.example_google.ExampleClass
@@ -78,7 +78,7 @@ examples/
 ### Function
 
 ```markdown
-::: __mkapi__.examples.styles.example_google.module_level_function
+::: examples.styles.example_google.module_level_function
 ```
 
 ::: examples.styles.example_google.module_level_function
@@ -86,7 +86,7 @@ examples/
 ### Attribute
 
 ```markdown
-::: __mkapi__.examples.styles.example_google.module_level_variable2|sourcelink
+::: examples.styles.example_google.module_level_variable2|sourcelink
 ```
 
 ::: examples.styles.example_google.module_level_variable2|sourcelink

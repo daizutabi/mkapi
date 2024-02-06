@@ -122,3 +122,12 @@ def test_iter_objects_member_only():
     cls = get_object(name)
     assert isinstance(cls, Class)
     assert len(list(iter_objects(cls, member_only=True))) == 3
+
+
+def test_examples():
+    name = "polars.lazyframe.frame.LazyFrame.std"
+    name = "polars.lazyframe.frame.LazyFrame.fill_null"
+    m = get_object(name)
+    assert isinstance(m, Function)
+    print(m.doc.sections[1].text.markdown)
+    # assert 0

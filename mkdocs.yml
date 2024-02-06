@@ -58,5 +58,5 @@ nav:
   # - API: <api>/mkapi.***
   - Examples: <api>/examples.**
   # - Schemdraw: <api>/schemdraw.***
-  # - Polars: <api>/polars.***
+  - Polars: <api>/polars.***
   # - Altair: <api>/altair.***

@@ -24,7 +24,7 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
         yield text[cursor:]
 
 
-FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*^(?P=pre)\n?", re.M | re.S)
+FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)\n?", re.M | re.S)
 
 
 def _iter_fenced_codes(text: str) -> Iterator[re.Match | str]:
@@ -51,16 +51,16 @@ def _iter_examples(text: str) -> Iterator[doctest.Example | str]:
     if "\n" not in text:
         yield text
         return
-    text = _add_example_escape(text)
+    text_escaped = _add_example_escape(text)
     try:
-        examples = doctest.DocTestParser().get_examples(text)
+        examples = doctest.DocTestParser().get_examples(text_escaped)
     except ValueError:
-        yield _delete_example_escape(text)
+        yield text
         return
     if not examples:
-        yield _delete_example_escape(text)
+        yield text
         return
-    lines = text.splitlines()
+    lines = text_escaped.splitlines()
     current = 0
     for example in examples:
         if example.lineno > current:
@@ -110,99 +110,57 @@ def _convert_examples(examples: list[doctest.Example]) -> str:
     return "\n".join(lines)
 
 
-def _split(text: str) -> Iterator[tuple[str, bool]]:
-    for match in _iter_fenced_codes(text):
-        if isinstance(match, re.Match):
-            yield match.group(), False
-        else:
-            for examples in _iter_example_lists(match):
-                if isinstance(examples, list):
-                    yield _convert_examples(examples), False
-                else:
-                    yield examples, True
+_ = r"^(?P<suffix>(?P<pre> *)(?P<prev>\S.*)\n{2,})(?P=pre) {4}\S"
+FOURINDENT = re.compile(_, re.M)
+DIRECTIVE = re.compile(r"^(?P<pre> *)\.\. *(?P<name>[\w\-]+):: *(?P<attr>.*)$", re.M)
 
 
-def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
-    """Yield strings or match objects from a markdown text."""
-    for sub, is_text in _split(text):
-        if is_text:
-            yield from _iter(pattern, sub)
-        else:
-            yield sub
-
-
-def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:
-    """Replace a markdown text."""
-    subs = (m if isinstance(m, str) else rel(m) for m in finditer(pattern, text))
-    return "".join(subs)
-
-
-def convert(text: str) -> str:
-    """Convert markdown."""
-    subs = []
-    for sub, is_text in _split(text):
-        if is_text:
-            subs.extend(_convert_text(sub))
-        else:
-            subs.append(sub)
-    return "".join(subs)
-
-
-DIRECTIVE = re.compile(r"^(?P<pre> *).. *(?P<name>[\w\-_]+):: *(?P<attr>.*)$", re.M)
-
-
-def _convert_text(text: str) -> Iterator[str]:
-    it = _iter(DIRECTIVE, text)
-    for m in it:
-        if isinstance(m, str):
-            yield _convert_inline(m)
-        else:
-            yield from _convert_directive(m, it)
-
-
-def _convert_directive(m: re.Match, it: Iterator[re.Match | str]) -> Iterator[str]:
-    prefix, name, attr = m.groups()
-    match name:
-        case "deprecated" if attr:
-            if " " not in attr:
-                attr = f"Deprecated since version {attr}"
-            yield f'{prefix}!!! {name} "{attr}"'
-        case "deprecated" | "warning" | "note":
-            yield f"{prefix}!!! {name}"
-        case "code-block":
-            try:
-                code = next(it)
-            except StopIteration:
-                code = ""
-            if isinstance(code, str):
-                yield from _convert_code_block(attr, prefix, code)
+def _iter_literal_block(text: str) -> Iterator[str]:
+    if match := FOURINDENT.search(text):
+        prefix = match.group("pre")
+        indent = len(prefix)
+        prev = match.group("prev")
+        pos = match.start() + len(match.group("suffix"))
+        if m := DIRECTIVE.match(prev):
+            if m.group("name") == "code-block":
+                yield text[: match.start()]
+                lang = m.group("attr")
             else:
-                yield m.group()
-                yield code.group()
-        case _:
-            yield m.group()
+                yield text[: match.end()]
+                yield from _iter_literal_block(text[match.end() :])
+                return
+        else:
+            lang = ""
+            yield text[:pos]
+        code, rest = _split_block(text[pos:], indent)
+        code = textwrap.indent(textwrap.dedent(code), prefix)
+        yield f"{prefix}```{lang}\n{code}{prefix}```\n"
+        yield from _iter_literal_block(rest)
+    else:
+        yield text
 
 
-def _convert_code_block(lang: str, prefix: str, code: str) -> Iterator[str]:
-    yield f"{prefix}```{lang}"
-    indent = -1
-    lines = code.splitlines()
+def _split_block(text: str, indent: int) -> tuple[str, str]:
+    subs = {True: [], False: []}
+    for sub, is_block in _iter_blocks(text, indent):
+        subs[is_block].append(sub)
+    return "".join(subs[True]), "".join(subs[False])
+
+
+def _iter_blocks(text: str, indent: int) -> Iterator[tuple[str, bool]]:
+    lines = text.splitlines()
     rests = []
     for k, line in enumerate(lines):
         if not line:
             rests.append("\n")
             continue
-        current_indent = _get_indent(line)
-        if indent == -1:
-            indent = current_indent
-        elif current_indent < indent:
+        if _get_indent(line) <= indent:
             rests.extend(f"{line}\n" for line in lines[k:])
             break
-        yield from rests
+        yield "".join(rests), True
         rests.clear()
-        yield f"{prefix}{line[indent:]}\n"
-    yield f"{prefix}```\n"
-    yield _convert_inline("".join(rests))
+        yield f"{line}\n", True
+    yield "".join(rests), False
 
 
 def _get_indent(line: str) -> int:
@@ -212,27 +170,84 @@ def _get_indent(line: str) -> int:
     return -1
 
 
-def _convert_inline(text: str) -> str:
-    # return text
-    return replace_link(text)
+def _iter_code_blocks(text: str) -> Iterator[str]:
+    for match in _iter_fenced_codes(text):
+        if isinstance(match, re.Match):
+            yield match.group()
+        else:
+            prev_type = str
+            for examples in _iter_example_lists(match):
+                if isinstance(examples, list):
+                    if prev_type is list:
+                        yield "\n"
+                    yield _convert_examples(examples)
+                    prev_type = list
+                else:
+                    yield from _iter_literal_block(examples)
+                    prev_type = str
 
 
-INTERNAL_LINK_PATTERN = re.compile(r":\w+?:`(?P<name>.+?)\s+?<(?P<href>\S+?)>`")
-INTERNAL_LINK_WITHOUT_HREF_PATTERN = re.compile(r":\w+?:`(?P<name>\S+?)`")
-LINK_PATTERN = re.compile(r"`(?P<name>[^<].+?)\s+?<(?P<href>\S+?)>`_+", re.DOTALL)
-LINK_WITHOUT_HREF_PATTERN = re.compile(r"`(?P<name>.+?)`_+", re.DOTALL)
-_ = r"..\s+_(?P<name>.+?)(?P<sep>:\s+)(?P<href>\S+?)"
-REFERENCE_PATTERN = re.compile(_, re.DOTALL)
+def _convert_code_block(text: str) -> str:
+    return "".join(_iter_code_blocks(text))
 
 
-def replace_link(text: str) -> str:
+def _replace_directive(match: re.Match) -> str:
+    pre, name, attr = match.groups()
+    match name:
+        case "deprecated" if attr:
+            if " " not in attr:
+                attr = f"Deprecated since version {attr}"
+            return f'{pre}!!! {name} "{attr}"'
+        case "deprecated" | "warning" | "note":
+            return f"{pre}!!! {name}"
+        case _:
+            return match.group()
+
+
+INTERNAL_LINK = re.compile(r":\w+?:`(?P<name>.+?)\s+?<(?P<href>\S+?)>`")
+INTERNAL_LINK_WITHOUT_HREF = re.compile(r":\w+?:`(?P<name>\S+?)`")
+LINK = re.compile(r"`(?P<name>[^<].+?)\s+?<(?P<href>\S+?)>`_+", re.S)
+LINK_WITHOUT_HREF = re.compile(r"`(?P<name>.+?)`_+", re.S)
+REFERENCE = re.compile(r"\.\.\s+_(?P<name>.+?)(?P<sep>:\s+)(?P<href>\S+?)", re.S)
+
+
+def _replace(text: str) -> str:
     """Replace link of reStructuredText."""
-    text = re.sub(INTERNAL_LINK_PATTERN, r"[\g<name>][__mkapi__.\g<href>]", text)
-    text = re.sub(INTERNAL_LINK_WITHOUT_HREF_PATTERN, r"[__mkapi__.\g<name>][]", text)
-    text = re.sub(LINK_PATTERN, r"[\g<name>](\g<href>)", text)
-    text = re.sub(LINK_WITHOUT_HREF_PATTERN, r"[\g<name>][]", text)
-    text = re.sub(REFERENCE_PATTERN, r"[\g<name>]\g<sep>\g<href>", text)
-    return text
+    text = INTERNAL_LINK.sub(r"[\g<name>][__mkapi__.\g<href>]", text)
+    text = INTERNAL_LINK_WITHOUT_HREF.sub(r"[__mkapi__.\g<name>][]", text)
+    text = LINK.sub(r"[\g<name>](\g<href>)", text)
+    text = LINK_WITHOUT_HREF.sub(r"[\g<name>][]", text)
+    text = REFERENCE.sub(r"[\g<name>]\g<sep>\g<href>", text)
+    return DIRECTIVE.sub(_replace_directive, text)
+
+
+def _convert(text: str) -> Iterator[str]:
+    text = _convert_code_block(text)
+    for match in _iter_fenced_codes(text):
+        if isinstance(match, re.Match):
+            yield match.group()
+        else:
+            yield _replace(match)
+
+
+def convert(text: str) -> str:
+    """Convert markdown."""
+    return "".join(_convert(text))
+
+
+def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
+    """Yield strings or match objects from a markdown text."""
+    for match in _iter_fenced_codes(text):
+        if isinstance(match, re.Match):
+            yield match.group()
+        else:
+            yield from _iter(pattern, match)
+
+
+def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:
+    """Replace a markdown text."""
+    subs = (m if isinstance(m, str) else rel(m) for m in finditer(pattern, text))
+    return "".join(subs)
 
 
 def add_link(text: str) -> str:

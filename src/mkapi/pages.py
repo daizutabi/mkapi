@@ -14,7 +14,7 @@ from mkapi.objects import Module, is_empty, iter_objects, iter_objects_with_dept
 from mkapi.utils import split_filters, update_filters
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable
 
 NAME_PATTERN = re.compile(r"^(?P<name>.+?)(?P<maxdepth>\.\*+)?$")
 
@@ -110,51 +110,60 @@ def _create_source_page(
     return f"# ::: {name}{filters_str}\n"
 
 
+# def _split_markdown(source: str) -> Iterator[tuple[str, int, list[str]]]:
+#     """Yield tuples of (text, level, filters)."""
+#     for match in mkapi.markdown.finditer(OBJECT_PATTERN, source):
+#         if isinstance(match, str):
+#             yield match, -1, []
+#         else:
+#             heading, name = match.group("heading"), match.group("name")
+#             level = len(heading)
+#             name, filters = split_filters(name)
+#             yield name, level, filters
+
+# cursor = 0
+# for match in OBJECT_PATTERN.finditer(source):
+#     print(match)
+#     start, end = match.start(), match.end()
+#     if cursor < start and (markdown := source[cursor:start].strip()):
+#         yield markdown, -1, []
+#     cursor = end
+#     heading, name = match.groups()
+#     if name.startswith("__mkapi__."):
+#         yield match.group().replace("__mkapi__.", ""), -1, []
+#         continue
+#     level = len(heading)
+#     name, filters = split_filters(name)
+#     yield name, level, filters
+# if cursor < len(source) and (markdown := source[cursor:].strip()):
+#     yield markdown, -1, []
+
 OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
-
-
-def _split_markdown(source: str) -> Iterator[tuple[str, int, list[str]]]:
-    """Yield tuples of (text, level, filters)."""
-    for match in mkapi.markdown.finditer(OBJECT_PATTERN, source):
-        if isinstance(match, str):
-            yield match, -1, []
-        else:
-            heading, name = match.groups("heading"), match.group("name")
-            level = len(heading)
-            name, filters = split_filters(name)
-            yield name, level, filters
-
-    # cursor = 0
-    # for match in OBJECT_PATTERN.finditer(source):
-    #     print(match)
-    #     start, end = match.start(), match.end()
-    #     if cursor < start and (markdown := source[cursor:start].strip()):
-    #         yield markdown, -1, []
-    #     cursor = end
-    #     heading, name = match.groups()
-    #     if name.startswith("__mkapi__."):
-    #         yield match.group().replace("__mkapi__.", ""), -1, []
-    #         continue
-    #     level = len(heading)
-    #     name, filters = split_filters(name)
-    #     yield name, level, filters
-    # if cursor < len(source) and (markdown := source[cursor:].strip()):
-    #     yield markdown, -1, []
 
 
 def convert_markdown(source: str, path: str, anchor: str, filters: list[str]) -> str:
     """Return converted markdown."""
-    markdowns = []
-    for name, level, filters_ in _split_markdown(source):
-        if level == -1:
-            markdowns.append(name)
-        else:
-            updated_filters = update_filters(filters, filters_)
-            markdown = create_markdown(name, level, updated_filters)
-            markdowns.append(markdown)
-    markdown = "\n\n".join(markdowns)
-    replace = partial(_replace_link, directory=Path(path).parent, anchor=anchor)
-    return re.sub(LINK_PATTERN, replace, markdown)
+
+    def replace_object(match: re.Match) -> str:
+        heading, name = match.group("heading"), match.group("name")
+        level = len(heading)
+        name, filters_ = split_filters(name)
+        updated_filters = update_filters(filters, filters_)
+        return create_markdown(name, level, updated_filters)
+
+    markdown = mkapi.markdown.sub(OBJECT_PATTERN, replace_object, source)
+
+    # markdowns = []
+    # for name, level, filters_ in _split_markdown(source):
+    #     if level == -1:
+    #         markdowns.append(name)
+    #     else:
+    #         updated_filters = update_filters(filters, filters_)
+    #         markdown = create_markdown(name, level, updated_filters)
+    #         markdowns.append(markdown)
+    # markdown = "\n\n".join(markdowns)
+    replace_link = partial(_replace_link, directory=Path(path).parent, anchor=anchor)
+    return re.sub(LINK_PATTERN, replace_link, markdown)
 
 
 def create_markdown(name: str, level: int, filters: list[str]) -> str:
