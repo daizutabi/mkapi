@@ -1,77 +1,79 @@
-# MkApi Documentation
+# Home
 
-MkApi plugin for [MkDocs](https://www.mkdocs.org/) generates API documentation for Python code. MkApi supports two styles of docstrings: [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
+[![Built with Material for MkDocs](https://img.shields.io/badge/Material_for_MkDocs-526CFE?style=for-the-badge&logo=MaterialForMkDocs&logoColor=white)](https://squidfunk.github.io/mkdocs-material/)
 
-Features of MkApi are:
+MkAPI is a plugin for [MkDocs](https://www.mkdocs.org/) to generate a
+API documentation for your Python project.
 
-* **Type annotation**: If you write your function such as `def func(x: int) -> str:`, you don't need write type(s) in Parameters, Returns, or Yields section again. You can overwrite the type annotation in the corresponding docstring.
-* **Object type inspection**: MkApi plugin creates *class*, *dataclass*, *function*, or *generator* prefix for each object.
-* **Attribute inspection**: If you write attributes with description as comment in module or class, Attributes section is automatically created.
-* **Docstring inheritance**: Docstring of a subclass can inherit parameters and attributes description from its superclasses.
-* **Table of Contents**: Table of contents are inserted into the documentation of each package, module, and class.
-* **Page mode**: Comprehensive API documentation for your project, in which objects are linked to each other by type annotation.
-* **Bidirectional Link**: Using the Page mode, bidirectional links are created between documentation and source code.
+MkAPI supports two styles of docstrings:
+[Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
+and
+[NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
+See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/)
+documentations for
+details.
+
+Features of MkAPI are:
+
+* **Type annotation**: If you write your function such as
+  `def func(x: int) -> str:`, you don't need write type(s)
+  in Parameters, Returns, or Yields section again.
+  You can override the type annotation in the corresponding docstring.
+* **Object type inspection**: MkAPI plugin creates *class*,
+  *dataclass*, *function*, *method*, *property* prefix for each object.
+* **Docstring inheritance**: Docstring of a subclass can inherit parameters
+  and attributes description from its superclasses.
+* **Table of Contents**: Table of contents are inserted into the documentation
+  of each package, module, and class.
+* **Bidirectional Link**: Bidirectional links are created between
+  documentation and source code.
 
 ## Installation
 
-Install the plugin using pip:
+Install the MkAPI plugin using pip:
 
-~~~bash
+```bash
 pip install mkapi
-~~~
+```
 
 ## Configuration
 
 Add the following lines to `mkdocs.yml`:
 
-~~~yml
+```yaml
 plugins:
-  - search # necessary for search to work
   - mkapi
-~~~
+```
 
 ## Usage
 
-MkApi provides two modes to generate documentation: Embedding mode and Page mode.
+MkAPI provides two modes to generate API documentation:
+Object mode and Page mode.
 
-### Embedding Mode
+### Object Mode
 
-To generate the documentation from docstring in a Markdown source, add an exclamation mark (!), followed by `mkapi` in brackets, and the object full name in parentheses. Yes, this is like adding an image. The object can be a function, class, or module, *etc*.
+To generate the API documentation in a Markdown source,
+add three colons + object full name.
+The object can be a function, class, attribute, or module.
 
-~~~markdown
-![mkapi](<package.module.object>)
-~~~
+```markdown
+::: package.module.object
+```
 
-You can combine this syntax with Markdown heading:
-
-~~~markdown
-## ![mkapi](<package.module.object>)
-~~~
-
-MkApi imports modules that you specify. If they aren't in the `sys.path`, configure `mkdocs.yml` like below:
-
-~~~yml
-plugins:
-  - search
-  - mkapi:
-      src_dirs: [<path1>, <path2>, ...]
-~~~
-
-Here, `pathX`s are inserted to `sys.path`. These `pathX`s are relative to the `mkdocs.yml` directory.
-
-The embedding mode is useful to embed documentation of an object in an arbitrary position of a Markdown source. For more details, see:
-
-* [Google style examples](examples/google_style.md)
-* [NumPy style examples](examples/numpy_style.md)
+The Object mode is useful to embed an object documentation
+in an arbitrary position of a Markdown source.
+For more details, see [Object mode](usage/object.md).
 
 ### Page Mode
 
-Using the page mode, you can construct a comprehensive API documentation for your project. You can get this powerful feature by just one line:
+Using the Page mode, you can construct a comprehensive API documentation
+for your project.
+You can get this powerful feature by just one line in `mkdocs.yml`:
 
-~~~yaml
+```yaml
 nav:
   - index.md
-  - API: mkapi/api/mkapi
-~~~
+  - API: <api>/package.***
+```
 
-For more details, see [Page Mode and Internal Links](usage/page.md)
+For more details, see [Page mode](usage/page.md).

@@ -1,0 +1,126 @@
+h1.mkapi-heading,
+h2.mkapi-heading,
+h3.mkapi-heading,
+h4.mkapi-heading,
+h5.mkapi-heading,
+p.mkapi-heading {
+  font-size: 85%;
+  font-weight: 400;
+  text-align-last: justify;
+  margin-bottom: 0px;
+}
+.mkapi-heading-name {
+  color: var(--md-default-fg-color--lighter);
+}
+.mkapi-heading-name a {
+  color: unset;
+}
+p.mkapi-object {
+  margin-block-start: 0px;
+  margin-block-end: 0px;
+  border-top: 2px solid var(--md-default-fg-color--light);
+}
+.mkapi-object-kind {
+  color: var(--md-code-hl-comment-color);
+  font-size: 90%;
+  font-style: italic;
+}
+.mkapi-object-name {
+  color: var(--md-code-hl-name-color);
+  font-family: var(--md-code-font-family);
+  font-weight: 600;
+  font-size: 1.1em;
+}
+.mkapi-object-name .prefix {
+  color: var(--md-code-hl-name-color);
+}
+.mkapi-object-name .dot {
+  color: var(--md-code-hl-comment-color);
+}
+.mkapi-signature .arg {
+  color: var(--md-code-hl-name-color);
+  font-style: italic;
+}
+.mkapi-signature .default, .ann, .return, .star {
+  color: var(--md-code-hl-variable-color);
+}
+.mkapi-signature .paren {
+  color: var(--md-code-hl-punctuation-color);
+  margin-left: 2px;
+  margin-right: 2px;
+}
+.mkapi-signature .sep {
+  color: var(--md-code-hl-punctuation-color);
+  margin-left: 0px;
+  margin-right: 2px;
+}
+.mkapi-signature .comma, .colon {
+  color: var(--md-code-hl-punctuation-color);
+  margin-left: 2px;
+  margin-right: 0px;
+}
+.mkapi-signature .equal, .arrow {
+  color: var(--md-code-hl-punctuation-color);
+  margin-left: 0px;
+  margin-right: 0px;
+}
+p.mkapi-object-bases {
+  color: var(--md-default-fg-color--light);
+  font-size: 85%;
+  margin-block-start: 0px;
+}
+.mkapi-section-name {
+  color: var(--md-default-fg-color--light);
+  border-bottom: thin solid var(--md-default-fg-color--light);
+  font-size: 1.05em;
+  font-weight: 400;
+  margin-top: 16px;
+}
+ul.mkapi-section-items {
+  margin-top: 6pt;
+}
+.mkapi-item-name {
+  font-weight: 600;
+}
+.mkapi-item-type,.mkapi-object-type {
+  color: var(--md-code-hl-variable-color);
+}
+li.mkapi-section-item li {
+  margin-bottom: 2px;
+}
+.mkapi-example-input pre {
+  margin-bottom: 0px;
+}
+.mkapi-example-output pre {
+  margin-top: 0px;
+}
+.mkapi-example-input code {
+  font-size: 85%;
+}
+.mkapi-example-output code {
+  font-size: 85%;
+  border: solid var(--md-code-bg-color);
+  background-color: transparent;
+}
+.mkapi-source code {
+  font-size: 85%;
+}
+.mkapi-docs-link {
+  font-family: var(--md-text-font-family);
+  display: block;
+  float: right;
+}
+.md-typeset .admonition.deprecated,
+.md-typeset details.deprecated {
+  border-color: #ff5252;
+}
+.md-typeset .deprecated > .admonition-title,
+.md-typeset .deprecated > summary {
+  background-color: #ff52521a;
+}
+.md-typeset .deprecated > .admonition-title::before,
+.md-typeset .deprecated > summary::before {
+  background-color: #ff5252;
+  -webkit-mask-image: var(--md-admonition-icon--info);
+          mask-image: var(--md-admonition-icon--info);
+}

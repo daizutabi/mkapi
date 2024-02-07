@@ -1,5 +1,0 @@
-include README.md
-include LICENSE
-recursive-include mkapi *.js *.css *.yml *.jinja2
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]

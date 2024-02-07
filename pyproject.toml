@@ -1,0 +1,115 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mkapi"
+description = "A documentation generation tool for MkDocs"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: MkDocs",
+  "Programming Language :: Python",
+  "Topic :: Documentation",
+  "Topic :: Software Development :: Documentation",
+]
+dynamic = ["version"]
+requires-python = ">=3.12"
+dependencies = ["halo", "jinja2", "mkdocs-material", "tqdm"]
+
+[project.urls]
+Documentation = "https://github.com/daizutabi/mkapi#readme" # FIXME
+Source = "https://github.com/daizutabi/mkapi"
+Issues = "https://github.com/daizutabi/mkapi/issues"
+
+[project.entry-points."mkdocs.plugins"]
+mkapi = "mkapi.plugins:MkAPIPlugin"
+
+[tool.hatch.version]
+path = "src/mkapi/__about__.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/.github", "/docs"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/mkapi"]
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.12"]
+
+[tool.hatch.envs.default]
+dependencies = ["polars", "pytest-cov", "schemdraw"]
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests src/mkapi}"
+
+[tool.pytest.ini_options]
+addopts = [
+  "--verbose",
+  "--color=yes",
+  "--doctest-modules",
+  "--cov=mkapi",
+  "--cov-report=lcov:lcov.info",
+]
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
+filterwarnings = [
+  'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated:DeprecationWarning',
+  'ignore:\nPyarrow will become a required dependency:DeprecationWarning',
+]
+
+[tool.coverage.run]
+omit = ["src/mkapi/__about__.py"]
+
+[tool.coverage.report]
+exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
+
+[tool.hatch.envs.docs]
+dependencies = ["altair", "polars", "pyparsing", "schemdraw"]
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --clean --strict {args}"
+serve = "mkdocs serve --dev-addr localhost:8000 {args}"
+deploy = "mkdocs gh-deploy --force"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+select = ["ALL"]
+ignore = [
+  "ANN002",
+  "ANN003",
+  "ANN101",
+  "ANN102",
+  "COM812",
+  "D105",
+  "D406",
+  "G004",
+  "D407",
+  "EM102",
+  "ERA001",
+  "FIX002",
+  "FIX003",
+  "ISC001",
+  "N812",
+  "PGH003",
+  "PLR2004",
+  "RET504",
+  "TD",
+  "TRY003",
+]
+
+
+[tool.ruff.extend-per-file-ignores]
+"tests/*.py" = ["ANN", "D", "S101", "INP001", "T201", "PLR2004", "PGH003"]
+"plugins.py" = ["ANN", "D", "ARG002"]
+
+[tool.ruff.lint]
+unfixable = [
+  "RUF100", # Don't touch noqa lines
+  "F401",   # Don't touch unused imports
+]
+
+[tool.ruff.isort]
+known-first-party = ["mkapi"]
+
+[tool.ruff.pydocstyle]
+convention = "google"

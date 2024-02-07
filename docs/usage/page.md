@@ -1,131 +1,189 @@
-# Page Mode and Internal Links
+# Page mode
 
-<style type="text/css">
-<!--
-.mkapi-node {
-  border: 2px dashed #88AA88;
-}
--->
-</style>
+MkAPI provides Page mode to construct a comprehensive
+API documentation for your project.
 
-{{ # cache:clear }}
+## Navigation setting
 
-## Page Mode
+The use of Page mode is very simple.
+Just add a single line to `nav` section in `mkdocs.yml`
 
-Page mode is a powerful feature that constructs a comprehensive API documentation for your project. To use the page mode, just add one line to `mkdocs.yml`:
-
-~~~yaml
+```yaml
 nav:
-  - index.md
-  - API: mkapi/api/mkapi
-~~~
+  - index.md  # normal page.
+  - <api>/package.module  # MkAPI page with a special syntax.
+```
 
-MkApi scans the `nav` to find an entry that starts with `'mkapi/'`. This entry must include two or more slashes (`'/'`). Second part (`'api'`) splitted by slash is a directory name. MkApi automatically creates this directory in the `docs` directory at the beginning of the process and deletes it and its contents after the process.
+Here, a __bracket__ (`<...>`) is a marker to indicate that
+this page should be processed by MkAPI to generate API
+documentation.
+The text in the bracket is used as a name of API directory.
+In this case, a new API directory `api` is created
+in the `docs` directory by MkAPI.
+Module page(s) will be located under this directory automatically:
 
-The rest (`'mkapi'`) is a root package name, which is assumed to exist in the `mkdocs.yml` directory. However, if a root package is in `src` directory, for example, you can specify it like this:
-
-~~~yaml
-  - API: mkapi/api/src/mkapi
-~~~
-
-
-MkApi searches all packages and modules and create a Markdown source for one package or module, which is saved in the `api` directory. The rest work is done by MkDocs. You can see the documentation of MkApi in the left navigation menu.
+``` sh
+.
+├─ docs/
+│  ├─ api/
+│  │  └─ package
+│  │     └─ module.md
+│  ├─ src/
+│  └─ index.md
+└─ mkdocs.yml
+```
 
 !!! note
-    * If a package or module has no package- or module-level docstring and its members have no docstring as well, MkApi doesn't process it.
-    * For upper case heading, use the `upper` filter. See [Documentation with Heading](../module/#documentation-with-heading).
+    - You can change the name `api` as long as it is a valid URI or
+      directory name and it does not exist.
+    - A `src` directory is also created to locate source codes.
+      The name `src` is configured by the plugin setting.
+      See [Configuration](config.md).
 
-## Internal Links
+In the above example, just one `pakcge.module` page is created.
+In order to obtain a collection of subpackages/submodules,
+you can use `*` symbols.
+There are three ways:
 
-### Link from Markdown
+=== "1. package.*"
 
-Once a project documentation is generated, you can use hyperlink to it using normal Markdown syntax.
+    - Modules under `package` directory are collected.
+    - `nav` section is extended *vertically*.
 
-~~~markdown
-Go to [Section](!!mkapi.core.base.Section).
-~~~
+    ```yaml
+    nav:
+      - index.md
+      - <api>/package.*
+      - other.md
+    ```
 
-The above line create a link to `mkapi.core.base.Section` object:
+    will be converted into
 
-Go to [Section](mkapi.core.base.Section).
+    ```yaml
+    nav:
+      - index.md
+      - package: api/package/README.md
+      - module_1: api/package/module_1.md
+      - module_2: api/package/module_2.md
+      - other.md
+    ```
 
-### Link from Docstring
+=== "2. package.**"
 
-You can use this feature even in your docstring. For example, assume that `func()` is defined in a `link.fullname` module:
+    - Modules under `package` directory and its
+    subdirectories are collected, recursively.
+    - `nav` section is extended *vertically*
+    in flat structure.
 
-#File link/fullname.py
-~~~python
-def func():
-    """Internal link example.
+    ```yaml
+    nav:
+      - index.md
+      - <api>/package.**
+      - other.md
+    ```
 
-    See Also:
-        [a method](!!mkapi.core.base.Item.set_html)
-    """
-~~~
+    will be converted into
 
-The `link.fullname.func()` is rendered as:
+    ```yaml
+    nav:
+      - index.md
+      - package: api/package/READ.md
+      - subpackage_1: api/package/subpackage_1/README.md
+      - module_11: api/package/subpackage_1/module_11.md
+      - module_21: api/package/subpackage_1/module_12.md
+      - subpackage_2: api/package/subpackage_2/README.md
+      - module_21: api/package/subpackage_2/module_21.md
+      - module_22: api/package/subpackage_2/module_22.md
+      - module_1: api/package/module_1.md
+      - module_2: api/package/module_2.md
+      - other.md
+    ```
 
-![mkapi](link.fullname.func)
+=== "3. package.***"
 
-You can click the above "a method" to visit its documentation.
+    - Modules under `package` directory and its
+    subdirectories are collected, recursively.
+    - `nav` section is extended to have the same tree structure as the package.
+    - The top section title can be set, for example, `API`.
 
-Furthermore, if your module imports an object, you can refer it by its qualified name only.
+    ```yaml
+    nav:
+      - index.md
+      - API: <api>/package.**
+      - other.md
+    ```
 
-#File link/qualname.py
-~~~python
-from mkapi.core.base import Section
-from mkapi.core.docstring import get_docstring
+    will be converted into
 
+    ```yaml
+    nav:
+      - index.md
+      - API:
+        - package: api/package/READ.md
+          - subpackage_1:
+            - subpackage_1: api/package/subpackage_1/README.md
+            - module_11: api/package/subpackage_1/module_11.md
+            - module_12: api/package/subpackage_1/module_12.md
+          - subpackage_2:
+            - subpackage_2: api/package/subpackage_2/README.md
+            - module_21: api/package/subpackage_2/module_21.md
+            - module_22: api/package/subpackage_2/module_22.md
+        - module_1: api/package/module_1.md
+        - module_2: api/package/module_2.md
+      - other.md
+    ```
 
-def func():
-    """Internal link example.
+!!! note
+    - `README.md` is a index page for packages. Actually it corresponds to `__init__.py`
+    - Section and page titles can be configured programatically.
+      See [Configuration](config.md).
+    - You can set the top setion title as
+      `<section>`: `<api>/package.[***]` like the last case.
 
-    * [Section]() --- Imported object.
-    * [](get_docstring) --- Imported object.
-    * [Section.set_html]() --- Member of imported object.
-    * [Section definition](Section) --- Alternative text.
-    * Section_  --- reStructuredText style.
-    """
-    return Section(), get_docstring(None)
-~~~
+## Example API pages
 
-The `link.qualname.func()` is rendered as:
+To demonstrate the Page mode. This MkAPI documentation ships with
+some libraries reference:
 
-![mkapi](link.qualname.func)
+- [Schemdraw](https://schemdraw.readthedocs.io/en/stable/)
+  － Schemdraw is a Python package for producing high-quality
+  electrical circuit schematic diagrams.
+- [Polars](https://docs.pola.rs/)
+  － Polars is a blazingly fast DataFrame library for manipulating
+  structured data.
+- [Altair](https://altair-viz.github.io/)
+  － Vega-Altair is a declarative visualization library for Python.
 
-### Link from Embedding Mode
+Click section tabs at the top bar or buttons below to see the API documentation.
 
-Documentation created by the embedding mode has link to its project documentation.
+<style type="text/css">
+.mkapi-center {
+  display: flex;
+  justify-content: center;
+}
+</style>
 
-~~~markdown
-![mkapi](!!mkapi.core.docstring.section_heading)
-~~~
+<div class="mkapi-center" markdown="1">
+[Schemdraw][schemdraw]{.md-button .md-button--primary}
+[Polars][polars]{.md-button .md-button--primary}
+[Altair][altair]{.md-button .md-button--primary}
+</div>
 
-creates the documentation of the `section_heading()`:
+__Note that MkAPI processed the docstrings of
+these libraries without any modification.__
 
-![mkapi](mkapi.core.docstring.section_heading)
+Here is the actual `nav` section in `mkdocs.yml` of this documentation.
+Use this to reproduce the similar navigation structure for your project if you like.
 
-You can click the prefix (`mkapi.core.docstring`) or the function name (`section_heading`) to go to the project documentation.
-
-
-### Link from Type
-
-[Docstring](mkapi.core.base.Docstring) class of MkApi has an attribute `sections` that is a list of `Section` class instance:
-
-~~~python
-# Mimic code of Docstring class.
-from dataclasses import dataclass
-from typing import List
-
-from mkapi.core.base import Section
-
-@dataclass
-class Docstring:
-    """Docstring ...."""
-    sections: List[Section] = field(default_factory=list)
-    type: str = ""
-~~~
-
-Corresponding *real* documentation is displayed as below. Note that **Section** and **Type** are bold, which indicates that it is a link. Let's click. This link system using type annotation is useful to navigate users throughout the project documentation.
-
-![mkapi](mkapi.core.base.Docstring)
+```yaml
+nav:
+  - index.md
+  - Usage:  # Actual MkAPI documentation
+    - usage/object.md
+    - usage/page.md
+    - usage/config.md
+  - Examples: <api>/examples.**  # for Object mode description
+  - Schemdraw: <api>/schemdraw.***  # for Page mode demonstration
+  - Polars: <api>/polars.***  # for Page mode demonstration
+  - Altair: <api>/altair.***  # for Page mode demonstration
+```
