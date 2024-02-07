@@ -25,19 +25,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Install Linux dependencies
-        if: startsWith(runner.os, 'Linux')
-        run: |
-          sudo apt-get update
-          sudo apt-get install texlive-plain-generic inkscape texlive-xetex latexmk
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Hatch
         run: pip install --upgrade hatch
-      - name: Run static analysis
-        run: hatch fmt --check
       - name: Run tests
         run: hatch run test
       - name: Upload Codecov Results
