@@ -165,7 +165,10 @@ def _is_identifier(name: str) -> bool:
 def create_expr(name: str) -> ast.expr:
     """Return an [ast.expr] instance of a name."""
     if _is_identifier(name):
-        expr = ast.parse(name).body[0]
+        try:
+            expr = ast.parse(name).body[0]
+        except SyntaxError:
+            return ast.Constant("")
         if isinstance(expr, ast.Expr):
             return expr.value
     return ast.Constant(value=name)

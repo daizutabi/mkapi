@@ -133,7 +133,7 @@ the unaliased fullname by hovering mouse cursor on the names.
 
 !!! Note
     Currently, MkAPI doesn't support dynamic assignment to `__all__`.
-    For example, the below code are just ignored:
+    For example, the below codes are just ignored:
 
     ```python
     def get_all():
