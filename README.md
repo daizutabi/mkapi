@@ -4,19 +4,23 @@
 [![Python versions][pyversions-image]][pyversions-link]
 [![Code style: black][black-image]][black-link]
 
-MkAPI plugin for [MkDocs](https://www.mkdocs.org/) generates
-API documentation for Python code.
+MkAPI is a plugin for [MkDocs](https://www.mkdocs.org/) to generate a
+API documentation for your Python project.
 
 MkAPI supports two styles of docstrings:
-[Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and
+[Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
+and
 [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
+See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/)
+documentations for
+details.
 
 Features of MkAPI are:
 
 * **Type annotation**: If you write your function such as
   `def func(x: int) -> str:`, you don't need write type(s)
   in Parameters, Returns, or Yields section again.
-  You can overwrite the type annotation in the corresponding docstring.
+  You can override the type annotation in the corresponding docstring.
 * **Object type inspection**: MkAPI plugin creates *class*,
   *dataclass*, *function*, *method*, *property* prefix for each object.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters
@@ -28,20 +32,20 @@ Features of MkAPI are:
 
 ## Installation
 
-Install the plugin using pip:
+Install the MkAPI plugin using pip:
 
-~~~bash
+```bash
 pip install mkapi
-~~~
+```
 
 ## Configuration
 
 Add the following lines to `mkdocs.yml`:
 
-~~~yml
+```yaml
 plugins:
   - mkapi
-~~~
+```
 
 ## Usage
 
@@ -54,36 +58,27 @@ To generate the API documentation in a Markdown source,
 add three colons + object full name.
 The object can be a function, class, attribute, or module.
 
-~~~markdown
+```markdown
 ::: package.module.object
-~~~
+```
 
-You can combine this syntax with Markdown heading:
-
-~~~markdown
-## ::: package.module.object
-~~~
-
-The embedding mode is useful to embed an object interface
-in an arbitrary position of a Markdown source. For more details, see:
-
-* [Google style examples](https://mkapi.daizutabi.net/examples/google_style)
-* [NumPy style examples](https://mkapi.daizutabi.net/examples/numpy_style)
+The Object mode is useful to embed an object documentation
+in an arbitrary position of a Markdown source.
+For more details, see [Object mode](https://daizutabi.github.io/mkapi/usage/object).
 
 ### Page Mode
 
-Using the page mode, you can construct a comprehensive API documentation
+Using the Page mode, you can construct a comprehensive API documentation
 for your project.
-You can get this powerful feature by just one line:
+You can get this powerful feature by just one line in `mkdocs.yml`:
 
-~~~yaml
+```yaml
 nav:
   - index.md
-  - API: <api>/mkapi.***
-~~~
+  - API: <api>/package.***
+```
 
-For more details, see
-[Page mode and internal links](https://mkapi.daizutabi.net/usage/page)
+For more details, see [Page mode](https://daizutabi.github.io/mkapi/usage/page/).
 
 [pypi-image]: https://badge.fury.io/py/mkapi.svg
 [pypi-link]: https://pypi.org/project/mkapi
