@@ -1,7 +1,7 @@
 # Home
 
 MkAPI plugin for [MkDocs](https://www.mkdocs.org/) generates
-API documentation for Python code.
+API documentation for your Python project.
 
 MkAPI supports two styles of docstrings:
 [Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and
@@ -53,24 +53,18 @@ add three colons + object full name.
 The object can be a function, class, attribute, or module.
 
 ```markdown
-::: __mkapi__.package.module.object
+::: package.module.object
 ```
 
-You can combine this syntax with Markdown heading.
-
-```markdown
-## ::: __mkapi__.package.module.object
-```
-
-The embedding mode is useful to embed an object interface
-in an arbitrary position of a Markdown source. For more details, see
-[Object mode](usage/object.md).
+The Object mode is useful to embed an object documentation
+in an arbitrary position of a Markdown source.
+For more details, see [Object mode](usage/object.md).
 
 ### Page Mode
 
-Using the page mode, you can construct a comprehensive API documentation
+Using the Page mode, you can construct a comprehensive API documentation
 for your project.
-You can get this powerful feature by just one line:
+You can get this powerful feature by just one line in `mkdocs.yml`:
 
 ```yaml
 nav:

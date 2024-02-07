@@ -142,8 +142,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def on_shutdown(self) -> None:
         for path in MkAPIPlugin.api_dirs:
             if path.exists():
-                msg = f"Removing API directory: {path}"
-                logger.info(msg)
+                logger.info(f"Deleting API directory: {path}")
                 shutil.rmtree(path)
 
 
@@ -191,9 +190,14 @@ def _create_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     def mkdir(path: str) -> list:
         api_dir = Path(config.docs_dir) / path
         if api_dir.exists() and api_dir not in MkAPIPlugin.api_dirs:
-            msg = f"API directory exists: {api_dir}"
-            logger.error(msg)
-            sys.exit()
+            logger.warning(f"API directory exists: {api_dir}")
+            ans = input("Delete the directory? [yes/no] ")
+            if ans.lower() == "yes":
+                logger.info(f"Deleting API directory: {api_dir}")
+                shutil.rmtree(api_dir)
+            else:
+                logger.error("Delete the directory manually.")
+                sys.exit()
         if not api_dir.exists():
             msg = f"Making API directory: {api_dir}"
             logger.info(msg)

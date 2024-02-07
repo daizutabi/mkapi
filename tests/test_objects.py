@@ -26,7 +26,7 @@ def google():
     path = str(Path(__file__).parent)
     if path not in sys.path:
         sys.path.insert(0, str(path))
-    return get_module_node("examples.styles.example_google")
+    return get_module_node("examples.styles.google")
 
 
 @pytest.fixture(scope="module")

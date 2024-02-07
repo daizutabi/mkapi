@@ -235,6 +235,9 @@ def convert(text: str) -> str:
     return "".join(_convert(text))
 
 
+INLINE_CODE = re.compile(r"(?P<pre>`+).+?(?P=pre)")
+
+
 def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
     """Yield strings or match objects from a markdown text."""
     for match in _iter_fenced_codes(text):
@@ -242,6 +245,10 @@ def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
             yield match.group()
         else:
             yield from _iter(pattern, match)
+            # for m in _iter(INLINE_CODE, match):
+            #     if isinstance(m, re.Match):
+            #         yield m.group()
+            #     else:
 
 
 def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:

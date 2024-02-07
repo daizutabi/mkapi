@@ -56,7 +56,7 @@ Bases :
 {% for item in section.items %}
 <li class="mkapi-section-item" markdown="block">
 {%- if item.name -%}
-<span class="mkapi-item-name">{{ item.name }}</span>
+<span class="mkapi-item-name">{{ item.name.replace("_", "\\_") }}</span>
 {%- endif -%}
 {%- if item.name and item.type.markdown %} : {% endif %}
 {%- if item.type.markdown -%}

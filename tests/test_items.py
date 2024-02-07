@@ -120,7 +120,7 @@ def load_module(name):
 
 @pytest.fixture(scope="module")
 def google():
-    return load_module("examples.styles.example_google")
+    return load_module("examples.styles.google")
 
 
 @pytest.fixture(scope="module")

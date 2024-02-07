@@ -10,7 +10,7 @@ Examples can be given using either the ``Example`` or ``Examples``
 sections. Sections support any reStructuredText formatting, including
 literal blocks::
 
-    $ python example_numpy.py
+    $ python numpy.py
 
 
 Section breaks are created with two blank lines. Section breaks are also
@@ -158,7 +158,7 @@ def module_level_function(param1, param2=None, *args, **kwargs):
 
     """
     if param1 == param2:
-        raise ValueError('param1 may not be equal to param2')
+        raise ValueError("param1 may not be equal to param2")
     return True
 
 
@@ -331,7 +331,6 @@ class ExampleClass:
             napoleon_include_special_with_doc = True
 
         """
-        pass
 
     def __special_without_docstring__(self):
         pass
@@ -349,7 +348,6 @@ class ExampleClass:
             napoleon_include_private_with_doc = True
 
         """
-        pass
 
     def _private_without_docstring(self):
         pass

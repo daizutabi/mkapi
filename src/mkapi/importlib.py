@@ -120,7 +120,7 @@ def add_sections(module: Module) -> None:
             name = "Methods" if isinstance(obj, Class) else "Functions"
             add_section(obj, obj.functions, name)
         if isinstance(obj, Module | Class):
-            add_section(obj, obj.attributes, "Attributes")
+            add_section_attributes(obj)
 
 
 def add_section(
@@ -134,6 +134,32 @@ def add_section(
     if items := [_get_item(child) for child in children if not is_empty(child)]:
         section = Section(name, Type(), Text(), items)
         obj.doc.sections.append(section)
+
+
+def add_section_attributes(obj: Module | Class) -> None:
+    """Add an Attributes section."""
+    name = "Attributes"
+    if section := get_by_name(obj.doc.sections, name):
+        index = obj.doc.sections.index(section)
+    else:
+        index = -1
+    items = []
+    attributes = []
+    for attr in obj.attributes:
+        if not is_empty(attr):
+            if attr.doc.sections:
+                items.append(_get_item(attr))
+            else:
+                items.append(_get_item_attribute(attr))
+                continue
+        attributes.append(attr)
+    obj.attributes = attributes
+    if items:
+        section = Section(name, Type(), Text(), items)
+        if index == -1:
+            obj.doc.sections.append(section)
+        else:
+            obj.doc.sections[index] = section
 
 
 ASNAME_PATTERN = re.compile(r"^\[.+?\]\[(__mkapi__\..+?)\]$")
@@ -178,3 +204,7 @@ def _get_item(obj: Module | Class | Function | Attribute) -> Item:
     type_.markdown = type_.markdown.split("..")[-1]
     text.markdown = text.markdown.split("\n\n")[0]
     return Item("", type_, text)
+
+
+def _get_item_attribute(attr: Attribute) -> Item:
+    return Item(attr.name, attr.type, attr.doc.text)

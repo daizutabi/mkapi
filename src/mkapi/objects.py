@@ -115,7 +115,7 @@ def create_attribute(
                 _, lines[0] = lines[0].split(":", maxsplit=1)
                 doc.text.str = "\n".join(lines)
     else:
-        doc = Docstring("", Type(), Text(), [])
+        doc = Docstring("", Type(), assign.text, [])
     name, type_, default = assign.name, assign.type, assign.default
     return Attribute(name, node, doc, module, parent, type_, default)
 
@@ -326,19 +326,23 @@ def merge_attributes(obj: Module | Class) -> None:
     """Merge attributes."""
     if not (section := get_by_type(obj.doc.sections, Assigns)):
         return
-    index = obj.doc.sections.index(section)
-    del obj.doc.sections[index]
+    section.name = "Attributes"
     module = obj if isinstance(obj, Module) else obj.module
     parent = obj if isinstance(obj, Class) else None
+    attributes = []
     for assign in section.items:
-        if attr := get_by_name(obj.attributes, assign.name):
+        if not (attr := get_by_name(obj.attributes, assign.name)):
+            attr = create_attribute(assign, module, parent)
+        else:
             if not attr.doc.text.str:
                 attr.doc.text.str = assign.text.str
             if not attr.type.expr:
                 attr.type.expr = assign.type.expr
-        else:
-            attr = create_attribute(assign, module, parent)
-            obj.attributes.append(attr)
+        attributes.append(attr)
+    for attr in obj.attributes:
+        if not get_by_name(attributes, attr.name):
+            attributes.append(attr)
+    obj.attributes = attributes
 
 
 def merge_bases(obj: Class) -> None:
