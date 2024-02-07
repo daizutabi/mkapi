@@ -21,7 +21,7 @@ requires-python = ">=3.12"
 dependencies = ["halo", "jinja2", "mkdocs-material", "tqdm"]
 
 [project.urls]
-Documentation = "https://github.com/daizutabi/mkapi#readme" # FIXME
+Documentation = "https://daizutabi.github.io/mkapi/"
 Source = "https://github.com/daizutabi/mkapi"
 Issues = "https://github.com/daizutabi/mkapi/issues"
 
@@ -97,7 +97,6 @@ ignore = [
   "TD",
   "TRY003",
 ]
-
 
 [tool.ruff.extend-per-file-ignores]
 "tests/*.py" = ["ANN", "D", "S101", "INP001", "T201", "PLR2004", "PGH003"]
