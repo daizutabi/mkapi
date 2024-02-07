@@ -12,6 +12,7 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Framework :: MkDocs",
   "Programming Language :: Python",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Documentation",
   "Topic :: Software Development :: Documentation",
 ]

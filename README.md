@@ -1,8 +1,9 @@
 # MkAPI
 
-[![PyPI version][pypi-image]][pypi-link]
-[![Python versions][pyversions-image]][pyversions-link]
-[![Code style: black][black-image]][black-link]
+[![PyPI Version][pypi-v-image]][pypi-v-link]
+[![Build Status][GHAction-image]][GHAction-link]
+[![Coverage Status][codecov-image]][codecov-link]
+[![Python Version][python-v-image]][python-v-link]
 
 MkAPI is a plugin for [MkDocs](https://www.mkdocs.org/) to generate a
 API documentation for your Python project.
@@ -80,9 +81,12 @@ nav:
 
 For more details, see [Page mode](https://daizutabi.github.io/mkapi/usage/page/).
 
-[pypi-image]: https://badge.fury.io/py/mkapi.svg
-[pypi-link]: https://pypi.org/project/mkapi
-[black-image]: https://img.shields.io/badge/code%20style-black-000000.svg
-[black-link]: https://github.com/ambv/black
-[pyversions-image]: https://img.shields.io/pypi/pyversions/mkapi.svg
-[pyversions-link]: https://pypi.org/project/mkapi
+<!-- Badges -->
+[pypi-v-image]: https://img.shields.io/pypi/v/mkapi.svg
+[pypi-v-link]: https://pypi.org/project/mkapi/
+[GHAction-image]: https://github.com/daizutabi/mkapi/actions/workflows/ci.yml/badge.svg?branch=main&event=push
+[GHAction-link]: https://github.com/daizutabi/mkapi/actions?query=event%3Apush+branch%3Amain
+[codecov-image]: https://codecov.io/github/daizutabi/mkapi/coverage.svg?branch=main
+[codecov-link]: https://codecov.io/github/daizutabi/mkapi?branch=main
+[python-v-image]: https://img.shields.io/pypi/pyversions/mkapi.svg
+[python-v-link]: https://pypi.org/project/mkapi
