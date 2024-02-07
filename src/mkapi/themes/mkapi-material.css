@@ -96,15 +96,13 @@ li.mkapi-section-item li {
 }
 .mkapi-example-input code {
   font-size: 85%;
-  background-color: var(--md-default-fg-color--lightest);
 }
 .mkapi-example-output code {
   font-size: 85%;
-  font-family: monospace;
-  background-color: var(--md-code-bg-color);
+  border: solid var(--md-code-bg-color);
+  background-color: transparent;
 }
 .mkapi-source code {
-  font-family: monospace;
   font-size: 85%;
 }
 .mkapi-docs-link {

@@ -1,12 +1,16 @@
 # Home
 
-MkAPI plugin for [MkDocs](https://www.mkdocs.org/) generates
+[![Built with Material for MkDocs](https://img.shields.io/badge/Material_for_MkDocs-526CFE?style=for-the-badge&logo=MaterialForMkDocs&logoColor=white)](https://squidfunk.github.io/mkdocs-material/)
+
+MkAPI is a plugin for [MkDocs](https://www.mkdocs.org/) to generate a
 API documentation for your Python project.
 
 MkAPI supports two styles of docstrings:
-[Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) and
+[Google](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
+and
 [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
-See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/) documentations for
+See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/)
+documentations for
 details.
 
 Features of MkAPI are:
@@ -14,7 +18,7 @@ Features of MkAPI are:
 * **Type annotation**: If you write your function such as
   `def func(x: int) -> str:`, you don't need write type(s)
   in Parameters, Returns, or Yields section again.
-  You can overwrite the type annotation in the corresponding docstring.
+  You can override the type annotation in the corresponding docstring.
 * **Object type inspection**: MkAPI plugin creates *class*,
   *dataclass*, *function*, *method*, *property* prefix for each object.
 * **Docstring inheritance**: Docstring of a subclass can inherit parameters

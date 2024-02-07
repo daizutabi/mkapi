@@ -225,7 +225,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     section_title = _get_function("section_title", plugin)
 
     def _create_page(name: str, path: str, filters: list[str], depth: int) -> str:
-        spinner.text = f"Updating nav...: {name}"
+        spinner.text = f"Updating nav...: [{2*len(MkAPIPlugin.api_uris):>3}] {name}"
         MkAPIPlugin.api_uris.append(path)
         abs_path = Path(config.docs_dir) / path
         _check_path(abs_path)
@@ -240,6 +240,8 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         return page_title(name, depth) if page_title else name
 
     def predicate(name: str) -> bool:
+        if not plugin.config.exclude:
+            return True
         return any(ex not in name for ex in plugin.config.exclude)
 
     with warnings.catch_warnings():

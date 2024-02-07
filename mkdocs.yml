@@ -27,8 +27,8 @@ theme:
         name: Switch to light mode
   features:
     - content.tooltips
+    - content.code.annotate
     - navigation.expand
-    - navigation.footer
     - navigation.indexes
     - navigation.instant
     - navigation.sections
@@ -42,20 +42,23 @@ plugins:
       exclude:
         - altair.vegalite
       debug: true
-      # filters: [plugin_filter]
 markdown_extensions:
   - pymdownx.magiclink
   - pymdownx.highlight:
       use_pygments: true
   - pymdownx.inlinehilite
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 nav:
   - index.md
   - Usage:
     - usage/object.md
     - usage/page.md
-  # - API: <api>/mkapi.***
+    - usage/config.md
   - Examples: <api>/examples.**
-  # - Schemdraw: <api>/schemdraw.***
-  # - Polars: <api>/polars.***
-  # - Altair: <api>/altair.***
+  - Schemdraw: <api>/schemdraw.***
+  - Polars: <api>/polars.***
+  - Altair: <api>/altair.***
+extra_css:
+  - stylesheets/extra.css

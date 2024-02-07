@@ -297,3 +297,8 @@ def test_set_markdown():
     assert isinstance(obj, Function)
     m = obj.doc.text.markdown
     assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."
+
+
+# schemdraw.elements.intcircuits.Ic
+# IcDIP
+# Keyword argsの違い
