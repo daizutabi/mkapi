@@ -113,7 +113,7 @@ def create_attribute(
         if doc.text.str and (lines := doc.text.str.splitlines()):  # noqa: SIM102
             if ":" in lines[0]:
                 _, lines[0] = lines[0].split(":", maxsplit=1)
-                doc.text.str = "\n".join(lines)
+                doc.text.str = "\n".join(lines).strip()
     else:
         doc = Docstring("", Type(), assign.text, [])
     name, type_, default = assign.name, assign.type, assign.default

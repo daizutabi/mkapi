@@ -25,55 +25,41 @@
     <span class="mkapi-colon">:</span>
     <span class="mkapi-object-type">{{ obj.type.markdown|safe }}</span>
   {%- endif -%}
-{{ "\n" }}</p>
+</p>
 
 {% if obj.kind in ["class", "dataclass"] and obj.bases -%}
 <p class="mkapi-object-bases" markdown="1">Bases :
-  {% for base in obj.bases %}<span class="mkapi-object-base">{{ base.type.markdown|safe }}</span>
-    {%- if not loop.last %}<span class="mkapi-comma">, </span>{% else %}
-</p>{% endif %}
-  {% endfor -%}
-{% endif %}
+{% for base in obj.bases %}<span class="mkapi-object-base">{{ base.type.markdown|safe }}</span>
+  {%- if not loop.last %}<span class="mkapi-comma">, </span>{% endif %}
+{% endfor %}</p>
+{% endif -%}
 
-{% if doc.text.markdown %}
-<div class="mkapi-doc-text" markdown="1">
 {{ doc.text.markdown|safe }}
-</div>
-{% endif %}
 
-{% for section in doc.sections if section.name != "Bases" %}
-
-{% if section.name and not section.kind %}
-<div class="mkapi-section-name mkapi-section-{{ section.name|lower }}">
-{{ section.name }}
-</div>
-{% endif %}
-
-{% if section.text.markdown %}
-<div class="mkapi-section-text{% if section.name %} mkapi-section-{{ section.name|lower }}{% endif %}" markdown="1">
-{{ section.text.markdown|safe }}
-</div>
-{% endif %}
-
-{% if section.items %}<ul class="mkapi-section-items" markdown="1">{% endif %}
-
-{% for item in section.items %}
-<li class="mkapi-section-item" markdown="block">
-{%- if item.name -%}
-<span class="mkapi-item-name">{{ item.name.replace("_", "\\_") }}</span>
-{%- endif -%}
-{%- if item.name and item.type.markdown %} : {% endif %}
-{%- if item.type.markdown -%}
-<span class="mkapi-item-type">{{ item.type.markdown|safe }}</span>
-{%- endif -%}
-{%- if item.text.markdown %}
- &mdash;
-{{ item.text.markdown|safe}}
+{% for section in doc.sections %}
+{%- if section.name and not section.kind -%}
+<div class="mkapi-section"><span class="mkapi-section-name">{{ section.name }}</span></div>
 {%- endif %}
-</li>
+
+{{ section.text.markdown|safe }}
+
+{% if section.items -%}
+<ul markdown="1">
+  {% for item in section.items %}
+  <li markdown="block">
+  {% if item.name -%}
+    <span class="mkapi-item-name">{{ item.name.replace("_", "\\_") }}</span>
+  {%- endif -%}
+  {%- if item.name and item.type.markdown %} : {% endif %}
+  {% if item.type.markdown -%}
+    <span class="mkapi-item-type">{{ item.type.markdown|safe }}</span>
+  {%- endif -%}
+  {%- if item.text.markdown %} &mdash;
+{{ item.text.markdown|safe}}
+  {%- endif %}
+  </li>
 {% endfor %}
-
-{% if section.items %}</ul>{% endif %}
-
+</ul>
+{% endif %}
 {% endfor %}
 </div>

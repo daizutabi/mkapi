@@ -38,7 +38,7 @@ def test_render_moduled():
     s = '<p class="mkapi-object" markdown="1">\n  <'
     assert s in m
     assert '>\n  <span class="mkapi-object-kind">package</span>\n  <' in m
-    assert "styles</span></span>\n</p>" in m
+    assert "styles</span></span></p>" in m
 
 
 def test_render_method():
@@ -49,7 +49,7 @@ def test_render_method():
     assert s in m
     assert '>\n  <span class="mkapi-object-kind">method</span>\n  <' in m
     assert '>\n  <span class="mkapi-object-name"><span' in m
-    assert '><span class="mkapi-paren">)</span></span>\n</p>' in m
+    assert '><span class="mkapi-paren">)</span></span></p>' in m
 
 
 def test_render_attribute():
@@ -60,37 +60,39 @@ def test_render_attribute():
     assert s in m
     assert '>\n  <span class="mkapi-object-kind">attribute</span>\n  <' in m
     assert '</span></span>\n    <span class="mkapi-colon">:</span>\n' in m
-    assert ':</span>\n    <span class="mkapi-object-type">int</span>\n</p>' in m
+    assert ':</span>\n    <span class="mkapi-object-type">int</span></p>' in m
 
 
 def test_render_class():
     obj = get_object("mkapi.objects.Class")
     assert isinstance(obj, Class)
     bases = obj.bases
-    # obj.bases = obj.bases * 3
-    assert obj
+    obj.bases = bases * 2
     m = render(obj, 2, [])
-    s = "</span></span>\n</p>\n"
+    s = "</span></span></p>\n"
     assert s in m
-    i = m.index(s)
-    print(m[i : i + 500])
-    # assert 0
-
+    assert '.Callable]</span><span class="mkapi-comma">, </span>\n' in m
+    # assert '.Callable]</span>\n</p>\n\n<div class="mkapi-doc-text"' in m
     obj.bases = bases
-    # m = render(obj, 2, [])
-    # s = '<p class="mkapi-object" markdown="1">\n  <'
-    # assert s in m
-    # assert '>\n  <span class="mkapi-object-kind">method</span>\n  <' in m
-    # assert '>\n  <span class="mkapi-object-name"><span' in m
-    # assert '><span class="mkapi-paren">)</span></span>\n</p>' in m
 
 
-#     i = m.index(s)
-#     print(m[i : i + 500])
+# def test_render_doc_text():
+#     obj = get_object("examples.styles.google.ExampleClass")
+#     assert obj
+#     m = render(obj, 2, [])
+#     s = '<div class="mkapi-doc-text" markdown="1">\nThe summary'
+#     assert s in m
 
-#     assert 0
-#     # name = "polars.config.Config.set_tbl_cell_alignment"
-#     # obj = get_object(name)
+
+# def test_render_section():
+#     obj = get_object("examples.styles.google.ExampleClass")
+#     assert obj
+#     m = render(obj, 2, [])
+#     print(m)
+#     assert '</div>\n\n<div class="mkapi-section"' in m
+#     assert '</div>\n\n<ul class="mkapi-section-items" markdown="1">' in m
+#     assert "\n  </li>\n\n  <li" in m
+#     assert "\n  </li>\n\n</ul>\n" in m
 
 
 # def test_render_sourcelink():
