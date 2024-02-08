@@ -16,7 +16,7 @@ from mkapi.globals import get_fullname, resolve_with_attribute
 from mkapi.items import (
     Assign,
     Assigns,
-    Bases,
+    # Bases,
     Default,
     Parameters,
     Raises,
@@ -179,7 +179,7 @@ class Class(Callable):
 
     def __iter__(self) -> Iterator[Type | Text]:
         """Yield [Type] or [Text] instances."""
-        for item in itertools.chain(self.attributes, self.parameters):
+        for item in itertools.chain(self.bases, self.attributes, self.parameters):
             yield from item
 
 
@@ -265,8 +265,8 @@ def merge_items(module: Module) -> None:
         if isinstance(obj, Module | Class):
             _add_doc_comments(obj.attributes, module.source)
             merge_attributes(obj)
-        if isinstance(obj, Class):
-            merge_bases(obj)
+        # if isinstance(obj, Class):
+        #     merge_bases(obj)
 
 
 def _add_doc_comments(attrs: list[Attribute], source: str | None = None) -> None:
@@ -345,12 +345,12 @@ def merge_attributes(obj: Module | Class) -> None:
     obj.attributes = attributes
 
 
-def merge_bases(obj: Class) -> None:
-    """Merge bases."""
-    if not obj.bases:
-        return
-    section = Bases("Bases", Type(), Text(), obj.bases)
-    obj.doc.sections.insert(0, section)
+# def merge_bases(obj: Class) -> None:
+#     """Merge bases."""
+#     if not obj.bases:
+#         return
+#     section = Bases("Bases", Type(), Text(), obj.bases)
+#     obj.doc.sections.insert(0, section)
 
 
 def set_markdown(module: Module) -> None:

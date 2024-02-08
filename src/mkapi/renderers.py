@@ -63,7 +63,7 @@ def _render_object(
     context: dict[str, Any],
 ) -> str:
     if isinstance(obj, Class | Function):
-        context["signature"] = get_signature(obj).markdown
+        context["signature"] = get_signature(obj)
     return templates["object"].render(context)
 
 

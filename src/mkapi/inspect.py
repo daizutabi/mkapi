@@ -21,8 +21,6 @@ if TYPE_CHECKING:
 
 def iter_decorator_names(obj: Class | Function) -> Iterator[str]:
     """Yield decorator_names."""
-    if not obj.module:
-        return
     for deco in obj.node.decorator_list:
         deco_name = next(mkapi.ast.iter_identifiers(deco))
         if name := get_fullname(obj.module.name, deco_name):
@@ -33,8 +31,6 @@ def iter_decorator_names(obj: Class | Function) -> Iterator[str]:
 
 def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
     """Return a decorator expr by name."""
-    if not obj.module:
-        return None
     for deco in obj.node.decorator_list:
         deco_name = next(mkapi.ast.iter_identifiers(deco))
         if get_fullname(obj.module.name, deco_name) == name:
@@ -93,7 +89,7 @@ def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
 class Part:
     """Signature part."""
 
-    text: str
+    markdown: str
     kind: str
 
 
@@ -106,27 +102,18 @@ class Signature:
     def __iter__(self) -> Iterator[Part]:
         return iter(self.parts)
 
-    def __repr__(self) -> str:
-        return self.markdown
-
-    @property
-    def markdown(self) -> str:
-        """Return Markdown of signature."""
-        markdowns = [f'<span class="{p.kind}">{p.text}</span>' for p in self]
-        return "".join(markdowns)
-
 
 def _iter_sep(kind: str | None, prev_kind: str | None) -> Iterator[tuple[str, str]]:
     if prev_kind == "posonlyargs" and kind != prev_kind:
-        yield "/", "sep"
+        yield "/", "slash"
         yield ", ", "comma"
     if kind == "kwonlyargs" and prev_kind not in [kind, "vararg"]:
-        yield "\\*", "sep"
+        yield r"\*", "star"
         yield ", ", "comma"
     if kind == "vararg":
-        yield "\\*", "star"
+        yield r"\*", "star"
     if kind == "kwarg":
-        yield "\\*\\*", "star"
+        yield r"\*\*", "star"
 
 
 def _iter_param(param: Parameter) -> Iterator[tuple[str, str]]:
@@ -156,7 +143,7 @@ def iter_signature(obj: Class | Function) -> Iterator[tuple[str, str]]:
         prev_kind = kind
     if kind == "posonlyargs":
         yield ", ", "comma"
-        yield "/", "sep"
+        yield "/", "slash"
     yield ")", "paren"
     if not hasattr(obj, "returns") or not obj.returns:  # type: ignore
         return
@@ -168,10 +155,3 @@ def get_signature(obj: Class | Function) -> Signature:
     """Return signature."""
     parts = [Part(*args) for args in iter_signature(obj)]
     return Signature(parts)
-
-
-# Parameter.POSITIONAL_ONLY: "posonlyargs",
-# Parameter.POSITIONAL_OR_KEYWORD: "args",
-# Parameter.VAR_POSITIONAL: "vararg",
-# Parameter.KEYWORD_ONLY: "kwonlyargs",
-# Parameter.VAR_KEYWORD: "kwarg",

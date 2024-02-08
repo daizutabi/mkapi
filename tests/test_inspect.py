@@ -1,17 +1,25 @@
 import ast
-
-import pytest
+import dataclasses
 
 from mkapi.inspect import (
     get_decorator,
     get_signature,
     is_classmethod,
     is_dataclass,
+    is_staticmethod,
     iter_decorator_names,
     iter_signature,
 )
-from mkapi.objects import Class, Function, create_module
+from mkapi.objects import Class, Function, Member, create_module
 from mkapi.utils import get_by_name, get_module_node
+
+
+def test_iter_decorator_names():
+    src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
+    node = ast.parse(src)
+    module = create_module("a", node)
+    f = module.functions[0]
+    assert list(iter_decorator_names(f)) == ["a", "b.c", "d"]
 
 
 def test_get_decorator():
@@ -24,6 +32,36 @@ def test_get_decorator():
     assert isinstance(cls, Class)
     assert get_decorator(cls, "dataclasses.dataclass")
     assert is_dataclass(cls)
+    assert dataclasses.is_dataclass(Member)
+    src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
+    node = ast.parse(src)
+    module = create_module("a", node)
+    f = module.functions[0]
+    assert get_decorator(f, "d")
+    assert not get_decorator(f, "x")
+
+
+def test_is_method():
+    src = "class A:\n @classmethod\n def f(cls): pass"
+    node = ast.parse(src)
+    module = create_module("a", node)
+    cls = module.classes[0]
+    assert isinstance(cls, Class)
+    assert is_classmethod(cls.functions[0])
+    src = "class A:\n @staticmethod\n def f(cls): pass"
+    node = ast.parse(src)
+    module = create_module("a", node)
+    cls = module.classes[0]
+    assert isinstance(cls, Class)
+    assert is_staticmethod(cls.functions[0])
+
+
+# TODO
+# def test_iter_dataclass_parameters():
+#     obj = get_object("mkapi.objects.Class")
+#     assert isinstance(obj, Class)
+#     print(obj.attributes)
+#     print(list(iter_dataclass_parameters(obj)))
 
 
 def get(src: str) -> Function:
@@ -51,48 +89,18 @@ def sig(src: str) -> str:
 def test_iter_signature_kind():
     assert sig("x,y,z") == "(x,y,z)"
     assert sig("x,/,y,z") == "(x,/,y,z)"
-    assert sig("x,/,*,y,z") == r"(x,/,\*,y,z)"
-    assert sig("x,/,y,*,z") == r"(x,/,y,\*,z)"
+    assert sig("x,/,*,y,z") == "(x,/,\\*,y,z)"
+    assert sig("x,/,y,*,z") == "(x,/,y,\\*,z)"
     assert sig("x,y,z,/") == "(x,y,z,/)"
-    assert sig("*,x,y,z") == r"(\*,x,y,z)"
-    assert sig("*x,y,**z") == r"(\*x,y,\*\*z)"
-    assert sig("x,y,/,**z") == r"(x,y,/,\*\*z)"
+    assert sig("*,x,y,z") == "(\\*,x,y,z)"
+    assert sig("*x,y,**z") == "(\\*x,y,\\*\\*z)"
+    assert sig("x,y,/,**z") == "(x,y,/,\\*\\*z)"
 
 
-def test_markdown():
-    name = "mkapi.objects"
-    node = get_module_node(name)
-    assert node
-    module = create_module(name, node)
-    assert module
-    func = get_by_name(module.functions, "create_module")
-    assert isinstance(func, Function)
-    sig = get_signature(func)
-    m = sig.markdown
-    assert '<span class="ann">[ast][__mkapi__.ast].Module</span>' in m
-
-
-@pytest.fixture(scope="module")
-def DataFrame() -> Class:  # noqa: N802
-    node = get_module_node("polars.dataframe.frame")
-    assert node
-    module = create_module("polars.dataframe.frame", node)
-    assert module
-    cls = get_by_name(module.classes, "DataFrame")
-    assert isinstance(cls, Class)
-    return cls
-
-
-def test_markdown_polars(DataFrame):  # noqa: N803
-    func = get_by_name(DataFrame.functions, "to_pandas")
-    assert isinstance(func, Function)
-    sig = get_signature(func)
-    m = sig.markdown
-    assert r'<span class="sep">\*</span>' in m
-
-
-def test_method(DataFrame):  # noqa: N803
-    func = get_by_name(DataFrame.functions, "_from_arrow")
-    assert isinstance(func, Function)
-    assert "classmethod" in iter_decorator_names(func)
-    assert is_classmethod(func)
+def test_get_signature():
+    obj = get("def f(x_:str='s',/,*y_,z_=1,**kwargs)->int: pass")
+    s = list(get_signature(obj))
+    assert s[0].kind == "paren"
+    assert s[0].markdown == "("
+    assert s[1].kind == "arg"
+    assert s[1].markdown == "x\\_"

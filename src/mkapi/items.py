@@ -338,11 +338,11 @@ def create_returns(name: str, text: str, style: str) -> Returns:
     return Returns(name, Type(), Text(), returns)
 
 
-@dataclass(repr=False)
-class Bases(Section):
-    """Bases section."""
+# @dataclass(repr=False)
+# class Bases(Section):
+#     """Bases section."""
 
-    items: list[Base]
+#     items: list[Base]
 
 
 @dataclass(repr=False)
