@@ -1,4 +1,4 @@
-<div class="mkapi-container" markdown="1">
+<div class="mkapi-content" markdown="1">
 
 <{{ heading }} class="mkapi-heading" id="{{ obj.fullname }}" markdown="1">
 <span class="mkapi-heading-name">{{ fullname|safe }}</span>
@@ -38,7 +38,7 @@
 
 {% for section in doc.sections %}
 {%- if section.name and not section.kind -%}
-<div class="mkapi-section"><span class="mkapi-section-name">{{ section.name }}</span></div>
+<p class="mkapi-section"><span class="mkapi-section-name">{{ section.name }}</span></p>
 {%- endif %}
 
 {{ section.text.markdown|safe }}

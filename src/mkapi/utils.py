@@ -67,7 +67,7 @@ def find_submodule_names(
     """
     predicate = predicate or (lambda _: True)
     names = [name for name in iter_submodule_names(name) if predicate(name)]
-    names.sort(key=lambda x: [not is_package(x), x])
+    names.sort(key=lambda x: [not is_package(x), x.replace("_", "~")])
     return names
 
 

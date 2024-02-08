@@ -31,7 +31,7 @@ examples/
 ```
 
 <style type="text/css">
-.mkapi-container {
+.mkapi-content {
   border: dashed #22772288;
 }
 </style>

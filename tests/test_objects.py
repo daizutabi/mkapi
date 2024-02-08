@@ -302,3 +302,4 @@ def test_set_markdown():
 # schemdraw.elements.intcircuits.Ic
 # IcDIP
 # Keyword argsの違い
+# altair.utils.core.parse_shorthand: return
