@@ -74,7 +74,7 @@ def test_render_class():
     assert s in m
     i = m.index(s)
     print(m[i : i + 500])
-    assert 0
+    # assert 0
 
     obj.bases = bases
     # m = render(obj, 2, [])
