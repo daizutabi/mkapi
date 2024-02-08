@@ -56,7 +56,7 @@ nav:
     - usage/object.md
     - usage/page.md
     - usage/config.md
-  - API: <api>/mkapi.***
+  # - API: <api>/mkapi.***
   - Examples: <api>/examples.**
   # - Schemdraw: <api>/schemdraw.***
   # - Polars: <api>/polars.***

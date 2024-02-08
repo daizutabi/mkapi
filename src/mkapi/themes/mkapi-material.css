@@ -31,35 +31,35 @@ p.mkapi-object {
   font-weight: 600;
   font-size: 1.1em;
 }
-.mkapi-object-name .prefix {
+.mkapi-prefix {
   color: var(--md-code-hl-name-color);
 }
-.mkapi-object-name .dot {
+.mkapi-dot {
   color: var(--md-code-hl-comment-color);
 }
-.mkapi-signature .arg {
+.mkapi-arg {
   color: var(--md-code-hl-name-color);
   font-style: italic;
 }
-.mkapi-signature .default, .ann, .return, .star {
+.mkapi-default, .mkapi-ann, .mkapi-return, .mkapi-star {
   color: var(--md-code-hl-variable-color);
 }
-.mkapi-signature .paren {
+.mkapi-paren {
   color: var(--md-code-hl-punctuation-color);
   margin-left: 2px;
   margin-right: 2px;
 }
-.mkapi-signature .sep {
+.mkapi-star, .mkapi-slash {
   color: var(--md-code-hl-punctuation-color);
   margin-left: 0px;
   margin-right: 2px;
 }
-.mkapi-signature .comma, .colon {
+.mkapi-comma, .mkapi-colon {
   color: var(--md-code-hl-punctuation-color);
   margin-left: 2px;
   margin-right: 0px;
 }
-.mkapi-signature .equal, .arrow {
+.mkapi-equal, .mkapi-arrow {
   color: var(--md-code-hl-punctuation-color);
   margin-left: 0px;
   margin-right: 0px;
@@ -69,24 +69,27 @@ p.mkapi-object-bases {
   font-size: 85%;
   margin-block-start: 0px;
 }
+.mkapi-section {
+  margin-bottom: 8px;
+
+}
+.mkapi-section + p {
+  margin-block-start: 0px;
+}
+.mkapi-section + ul ,
+.mkapi-section + ol {
+  margin-block-start: 0px;
+}
+
 .mkapi-section-name {
-  color: var(--md-default-fg-color--light);
   border-bottom: thin solid var(--md-default-fg-color--light);
   font-size: 1.05em;
-  font-weight: 400;
-  margin-top: 16px;
-}
-ul.mkapi-section-items {
-  margin-top: 6pt;
 }
 .mkapi-item-name {
   font-weight: 600;
 }
-.mkapi-item-type,.mkapi-object-type {
-  color: var(--md-code-hl-variable-color);
-}
-li.mkapi-section-item li {
-  margin-bottom: 2px;
+.mkapi-item-type, .mkapi-object-type {
+  color: var(--md-default-fg-color--light);
 }
 .mkapi-example-input pre {
   margin-bottom: 0px;
