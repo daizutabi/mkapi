@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mkapi"
-description = "A documentation generation tool for MkDocs"
+description = "A plugin for MkDocs to generate API documentation"
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]

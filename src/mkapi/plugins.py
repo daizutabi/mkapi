@@ -15,7 +15,6 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
-import yaml
 from halo import Halo
 from mkdocs.config import Config, config_options
 from mkdocs.plugins import BasePlugin, get_plugin_logger
@@ -79,7 +78,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         for file in files:
             if file.src_uri.startswith(f"{self.config.src_dir}/"):
                 file.inclusion = InclusionLevel.NOT_IN_NAV
-        for file in _collect_theme_files(config, self):
+        for file in _collect_stylesheets(config, self):
             files.append(file)
         return files
 
@@ -131,13 +130,6 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_post_build(self, *, config: MkDocsConfig) -> None:
         self.bar.close()
-
-    def on_serve(self, server, config: MkDocsConfig, builder, **kwargs):
-        if self.config.debug:
-            for path in ["themes", "templates"]:
-                path_str = (Path(mkapi.__file__).parent / path).as_posix()
-                server.watch(path_str, builder)
-        return server
 
     def on_shutdown(self) -> None:
         for path in MkAPIPlugin.api_dirs:
@@ -252,35 +244,24 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         spinner.stop()
 
 
-def _collect_theme_files(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:  # noqa: ARG001
-    root = Path(mkapi.__file__).parent / "themes"
+def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:  # noqa: ARG001
+    root = Path(mkapi.__file__).parent / "stylesheets"
     docs_dir = config.docs_dir
     config.docs_dir = root.as_posix()
-    theme_files = get_files(config)
+    stylesheet_files = get_files(config)
     config.docs_dir = docs_dir
     theme_name = config.theme.name or "mkdocs"
     files: list[File] = []
     css: list[str] = []
-    js: list[str] = []
-    for file in theme_files:
+    for file in stylesheet_files:
         path = Path(file.src_path).as_posix()
-        if path.endswith(".css"):
-            if "common" in path or theme_name in path:
-                files.append(file)
-                css.append(path)
-        elif path.endswith(".js"):
+        if path.endswith("mkapi-common.css"):
+            files.insert(0, file)
+            css.insert(0, path)
+        elif path.endswith(f"mkapi-{theme_name}.css"):
             files.append(file)
-            js.append(path)
-        elif path.endswith((".yml", ".yaml")):
-            with (root / path).open() as f:
-                data = yaml.safe_load(f)
-            if isinstance(data, dict):
-                css.extend(data.get("extra_css", []))
-                js.extend(data.get("extra_javascript", []))
-    css = [f for f in css if f not in config.extra_css]
-    js = [f for f in js if f not in config.extra_javascript]
-    config.extra_css.extend(css)
-    config.extra_javascript.extend(js)
+            css.append(path)
+    config.extra_css = [*css, *config.extra_css]
     return files
 
 
@@ -290,7 +271,6 @@ def _replace_toc(
     depth: int = 0,
 ) -> None:
     for link in toc:
-        # link.id = link.id.replace("\0295\03", "_")
         link.title = re.sub(r"\s+\[.+?\]", "", link.title)  # Remove source link.
         if title:
             link.title = title(link.title, depth)

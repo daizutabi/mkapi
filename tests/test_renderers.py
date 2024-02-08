@@ -19,7 +19,7 @@ def test_load_templates():
 def test_render_sourcelink():
     obj = get_object("examples")
     assert obj
-    c = '<div class="mkapi-container" markdown="1">\n'
+    c = '<div class="mkapi-content" markdown="1">\n'
     h = '<h2 class="mkapi-heading" id="examples" markdown="1">'
     n = '<span class="mkapi-heading-name">examples</span>'
     s = '<span class="mkapi-source-link">[source][__mkapi__.__source__.examples]</span>'
@@ -72,44 +72,4 @@ def test_render_class():
     s = "</span></span></p>\n"
     assert s in m
     assert '.Callable]</span><span class="mkapi-comma">, </span>\n' in m
-    # assert '.Callable]</span>\n</p>\n\n<div class="mkapi-doc-text"' in m
     obj.bases = bases
-
-
-# def test_render_doc_text():
-#     obj = get_object("examples.styles.google.ExampleClass")
-#     assert obj
-#     m = render(obj, 2, [])
-#     s = '<div class="mkapi-doc-text" markdown="1">\nThe summary'
-#     assert s in m
-
-
-# def test_render_section():
-#     obj = get_object("examples.styles.google.ExampleClass")
-#     assert obj
-#     m = render(obj, 2, [])
-#     print(m)
-#     assert '</div>\n\n<div class="mkapi-section"' in m
-#     assert '</div>\n\n<ul class="mkapi-section-items" markdown="1">' in m
-#     assert "\n  </li>\n\n  <li" in m
-#     assert "\n  </li>\n\n</ul>\n" in m
-
-
-# def test_render_sourcelink():
-#     obj = get_object("examples.styles.google.ExampleClass")
-#     assert obj
-#     m = render(obj, 2, ["sourcelink"])
-#     print(m[:400])
-#     print("-" * 40)
-#     m = render(obj, 2, [])
-#     print(m[:400])
-#     assert 0
-#     # name = "polars.config.Config.set_tbl_cell_alignment"
-# obj = get_object(name)
-# assert obj
-# m = render(obj, 1, [])
-# print(m)
-# print("-" * 100)
-# h = markdown.markdown(m, extensions=["md_in_html"])
-# print(h)
-# # assert 0

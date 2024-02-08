@@ -5,7 +5,7 @@
 [![Coverage Status][codecov-image]][codecov-link]
 [![Python Version][python-v-image]][python-v-link]
 
-MkAPI is a plugin for [MkDocs](https://www.mkdocs.org/) to generate a
+MkAPI is a plugin for [MkDocs](https://www.mkdocs.org/) to generate
 API documentation for your Python project.
 
 MkAPI supports two styles of docstrings:
