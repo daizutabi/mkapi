@@ -12,19 +12,19 @@ and
 See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/)
 documentation for details.
 
-Features of MkAPI are:
+## Features
 
-* **Type annotation**: If you write your function such as
+- __Type annotation__: If you write your function such as
   `def func(x: int) -> str:`, you don't need write type(s)
   in Parameters, Returns, or Yields section again.
-  You can override the type annotation in the corresponding docstring.
-* **Object type inspection**: MkAPI plugin creates *class*,
+  You can override the type annotation in docstrings.
+- __Object type inspection__: MkAPI plugin creates *class*,
   *dataclass*, *function*, *method*, *property* prefix for each object.
-* **Docstring inheritance**: Docstring of a subclass can inherit parameters
+- __Docstring inheritance__: Docstring of a subclass can inherit parameters
   and attributes description from its superclasses.
-* **Table of Contents**: Table of contents are inserted into the documentation
+- __Table of Contents__: Table of contents are inserted into the documentation
   of each package, module, and class.
-* **Bidirectional Link**: Bidirectional links are created between
+- __Bidirectional Link__: Bidirectional links are created between
   documentation and source code.
 
 ## Installation
@@ -53,7 +53,7 @@ Object mode and Page mode.
 
 To generate the API documentation in a Markdown source,
 add three colons + object full name.
-The object can be a function, class, attribute, or module.
+The object can be a module, class, function, or attribute.
 
 ```markdown
 ::: package.module.object
@@ -72,7 +72,7 @@ You can get this powerful feature by just one line in `mkdocs.yml`:
 ```yaml
 nav:
   - index.md
-  - API: <api>/package.***
+  - API: $api/package.***
 ```
 
 For more details, see [Page mode](usage/page.md).

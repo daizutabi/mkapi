@@ -84,7 +84,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_nav(self, *args, **kwargs) -> None:
         total = len(MkAPIPlugin.api_uris) + len(MkAPIPlugin.api_srcs)
-        desc = "MkAPI: Building API"
+        desc = "MkAPI: Building API pages"
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.bar = tqdm(desc=desc, total=total, leave=False)
@@ -217,7 +217,8 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     section_title = _get_function("section_title", plugin)
 
     def _create_page(name: str, path: str, filters: list[str], depth: int) -> str:
-        spinner.text = f"Updating nav...: [{2*len(MkAPIPlugin.api_uris):>3}] {name}"
+        n = len(MkAPIPlugin.api_uris)
+        spinner.text = f"Collecting modules [{n:>3}]: {name}"
         MkAPIPlugin.api_uris.append(path)
         abs_path = Path(config.docs_dir) / path
         _check_path(abs_path)

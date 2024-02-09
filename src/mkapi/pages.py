@@ -29,34 +29,26 @@ def _split_name_maxdepth(name: str) -> tuple[str, int]:
     return name, maxdepth
 
 
+object_paths: dict[str, Path] = {}
+
+
 def create_object_page(
     name: str,
     path: Path,
     filters: list[str],
     predicate: Callable[[str], bool] | None = None,
-) -> None:
-    """Create API page."""
-    with path.open("w") as file:
-        markdown = _create_object_page(name, path, filters, predicate)
-        file.write(markdown)
-
-
-object_paths: dict[str, Path] = {}
-
-
-def _create_object_page(
-    name: str,
-    path: Path,
-    filters: list[str],
-    predicate: Callable[[str], bool] | None = None,
+    *,
+    save: bool = True,
 ) -> str:
-    """Create markdown."""
+    """Create object page for an object."""
     name, maxdepth = _split_name_maxdepth(name)
+
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    markdowns = []
     filters_str = "|" + "|".join(filters) if filters else ""
+
+    markdowns = []
     for child, depth in iter_objects_with_depth(obj, maxdepth, member_only=True):
         if is_empty(child):
             continue
@@ -66,7 +58,14 @@ def _create_object_page(
         heading = "#" * (depth + 1)
         markdown = f"{heading} ::: {child.fullname}{filters_str}\n"
         markdowns.append(markdown)
-    return "\n".join(markdowns)
+
+    markdown = "\n".join(markdowns)
+
+    if save:
+        with path.open("w") as file:
+            file.write(markdown)
+
+    return markdown
 
 
 source_paths: dict[str, Path] = {}
@@ -77,20 +76,12 @@ def create_source_page(
     path: Path,
     filters: list[str],
     predicate: Callable[[str], bool] | None = None,
-) -> None:
-    """Create source page."""
-    with path.open("w") as file:
-        markdown = _create_source_page(name, path, filters, predicate)
-        file.write(markdown)
-
-
-def _create_source_page(
-    name: str,
-    path: Path,
-    filters: list[str],
-    predicate: Callable[[str], bool] | None = None,
+    *,
+    save: bool = True,
 ) -> str:
+    """Create source page for a module."""
     name, maxdepth = _split_name_maxdepth(name)
+
     if not (obj := get_object(name)) or not isinstance(obj, Module):
         return f"!!! failure\n\n    module {name!r} not found.\n"
 
@@ -98,48 +89,19 @@ def _create_source_page(
     for child in iter_objects(obj, maxdepth):
         if predicate and not predicate(child.fullname):
             continue
-        # if isinstance(child, Module):
-        #     obj_ = f"__mkapi__:{child.fullname}=0"
-        # elif obj.name == child.module.name and child.node:
-        #     obj_ = f"__mkapi__:{child.fullname}={child.node.lineno-1}"
-        # else:
-        #     continue
-        # object_filters.append(obj_)
         if object_filter := get_object_filter_for_source(child, obj):
             object_filters.append(object_filter)
         source_paths.setdefault(child.fullname, path)
 
     filters_str = "|" + "|".join([*filters, "source", *object_filters])
-    return f"# ::: {name}{filters_str}\n"
+    markdown = f"# ::: {name}{filters_str}\n"
 
+    if save:
+        with path.open("w") as file:
+            file.write(markdown)
 
-# def _split_markdown(source: str) -> Iterator[tuple[str, int, list[str]]]:
-#     """Yield tuples of (text, level, filters)."""
-#     for match in mkapi.markdown.finditer(OBJECT_PATTERN, source):
-#         if isinstance(match, str):
-#             yield match, -1, []
-#         else:
-#             heading, name = match.group("heading"), match.group("name")
-#             level = len(heading)
-#             name, filters = split_filters(name)
-#             yield name, level, filters
+    return markdown
 
-# cursor = 0
-# for match in OBJECT_PATTERN.finditer(source):
-#     print(match)
-#     start, end = match.start(), match.end()
-#     if cursor < start and (markdown := source[cursor:start].strip()):
-#         yield markdown, -1, []
-#     cursor = end
-#     heading, name = match.groups()
-#     if name.startswith("__mkapi__."):
-#         yield match.group().replace("__mkapi__.", ""), -1, []
-#         continue
-#     level = len(heading)
-#     name, filters = split_filters(name)
-#     yield name, level, filters
-# if cursor < len(source) and (markdown := source[cursor:].strip()):
-#     yield markdown, -1, []
 
 OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
 
@@ -155,17 +117,6 @@ def convert_markdown(source: str, path: str, anchor: str, filters: list[str]) ->
         return create_markdown(name, level, updated_filters)
 
     markdown = mkapi.markdown.sub(OBJECT_PATTERN, replace_object, source)
-
-    # markdowns = []
-    # for name, level, filters_ in _split_markdown(source):
-    #     if level == -1:
-    #         markdowns.append(name)
-    #     else:
-    #         updated_filters = update_filters(filters, filters_)
-    #         markdown = create_markdown(name, level, updated_filters)
-    #         markdowns.append(markdown)
-    # markdown = "\n\n".join(markdowns)
-    # return re.sub(LINK_PATTERN, replace_link, markdown)
     replace_link = partial(_replace_link, directory=Path(path).parent, anchor=anchor)
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 

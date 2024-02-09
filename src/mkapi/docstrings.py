@@ -245,6 +245,7 @@ def parse(text: str | None, style: Style | None = None) -> Docstring:
         return Docstring("Docstring", Type(), Text(), [])
     style = style or get_style(text)
     text = mkapi.markdown.convert(text)
+    text = mkapi.markdown.replace(text, ["<", ">"], ["&lt;", "&gt;"])
     sections = list(iter_sections(text, style))
     if sections and not sections[0].name:
         type_ = sections[0].type

@@ -15,7 +15,7 @@ and
 See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/)
 documentation for details.
 
-Features of MkAPI are:
+## Features
 
 * **Type annotation**: If you write your function such as
   `def func(x: int) -> str:`, you don't need write type(s)
@@ -75,7 +75,7 @@ You can get this powerful feature by just one line in `mkdocs.yml`:
 ```yaml
 nav:
   - index.md
-  - API: <api>/package.***
+  - API: $api/package.***
 ```
 
 For more details, see [Page mode](https://daizutabi.github.io/mkapi/usage/page/).

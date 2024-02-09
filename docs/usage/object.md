@@ -48,13 +48,13 @@ you can write a Markdown syntax like:
 ::: examples
 ```
 
-The three collon (`:::`) must start at the begging of line,
-followed by a space (` `) and an object fullname,
+Three colons (`:::`) must start at the begging of line,
+followed by a space (<code>&blank;</code>) and an object fullname,
 for example, `package.module.function`.
-Here, just a pakcage name `examples`.
-MkAPI scan Markdown source to find this syntax pattern and
+In the current case, just a pakcage name `examples`.
+MkAPI scans the Markdown source to find this syntax pattern and
 then convert it into the corresponding object documentation
-like this:
+like below:
 
 ::: examples
 
@@ -71,9 +71,9 @@ Below the line, the object kind (*package*) and
 (qualified) name (`examples`) are shown.
 This part is a *heading* of the object documentation.
 
-Below the heading, main contents of documentation
+After the heading, main contents of documentation
 are rendered.
-In the `examples` package case, the contents is a just
+Contents of the `examples` package is just
 one-line summary for the package.
 
 MkAPI can embed the source code of objects as well as their
@@ -92,11 +92,11 @@ The output is shown below:
 
 ::: examples|source|bare
 
-The above docstring is the only content of `examples/__init__.py`.
+The above docstring is entire contents of `examples/__init__.py`.
 
 ## Package with `__all__`
 
-A pakcage can have an `__all__` attribute to provide names
+A package can have an `__all__` attribute to provide names
 that should be imported when `from package import *` is encountered.
 (See "[Importing * From a Package][1]" of Python documentation.)
 
@@ -118,17 +118,17 @@ Check the output:
 
 In the above example, `examples.styles` object documentation has
 a **Classes** section that includes two classes:
-`ExampleClassGoogle` and `ExampleClassNumpy`.
+`ExampleClassGoogle` and `ExampleClassNumPy`.
 These names has a link to the object documentation to navigate you.
-The summary line for a class is also shown for convinience.
-Blow is the source code of `examples.styles/__init__.py`.
+The summary line for classes is also shown for convinience.
+Below is the source code of `examples/styles/__init__.py`.
 
 ::: examples.styles|source|bare
 
 Two modules (`google` and `numpy`) have their own class
 with the same name of `ExampleClass`.
 The parent package `examples.styles` uses `import` statement
-with alias name (`ExampleClassGoogle` or `ExampleClassNumpy`)
+with alias name (`ExampleClassGoogle` or `ExampleClassNumPy`)
 to distinct these two classes.
 The **Classes** section shows these alias names, but you can check
 the unaliased fullname by hovering mouse cursor on the names.
@@ -149,7 +149,7 @@ the unaliased fullname by hovering mouse cursor on the names.
 Python module has classes, functions, or attributes as its members.
 A Module documentation can be a docstring of module itself written by the
 author.
-MkAPIT adds members list automatically.
+MkAPI adds members list automatically.
 
 ```markdown
 ::: examples.styles.google
@@ -158,49 +158,66 @@ MkAPIT adds members list automatically.
 ::: examples.styles.google
 
 !!! warning
-    Currently, MkAPI supports a small subset of reStructuredText formatting:
-    `.. code-block::`, `.. note::`, `.. warning::`,  and `.. deprecated::`
-    directives. The following content must be indented by four spaces from the
-    start indent of directives.
+    Currently, MkAPI supports a small subset of reStructuredText directives:
+
+    - `.. code-block::`
+    - `.. note::`
+    - `.. warning::`
+    - `.. deprecated::`
+
+    The following content must be indented by four spaces.
 
 You can check the corresponding docstring
 [here][examples.styles.google|source].
 
 !!! note
-    You can link a Markdown text to object (1) documentation or (2) source:
+    In a Markdown source, you can add a link to
+    (1) documentation or (2) source of an object:
 
-    1. `[some text][examples.styles.google]`
-    2. `[some text][examples.styles.google|source]`
+    1. `[some text][package.module.function]`
+    2. `[some text][package.module.function|source]`
+
+    In a docstring, the module name can be omitted:
+
+    ```python
+    import module
+
+    def f():
+        """[A function][f] or just [f]."""
+
+    def g():
+        """You can refer [other object][f] as well as [module]."""
+    ```
 
 ## Module members
 
-The last part of this page is for module's members.
+The last part of this page is for module members.
 The syntax to embed these objects is the same as package or module.
-But here, a new filter `sourcelink` is introduced.
+In addition, a new filter `sourcelink` is introduced here.
 
 ### Class
 
-`examples.styles.goole` has a `ExampleClass` class.
+`examples.styles.goole` module has an `ExampleClass` class.
 You can write like below:
 
 ```markdown
 ::: examples.styles.google.ExampleClass|sourcelink
 ```
 
-A new `sourcelink` filter is added at the end of the line.
+A new `sourcelink` filter is added at the end of line.
 This filter creates a link to the source code
 to enable to visit it easily.
 Let's see the output.
 A `[source]` tag is added in the right side of the heading .
-You can click it to see the code.
+You can click it to see the source code.
 
-Functions or attributes can also be embeded in Markdown source
+Functions or attributes can also be embeded in a Markdown source
 in the same way as described above.
 
 There is another useful feature.
 The heading of object documentation contains the fullname of an object.
 This fullname has hierarchical links to parent objects.
-In the below examples, the fullname is:
+In the current case, the fullname is:
 
     examples.styles.google.ExampleClass
 
@@ -209,7 +226,7 @@ Here,
 - The first segment `examples` has a link to the top level pakcage `examples`.
 - The second segment `styles` has a link to the subpakcage `examples.styles`.
 - The third segment `google` has a link to the module `examples.styles.google`.
-- The final segment `ExampleClass` is the corresponding object itself so that a link
+- The last segment `ExampleClass` is the corresponding object itself so that a link
   has been omitted.
 
 You can check these links by hovering mouse cursor on the name segments.
@@ -221,7 +238,7 @@ You can check these links by hovering mouse cursor on the name segments.
     or explicitly escaped (\\\_\\\_init\\\_\\\_).
 
 !!! note
-    Currently, `__special__` or `_private` members are treated as
+    Currently, `__special__` and `_private` members are treated as
     a normal member.
 
 ### Function
@@ -239,3 +256,7 @@ You can check these links by hovering mouse cursor on the name segments.
 ```
 
 ::: examples.styles.google.module_level_variable2
+
+Now, you might be wondering if you have to write
+all of the module members by yourself.
+[Page mode](page.md) of MkAPI will help you.
