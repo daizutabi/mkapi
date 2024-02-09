@@ -245,16 +245,28 @@ def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
             yield match.group()
         else:
             yield from _iter(pattern, match)
-            # for m in _iter(INLINE_CODE, match):
-            #     if isinstance(m, re.Match):
-            #         yield m.group()
-            #     else:
 
 
 def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:
     """Replace a markdown text."""
     subs = (m if isinstance(m, str) else rel(m) for m in finditer(pattern, text))
     return "".join(subs)
+
+
+def replace(text: str, olds: list[str], news: list[str]) -> str:
+    """Return a copy with all occurrences of substring old replaced by new."""
+
+    def _replace() -> Iterator[str]:
+        for match in _iter_fenced_codes(text):
+            if isinstance(match, re.Match):
+                yield match.group()
+            else:
+                text_ = match
+                for old, new in zip(olds, news, strict=True):
+                    text_ = text_.replace(old, new)
+                yield text_
+
+    return "".join(_replace())
 
 
 def add_link(text: str) -> str:

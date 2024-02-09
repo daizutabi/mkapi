@@ -11,15 +11,17 @@ Just add a single line to `nav` section in `mkdocs.yml`:
 ```yaml title="mkdocs.yml"
 nav:
   - index.md  # normal page.
-  - <api>/package.module  # MkAPI page with a special syntax.
+  - $api/package.module  # MkAPI page with a special syntax.
 ```
 
-Here, a __bracket__ (`<...>`) is a marker to indicate that
+Here, a leading `$` is a marker to indicate that
 this page should be processed by MkAPI to generate API
 documentation.
-A text in the bracket is used as a name of API directory.
-In this case, a new API directory `api` is created
-in a `docs` directory by MkAPI.
+A text between the leading `$` and the last `/`
+is used as a name of API directory
+as well as the prefix of URI.
+In this case, MkAPI creates a new API directory `api`
+in a `docs` directory.
 Module page(s) will be located under this directory automatically:
 
 ``` sh
@@ -34,27 +36,48 @@ Module page(s) will be located under this directory automatically:
 ```
 
 !!! note
-    - You can change the name `api` as long as it is a valid URI or
+    - You can change the name `api` as long as it is a valid
       directory name and it does not exist.
     - A `src` directory is also created to locate source codes.
       The name `src` is configured by the plugin setting.
       See [Configuration](config.md).
+    - Both `api` and `src` directories will be removed after
+      building documentation by MkDocs.
 
 In the above example, just one `api/package/module.md` file
 will be created.
 In order to obtain a collection of subpackages/submodules,
 you can use `*` symbols.
-There are three ways:
+Consider next directory structure:
 
-=== "1. package.*"
+```sh
+package/
+├─ subpackage1/
+│  ├─ __init__.py
+│  ├─ module_11.py
+│  └─ module_12.py
+├─ subpackage2/
+│  ├─ __init__.py
+│  ├─ module_21.py
+│  └─ module_22.py
+├─ __init__.py
+├─ module1.py
+└─ module2.py
+```
+
+There are three ways to collect modules:
+
+=== "package.*"
 
     - Modules under a `package` directory are collected.
     - The `nav` section is extended *vertically*.
 
+    Example:
+
     ```yaml
     nav:
       - index.md
-      - <api>/package.*
+      - $api/package.*
       - other.md
     ```
 
@@ -69,7 +92,7 @@ There are three ways:
       - other.md
     ```
 
-=== "2. package.**"
+=== "package.**"
 
     - Modules under a `package` directory and its
     subdirectories are collected, recursively.
@@ -77,10 +100,12 @@ There are three ways:
     in flat structure.
     - Optionally, a section title can be set, for example, `API`.
 
+    Example:
+
     ```yaml
     nav:
       - index.md
-      - API: <api>/package.**
+      - API: $api/package.**
       - other.md
     ```
 
@@ -90,7 +115,7 @@ There are three ways:
     nav:
       - index.md
       - API:
-        - package: api/package/READ.md
+        - package: api/package/README.md
         - subpackage_1: api/package/subpackage_1/README.md
         - module_11: api/package/subpackage_1/module_11.md
         - module_21: api/package/subpackage_1/module_12.md
@@ -102,17 +127,19 @@ There are three ways:
       - other.md
     ```
 
-=== "3. package.***"
+=== "package.***"
 
     - Modules under a `package` directory and its
     subdirectories are collected, recursively.
     - The `nav` section is extended to have the same tree structure as the package.
     - Optionally, a top section title can be set, for example, `API`.
 
+    Example:
+
     ```yaml
     nav:
       - index.md
-      - API: <api>/package.***
+      - API: $api/package.***
       - other.md
     ```
 
@@ -122,7 +149,7 @@ There are three ways:
     nav:
       - index.md
       - API:
-        - package: api/package/READ.md
+        - package: api/package/README.md
           - subpackage_1:
             - subpackage_1: api/package/subpackage_1/README.md
             - module_11: api/package/subpackage_1/module_11.md
@@ -137,11 +164,11 @@ There are three ways:
     ```
 
 !!! note
-    - `README.md` is an index page for packages. It corresponds to `__init__.py`
+    - `README.md` is an index page for packages. It corresponds to `__init__.py`.
     - Section and page titles can be configured programatically.
       See [Configuration](config.md).
 
-## Example API pages
+## Example API documentations
 
 To demonstrate the Page mode, this MkAPI documentation ships with
 some references:
@@ -170,9 +197,6 @@ Click section tabs at the top bar or buttons below to see the API documentation.
 [Altair][altair]{.md-button .md-button--primary}
 </div>
 
-__Note that MkAPI processed the docstrings of
-these libraries without any modification.__
-
 Here is the actual `nav` section in `mkdocs.yml` of this documentation.
 Use this to reproduce the similar navigation structure for your project if you like.
 
@@ -183,9 +207,9 @@ nav:
     - usage/object.md
     - usage/page.md
     - usage/config.md
-  - API: <api>/mkapi.***  # API documentation for MkAPI itself
-  - Examples: <api>/examples.**  # for Object mode description
-  - Schemdraw: <api>/schemdraw.***  # for Page mode demonstration
-  - Polars: <api>/polars.***  # for Page mode demonstration
-  - Altair: <api>/altair.***  # for Page mode demonstration
+  - API: $api/mkapi.**  # API documentation of MkAPI itself
+  - Examples: $api/examples.**  # for Object mode description
+  - Schemdraw: $api/schemdraw.***  # for Page mode demonstration
+  - Polars: $api/polars.***  # for Page mode demonstration
+  - Altair: $api/altair.***  # for Page mode demonstration
 ```

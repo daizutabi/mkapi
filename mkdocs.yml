@@ -57,11 +57,11 @@ nav:
     - usage/object.md
     - usage/page.md
     - usage/config.md
-  - API: <api>/mkapi.***
-  - Examples: <api>/examples.**
-  - Schemdraw: <api>/schemdraw.***
-  - Polars: <api>/polars.***
-  - Altair: <api>/altair.***
+  - API: $api/mkapi.**
+  - Examples: $api/examples.**
+  - Schemdraw: $api/schemdraw.***
+  - Polars: $api/polars.***
+  - Altair: $api/altair.***
 extra_css:
   - stylesheets/extra.css
 watch:

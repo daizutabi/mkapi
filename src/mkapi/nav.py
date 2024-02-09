@@ -121,7 +121,7 @@ def create(nav: list, create_apinav: Callable[[str, str, list[str]], list]) -> l
     return nav_
 
 
-API_URI_PATTERN = re.compile(r"^\<(.+)\>/(.+)$")
+API_URI_PATTERN = re.compile(r"^(?P<uri>\<.+\>|\$.+)/(?P<name>[^/]+)$")
 
 
 def _match_api_entry(item: str | list | dict) -> re.Match | None:
@@ -132,6 +132,7 @@ def _match_api_entry(item: str | list | dict) -> re.Match | None:
 
 def _split_name_path_filters(match: re.Match) -> tuple[str, str, list[str]]:
     path, name_filters = match.groups()
+    path = path[1:-1] if path.startswith("<") else path[1:]
     name, filters = split_filters(name_filters)
     return name, path, filters
 

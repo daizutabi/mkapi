@@ -1,15 +1,15 @@
 import sys
 from pathlib import Path
 
-from mkapi.importlib import cache_clear, get_object, load_module
-from mkapi.objects import Class, Module, objects
+from mkapi.importlib import cache_clear, get_object
+from mkapi.objects import Class, Module
 from mkapi.renderers import (
     get_object_filter_for_source,
     load_templates,
     render,
     templates,
 )
-from mkapi.utils import get_by_name, get_module_node_source
+from mkapi.utils import get_by_name
 
 path = str(Path(__file__).parent)
 if path not in sys.path:

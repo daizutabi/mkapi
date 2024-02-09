@@ -1,6 +1,7 @@
 import yaml
 
 from mkapi.nav import (
+    API_URI_PATTERN,
     create,
     create_apinav,
     gen_apinav,
@@ -8,6 +9,25 @@ from mkapi.nav import (
     update,
 )
 from mkapi.utils import is_package
+
+
+def test_pattern():
+    m = API_URI_PATTERN.match("<a/b/c>/d.e.f")
+    assert m
+    assert m.groups() == ("<a/b/c>", "d.e.f")
+    m = API_URI_PATTERN.match("<a/b/c.d>/e.f")
+    assert m
+    assert m.groups() == ("<a/b/c.d>", "e.f")
+    assert not API_URI_PATTERN.match("<a/b/c>d.e.f")
+    m = API_URI_PATTERN.match("$a/b/c/d.e.f")
+    assert m
+    assert m.groups() == ("$a/b/c", "d.e.f")
+    m = API_URI_PATTERN.match("$a/b.c/d.e.f")
+    assert m
+    assert m.groups() == ("$a/b.c", "d.e.f")
+    m = API_URI_PATTERN.match("$a/b.c/d.e/f")
+    assert m
+    assert m.groups() == ("$a/b.c/d.e", "f")
 
 
 def test_get_apinav():
@@ -25,7 +45,8 @@ def test_get_apinav():
     assert nav[0] == "mkdocs"
     assert nav[1] == "mkdocs.commands"
     assert nav[2] == "mkdocs.commands.build"
-    assert (i := nav.index("mkdocs.config"))
+    i = nav.index("mkdocs.config")
+    assert i
     assert nav[i + 1] == "mkdocs.config.base"
     nav = get_apinav("mkdocs.***")
     assert len(nav) == 1
@@ -68,8 +89,8 @@ src = """
   - 2.md
   - <api2>/mkapi.***|f3
   - 3.md
-- B: <api3>/mkdocs.**|f4
-- C: <api3>/mkdocs.***|f4
+- B: $api3/mkdocs.**|f4
+- C: $api3/mkdocs.***|f4
 """
 
 
