@@ -17,9 +17,15 @@ documentation for details.
 
 ## Screenshots
 
+### Schemdraw (package tree view & package summary)
+
 ![schemdraw](docs/images/image1.png)
 
+### Polars (class documentation & link to source code)
+
 ![polars](docs/images/image2.png)
+
+### Altair (table of contents)
 
 ![altair](docs/images/image3.png)
 
