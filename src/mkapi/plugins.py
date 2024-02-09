@@ -60,8 +60,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     nav: ClassVar[list | None] = None
     api_dirs: ClassVar[list] = []
-    api_uris: ClassVar[list] = []
-    api_srcs: ClassVar[list] = []
+    api_uris: ClassVar[dict[str, str]] = {}
+    api_srcs: ClassVar[dict[str, str]] = {}
     api_uri_width: ClassVar[int] = 0
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
@@ -113,10 +113,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     ) -> str:
         """Merge HTML and MkAPI's object structure."""
         toc_title = _get_function("toc_title", self)
-        if page.file.src_uri in MkAPIPlugin.api_uris:
+        if page.file.src_uri in MkAPIPlugin.api_uris.values():
             _replace_toc(page.toc, toc_title)
             self._update_bar(page.file.src_uri)
-        if page.file.src_uri in MkAPIPlugin.api_srcs:
+        if page.file.src_uri in MkAPIPlugin.api_srcs.values():
             path = Path(config.docs_dir) / page.file.src_uri
             html = convert_source(html, path, self.config.docs_anchor)
             self._update_bar(page.file.src_uri)
@@ -137,6 +137,12 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             if path.exists():
                 logger.info(f"Deleting API directory: {path}")
                 shutil.rmtree(path)
+
+
+markdown_cache: dict[str, str] = {}
+
+# def _get_markdown_cachename_from_path(path: Path, plugin: MkAPIPlugin) -> str | None:
+#     pass
 
 
 def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
@@ -160,14 +166,21 @@ def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noq
 
 
 def _update_config(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
-    if not MkAPIPlugin.nav:
-        _create_nav(config, plugin)
-        _update_nav(config, plugin)
-        MkAPIPlugin.nav = config.nav
-        uris = itertools.chain(MkAPIPlugin.api_uris, MkAPIPlugin.api_srcs)
-        MkAPIPlugin.api_uri_width = max(len(uri) for uri in uris)
-    else:
-        config.nav = MkAPIPlugin.nav
+    _create_nav(config, plugin)
+    _update_nav(config, plugin)
+    MkAPIPlugin.nav = config.nav
+    uris = itertools.chain(MkAPIPlugin.api_uris.values(), MkAPIPlugin.api_srcs.values())
+    MkAPIPlugin.api_uri_width = max(len(uri) for uri in uris)
+    # if not MkAPIPlugin.nav:
+    #     _create_nav(config, plugin)
+    #     _update_nav(config, plugin)
+    #     MkAPIPlugin.nav = config.nav
+    #     uris = itertools.chain(
+    #         MkAPIPlugin.api_uris.values(), MkAPIPlugin.api_srcs.values()
+    #     )
+    #     MkAPIPlugin.api_uri_width = max(len(uri) for uri in uris)
+    # else:
+    #     config.nav = MkAPIPlugin.nav
 
 
 def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
@@ -218,19 +231,29 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     section_title = _get_function("section_title", plugin)
 
     def _create_page(name: str, path: str, filters: list[str], depth: int) -> str:
+        is_dirty = is_module_cache_dirty(name)
+
         n = len(MkAPIPlugin.api_uris)
         spinner.text = f"Collecting modules [{n:>3}]: {name}"
-        MkAPIPlugin.api_uris.append(path)
+
         abs_path = Path(config.docs_dir) / path
-        if not abs_path.exists() or is_module_cache_dirty(name):
+
+        if not abs_path.exists() or is_dirty:
             _check_path(abs_path)
             create_object_page(f"{name}.**", abs_path, [*filters, "sourcelink"])
+            MkAPIPlugin.api_uris[name] = path
+        # if path not in MkAPIPlugin.api_uris:
+        #     MkAPIPlugin.api_uris.append(path)
 
         path = plugin.config.src_dir + "/" + name.replace(".", "/") + ".md"
-        MkAPIPlugin.api_srcs.append(path)
         abs_path = Path(config.docs_dir) / path
-        _check_path(abs_path)
-        create_source_page(f"{name}.**", abs_path, filters)
+
+        if not abs_path.exists() or is_dirty:
+            _check_path(abs_path)
+            create_source_page(f"{name}.**", abs_path, filters)
+            MkAPIPlugin.api_srcs[name] = path
+            # if path not in MkAPIPlugin.api_srcs:
+            #     MkAPIPlugin.api_srcs.append(path)
 
         return page_title(name, depth) if page_title else name
 
