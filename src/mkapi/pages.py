@@ -44,22 +44,24 @@ def create_object_page(
     name, maxdepth = _split_name_maxdepth(name)
 
     if not (obj := get_object(name)):
-        return f"!!! failure\n\n    {name!r} not found."
+        markdown = f"!!! failure\n\n    {name!r} not found."
+    else:
+        filters_str = "|" + "|".join(filters) if filters else ""
 
-    filters_str = "|" + "|".join(filters) if filters else ""
+        markdowns = []
+        for child, depth in iter_objects_with_depth(obj, maxdepth, member_only=True):
+            if is_empty(child):
+                continue
+            if predicate and not predicate(child.fullname):
+                continue
+            if save:
+                object_paths.setdefault(child.fullname, path)
 
-    markdowns = []
-    for child, depth in iter_objects_with_depth(obj, maxdepth, member_only=True):
-        if is_empty(child):
-            continue
-        if predicate and not predicate(child.fullname):
-            continue
-        object_paths.setdefault(child.fullname, path)
-        heading = "#" * (depth + 1)
-        markdown = f"{heading} ::: {child.fullname}{filters_str}\n"
-        markdowns.append(markdown)
+            heading = "#" * (depth + 1)
+            markdown = f"{heading} ::: {child.fullname}{filters_str}\n"
+            markdowns.append(markdown)
 
-    markdown = "\n".join(markdowns)
+        markdown = "\n".join(markdowns)
 
     if save:
         with path.open("w") as file:
@@ -83,18 +85,19 @@ def create_source_page(
     name, maxdepth = _split_name_maxdepth(name)
 
     if not (obj := get_object(name)) or not isinstance(obj, Module):
-        return f"!!! failure\n\n    module {name!r} not found.\n"
+        markdown = f"!!! failure\n\n    module {name!r} not found.\n"
+    else:
+        object_filters = []
+        for child in iter_objects(obj, maxdepth):
+            if predicate and not predicate(child.fullname):
+                continue
+            if object_filter := get_object_filter_for_source(child, obj):
+                object_filters.append(object_filter)
+            if save:
+                source_paths.setdefault(child.fullname, path)
 
-    object_filters = []
-    for child in iter_objects(obj, maxdepth):
-        if predicate and not predicate(child.fullname):
-            continue
-        if object_filter := get_object_filter_for_source(child, obj):
-            object_filters.append(object_filter)
-        source_paths.setdefault(child.fullname, path)
-
-    filters_str = "|" + "|".join([*filters, "source", *object_filters])
-    markdown = f"# ::: {name}{filters_str}\n"
+        filters_str = "|" + "|".join([*filters, "source", *object_filters])
+        markdown = f"# ::: {name}{filters_str}\n"
 
     if save:
         with path.open("w") as file:
@@ -103,30 +106,29 @@ def create_source_page(
     return markdown
 
 
-OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
-
-
 def convert_markdown(source: str, path: str, anchor: str, filters: list[str]) -> str:
     """Return converted markdown."""
-
-    def replace_object(match: re.Match) -> str:
-        heading, name = match.group("heading"), match.group("name")
-        level = len(heading)
-        name, filters_ = split_filters(name)
-        updated_filters = update_filters(filters, filters_)
-        return create_markdown(name, level, updated_filters)
-
+    replace_object = partial(_replace_object, filters=filters)
     markdown = mkapi.markdown.sub(OBJECT_PATTERN, replace_object, source)
+
     replace_link = partial(_replace_link, directory=Path(path).parent, anchor=anchor)
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 
 
-def create_markdown(name: str, level: int, filters: list[str]) -> str:
-    """Return a Markdown source."""
+OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
+
+
+def _replace_object(match: re.Match, filters: list[str]) -> str:
+    heading, name = match.group("heading"), match.group("name")
+    level = len(heading)
+    name, filters_ = split_filters(name)
+
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    return mkapi.renderers.render(obj, level, filters)
+    updated_filters = update_filters(filters, filters_)
+
+    return mkapi.renderers.render(obj, level, updated_filters)
 
 
 LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
@@ -135,32 +137,43 @@ LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
 def _replace_link(match: re.Match, directory: Path, anchor: str = "source") -> str:
     asname, fullname = match.groups()
     fullname, filters = split_filters(fullname)
+
     if fullname.startswith("__mkapi__.__source__."):
-        fullname = fullname[21:]
-        if source_path := source_paths.get(fullname):
-            uri = source_path.relative_to(directory, walk_up=True).as_posix()
-            return f'[[{anchor}]]({uri}#{fullname} "{fullname}")'
-        return ""
+        name = f"[{anchor}]"
+        return _replace_link_from_source(name, fullname[21:], directory)
 
     if "source" in filters:
-        if source_path := source_paths.get(fullname):
-            uri = source_path.relative_to(directory, walk_up=True).as_posix()
-            return f'[{asname}]({uri}#{fullname} "{fullname}")'
-        return asname
+        return _replace_link_from_source(asname, fullname, directory) or asname
 
+    return _replace_link_from_object(asname, fullname, directory) or match.group()
+
+
+def _replace_link_from_object(name: str, fullname: str, directory: Path) -> str:
     if fullname.startswith("__mkapi__."):
         from_mkapi = True
         fullname = fullname[10:]
     else:
         from_mkapi = False
+
     if fullname_ := resolve_with_attribute(fullname):
         fullname = fullname_
+
     if object_path := object_paths.get(fullname):
         uri = object_path.relative_to(directory, walk_up=True).as_posix()
-        return f'[{asname}]({uri}#{fullname} "{fullname}")'
+        return f'[{name}]({uri}#{fullname} "{fullname}")'
+
     if from_mkapi:
-        return f'<span class="mkapi-tooltip" title="{fullname}">{asname}</span>'
-    return match.group()
+        return f'<span class="mkapi-tooltip" title="{fullname}">{name}</span>'
+
+    return ""
+
+
+def _replace_link_from_source(name: str, fullname: str, directory: Path) -> str:
+    if source_path := source_paths.get(fullname):
+        uri = source_path.relative_to(directory, walk_up=True).as_posix()
+        return f'[{name}]({uri}#{fullname} "{fullname}")'
+
+    return ""
 
 
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")

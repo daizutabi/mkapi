@@ -153,3 +153,6 @@ def test_overload():
     func = get_by_name(module.functions, "repeat")
     assert isinstance(func, Function)
     assert func.doc.sections
+
+
+# LazyFrame.tail

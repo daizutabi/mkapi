@@ -88,8 +88,9 @@ def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> 
                 index = int(index_str)
                 if len(lines[index]) > 80 and index:
                     index -= 1
-                if "## __mkapi__." not in lines[index]:
-                    lines[index] = f"{lines[index]}## __mkapi__.{name}"
+                line = lines[index]
+                if "## __mkapi__." not in line:
+                    lines[index] = f"{line}## __mkapi__.{name}"
         source = "\n".join(lines)
     else:
         source = ""
