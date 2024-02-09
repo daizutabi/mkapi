@@ -1,9 +1,9 @@
 # MkAPI
 
 [![PyPI Version][pypi-v-image]][pypi-v-link]
+[![Python Version][python-v-image]][python-v-link]
 [![Build Status][GHAction-image]][GHAction-link]
 [![Coverage Status][codecov-image]][codecov-link]
-[![Python Version][python-v-image]][python-v-link]
 
 MkAPI is a plugin for [MkDocs](https://www.mkdocs.org/) to generate
 API documentation for your Python project.
@@ -83,9 +83,9 @@ For more details, see [Page mode](https://daizutabi.github.io/mkapi/usage/page/)
 <!-- Badges -->
 [pypi-v-image]: https://img.shields.io/pypi/v/mkapi.svg
 [pypi-v-link]: https://pypi.org/project/mkapi/
+[python-v-image]: https://img.shields.io/pypi/pyversions/mkapi.svg
+[python-v-link]: https://pypi.org/project/mkapi
 [GHAction-image]: https://github.com/daizutabi/mkapi/actions/workflows/ci.yml/badge.svg?branch=main&event=push
 [GHAction-link]: https://github.com/daizutabi/mkapi/actions?query=event%3Apush+branch%3Amain
 [codecov-image]: https://codecov.io/github/daizutabi/mkapi/coverage.svg?branch=main
 [codecov-link]: https://codecov.io/github/daizutabi/mkapi?branch=main
-[python-v-image]: https://img.shields.io/pypi/pyversions/mkapi.svg
-[python-v-link]: https://pypi.org/project/mkapi
