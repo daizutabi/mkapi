@@ -30,6 +30,7 @@ from mkapi.pages import (
     create_object_page,
     create_source_page,
 )
+from mkapi.utils import is_module_cache_dirty
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -221,8 +222,9 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         spinner.text = f"Collecting modules [{n:>3}]: {name}"
         MkAPIPlugin.api_uris.append(path)
         abs_path = Path(config.docs_dir) / path
-        _check_path(abs_path)
-        create_object_page(f"{name}.**", abs_path, [*filters, "sourcelink"])
+        if not abs_path.exists() or is_module_cache_dirty(name):
+            _check_path(abs_path)
+            create_object_page(f"{name}.**", abs_path, [*filters, "sourcelink"])
 
         path = plugin.config.src_dir + "/" + name.replace(".", "/") + ".md"
         MkAPIPlugin.api_srcs.append(path)

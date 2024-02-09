@@ -25,6 +25,7 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
 
 
 FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)\n?", re.M | re.S)
+INLINE_CODE = re.compile(r"(?P<pre>`+).+?(?P=pre)")
 
 
 def _iter_fenced_codes(text: str) -> Iterator[re.Match | str]:
@@ -233,9 +234,6 @@ def _convert(text: str) -> Iterator[str]:
 def convert(text: str) -> str:
     """Convert markdown."""
     return "".join(_convert(text))
-
-
-INLINE_CODE = re.compile(r"(?P<pre>`+).+?(?P=pre)")
 
 
 def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
