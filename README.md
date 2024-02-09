@@ -15,6 +15,14 @@ and
 See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/)
 documentation for details.
 
+## Screenshots
+
+![a](docs/images/image1.png)
+
+![a](docs/images/image2.png)
+
+![a](docs/images/image3.png)
+
 ## Features
 
 * **Type annotation**: If you write your function such as
