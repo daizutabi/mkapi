@@ -17,11 +17,11 @@ documentation for details.
 
 ## Screenshots
 
-![a](docs/images/image1.png)
+![schemdraw](docs/images/image1.png)
 
-![a](docs/images/image2.png)
+![polars](docs/images/image2.png)
 
-![a](docs/images/image3.png)
+![altair](docs/images/image3.png)
 
 ## Features
 
