@@ -233,10 +233,6 @@ You can check these links by hovering mouse cursor on the name segments.
 
 ::: examples.styles.google.ExampleClass|sourcelink
 
-!!! warning
-    "\_\_init\_\_" should be written in an inline code (\`\_\_init\_\_\`)
-    or explicitly escaped (\\\_\\\_init\\\_\\\_).
-
 !!! note
     Currently, `__special__` and `_private` members are treated as
     a normal member.
