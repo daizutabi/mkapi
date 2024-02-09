@@ -9,7 +9,7 @@ from mkapi.objects import (
     create_module,
     iter_objects,
 )
-from mkapi.utils import get_by_name, get_by_type, get_module_node
+from mkapi.utils import get_by_name, get_by_type, get_module_node, iter_by_name
 
 
 def test_iter_objects_polars():
@@ -131,3 +131,25 @@ def test_examples():
     assert isinstance(m, Function)
     print(m.doc.sections[1].text.markdown)
     # assert 0
+
+
+def test_property():
+    name = "polars.dataframe.frame"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    cls = get_by_name(module.classes, "DataFrame")
+    assert isinstance(cls, Class)
+    assert not get_by_name(cls.functions, "plot")
+    assert get_by_name(cls.attributes, "plot")
+
+
+def test_overload():
+    name = "polars.functions.repeat"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    assert len(list(iter_by_name(module.functions, "repeat"))) == 1
+    func = get_by_name(module.functions, "repeat")
+    assert isinstance(func, Function)
+    assert func.doc.sections

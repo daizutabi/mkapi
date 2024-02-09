@@ -1,9 +1,15 @@
 import sys
 from pathlib import Path
 
-from mkapi.importlib import get_object
-from mkapi.objects import Class
-from mkapi.renderers import load_templates, render, templates
+from mkapi.importlib import cache_clear, get_object, load_module
+from mkapi.objects import Class, Module, objects
+from mkapi.renderers import (
+    get_object_filter_for_source,
+    load_templates,
+    render,
+    templates,
+)
+from mkapi.utils import get_by_name, get_module_node_source
 
 path = str(Path(__file__).parent)
 if path not in sys.path:
@@ -73,3 +79,16 @@ def test_render_class():
     assert s in m
     assert '.Callable]</span><span class="mkapi-comma">, </span>\n' in m
     obj.bases = bases
+
+
+def test_source():
+    cache_clear()
+    module = get_object("mkapi.objects")
+    assert isinstance(module, Module)
+    cls = get_by_name(module.classes, "Object")
+    assert isinstance(cls, Class)
+    f = get_object_filter_for_source(cls, module)
+    assert f
+    m = render(module, 2, ["source", f])
+    print(m)
+    assert "\nclass Object:## __mkapi__.mkapi.objects.Object\n" in m

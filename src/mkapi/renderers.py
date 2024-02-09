@@ -67,6 +67,18 @@ def _render_object(
     return templates["object"].render(context)
 
 
+def get_object_filter_for_source(
+    obj: Module | Class | Function | Attribute,
+    module: Module,
+) -> str | None:
+    """Return a filter for an object used in source code pages."""
+    if isinstance(obj, Module):
+        return f"__mkapi__:{obj.fullname}=0"
+    if obj.module.name == module.name and obj.node:
+        return f"__mkapi__:{obj.fullname}={obj.node.lineno-1}"
+    return None
+
+
 def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> str:
     if source := get_source(obj):
         lines = source.splitlines()
@@ -74,6 +86,8 @@ def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> 
             if filter_.startswith("__mkapi__:"):
                 name, index_str = filter_[10:].split("=")
                 index = int(index_str)
+                if len(lines[index]) > 80 and index:
+                    index -= 1
                 if "## __mkapi__." not in lines[index]:
                     lines[index] = f"{lines[index]}## __mkapi__.{name}"
         source = "\n".join(lines)

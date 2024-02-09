@@ -16,7 +16,6 @@ from mkapi.globals import get_fullname, resolve_with_attribute
 from mkapi.items import (
     Assign,
     Assigns,
-    # Bases,
     Default,
     Parameters,
     Raises,
@@ -159,11 +158,11 @@ def create_function(
     func = Function(node.name, node, doc, module, parent, params, returns, raises)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
-            clss = create_class(child, module, func)
-            func.classes.append(clss)
+            cls = create_class(child, module, func)
+            func.classes.append(cls)
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-            funcs = create_function(child, module, func)
-            func.functions.append(funcs)
+            func_ = create_function(child, module, func)
+            func.functions.append(func_)
     return func
 
 
@@ -196,16 +195,16 @@ def create_class(
     bases = list(iter_bases(node))
     cls = Class(name, node, doc, module, parent, bases)
     for child in iter_assigns(node):
-        attrs = create_attribute(child, module, cls)
-        cls.attributes.append(attrs)
+        attr = create_attribute(child, module, cls)
+        cls.attributes.append(attr)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
-            clss = create_class(child, module, cls)
-            cls.classes.append(clss)
+            cls_ = create_class(child, module, cls)
+            cls.classes.append(cls_)
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-            if not get_by_name(cls.attributes, child.name):  # for property
-                funcs = create_function(child, module, cls)
-                cls.functions.append(funcs)
+            if mkapi.ast.is_function(child):
+                func = create_function(child, module, cls)
+                cls.functions.append(func)
     return cls
 
 
@@ -240,15 +239,16 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
     doc = docstrings.parse(text)
     module = Module(name, node, doc, source)
     for child in iter_assigns(node):
-        attrs = create_attribute(child, module)
-        module.attributes.append(attrs)
+        attr = create_attribute(child, module)
+        module.attributes.append(attr)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
-            clss = create_class(child, module)
-            module.classes.append(clss)
+            cls = create_class(child, module)
+            module.classes.append(cls)
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-            funcs = create_function(child, module)
-            module.functions.append(funcs)
+            if mkapi.ast.is_function(child):
+                func = create_function(child, module)
+                module.functions.append(func)
     merge_items(module)
     set_markdown(module)
     return module
@@ -265,8 +265,6 @@ def merge_items(module: Module) -> None:
         if isinstance(obj, Module | Class):
             _add_doc_comments(obj.attributes, module.source)
             merge_attributes(obj)
-        # if isinstance(obj, Class):
-        #     merge_bases(obj)
 
 
 def _add_doc_comments(attrs: list[Attribute], source: str | None = None) -> None:
@@ -343,14 +341,6 @@ def merge_attributes(obj: Module | Class) -> None:
         if not get_by_name(attributes, attr.name):
             attributes.append(attr)
     obj.attributes = attributes
-
-
-# def merge_bases(obj: Class) -> None:
-#     """Merge bases."""
-#     if not obj.bases:
-#         return
-#     section = Bases("Bases", Type(), Text(), obj.bases)
-#     obj.doc.sections.insert(0, section)
 
 
 def set_markdown(module: Module) -> None:

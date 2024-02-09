@@ -201,7 +201,7 @@ def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
             attr = create_assign(child)
             if attr.name:
                 yield attr
-        elif isinstance(child, ast.FunctionDef) and is_property(child):
+        elif isinstance(child, ast.FunctionDef) and is_property(child, read_only=True):
             yield create_assign_from_property(child)
 
 
@@ -336,13 +336,6 @@ def create_returns(name: str, text: str, style: str) -> Returns:
     text_ = Text(text_ or None)
     returns = [Return(name_, type_, text_)]
     return Returns(name, Type(), Text(), returns)
-
-
-# @dataclass(repr=False)
-# class Bases(Section):
-#     """Bases section."""
-
-#     items: list[Base]
 
 
 @dataclass(repr=False)

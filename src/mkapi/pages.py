@@ -11,6 +11,7 @@ import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object
 from mkapi.objects import Module, is_empty, iter_objects, iter_objects_with_depth
+from mkapi.renderers import get_object_filter_for_source
 from mkapi.utils import split_filters, update_filters
 
 if TYPE_CHECKING:
@@ -93,20 +94,22 @@ def _create_source_page(
     if not (obj := get_object(name)) or not isinstance(obj, Module):
         return f"!!! failure\n\n    module {name!r} not found.\n"
 
-    objects = []
+    object_filters = []
     for child in iter_objects(obj, maxdepth):
         if predicate and not predicate(child.fullname):
             continue
-        if isinstance(child, Module):
-            obj_ = f"__mkapi__:{child.fullname}=0"
-        elif obj.name == child.module.name and child.node:
-            obj_ = f"__mkapi__:{child.fullname}={child.node.lineno-1}"
-        else:
-            continue
-        objects.append(obj_)
+        # if isinstance(child, Module):
+        #     obj_ = f"__mkapi__:{child.fullname}=0"
+        # elif obj.name == child.module.name and child.node:
+        #     obj_ = f"__mkapi__:{child.fullname}={child.node.lineno-1}"
+        # else:
+        #     continue
+        # object_filters.append(obj_)
+        if object_filter := get_object_filter_for_source(child, obj):
+            object_filters.append(object_filter)
         source_paths.setdefault(child.fullname, path)
 
-    filters_str = "|" + "|".join([*filters, "source", *objects])
+    filters_str = "|" + "|".join([*filters, "source", *object_filters])
     return f"# ::: {name}{filters_str}\n"
 
 
