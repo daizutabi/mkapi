@@ -144,12 +144,6 @@ def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]
                 names.append(name)
 
 
-def is_property(node: ast.FunctionDef) -> bool:
-    """Return True if a function is a property."""
-    decos = node.decorator_list
-    return any(ast.unparse(deco).startswith("property") for deco in decos)
-
-
 # a1.b_2(c[d]) -> a1, b_2, c, d
 SPLIT_IDENTIFIER_PATTERN = re.compile(r"[\.\[\]\(\)|]|\s+")
 
@@ -245,3 +239,34 @@ def unparse(
 ) -> str:
     """Unparse the AST node with a callback function."""
     return "".join(_unparse(node, callback, is_type=is_type))
+
+
+def is_property(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    *,
+    read_only: bool = True,
+) -> bool:
+    """Return True if a function is a property."""
+    for deco in node.decorator_list:
+        deco_names = next(iter_identifiers(deco)).split(".")
+        if len(deco_names) == 1 and deco_names[0] == "property":
+            return True
+        if read_only:
+            continue
+        if len(deco_names) == 2 and deco_names[1] == "setter":
+            return True
+    return False
+
+
+def has_overload(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    """Return True if a function has an `overload` decorator."""
+    for deco in node.decorator_list:
+        deco_names = next(iter_identifiers(deco)).split(".")
+        if len(deco_names) == 1 and deco_names[0] == "overload":
+            return True
+    return False
+
+
+def is_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    """Return True if a function is neither a property nor overloaded."""
+    return not (is_property(node, read_only=False) or has_overload(node))

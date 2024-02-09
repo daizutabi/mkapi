@@ -10,8 +10,7 @@ MkAPI supports two styles of docstrings:
 and
 [NumPy](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard).
 See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/)
-documentations for
-details.
+documentation for details.
 
 Features of MkAPI are:
 

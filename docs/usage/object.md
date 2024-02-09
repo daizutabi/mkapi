@@ -10,14 +10,16 @@ to describe the Object mode of MkAPI.
 This package includes one subpackage `styles`
 and the `styles` subpackage includes two modules:
 `google.py` and `numpy.py`
-These two modules are style guides of docstrings:
+These two modules are style guides of docstrings
+copied from [Napoleon][napoleon] project site:
 
-- [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google)
+- `google.py`: [Example Google Style Python Docstrings][google]
 
-- [Example NumPy Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html#example-numpy)
+- `numpy.py`: [Example NumPy Style Python Docstrings][numpy]
 
-See [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/) site
-about two styles for more details.
+[napoleon]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/
+[google]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html
+[numpy]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html
 
 The directory structure of the `examples` package is shown below:
 

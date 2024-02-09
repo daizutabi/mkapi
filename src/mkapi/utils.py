@@ -104,32 +104,48 @@ def iter_parent_module_names(fullname: str, *, reverse: bool = False) -> Iterato
         yield ".".join(names[:k])
 
 
-def get_by_name[T](items: Iterable[T], name: str, attr: str = "name") -> T | None:  # noqa: D103
+def iter_by_name[T](items: Iterable[T], name: str, attr: str = "name") -> Iterator[T]:
+    """Yield items with a name from an item list."""
     for item in items:
         if getattr(item, attr, None) == name:
-            return item
+            yield item
+
+
+def get_by_name[T](items: Iterable[T], name: str, attr: str = "name") -> T | None:
+    """Get the first item with a name from an item list."""
+    for item in iter_by_name(items, name, attr):
+        return item
     return None
 
 
-def get_by_kind[T](items: Iterable[T], kind: str) -> T | None:  # noqa: D103
-    return get_by_name(items, kind, attr="kind")
+def get_by_kind[T](items: Iterable[T], kind: str) -> T | None:
+    """Get the first item with a kind from an item list."""
+    for item in iter_by_name(items, kind, attr="kind"):
+        return item
+    return None
 
 
-def get_by_type[T](items: Iterable, type_: type[T]) -> T | None:  # noqa: D103
+def get_by_type[T](items: Iterable, type_: type[T]) -> T | None:
+    """Get the first item with a type from an item list."""
     for item in items:
         if isinstance(item, type_):
             return item
     return None
 
 
-def del_by_name[T](items: list[T], name: str, attr: str = "name") -> None:  # noqa: D103
+def del_by_name[T](items: list[T], name: str, attr: str = "name") -> None:
+    """Delete the first item with a name from an item list.
+
+    The first argument `items` is changed in-place.
+    """
     for k, item in enumerate(items):
         if getattr(item, attr, None) == name:
             del items[k]
             return
 
 
-def unique_names(a: Iterable, b: Iterable, attr: str = "name") -> list[str]:  # noqa: D103
+def unique_names(a: Iterable, b: Iterable, attr: str = "name") -> list[str]:
+    """Return unique names from two iterables."""
     names = [getattr(x, attr) for x in a]
     for x in b:
         if (name := getattr(x, attr)) not in names:
@@ -138,7 +154,7 @@ def unique_names(a: Iterable, b: Iterable, attr: str = "name") -> list[str]:  # 
 
 
 def split_filters(name: str) -> tuple[str, list[str]]:
-    """Split filters written after `|`s.
+    """Split filters written after `|`.
 
     Examples:
         >>> split_filters("a.b.c")

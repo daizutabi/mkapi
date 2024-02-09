@@ -277,7 +277,7 @@ def add_link(text: str) -> str:
 
 
 def get_admonition(name: str, title: str, text: str) -> str:
-    """Return an admonition markdown for a Notes or Warnings section."""
+    """Return an admonition markdown for a "Notes" or "Warnings" section."""
     lines = [f'!!! {name} "{title}"']
     lines.extend("    " + line if line else "" for line in text.splitlines())
     return "\n".join(lines)

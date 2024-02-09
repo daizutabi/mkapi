@@ -31,6 +31,18 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
 
+def cache_clear() -> None:
+    """Clear cache.
+
+    - mkapi.utils.get_module_node_source,
+    - mkapi.objects.objects
+    - mkapi.importlib.load_module
+    """
+    get_module_node_source.cache_clear()
+    load_module.cache_clear()
+    objects.clear()
+
+
 @cache
 def load_module(name: str) -> Module | None:
     """Return a [Module] instance by the name."""
