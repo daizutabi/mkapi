@@ -223,19 +223,23 @@ In the current case, the fullname is:
 
 Here,
 
-- The first segment `examples` has a link to the top level pakcage `examples`.
-- The second segment `styles` has a link to the subpakcage `examples.styles`.
-- The third segment `google` has a link to the module `examples.styles.google`.
-- The last segment `ExampleClass` is the corresponding object itself so that a link
-  has been omitted.
+- The first segment `examples` has a link to the top
+  level pakcage `examples`.
+- The second segment `styles` has a link to the
+  subpakcage `examples.styles`.
+- The third segment `google` has a link to the module
+  `examples.styles.google`.
+- The last segment `ExampleClass` is the corresponding
+  object itself so that a link has been omitted.
 
-You can check these links by hovering mouse cursor on the name segments.
+You can check these links by hovering mouse cursor
+on the name segments.
 
 ::: examples.styles.google.ExampleClass|sourcelink
 
 !!! note
-    Currently, `__special__` and `_private` members are treated as
-    a normal member.
+    Currently, `__special__` and `_private` members
+    are treated as a normal member.
 
 ### Function
 

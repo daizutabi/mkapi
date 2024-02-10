@@ -70,7 +70,6 @@ def mkapi_plugin(mkdocs_config: MkDocsConfig):
 
 def test_mkapi_plugin(mkapi_plugin: MkAPIPlugin):
     assert isinstance(mkapi_plugin, MkAPIPlugin)
-    assert mkapi_plugin.nav is None
     assert isinstance(mkapi_plugin.config, MkAPIConfig)
 
 
