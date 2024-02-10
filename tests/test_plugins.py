@@ -122,5 +122,5 @@ def test_on_config(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
     assert (Path(config.docs_dir) / path).exists()
 
 
-# def test_build(config: MkDocsConfig):
-#     assert build(config) is None
+def test_build(config: MkDocsConfig):
+    assert build(config) is None
