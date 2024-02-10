@@ -2,16 +2,51 @@
 from __future__ import annotations
 
 import ast
+import functools
 import re
-
-# from dataclasses import dataclass
-from functools import cache
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
+    from typing import Any
+
+cached_objects = []
+
+
+@overload
+def cache(obj: Callable[..., Any]) -> Callable[..., Any]:
+    ...
+
+
+@overload
+def cache(obj: dict) -> dict:
+    ...
+
+
+@overload
+def cache(obj: list) -> list:
+    ...
+
+
+def cache(obj: Callable[..., Any] | dict | list) -> Callable[..., Any] | dict | list:
+    """Cache a function and register it to clear cache."""
+    if callable(obj):
+        cached = functools.cache(obj)
+        cached_objects.append(cached)
+        return cached
+    cached_objects.append(obj)
+    return obj
+
+
+def cache_clear() -> None:
+    """Clear cache."""
+    for obj in cached_objects:
+        if callable(obj):
+            obj.cache_clear()
+        else:
+            obj.clear()
 
 
 @cache

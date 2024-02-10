@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import re
-from functools import cache
 from typing import TYPE_CHECKING
 
 import mkapi.ast
@@ -21,6 +20,7 @@ from mkapi.objects import (
     objects,
 )
 from mkapi.utils import (
+    cache,
     del_by_name,
     get_by_name,
     get_module_node_source,
@@ -29,18 +29,6 @@ from mkapi.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
-
-def cache_clear() -> None:
-    """Clear cache.
-
-    - mkapi.importlib.get_module_node_source
-    - mkapi.objects.objects
-    - mkapi.importlib.load_module
-    """
-    get_module_node_source.cache_clear()
-    load_module.cache_clear()
-    objects.clear()
 
 
 @cache

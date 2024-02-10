@@ -32,7 +32,7 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import get_by_name, get_by_type, is_identifier, is_package
+from mkapi.utils import cache, get_by_name, get_by_type, is_identifier, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from mkapi.items import Base, Parameter, Raise, Return
 
 
-objects: dict[str, Module | Class | Function | Attribute | None] = {}
+objects: dict[str, Module | Class | Function | Attribute | None] = cache({})
 
 
 @dataclass

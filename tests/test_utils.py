@@ -1,8 +1,12 @@
+import datetime
 import sys
 import time
 from pathlib import Path
 
 from mkapi.utils import (
+    cache,
+    cache_clear,
+    cached_objects,
     find_submodule_names,
     get_module_node,
     get_module_node_source,
@@ -12,6 +16,32 @@ from mkapi.utils import (
     iter_submodule_names,
     module_cache,
 )
+
+
+@cache
+def f():
+    return datetime.datetime.now()  # noqa: DTZ005
+
+
+c = cache({})
+
+
+def test_cache():
+    assert f in cached_objects
+    x = f()
+    time.sleep(0.1)
+    y = f()
+    assert x == y
+    assert f.cache_info().currsize == 1
+    cache_clear()
+    assert f.cache_info().currsize == 0
+    time.sleep(0.1)
+    z = f()
+    assert x != z
+    assert f.cache_info().currsize == 1
+    c[1] = 1
+    cache_clear()
+    assert not c
 
 
 def test_get_module_path():

@@ -6,7 +6,6 @@
 # import mkapi.renderers
 # from mkapi.importlib import cache_clear
 # from mkapi.pages import (
-#     _split_name_maxdepth,
 #     convert_markdown,
 #     convert_source,
 #     create_object_page,
@@ -14,13 +13,6 @@
 #     object_paths,
 #     source_paths,
 # )
-
-
-# def test_split_name_maxdepth():
-#     assert _split_name_maxdepth("name") == ("name", 0)
-#     assert _split_name_maxdepth("name.*") == ("name", 1)
-#     assert _split_name_maxdepth("name.**") == ("name", 2)
-#     assert _split_name_maxdepth("name.") == ("name.", 0)
 
 
 # def test_create_object_page(tmpdir: Path):

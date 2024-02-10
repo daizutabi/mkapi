@@ -24,10 +24,9 @@ from tqdm.std import tqdm
 import mkapi
 import mkapi.nav
 from mkapi import renderers
-from mkapi.importlib import cache_clear
 from mkapi.nav import split_name_depth
 from mkapi.pages import Page, convert_source
-from mkapi.utils import get_module_path, is_package, module_cache
+from mkapi.utils import cache_clear, get_module_path, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable

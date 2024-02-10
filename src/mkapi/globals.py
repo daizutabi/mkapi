@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
-from functools import cache
 from typing import TYPE_CHECKING
 
 import mkapi.ast
 from mkapi.utils import (
+    cache,
     get_by_name,
     get_module_node,
     get_module_path,
