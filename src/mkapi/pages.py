@@ -37,20 +37,18 @@ class Page:
                 file.write("")
 
         if self.kind == "object":
-            filters = [*self.filters, "sourcelink"]
-            self.markdown = create_object_markdown(self.name, self.path, filters)
+            # filters = [*self.filters, "sourcelink"]
+            self.markdown = create_object_markdown(self.name, self.path, self.filters)
         elif self.kind == "source":
             self.markdown = create_source_markdown(self.name, self.path, self.filters)
 
     def convert_markdown(self, markdown: str, anchor: str) -> str:
         """Return converted markdown."""
-        filters = self.filters
+        # filters = self.filters
         if self.kind in ["object", "source"]:
             markdown = self.markdown
 
-        return convert_markdown(markdown, self.path, anchor, filters)
-
-        return '## titl\n xxx <h3 id="xx">section</h3>'
+        return convert_markdown(markdown, self.path, anchor)
 
 
 NAME_PATTERN = re.compile(r"^(?P<name>.+?)(?P<maxdepth>\.\*+)?$")
@@ -126,10 +124,11 @@ def create_source_markdown(
     return f"# ::: {name}{filters_str}\n"
 
 
-def convert_markdown(markdown: str, path: Path, anchor: str, filters: list[str]) -> str:
+# def convert_markdown(markdown: str, path: Path, anchor: str, filters: list[str]) -> str:
+def convert_markdown(markdown: str, path: Path, anchor: str) -> str:
     """Return converted markdown."""
-    replace_object = partial(_replace_object, filters=filters)
-    markdown = mkapi.markdown.sub(OBJECT_PATTERN, replace_object, markdown)
+    # replace_object = partial(_replace_object, filters=filters)
+    markdown = mkapi.markdown.sub(OBJECT_PATTERN, _replace_object, markdown)
 
     replace_link = partial(_replace_link, directory=path.parent, anchor=anchor)
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
@@ -138,17 +137,28 @@ def convert_markdown(markdown: str, path: Path, anchor: str, filters: list[str])
 OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
 
 
-def _replace_object(match: re.Match, filters: list[str]) -> str:
+def _replace_object(match: re.Match) -> str:
     heading, name = match.group("heading"), match.group("name")
     level = len(heading)
-    name, filters_ = split_filters(name)
+    name, filters = split_filters(name)
 
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    updated_filters = update_filters(filters, filters_)
+    return mkapi.renderers.render(obj, level, filters)
 
-    return mkapi.renderers.render(obj, level, updated_filters)
+
+# def _replace_object(match: re.Match, filters: list[str]) -> str:
+#     heading, name = match.group("heading"), match.group("name")
+#     level = len(heading)
+#     name, filters_ = split_filters(name)
+
+#     if not (obj := get_object(name)):
+#         return f"!!! failure\n\n    {name!r} not found."
+
+#     updated_filters = update_filters(filters, filters_)
+
+#     return mkapi.renderers.render(obj, level, updated_filters)
 
 
 LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")

@@ -25,7 +25,7 @@ import mkapi
 import mkapi.nav
 from mkapi import renderers
 from mkapi.nav import split_name_depth
-from mkapi.pages import Page, convert_markdown, convert_source
+from mkapi.pages import Page, convert_source
 from mkapi.utils import get_module_path, is_package
 
 if TYPE_CHECKING:
