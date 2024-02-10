@@ -12,23 +12,32 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-def get_apinav(name: str, predicate: Callable[[str], bool] | None = None) -> list:
-    """Return list of module names."""
+def split_name_depth(name: str) -> tuple[str, int]:
+    """Split a nav entry into name and depth."""
     if m := re.match(r"^(.+?)\.(\*+)$", name):
         name, option = m.groups()
-        n = len(option)
-    else:
-        n = 0
+        return name, len(option)
+    return name, 0
+
+
+def get_apinav(name: str, predicate: Callable[[str], bool] | None = None) -> list:
+    """Return list of module names."""
+    name, depth = split_name_depth(name)
+    # if m := re.match(r"^(.+?)\.(\*+)$", name):
+    #     name, option = m.groups()
+    #     n = len(option)
+    # else:
+    #     n = 0
     if not get_module_path(name):
         return []
     if not is_package(name):
         return [name]
     find = partial(find_submodule_names, predicate=predicate)
-    if n == 1:
+    if depth == 1:
         return [name, *find(name)]
-    if n == 2:
+    if depth == 2:
         return _get_apinav_list(name, find)
-    if n == 3:
+    if depth == 3:
         return [_get_apinav_dict(name, find)]
     return [name]
 
