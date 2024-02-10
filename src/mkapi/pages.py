@@ -31,11 +31,12 @@ class Page:
     markdown: str = field(default="", init=False)
 
     def __post_init__(self) -> None:
+        # Delete in MkDocs v1.6. Switch to virtual files
         if not self.path.exists():
             if not self.path.parent.exists():
                 self.path.parent.mkdir(parents=True)
             with self.path.open("w") as file:
-                file.write("")
+                file.write("")  # Dummy content
 
         self.set_markdown()
 
@@ -53,8 +54,9 @@ class Page:
                 return self.markdown
         if self.kind == "markdown":
             self.source = source
+        paths = source_paths if self.kind == "source" else object_paths
 
-        self.markdown = convert_markdown(self.source, self.path, anchor)
+        self.markdown = convert_markdown(self.source, self.path, paths, anchor)
         return self.markdown
 
 
@@ -113,11 +115,19 @@ def create_source_markdown(
     return f"# ::: {name}{filters_str}\n"
 
 
-def convert_markdown(markdown: str, path: Path, anchor: str) -> str:
+def convert_markdown(
+    markdown: str,
+    path: Path,
+    paths: dict[str, Path],
+    anchor: str,
+) -> str:
     """Return converted markdown."""
     markdown = mkapi.markdown.sub(OBJECT_PATTERN, _replace_object, markdown)
 
-    replace_link = partial(_replace_link, directory=path.parent, anchor=anchor)
+    def replace_link(match: re.Match) -> str:
+        return _replace_link(match, path.parent, paths, anchor)
+
+    # replace_link = partial(_replace_link, directory=path.parent, anchor=anchor)
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 
 
@@ -138,46 +148,54 @@ def _replace_object(match: re.Match) -> str:
 LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
 
 
-def _replace_link(match: re.Match, directory: Path, anchor: str = "source") -> str:
-    asname, fullname = match.groups()
+def _replace_link(
+    match: re.Match,
+    directory: Path,
+    paths: dict[str, Path],
+    anchor: str = "source",
+) -> str:
+    name, fullname = match.groups()
     fullname, filters = split_filters(fullname)
 
     if fullname.startswith("__mkapi__.__source__."):
         name = f"[{anchor}]"
-        return _replace_link_from_source(name, fullname[21:], directory)
+        paths = source_paths
+        return _replace_link_from_paths(name, fullname[21:], directory, paths) or ""
 
     if "source" in filters:
-        return _replace_link_from_source(asname, fullname, directory) or asname
+        paths = source_paths
+        # return _replace_link_from_paths(name, fullname, directory, paths) or name
 
-    return _replace_link_from_object(asname, fullname, directory) or match.group()
+    return _replace_link_from_paths(name, fullname, directory, paths) or match.group()
 
 
-def _replace_link_from_object(name: str, fullname: str, directory: Path) -> str:
+def _replace_link_from_paths(
+    name: str,
+    fullname: str,
+    directory: Path,
+    paths: dict[str, Path],
+) -> str | None:
+    fullname, from_mkapi = _resolve_fullname(fullname)
+
+    if path := paths.get(fullname):
+        uri = path.relative_to(directory, walk_up=True).as_posix()
+        return f'[{name}]({uri}#{fullname} "{fullname}")'
+
+    if from_mkapi:
+        return f'<span class="mkapi-tooltip" title="{fullname}">{name}</span>'
+
+    return None
+
+
+def _resolve_fullname(fullname: str) -> tuple[str, bool]:
     if fullname.startswith("__mkapi__."):
         from_mkapi = True
         fullname = fullname[10:]
     else:
         from_mkapi = False
 
-    if fullname_ := resolve_with_attribute(fullname):
-        fullname = fullname_
-
-    if object_path := object_paths.get(fullname):
-        uri = object_path.relative_to(directory, walk_up=True).as_posix()
-        return f'[{name}]({uri}#{fullname} "{fullname}")'
-
-    if from_mkapi:
-        return f'<span class="mkapi-tooltip" title="{fullname}">{name}</span>'
-
-    return ""
-
-
-def _replace_link_from_source(name: str, fullname: str, directory: Path) -> str:
-    if source_path := source_paths.get(fullname):
-        uri = source_path.relative_to(directory, walk_up=True).as_posix()
-        return f'[{name}]({uri}#{fullname} "{fullname}")'
-
-    return ""
+    fullname = resolve_with_attribute(fullname) or fullname
+    return fullname, from_mkapi
 
 
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
