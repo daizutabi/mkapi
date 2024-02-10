@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from mkapi.importlib import cache_clear, get_object
+from mkapi.importlib import get_object
 from mkapi.objects import Class, Module
 from mkapi.renderers import (
     get_object_filter_for_source,
@@ -9,7 +9,7 @@ from mkapi.renderers import (
     render,
     templates,
 )
-from mkapi.utils import get_by_name
+from mkapi.utils import cache_clear, get_by_name
 
 path = str(Path(__file__).parent)
 if path not in sys.path:
