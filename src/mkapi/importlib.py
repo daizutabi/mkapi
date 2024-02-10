@@ -34,9 +34,11 @@ if TYPE_CHECKING:
 def cache_clear() -> None:
     """Clear cache.
 
+    - mkapi.importlib.get_module_node_source
     - mkapi.objects.objects
     - mkapi.importlib.load_module
     """
+    get_module_node_source.cache_clear()
     load_module.cache_clear()
     objects.clear()
 

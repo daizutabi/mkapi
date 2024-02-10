@@ -24,9 +24,10 @@ from tqdm.std import tqdm
 import mkapi
 import mkapi.nav
 from mkapi import renderers
+from mkapi.importlib import cache_clear
 from mkapi.nav import split_name_depth
 from mkapi.pages import Page, convert_source
-from mkapi.utils import get_module_path, is_package
+from mkapi.utils import get_module_path, is_package, module_cache
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -59,9 +60,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def __init__(self) -> None:
         self.api_dirs = []
+        self.pages = {}
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
-        self.pages = {}
+        cache_clear()
         self.bar = None
         self.uri_width = 0
         self.page_title = _get_function("page_title", self)
@@ -108,16 +110,15 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         """Convert Markdown source to intermediate version."""
         uri = page.file.src_uri
+        page_ = self.pages[uri]
         anchor = self.config.src_anchor
+
         try:
-            return self.pages[uri].convert_markdown(markdown, anchor)
-            # path = page.file.abs_src_path
-            # filters = self.config.filters
-            # return convert_markdown(markdown, path, anchor, filters)
+            return page_.convert_markdown(markdown, anchor)
         except Exception as e:  # noqa: BLE001
             if self.config.debug:
                 raise
-            msg = f"{page.file.src_uri}:{type(e).__name__}: {e}"
+            msg = f"{uri}:{type(e).__name__}: {e}"
             logger.warning(msg)
             return markdown
 
@@ -129,15 +130,14 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         **kwargs,
     ) -> str:
         """Merge HTML and MkAPI's object structure."""
-        page_ = self.pages.get(page.file.src_uri)
-        if page_ and page_.kind == "object":
+        uri = page.file.src_uri
+        page_ = self.pages[uri]
+
+        if page_.kind == "object":
             _replace_toc(page.toc, self.toc_title)
-            self._update_bar(page.file.src_uri)
-        if page_ and page_.kind == "source":
-            path = Path(config.docs_dir) / page.file.src_uri
-            # assert page.file.abs_src_path == str(path)
-            html = convert_source(html, path, self.config.docs_anchor)
-            self._update_bar(page.file.src_uri)
+        if page_.kind == "source":
+            html = convert_source(html, page_.path, self.config.docs_anchor)
+        self._update_bar(page.file.src_uri)
         return html
 
     def _update_bar(self, uri: str) -> None:

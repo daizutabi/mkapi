@@ -50,8 +50,6 @@ def test_get_module_node():
 
 def test_module_cache(tmpdir: Path):
     module_cache.clear()
-    assert not get_module_node_source("___")
-    assert "___" in module_cache
     assert not is_module_cache_dirty("a")
 
     sys.path.insert(0, str(tmpdir))
@@ -77,9 +75,5 @@ def test_module_cache(tmpdir: Path):
     with path.open("w") as f:
         f.write(source)
     assert is_module_cache_dirty("a")
-    z = get_module_node_source("a")
-    assert z
-    assert x[0] is not z[0]
-    assert z[1] == source
 
     sys.path.pop(0)

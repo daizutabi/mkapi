@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import ast
 import re
-from dataclasses import dataclass
+
+# from dataclasses import dataclass
 from functools import cache
 from importlib.util import find_spec
 from pathlib import Path
@@ -73,46 +74,28 @@ def find_submodule_names(
     return names
 
 
-@dataclass
-class ModuleCache:
-    """Cache for module node and source."""
-
-    name: str
-    mtime: float
-    node: ast.Module
-    source: str
-
-
-module_cache: dict[str, ModuleCache | None] = {}
+module_cache: dict[str, float] = {}
 
 
 def is_module_cache_dirty(name: str) -> bool:
     """Return True if `module_cache` is dirty."""
     if not (path := get_module_path(name)):
         return False
-    if not (cache := module_cache.get(name)):
+    if not (mtime := module_cache.get(name)):
         return True
-    return cache.mtime != path.stat().st_mtime
+    return mtime != path.stat().st_mtime
 
 
+@cache
 def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
     """Return a tuple of ([ast.Module], source) from a module name."""
-    if name in module_cache and not module_cache[name]:
-        return None
     if not (path := get_module_path(name)):
-        module_cache[name] = None
         return None
-    mtime = path.stat().st_mtime
-    if (cache := module_cache.get(name)) and cache.mtime == mtime:
-        return cache.node, cache.source
     with path.open("r", encoding="utf-8") as f:
         source = f.read()
     node = ast.parse(source)
-    module_cache[name] = ModuleCache(name, mtime, node, source)
+    module_cache[name] = path.stat().st_mtime
     return node, source
-
-
-get_module_node_source.cache_clear = lambda: module_cache.clear()
 
 
 def get_module_node(name: str) -> ast.Module | None:
