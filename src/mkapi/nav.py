@@ -23,11 +23,6 @@ def split_name_depth(name: str) -> tuple[str, int]:
 def get_apinav(name: str, predicate: Callable[[str], bool] | None = None) -> list:
     """Return list of module names."""
     name, depth = split_name_depth(name)
-    # if m := re.match(r"^(.+?)\.(\*+)$", name):
-    #     name, option = m.groups()
-    #     n = len(option)
-    # else:
-    #     n = 0
     if not get_module_path(name):
         return []
     if not is_package(name):
@@ -148,24 +143,23 @@ def _split_name_path_filters(match: re.Match) -> tuple[str, str, list[str]]:
 
 def update(
     nav: list,
-    create_page: Callable[[str, str, list[str], int], str | None],
-    section: Callable[[str, int], str] | None = None,
+    create_page: Callable[[str, str, list[str]], str],
+    section_title: Callable[[str, int], str] | None = None,
+    page_title: Callable[[str, int], str] | None = None,
     predicate: Callable[[str], bool] | None = None,
 ) -> None:
     """Update navigation."""
 
-    def _create_apinav(name: str, api_path: str, filters: list[str]) -> list:
+    def _create_apinav(name: str, path: str, filters: list[str]) -> list:
         def page(name: str, depth: int) -> str | dict[str, str]:
-            if is_package(name):
-                path = name.replace(".", "/") + "/README.md"
-            else:
-                path = name.replace(".", "/") + ".md"
-            path = f"{api_path}/{path}"
-            title = create_page(name, path, filters, depth)
-            return {title: path} if title else path
+            uri = create_page(name, path, filters)
+
+            if page_title:
+                return {page_title(name, depth): uri}
+            return uri
 
         nav = get_apinav(name, predicate)
-        create_apinav(nav, page, section)
+        create_apinav(nav, page, section_title)
         return nav
 
     nav[:] = create(nav, _create_apinav)

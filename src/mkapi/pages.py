@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 from functools import partial
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import mkapi.markdown
@@ -16,6 +16,42 @@ from mkapi.utils import split_filters, update_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
+
+
+@dataclass
+class Page:
+    """Page class."""
+
+    name: str
+    path: Path
+    filters: list[str]
+    kind: str
+    markdown: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if not self.path.exists():
+            if not self.path.parent.exists():
+                self.path.parent.mkdir(parents=True)
+            with self.path.open("w") as file:
+                file.write("")
+
+        if self.kind == "object":
+            filters = [*self.filters, "sourcelink"]
+            self.markdown = create_object_markdown(self.name, self.path, filters)
+        elif self.kind == "source":
+            self.markdown = create_source_markdown(self.name, self.path, self.filters)
+
+    def convert_markdown(self, markdown: str, anchor: str) -> str:
+        """Return converted markdown."""
+        filters = self.filters
+        if self.kind in ["object", "source"]:
+            markdown = self.markdown
+
+        return convert_markdown(markdown, self.path, anchor, filters)
+
+        return '## titl\n xxx <h3 id="xx">section</h3>'
+
 
 NAME_PATTERN = re.compile(r"^(?P<name>.+?)(?P<maxdepth>\.\*+)?$")
 
@@ -32,86 +68,70 @@ def _split_name_maxdepth(name: str) -> tuple[str, int]:
 object_paths: dict[str, Path] = {}
 
 
-def create_object_page(
+def create_object_markdown(
     name: str,
     path: Path,
     filters: list[str],
     predicate: Callable[[str], bool] | None = None,
-    *,
-    save: bool = True,
 ) -> str:
     """Create object page for an object."""
-    name, maxdepth = _split_name_maxdepth(name)
+    # name, maxdepth = _split_name_maxdepth(name)
+    maxdepth = 2
 
     if not (obj := get_object(name)):
-        markdown = f"!!! failure\n\n    {name!r} not found."
-    else:
-        filters_str = "|" + "|".join(filters) if filters else ""
+        return f"!!! failure\n\n    {name!r} not found."
 
-        markdowns = []
-        for child, depth in iter_objects_with_depth(obj, maxdepth, member_only=True):
-            if is_empty(child):
-                continue
-            if predicate and not predicate(child.fullname):
-                continue
-            if save:
-                object_paths.setdefault(child.fullname, path)
+    filters_str = "|" + "|".join(filters) if filters else ""
 
-            heading = "#" * (depth + 1)
-            markdown = f"{heading} ::: {child.fullname}{filters_str}\n"
-            markdowns.append(markdown)
+    markdowns = []
+    for child, depth in iter_objects_with_depth(obj, maxdepth, member_only=True):
+        if is_empty(child):
+            continue
+        if predicate and not predicate(child.fullname):
+            continue
+        object_paths.setdefault(child.fullname, path)
 
-        markdown = "\n".join(markdowns)
+        heading = "#" * (depth + 1)
+        markdown = f"{heading} ::: {child.fullname}{filters_str}\n"
+        markdowns.append(markdown)
 
-    if save:
-        with path.open("w") as file:
-            file.write(markdown)
-
-    return markdown
+    return "\n".join(markdowns)
 
 
 source_paths: dict[str, Path] = {}
 
 
-def create_source_page(
+def create_source_markdown(
     name: str,
     path: Path,
     filters: list[str],
     predicate: Callable[[str], bool] | None = None,
-    *,
-    save: bool = True,
 ) -> str:
     """Create source page for a module."""
-    name, maxdepth = _split_name_maxdepth(name)
+    # name, maxdepth = _split_name_maxdepth(name)
+    maxdepth = 2
 
     if not (obj := get_object(name)) or not isinstance(obj, Module):
-        markdown = f"!!! failure\n\n    module {name!r} not found.\n"
-    else:
-        object_filters = []
-        for child in iter_objects(obj, maxdepth):
-            if predicate and not predicate(child.fullname):
-                continue
-            if object_filter := get_object_filter_for_source(child, obj):
-                object_filters.append(object_filter)
-            if save:
-                source_paths.setdefault(child.fullname, path)
+        return f"!!! failure\n\n    module {name!r} not found.\n"
 
-        filters_str = "|" + "|".join([*filters, "source", *object_filters])
-        markdown = f"# ::: {name}{filters_str}\n"
+    object_filters = []
+    for child in iter_objects(obj, maxdepth):
+        if predicate and not predicate(child.fullname):
+            continue
+        if object_filter := get_object_filter_for_source(child, obj):
+            object_filters.append(object_filter)
+        source_paths.setdefault(child.fullname, path)
 
-    if save:
-        with path.open("w") as file:
-            file.write(markdown)
-
-    return markdown
+    filters_str = "|" + "|".join([*filters, "source", *object_filters])
+    return f"# ::: {name}{filters_str}\n"
 
 
-def convert_markdown(source: str, path: str, anchor: str, filters: list[str]) -> str:
+def convert_markdown(markdown: str, path: Path, anchor: str, filters: list[str]) -> str:
     """Return converted markdown."""
     replace_object = partial(_replace_object, filters=filters)
-    markdown = mkapi.markdown.sub(OBJECT_PATTERN, replace_object, source)
+    markdown = mkapi.markdown.sub(OBJECT_PATTERN, replace_object, markdown)
 
-    replace_link = partial(_replace_link, directory=Path(path).parent, anchor=anchor)
+    replace_link = partial(_replace_link, directory=path.parent, anchor=anchor)
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 
 

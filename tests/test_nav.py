@@ -125,9 +125,14 @@ def test_nav_dict():
 
 
 def test_update_nav():
-    def create_page(name: str, path: str, filters: list[str], depth: int) -> str:
-        return name.upper() + ".".join(filters) + path + f".{depth}"
+    def create_page(name: str, path: str, filters: list[str]) -> str:
+        return f"{path}/{name}.{filters[0]}.md"
+
+    def page_title(name: str, depth) -> str:
+        return name.upper() + f".{depth}"
 
     nav = yaml.safe_load(src)
-    update(nav, create_page)
-    assert "MKAPI.OBJECTSf1.f2api1/mkapi/objects.md.0" in nav[1]
+    update(nav, create_page, page_title=page_title)
+    print(nav)
+    assert "MKAPI.OBJECTS.0" in nav[1]
+    assert nav[1]["MKAPI.OBJECTS.0"] == "api1/mkapi.objects.f1.md"
