@@ -9,7 +9,7 @@ import mkapi.markdown
 import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object, load_module
-from mkapi.objects import Module, is_empty, iter_objects_with_depth
+from mkapi.objects import is_empty, iter_objects_with_depth
 from mkapi.renderers import get_object_filter_for_source
 from mkapi.utils import is_module_cache_dirty, split_filters
 

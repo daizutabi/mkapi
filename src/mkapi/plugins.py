@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING
 
 from halo import Halo
 from mkdocs.config import Config, config_options
-from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel, get_files
 from tqdm.std import tqdm
@@ -32,7 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from mkdocs.config.defaults import MkDocsConfig
-    from mkdocs.structure.files import File, Files
+    from mkdocs.structure.files import Files
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
 

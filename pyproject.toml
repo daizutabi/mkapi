@@ -83,20 +83,22 @@ ignore = [
   "COM812",
   "D105",
   "D406",
-  "G004",
   "D407",
   "EM102",
   "ERA001",
   "FIX002",
   "FIX003",
+  "G004",
   "ISC001",
   "N812",
   "PGH003",
   "PLR2004",
+  "PT001",
   "RET504",
   "TD",
   "TRY003",
 ]
+exclude = ["google.py", 'numpy.py']
 
 [tool.ruff.extend-per-file-ignores]
 "tests/*.py" = ["ANN", "D", "S101", "INP001", "T201", "PLR2004", "PGH003"]
