@@ -34,6 +34,8 @@ if TYPE_CHECKING:
     from mkdocs.structure.files import Files
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
+    # from mkdocs.structure.nav import Navigation
+    # from mkdocs.utils.templates import TemplateContext
 
 logger = get_plugin_logger("MkAPI")
 
@@ -155,6 +157,18 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         if self.bar.n == self.bar.total:
             self.bar.close()
 
+    # def on_page_context(
+    #     self,
+    #     context: TemplateContext,
+    #     *,
+    #     page: MkDocsPage,
+    #     config: MkDocsConfig,
+    #     nav: Navigation,
+    # ) -> TemplateContext | None:
+    #     if len(nav.items):
+    #         nav.items.pop()
+    #     return context
+
     def on_shutdown(self) -> None:
         for path in self.api_dirs:
             if path.exists():
@@ -198,31 +212,43 @@ def _watch_directory(name: str, config: MkDocsConfig) -> None:
             config.watch.append(path)
 
 
+def _mkdir(path: Path, paths: list[Path]) -> None:
+    if path.exists() and path not in paths:
+        logger.warning(f"API directory exists: {path}")
+        ans = input("Delete the directory? [yes/no] ")
+        if ans.lower() == "yes":
+            logger.info(f"Deleting API directory: {path}")
+            shutil.rmtree(path)
+        else:
+            logger.error("Delete the directory manually.")
+            sys.exit()
+    if not path.exists():
+        msg = f"Making API directory: {path}"
+        logger.info(msg)
+        path.mkdir(parents=True)
+        paths.append(path)
+
+
+def _split_path(path: str, plugin: MkAPIPlugin) -> list[str]:
+    if ":" in path:
+        return path.split(":", maxsplit=1)
+    return [path, plugin.config.src_dir]
+
+
 def _create_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     if not config.nav:
         return
 
     def mkdir(name: str, path: str) -> list:
         _watch_directory(name, config)
-        api_dir = Path(config.docs_dir) / path
-        if api_dir.exists() and api_dir not in plugin.api_dirs:
-            logger.warning(f"API directory exists: {api_dir}")
-            ans = input("Delete the directory? [yes/no] ")
-            if ans.lower() == "yes":
-                logger.info(f"Deleting API directory: {api_dir}")
-                shutil.rmtree(api_dir)
-            else:
-                logger.error("Delete the directory manually.")
-                sys.exit()
-        if not api_dir.exists():
-            msg = f"Making API directory: {api_dir}"
-            logger.info(msg)
-            api_dir.mkdir()
-            plugin.api_dirs.append(api_dir)
+
+        for path_ in _split_path(path, plugin):
+            api_dir = Path(config.docs_dir) / path_
+            _mkdir(api_dir, plugin.api_dirs)
+
         return []
 
     mkapi.nav.create(config.nav, lambda *args: mkdir(args[0], args[1]))
-    mkdir("", plugin.config.src_dir)
 
 
 def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
@@ -231,22 +257,22 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
     def _create_page(name: str, path: str, filters: list[str]) -> str:
         uri = name.replace(".", "/")
-        suffix = "/README.md" if is_package(name) else ".md"
+        object_path, source_path = _split_path(path, plugin)
 
-        object_uri = f"{path}/{uri}{suffix}"
+        suffix = "/README.md" if is_package(name) else ".md"
+        object_uri = f"{object_path}/{uri}{suffix}"
         abs_path = Path(config.docs_dir) / object_uri
 
         if object_uri not in plugin.pages:
             plugin.pages[object_uri] = Page(name, abs_path, filters, "object")
 
-        source_uri = f"{plugin.config.src_dir}/{uri}.md"
+        source_uri = f"{source_path}/{uri}.md"
         abs_path = Path(config.docs_dir) / source_uri
 
         if source_uri not in plugin.pages:
             plugin.pages[source_uri] = Page(name, abs_path, filters, "source")
 
-        n = len(plugin.pages)
-        spinner.text = f"Collecting modules [{n:>3}]: {name}"
+        spinner.text = f"Collecting modules [{len(plugin.pages):>3}]: {name}"
 
         return object_uri
 
