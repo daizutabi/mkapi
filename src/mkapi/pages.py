@@ -123,7 +123,7 @@ def convert_markdown(
     paths = source_paths if is_source else object_paths
 
     def replace_link(match: re.Match) -> str:
-        return _replace_link(match, path.parent, paths, anchor, is_source=is_source)
+        return _replace_link(match, path.parent, paths, anchor)
 
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 
@@ -150,16 +150,27 @@ def _replace_object(match: re.Match) -> str:
 def _replace_source(markdown: str) -> str:
     module = None
     filters = []
+    headings = []
+
     for match in re.finditer(OBJECT_PATTERN, markdown):
         name, level, object_filter = _get_level_name_filters(match)
         if level == 1 and (obj := get_object(name)) and isinstance(obj, Module):
             module = obj
-        filters.extend(object_filter)
+
+        # Move to renderer.py
+        if level >= 2:
+            # 'markdown="1"' for toc.
+            attr = f'class="mkapi-dummy-heading" id="{name}" markdown="1"'
+            name_ = name.replace("_", "\\_")
+            heading = f"<h{level} {attr}>{name_}</h{level}>"
+            headings.append(heading)
+            filters.extend(object_filter)
 
     if not module:
         return "!!! failure\n\n    module not found."
 
-    return mkapi.renderers.render(module, level, filters, is_source=True)
+    source = mkapi.renderers.render(module, 1, filters, is_source=True)
+    return "\n".join([source, *headings])
 
 
 LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
@@ -169,9 +180,7 @@ def _replace_link(
     match: re.Match,
     directory: Path,
     paths: dict[str, Path],
-    anchor: str = "source",
-    *,
-    is_source: bool = False,
+    anchor: str,
 ) -> str:
     name, fullname = match.groups()
     fullname, filters = split_filters(fullname)
@@ -181,8 +190,10 @@ def _replace_link(
         paths = source_paths
         return _replace_link_from_paths(name, fullname[21:], directory, paths) or ""
 
-    if is_source:
-        return ""
+    if fullname.startswith("__mkapi__.__object__."):
+        name = f"[{anchor}]"
+        paths = object_paths
+        return _replace_link_from_paths(name, fullname[21:], directory, paths) or ""
 
     if "source" in filters:
         paths = source_paths
@@ -220,6 +231,7 @@ def _resolve_fullname(fullname: str) -> tuple[str, bool]:
 
 
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
+HEADING_PATTERN = re.compile(r"<h\d.+?mkapi-dummy-heading.+?</h\d>\n?")
 
 
 def convert_source(html: str, path: Path, anchor: str) -> str:
@@ -240,4 +252,5 @@ def convert_source(html: str, path: Path, anchor: str) -> str:
             return link
         return f"{open_tag}{close_tag}{link}"
 
-    return SOURCE_LINK_PATTERN.sub(replace, html)
+    html = SOURCE_LINK_PATTERN.sub(replace, html)
+    return HEADING_PATTERN.sub("", html)

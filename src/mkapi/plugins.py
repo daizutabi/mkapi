@@ -110,7 +110,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Convert Markdown source to intermediate version."""
         uri = page.file.src_uri
         page_ = self.pages[uri]
-        anchor = self.config.src_anchor
+        if page_.kind == "source":
+            anchor = self.config.docs_anchor
+        else:
+            anchor = self.config.src_anchor
 
         try:
             return page_.convert_markdown(markdown, anchor)

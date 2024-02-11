@@ -361,7 +361,6 @@ def test_sub():
         return f"xxx{name}xxx"
 
     m = sub(pattern, rel, src)
-    print(m)
     assert m.startswith("```\n# ::: a\n```\nxxx::: bxxx\nxxx::: cxxx\n```{.python")
     assert m.endswith("output}\n::: d\n```\n\nxxx::: exxx\nf")
 
