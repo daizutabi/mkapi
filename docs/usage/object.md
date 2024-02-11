@@ -140,17 +140,6 @@ to distinct these two classes.
 The **Classes** section shows these alias names, but you can check
 the unaliased fullname by hovering mouse cursor on the names.
 
-!!! Note
-    Currently, MkAPI doesn't support dynamic assignment to `__all__`.
-    For example, the below codes are just ignored:
-
-    ```python
-    def get_all():
-        return ["a", "b", "c"]
-
-    __all__ = get_all()
-    ```
-
 ## Module
 
 Python module has classes, functions, or attributes as its members.
