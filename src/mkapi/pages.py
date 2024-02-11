@@ -1,8 +1,9 @@
 """Page class that works with other converter."""
 from __future__ import annotations
 
+import datetime
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mkapi.markdown
@@ -14,8 +15,15 @@ from mkapi.renderers import get_object_filter_for_source
 from mkapi.utils import is_module_cache_dirty, split_filters
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
     from pathlib import Path
+
+
+def write_source(pages: Iterable[Page]) -> None:
+    """Write dummy markdown source."""
+    for page in pages:
+        if page.name and is_module_cache_dirty(page.name):
+            page.write_source()
 
 
 @dataclass
@@ -26,45 +34,37 @@ class Page:
     path: Path
     filters: list[str]
     kind: str
-    source: str = field(default="", init=False)
-    markdown: str = field(default="", init=False)
 
     def __post_init__(self) -> None:
         # Delete in MkDocs v1.6. Switch to virtual files
         if not self.path.exists():
             if not self.path.parent.exists():
                 self.path.parent.mkdir(parents=True)
-            with self.path.open("w") as file:
-                file.write("")  # Dummy content
+            self.write_source()
 
+    def write_source(self) -> None:
+        """Write dummy markdown source."""
         if self.kind in ["object", "source"]:
-            self.set_markdown()
-
-    def set_markdown(self) -> None:
-        """Set markdown."""
-        self.source = create_markdown(
-            self.name,
-            self.path,
-            self.filters,
-            is_source=self.kind == "source",
-        )
+            with self.path.open("w") as file:
+                file.write(f"{datetime.datetime.now()}")
 
     def convert_markdown(self, source: str, anchor: str) -> str:
         """Return converted markdown."""
+        is_source = self.kind == "source"
         if self.kind in ["object", "source"]:
-            if self.markdown and not is_module_cache_dirty(self.name):
-                return self.markdown
+            source = create_markdown(
+                self.name,
+                self.path,
+                self.filters,
+                is_source=is_source,
+            )
 
-        elif self.kind == "markdown":
-            self.source = source
-
-        self.markdown = convert_markdown(
-            self.source,
+        return convert_markdown(
+            source,
             self.path,
             anchor,
-            is_source=self.kind == "source",
+            is_source=is_source,
         )
-        return self.markdown
 
 
 object_paths: dict[str, Path] = {}
@@ -80,7 +80,6 @@ def create_markdown(
     is_source: bool = False,
 ) -> str:
     """Create object page for an object."""
-    # if not (obj := get_object(name)) or not isinstance(obj, Module):
     if not (module := load_module(name)):
         return f"!!! failure\n\n    module {name!r} not found.\n"
 
@@ -133,7 +132,7 @@ OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
 
 
 def _get_level_name_filters(match: re.Match) -> tuple[str, int, list[str]]:
-    heading, name = match.group("heading"), match.group("name")
+    heading, name = match.groups()
     level = len(heading)
     name, filters = split_filters(name)
     return name, level, filters
