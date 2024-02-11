@@ -74,9 +74,13 @@ This part is a *heading* of the object documentation.
 After the heading, main contents of documentation
 are rendered.
 Contents of the `examples` package is just
-one-line summary for the package.
+one-line summary for the package:
 
-MkAPI can embed the source code of objects as well as their
+```python title="examples/__init__.py"
+--8<-- "tests/examples/__init__.py"
+```
+
+<!-- MkAPI can embed the source code of objects as well as their
 documentation. For this, use *filters* like below:
 
 ```markdown
@@ -93,6 +97,7 @@ The output is shown below:
 ::: examples|source|bare
 
 The above docstring is entire contents of `examples/__init__.py`.
+ -->
 
 ## Package with `__all__`
 
@@ -123,7 +128,9 @@ These names has a link to the object documentation to navigate you.
 The summary line for classes is also shown for convinience.
 Below is the source code of `examples/styles/__init__.py`.
 
-::: examples.styles|source|bare
+```python title="examples/styles/__init__.py"
+--8<-- "tests/examples/styles/__init__.py"
+```
 
 Two modules (`google` and `numpy`) have their own class
 with the same name of `ExampleClass`.
@@ -193,7 +200,7 @@ You can check the corresponding docstring
 
 The last part of this page is for module members.
 The syntax to embed these objects is the same as package or module.
-In addition, a new filter `sourcelink` is introduced here.
+<!-- In addition, a new filter `sourcelink` is introduced here. -->
 
 ### Class
 
@@ -201,18 +208,15 @@ In addition, a new filter `sourcelink` is introduced here.
 You can write like below:
 
 ```markdown
-::: examples.styles.google.ExampleClass|sourcelink
+::: examples.styles.google.ExampleClass
 ```
 
-A new `sourcelink` filter is added at the end of line.
+<!-- A new `sourcelink` filter is added at the end of line.
 This filter creates a link to the source code
 to enable to visit it easily.
 Let's see the output.
 A `[source]` tag is added in the right side of the heading .
-You can click it to see the source code.
-
-Functions or attributes can also be embeded in a Markdown source
-in the same way as described above.
+You can click it to see the source code. -->
 
 There is another useful feature.
 The heading of object documentation contains the fullname of an object.
@@ -235,11 +239,14 @@ Here,
 You can check these links by hovering mouse cursor
 on the name segments.
 
-::: examples.styles.google.ExampleClass|sourcelink
+::: examples.styles.google.ExampleClass
 
 !!! note
     Currently, `__special__` and `_private` members
     are treated as a normal member.
+
+Functions or attributes can also be embeded in a Markdown source
+in the same way as described above.
 
 ### Function
 
