@@ -132,7 +132,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         uri = page.file.src_uri
         page_ = self.pages[uri]
 
-        if page_.kind == "object":
+        if page_.kind in ["object", "source"]:
             _replace_toc(page.toc, self.toc_title)
         if page_.kind == "source":
             html = convert_source(html, page_.path, self.config.docs_anchor)

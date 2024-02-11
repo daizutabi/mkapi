@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from functools import partial
 from typing import TYPE_CHECKING
 
 import mkapi.markdown
 import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object
-from mkapi.objects import Module, is_empty, iter_objects, iter_objects_with_depth
+from mkapi.objects import Module, is_empty, iter_objects_with_depth
 from mkapi.renderers import get_object_filter_for_source
 from mkapi.utils import is_module_cache_dirty, split_filters
 
@@ -38,42 +37,56 @@ class Page:
             with self.path.open("w") as file:
                 file.write("")  # Dummy content
 
-        self.set_markdown()
+        if self.kind in ["object", "source"]:
+            self.set_markdown()
 
     def set_markdown(self) -> None:
         """Set markdown."""
-        if self.kind == "object":
-            self.source = create_object_markdown(self.name, self.path, self.filters)
-        elif self.kind == "source":
-            self.source = create_source_markdown(self.name, self.path, self.filters)
+        self.source = create_markdown(
+            self.name,
+            self.path,
+            self.filters,
+            is_source=self.kind == "source",
+        )
 
     def convert_markdown(self, source: str, anchor: str) -> str:
         """Return converted markdown."""
-        if self.kind in ["object", "source"]:  # noqa: SIM102
+        if self.kind in ["object", "source"]:
             if self.markdown and not is_module_cache_dirty(self.name):
                 return self.markdown
-        if self.kind == "markdown":
-            self.source = source
-        paths = source_paths if self.kind == "source" else object_paths
 
-        self.markdown = convert_markdown(self.source, self.path, paths, anchor)
+        elif self.kind == "markdown":
+            self.source = source
+
+        self.markdown = convert_markdown(
+            self.source,
+            self.path,
+            anchor,
+            is_source=self.kind == "source",
+        )
         return self.markdown
 
 
 object_paths: dict[str, Path] = {}
+source_paths: dict[str, Path] = {}
 
 
-def create_object_markdown(
+def create_markdown(
     name: str,
     path: Path,
     filters: list[str],
     predicate: Callable[[str], bool] | None = None,
+    *,
+    is_source: bool = False,
 ) -> str:
     """Create object page for an object."""
-    if not (obj := get_object(name)):
-        return f"!!! failure\n\n    {name!r} not found."
+    if not (obj := get_object(name)) or not isinstance(obj, Module):
+        return f"!!! failure\n\n    module {name!r} not found.\n"
 
     filters_str = "|" + "|".join(filters) if filters else ""
+    object_filter = ""
+
+    paths = source_paths if is_source else object_paths
 
     markdowns = []
     for child, depth in iter_objects_with_depth(obj, 2, member_only=True):
@@ -81,68 +94,72 @@ def create_object_markdown(
             continue
         if predicate and not predicate(child.fullname):
             continue
-        object_paths.setdefault(child.fullname, path)
+        paths.setdefault(child.fullname, path)
+
+        if is_source:
+            object_filter = get_object_filter_for_source(child, obj)
+            object_filter = f"|{object_filter}" if object_filter else ""
 
         heading = "#" * (depth + 1)
-        markdown = f"{heading} ::: {child.fullname}{filters_str}\n"
+        markdown = f"{heading} ::: {child.fullname}{filters_str}{object_filter}\n"
         markdowns.append(markdown)
 
     return "\n".join(markdowns)
 
 
-source_paths: dict[str, Path] = {}
-
-
-def create_source_markdown(
-    name: str,
-    path: Path,
-    filters: list[str],
-    predicate: Callable[[str], bool] | None = None,
-) -> str:
-    """Create source page for a module."""
-    if not (obj := get_object(name)) or not isinstance(obj, Module):
-        return f"!!! failure\n\n    module {name!r} not found.\n"
-
-    object_filters = []
-    for child in iter_objects(obj, 2):
-        if predicate and not predicate(child.fullname):
-            continue
-        if object_filter := get_object_filter_for_source(child, obj):
-            object_filters.append(object_filter)
-        source_paths.setdefault(child.fullname, path)
-
-    filters_str = "|" + "|".join([*filters, "source", *object_filters])
-    return f"# ::: {name}{filters_str}\n"
-
-
 def convert_markdown(
     markdown: str,
     path: Path,
-    paths: dict[str, Path],
     anchor: str,
+    *,
+    is_source: bool = False,
 ) -> str:
     """Return converted markdown."""
-    markdown = mkapi.markdown.sub(OBJECT_PATTERN, _replace_object, markdown)
+    if is_source:
+        markdown = _replace_source(markdown)
+    else:
+        markdown = mkapi.markdown.sub(OBJECT_PATTERN, _replace_object, markdown)
+
+    paths = source_paths if is_source else object_paths
 
     def replace_link(match: re.Match) -> str:
-        return _replace_link(match, path.parent, paths, anchor)
+        return _replace_link(match, path.parent, paths, anchor, is_source=is_source)
 
-    # replace_link = partial(_replace_link, directory=path.parent, anchor=anchor)
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 
 
 OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
 
 
-def _replace_object(match: re.Match) -> str:
+def _get_level_name_filters(match: re.Match) -> tuple[str, int, list[str]]:
     heading, name = match.group("heading"), match.group("name")
     level = len(heading)
     name, filters = split_filters(name)
+    return name, level, filters
+
+
+def _replace_object(match: re.Match) -> str:
+    name, level, filters = _get_level_name_filters(match)
 
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    return mkapi.renderers.render(obj, level, filters)
+    return mkapi.renderers.render(obj, level, filters, is_source=False)
+
+
+def _replace_source(markdown: str) -> str:
+    module = None
+    filters = []
+    for match in re.finditer(OBJECT_PATTERN, markdown):
+        name, level, object_filter = _get_level_name_filters(match)
+        if level == 1 and (obj := get_object(name)) and isinstance(obj, Module):
+            module = obj
+        filters.extend(object_filter)
+
+    if not module:
+        return "!!! failure\n\n    module not found."
+
+    return mkapi.renderers.render(module, level, filters, is_source=True)
 
 
 LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
@@ -153,6 +170,8 @@ def _replace_link(
     directory: Path,
     paths: dict[str, Path],
     anchor: str = "source",
+    *,
+    is_source: bool = False,
 ) -> str:
     name, fullname = match.groups()
     fullname, filters = split_filters(fullname)
@@ -162,9 +181,11 @@ def _replace_link(
         paths = source_paths
         return _replace_link_from_paths(name, fullname[21:], directory, paths) or ""
 
+    if is_source:
+        return ""
+
     if "source" in filters:
         paths = source_paths
-        # return _replace_link_from_paths(name, fullname, directory, paths) or name
 
     return _replace_link_from_paths(name, fullname, directory, paths) or match.group()
 
