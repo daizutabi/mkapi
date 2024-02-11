@@ -95,7 +95,7 @@ def test_create_source_markdown_failure(tmpdir: Path):
     assert "!!! failure" in m
 
 
-@pytest.fixture()
+@pytest.fixture
 def prepare(tmpdir: Path):
     api = Path(tmpdir) / "api/a.md"
     src = Path(tmpdir) / "src/b.md"
@@ -108,12 +108,12 @@ def prepare(tmpdir: Path):
     return page, obj, src
 
 
-@pytest.fixture()
+@pytest.fixture
 def page(prepare):
     return prepare[0]
 
 
-@pytest.fixture()
+@pytest.fixture
 def src(prepare):
     return prepare[2]
 
@@ -161,3 +161,11 @@ def test_convert_source(src, page):
     assert '<span class="mkapi-docs-link">[[A]](../../api/a.md#mkapi.objects' in m
     assert "``` {.python .mkapi-source}" in m
     assert "class Attribute(Member):## __mkapi__.mkapi.objects.Attribute" in m
+
+    es = ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]
+    h = markdown.markdown(m, extensions=es)
+    assert '<h2 class="mkapi-dummy-heading" id="mkapi.objects.Object">' in h
+
+    h = convert_source(h, page, "AAA")
+    assert "mkapi-dummy-heading" not in h
+    assert '<a href="../../../api/a/#mkapi.objects.is_empty">[AAA]</a></span>' in h

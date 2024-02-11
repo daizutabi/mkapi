@@ -31,7 +31,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Hatch
         run: pip install --upgrade hatch
-      - name: Run tests
+      - name: Check format
+        run: hatch fmt --check
+      - name: Run test
         run: hatch run test
       - name: Upload Codecov Results
         if: success()

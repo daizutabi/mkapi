@@ -55,8 +55,8 @@ def test_nav(mkdocs_config: MkDocsConfig):
     for item in nav:
         if isinstance(item, dict):
             nav_dict.update(item)
-    assert nav_dict["API"] == "$api/mkapi.**"
-    assert nav_dict["Examples"] == "$api/examples.**"
+    assert nav_dict["API"] == "$api:src/mkapi.**"
+    assert nav_dict["Examples"] == "$api:src/examples.**"
     # assert nav_dict["Schemdraw"] == "$api/schemdraw.***"
     # assert nav_dict["Polars"] == "$api/polars.***"
     # assert nav_dict["Altair"] == "$api/altair.***"

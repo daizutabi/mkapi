@@ -58,8 +58,8 @@ nav:
     - usage/object.md
     - usage/page.md
     - usage/config.md
-  - API: $api/mkapi.**
-  - Examples: $api/examples.**
+  - API: $api:src/mkapi.**
+  - Examples: $api:src/examples.**
   # - Schemdraw: $api/schemdraw.***
   # - Polars: $api/polars.***
   # - Altair: $api/altair.***
