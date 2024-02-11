@@ -12,18 +12,11 @@ from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object, load_module
 from mkapi.objects import is_empty, iter_objects_with_depth
 from mkapi.renderers import get_object_filter_for_source
-from mkapi.utils import is_module_cache_dirty, split_filters
+from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
     from pathlib import Path
-
-
-def write_source(pages: Iterable[Page]) -> None:
-    """Write dummy markdown source."""
-    for page in pages:
-        if page.name and is_module_cache_dirty(page.name):
-            page.write_source()
 
 
 @dataclass
@@ -34,36 +27,40 @@ class Page:
     path: Path
     filters: list[str]
     kind: str
+    markdown: str = ""
 
     def __post_init__(self) -> None:
-        # Delete in MkDocs v1.6. Switch to virtual files
         if not self.path.exists():
             if not self.path.parent.exists():
                 self.path.parent.mkdir(parents=True)
-            self.write_source()
+            self.create_markdown()
 
-    def write_source(self) -> None:
-        """Write dummy markdown source."""
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.path!r})"
+
+    def create_markdown(self) -> None:
+        """Create markdown source."""
         if self.kind in ["object", "source"]:
             with self.path.open("w") as file:
                 file.write(f"{datetime.datetime.now()}")
 
-    def convert_markdown(self, source: str, anchor: str) -> str:
-        """Return converted markdown."""
-        is_source = self.kind == "source"
-        if self.kind in ["object", "source"]:
-            source = create_markdown(
+            self.markdown = create_markdown(
                 self.name,
                 self.path,
                 self.filters,
-                is_source=is_source,
+                is_source=self.kind == "source",
             )
 
+    def convert_markdown(self, markdown: str, anchor: str) -> str:
+        """Return converted markdown."""
+        if self.kind in ["object", "source"]:
+            markdown = self.markdown
+
         return convert_markdown(
-            source,
+            markdown,
             self.path,
             anchor,
-            is_source=is_source,
+            is_source=self.kind == "source",
         )
 
 

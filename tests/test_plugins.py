@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 import pytest
@@ -56,11 +57,12 @@ def test_nav(mkdocs_config: MkDocsConfig):
     for item in nav:
         if isinstance(item, dict):
             nav_dict.update(item)
+    assert "Usage" in nav_dict
     assert nav_dict["API"] == "$api:src/mkapi.**"
     assert nav_dict["Examples"] == "$api:src/examples.**"
-    # assert nav_dict["Schemdraw"] == "$api/schemdraw.***"
-    # assert nav_dict["Polars"] == "$api/polars.***"
-    # assert nav_dict["Altair"] == "$api/altair.***"
+    assert "Schemdraw" not in nav_dict
+    assert "Polars" not in nav_dict
+    assert "Altair" not in nav_dict
 
 
 @pytest.fixture(scope="module")
@@ -92,26 +94,30 @@ def test_get_function(mkapi_plugin):
     assert _get_function("toc_title", mkapi_plugin)
 
 
-@pytest.fixture()
+@pytest.fixture
 def config(mkdocs_config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
-    mkdocs_config.nav = [{"API": "$api/mkapi.**"}]
     api_dir = Path(mkdocs_config.docs_dir) / "api"
     src_dir = Path(mkdocs_config.docs_dir) / "src"
+    site_dir = Path(mkdocs_config.site_dir)
     assert not api_dir.exists()
     assert not src_dir.exists()
+    if site_dir.exists():
+        shutil.rmtree(site_dir)
     yield mkdocs_config
     mkapi_plugin.on_shutdown()
     assert not api_dir.exists()
     assert not src_dir.exists()
+    if site_dir.exists():
+        shutil.rmtree(site_dir)
 
 
 def test_on_config(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
     config = mkapi_plugin.on_config(config)
     nav = config.nav
     assert nav
-    assert isinstance(nav[0]["API"], list)
+    assert isinstance(nav[2]["API"], list)
     path = "api/mkapi/README.md"
-    assert nav[0]["API"][0]["mkapi"] == path
+    assert nav[2]["API"][0]["mkapi"] == path
     for path in ["api/mkapi/README.md", "api/mkapi/objects.md", "api/mkapi/items.md"]:
         assert (Path(config.docs_dir) / path).exists()
         if "READ" not in path:
@@ -127,3 +133,13 @@ def test_collect_stylesheets(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
 
 def test_build(config: MkDocsConfig):
     assert build(config) is None
+    plugin = config.plugins["mkapi"]
+    assert isinstance(plugin, MkAPIPlugin)
+    pages = plugin.pages
+    assert not pages["usage/object.md"].markdown
+    page = pages["api/examples/styles/README.md"]
+    assert page.markdown == "# ::: examples.styles\n"
+    m = page.convert_markdown("", "ABC")
+    assert '[examples](../README.md#examples "examples")' in m
+    assert "[[ABC]](../../../src/examples/styles.md#examples.styles" in m
+    assert "[ExampleClassGoogle](google.md#examples.styles.google.ExampleClass" in m
