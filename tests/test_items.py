@@ -283,6 +283,5 @@ def test_iter_merged_items_():
 
 def test_create_admonition():
     a = create_admonition("See Also", "a: b\nc: d")
-    print(a.text.str)
     x = '!!! info "See Also"\n    * [__mkapi__.a][]: b\n    * [__mkapi__.c][]: d'
     assert a.text.str == x

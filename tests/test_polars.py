@@ -129,7 +129,7 @@ def test_examples():
     name = "polars.lazyframe.frame.LazyFrame.fill_null"
     m = get_object(name)
     assert isinstance(m, Function)
-    print(m.doc.sections[1].text.markdown)
+    # print(m.doc.sections[1].text.markdown)
     # assert 0
 
 

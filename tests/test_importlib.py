@@ -95,8 +95,3 @@ def test_iter_dataclass_parameters():
     assert p[2].name == "text"
     assert p[3].name == "items"
     assert p[4].name == "kind"
-
-
-def test_a():  # TODO: delete
-    module = load_module("schemdraw.elements.cables")
-    print(module)

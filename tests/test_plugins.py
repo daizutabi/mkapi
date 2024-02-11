@@ -18,7 +18,6 @@ def config_file():
 
 
 def test_config_file_exists(config_file: Path):
-    print(config_file)
     assert config_file.exists()
 
 
@@ -113,7 +112,6 @@ def test_on_config(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
     assert isinstance(nav[0]["API"], list)
     path = "api/mkapi/README.md"
     assert nav[0]["API"][0]["mkapi"] == path
-    print(mkapi_plugin.pages)
     for path in ["api/mkapi/README.md", "api/mkapi/objects.md", "api/mkapi/items.md"]:
         assert (Path(config.docs_dir) / path).exists()
         if "READ" not in path:

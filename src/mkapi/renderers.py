@@ -29,6 +29,8 @@ def render(
     obj: Module | Class | Function | Attribute,
     level: int,
     filters: list[str],
+    *,
+    is_source: bool = False,
 ) -> str:
     """Return a rendered Markdown."""
     heading = f"h{level}" if level else "p"
@@ -53,7 +55,7 @@ def render(
         "doc": obj.doc,
         "filters": filters,
     }
-    if isinstance(obj, Module) and "source" in filters:
+    if isinstance(obj, Module) and is_source:
         return _render_source(obj, context, filters)
     return _render_object(obj, context)
 
