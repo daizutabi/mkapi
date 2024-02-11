@@ -6,7 +6,7 @@ import functools
 import re
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -155,28 +155,31 @@ def iter_parent_module_names(fullname: str, *, reverse: bool = False) -> Iterato
         yield ".".join(names[:k])
 
 
-def iter_by_name[T](items: Iterable[T], name: str, attr: str = "name") -> Iterator[T]:
+T = TypeVar("T")
+
+
+def iter_by_name(items: Iterable[T], name: str, attr: str = "name") -> Iterator[T]:
     """Yield items with a name from an item list."""
     for item in items:
         if getattr(item, attr, None) == name:
             yield item
 
 
-def get_by_name[T](items: Iterable[T], name: str, attr: str = "name") -> T | None:
+def get_by_name(items: Iterable[T], name: str, attr: str = "name") -> T | None:
     """Get the first item with a name from an item list."""
     for item in iter_by_name(items, name, attr):
         return item
     return None
 
 
-def get_by_kind[T](items: Iterable[T], kind: str) -> T | None:
+def get_by_kind(items: Iterable[T], kind: str) -> T | None:
     """Get the first item with a kind from an item list."""
     for item in iter_by_name(items, kind, attr="kind"):
         return item
     return None
 
 
-def get_by_type[T](items: Iterable, type_: type[T]) -> T | None:
+def get_by_type(items: Iterable, type_: type[T]) -> T | None:
     """Get the first item with a type from an item list."""
     for item in items:
         if isinstance(item, type_):
@@ -184,7 +187,7 @@ def get_by_type[T](items: Iterable, type_: type[T]) -> T | None:
     return None
 
 
-def del_by_name[T](items: list[T], name: str, attr: str = "name") -> None:
+def del_by_name(items: list[T], name: str, attr: str = "name") -> None:
     """Delete the first item with a name from an item list.
 
     The first argument `items` is changed in-place.

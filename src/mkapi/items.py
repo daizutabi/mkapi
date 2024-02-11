@@ -6,7 +6,7 @@ import textwrap
 from dataclasses import dataclass, field
 from enum import Enum
 from inspect import _ParameterKind
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 import mkapi.ast
 import mkapi.markdown
@@ -16,6 +16,11 @@ from mkapi.globals import (
     get_link_from_type_string,
 )
 from mkapi.utils import get_by_name, unique_names
+
+try:
+    from ast import TypeAlias
+except ImportError:
+    TypeAlias = None
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -197,7 +202,11 @@ class Assign(Item):
 def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
     """Yield [Assign] instances."""
     for child in mkapi.ast.iter_child_nodes(node):
-        if isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):
+        if (
+            isinstance(child, ast.AnnAssign | ast.Assign)
+            or TypeAlias
+            and isinstance(child, TypeAlias)
+        ):
             attr = create_assign(child)
             if attr.name:
                 yield attr
@@ -210,7 +219,7 @@ def create_assign(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Assign:
     name = mkapi.ast.get_assign_name(node) or ""
     type_ = mkapi.ast.get_assign_type(node)
     type_, text = _assign_type_text(type_, node.__doc__)
-    default = None if isinstance(node, ast.TypeAlias) else node.value
+    default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
     return Assign(name, type_, text, Default(default), node)
 
 
@@ -244,7 +253,10 @@ def split_without_name(text: str, style: str) -> tuple[str, str]:
     return "", text
 
 
-def iter_merged_items[T](items_ast: Sequence[T], items_doc: Sequence[T]) -> Iterator[T]:
+T = TypeVar("T")
+
+
+def iter_merged_items(items_ast: Sequence[T], items_doc: Sequence[T]) -> Iterator[T]:
     """Yield merged [Item] instances.
 
     `items_ast` are overwritten in-place.

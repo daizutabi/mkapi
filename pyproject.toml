@@ -12,12 +12,14 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Framework :: MkDocs",
   "Programming Language :: Python",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Documentation",
   "Topic :: Software Development :: Documentation",
 ]
 dynamic = ["version"]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = ["halo", "jinja2", "mkdocs-material", "tqdm"]
 
 [project.urls]
@@ -36,13 +38,14 @@ exclude = ["/.github", "/docs"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/mkapi"]
 
-[[tool.hatch.envs.all.matrix]]
-python = ["3.12"]
-
-[tool.hatch.envs.default]
+[tool.hatch.envs.test]
 dependencies = ["altair", "polars", "pytest-cov", "schemdraw"]
-[tool.hatch.envs.default.scripts]
-test = "pytest {args:tests src/mkapi}"
+
+[tool.hatch.envs.test.scripts]
+run = "pytest {args:tests src/mkapi}"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.10", "3.11", "3.12"]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -65,14 +68,16 @@ omit = ["src/mkapi/__about__.py"]
 exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
 
 [tool.hatch.envs.docs]
-dependencies = ["altair", "polars", "pyparsing", "schemdraw"]
+dependencies = ["altair", "polars", "schemdraw"]
+python = "3.11"
+
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict {args}"
 serve = "mkdocs serve --dev-addr localhost:8000 {args}"
 deploy = "mkdocs gh-deploy --force"
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py311"
 line-length = 88
 select = ["ALL"]
 ignore = [
@@ -85,12 +90,12 @@ ignore = [
   "D105",
   "D406",
   "D407",
+  "DTZ005",
   "EM102",
   "ERA001",
   "FIX002",
   "FIX003",
   "G004",
-  "DTZ005",
   "ISC001",
   "N812",
   "PGH003",
@@ -99,6 +104,7 @@ ignore = [
   "RET504",
   "TD",
   "TRY003",
+  "UP040",
 ]
 exclude = ["google.py", 'numpy.py']
 
