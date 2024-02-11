@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import mkapi.markdown
 import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
-from mkapi.importlib import get_object
+from mkapi.importlib import get_object, load_module
 from mkapi.objects import Module, is_empty, iter_objects_with_depth
 from mkapi.renderers import get_object_filter_for_source
 from mkapi.utils import is_module_cache_dirty, split_filters
@@ -80,7 +80,8 @@ def create_markdown(
     is_source: bool = False,
 ) -> str:
     """Create object page for an object."""
-    if not (obj := get_object(name)) or not isinstance(obj, Module):
+    # if not (obj := get_object(name)) or not isinstance(obj, Module):
+    if not (module := load_module(name)):
         return f"!!! failure\n\n    module {name!r} not found.\n"
 
     filters_str = "|" + "|".join(filters) if filters else ""
@@ -89,19 +90,19 @@ def create_markdown(
     paths = source_paths if is_source else object_paths
 
     markdowns = []
-    for child, depth in iter_objects_with_depth(obj, 2, member_only=True):
-        if is_empty(child):
+    for obj, depth in iter_objects_with_depth(module, 2, member_only=True):
+        if is_empty(obj):
             continue
-        if predicate and not predicate(child.fullname):
+        if predicate and not predicate(obj.fullname):
             continue
-        paths.setdefault(child.fullname, path)
+        paths.setdefault(obj.fullname, path)
 
         if is_source:
-            object_filter = get_object_filter_for_source(child, obj)
+            object_filter = get_object_filter_for_source(obj, module)
             object_filter = f"|{object_filter}" if object_filter else ""
 
         heading = "#" * (depth + 1)
-        markdown = f"{heading} ::: {child.fullname}{filters_str}{object_filter}\n"
+        markdown = f"{heading} ::: {obj.fullname}{filters_str}{object_filter}\n"
         markdowns.append(markdown)
 
     return "\n".join(markdowns)
@@ -154,8 +155,8 @@ def _replace_source(markdown: str) -> str:
 
     for match in re.finditer(OBJECT_PATTERN, markdown):
         name, level, object_filter = _get_level_name_filters(match)
-        if level == 1 and (obj := get_object(name)) and isinstance(obj, Module):
-            module = obj
+        if level == 1 and not (module := load_module(name)):
+            break
 
         # Move to renderer.py
         if level >= 2:

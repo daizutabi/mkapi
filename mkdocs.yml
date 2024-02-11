@@ -60,9 +60,9 @@ nav:
     - usage/config.md
   - API: $api/mkapi.**
   - Examples: $api/examples.**
-  - Schemdraw: $api/schemdraw.***
-  - Polars: $api/polars.***
-  - Altair: $api/altair.***
+  # - Schemdraw: $api/schemdraw.***
+  # - Polars: $api/polars.***
+  # - Altair: $api/altair.***
 extra_css:
   - stylesheets/extra.css
 watch:

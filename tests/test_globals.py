@@ -8,6 +8,8 @@ from mkapi.globals import (
     _iter_imports_from_import_from,
     _iter_objects_from_all,
     get_all,
+    get_all_from_ast,
+    get_all_from_importlib,
     get_fullname,
     get_globals,
     get_link_from_type,
@@ -193,3 +195,7 @@ def test_get_all():
     x = get_all("polars")
     assert x["api"] == "polars.api"
     assert x["ArrowError"] == "polars.exceptions.ArrowError"
+
+
+def test_get_all_from_importlib():
+    assert get_all_from_importlib("altair")

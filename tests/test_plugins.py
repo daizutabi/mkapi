@@ -57,9 +57,9 @@ def test_nav(mkdocs_config: MkDocsConfig):
             nav_dict.update(item)
     assert nav_dict["API"] == "$api/mkapi.**"
     assert nav_dict["Examples"] == "$api/examples.**"
-    assert nav_dict["Schemdraw"] == "$api/schemdraw.***"
-    assert nav_dict["Polars"] == "$api/polars.***"
-    assert nav_dict["Altair"] == "$api/altair.***"
+    # assert nav_dict["Schemdraw"] == "$api/schemdraw.***"
+    # assert nav_dict["Polars"] == "$api/polars.***"
+    # assert nav_dict["Altair"] == "$api/altair.***"
 
 
 @pytest.fixture(scope="module")
@@ -80,7 +80,6 @@ def mkapi_config(mkapi_plugin: MkAPIPlugin):
 def test_mkapi_config(mkapi_config: MkAPIConfig):
     config = mkapi_config
     assert config.config == "config.py"
-    assert config.exclude == ["altair.vegalite"]
     assert config.debug is True
 
 
