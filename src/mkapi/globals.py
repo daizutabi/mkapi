@@ -57,10 +57,10 @@ def _iter_objects(module: str) -> Iterator[str]:
 def _iter_all(node: ast.AST) -> Iterator[str]:
     if isinstance(node, ast.Assign):  # noqa: SIM102
         if mkapi.ast.get_assign_name(node) == "__all__":  # noqa: SIM102
-            if isinstance(node.value, ast.List):
-                for c in node.value.elts:
-                    if isinstance(c, ast.Constant) and isinstance(c.value, str):
-                        yield c.value
+            if isinstance(node.value, ast.List | ast.Tuple):
+                for arg in node.value.elts:
+                    if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                        yield arg.value
 
 
 def _iter_objects_from_all(module: str) -> Iterator[str]:
