@@ -12,18 +12,11 @@ from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object, load_module
 from mkapi.objects import is_empty, iter_objects_with_depth
 from mkapi.renderers import get_object_filter_for_source
-from mkapi.utils import is_module_cache_dirty, split_filters
+from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
     from pathlib import Path
-
-
-def write_source(pages: Iterable[Page]) -> None:
-    """Write dummy markdown source."""
-    for page in pages:
-        if page.name and is_module_cache_dirty(page.name):
-            page.write_source()
 
 
 @dataclass

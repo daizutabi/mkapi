@@ -53,6 +53,16 @@ class MkAPIConfig(Config):
     debug = config_options.Type(bool, default=False)
 
 
+def _create_markdown(pages: list[Page]) -> None:
+    names = []
+    for page in pages:
+        if page.name and is_module_cache_dirty(page.name):
+            names.append(page.name)  # noqa: PERF401
+    for page in pages:
+        if page.name in names:
+            page.create_markdown()
+
+
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     """MkAPIPlugin class for API generation."""
 
@@ -72,9 +82,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         cache_clear()
 
         if self.dirty:
-            for page in self.pages.values():
-                if page.name and is_module_cache_dirty(page.name):
-                    page.create_markdown()
+            _create_markdown(list(self.pages.values()))
 
         self.bar = None
         self.uri_width = 0
