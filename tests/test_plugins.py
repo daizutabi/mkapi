@@ -94,7 +94,7 @@ def test_get_function(mkapi_plugin):
     assert _get_function("toc_title", mkapi_plugin)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def config(mkdocs_config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
     api_dir = Path(mkdocs_config.docs_dir) / "api"
     src_dir = Path(mkdocs_config.docs_dir) / "src"
