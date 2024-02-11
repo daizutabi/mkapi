@@ -35,6 +35,9 @@ class Page:
                 self.path.parent.mkdir(parents=True)
             self.create_markdown()
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.path!r})"
+
     def create_markdown(self) -> None:
         """Create markdown source."""
         if self.kind in ["object", "source"]:

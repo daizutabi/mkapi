@@ -53,16 +53,6 @@ class MkAPIConfig(Config):
     debug = config_options.Type(bool, default=False)
 
 
-def _create_markdown(pages: list[Page]) -> None:
-    names = []
-    for page in pages:
-        if page.name and is_module_cache_dirty(page.name):
-            names.append(page.name)  # noqa: PERF401
-    for page in pages:
-        if page.name in names:
-            page.create_markdown()
-
-
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     """MkAPIPlugin class for API generation."""
 
@@ -372,3 +362,13 @@ def _replace_toc(
             link.title = link.title.split(".")[-1]  # Remove prefix.
 
         _replace_toc(link.children, title, depth + 1)
+
+
+def _create_markdown(pages: list[Page]) -> None:
+    names = []
+    for page in pages:
+        if page.name and is_module_cache_dirty(page.name):
+            names.append(page.name)  # noqa: PERF401
+    for page in pages:
+        if page.name in names:
+            page.create_markdown()
