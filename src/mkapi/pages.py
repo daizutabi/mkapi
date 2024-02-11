@@ -34,36 +34,37 @@ class Page:
     path: Path
     filters: list[str]
     kind: str
+    markdown: str = ""
 
     def __post_init__(self) -> None:
-        # Delete in MkDocs v1.6. Switch to virtual files
         if not self.path.exists():
             if not self.path.parent.exists():
                 self.path.parent.mkdir(parents=True)
-            self.write_source()
+            self.create_markdown()
 
-    def write_source(self) -> None:
-        """Write dummy markdown source."""
+    def create_markdown(self) -> None:
+        """Create markdown source."""
         if self.kind in ["object", "source"]:
             with self.path.open("w") as file:
                 file.write(f"{datetime.datetime.now()}")
 
-    def convert_markdown(self, source: str, anchor: str) -> str:
-        """Return converted markdown."""
-        is_source = self.kind == "source"
-        if self.kind in ["object", "source"]:
-            source = create_markdown(
+            self.markdown = create_markdown(
                 self.name,
                 self.path,
                 self.filters,
-                is_source=is_source,
+                is_source=self.kind == "source",
             )
 
+    def convert_markdown(self, markdown: str, anchor: str) -> str:
+        """Return converted markdown."""
+        if self.kind in ["object", "source"]:
+            markdown = self.markdown
+
         return convert_markdown(
-            source,
+            markdown,
             self.path,
             anchor,
-            is_source=is_source,
+            is_source=self.kind == "source",
         )
 
 

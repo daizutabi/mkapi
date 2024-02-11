@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from mkdocs.config.defaults import MkDocsConfig
+    from mkdocs.livereload import LiveReloadServer
     from mkdocs.structure.files import Files
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
@@ -61,6 +62,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def __init__(self) -> None:
         self.api_dirs = []
         self.pages = {}
+        self.server = None
         self.dirty = False
 
     def on_startup(self, *, command: str, dirty: bool) -> None:
@@ -72,7 +74,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         if self.dirty:
             for page in self.pages.values():
                 if page.name and is_module_cache_dirty(page.name):
-                    page.write_source()
+                    page.create_markdown()
 
         self.bar = None
         self.uri_width = 0
@@ -110,7 +112,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         return files
 
     def on_nav(self, *args, **kwargs) -> None:
-        if self.pages:
+        if self.pages and not (self.dirty and self.server):
             self.uri_width = max(len(uri) for uri in self.pages)
             desc = "MkAPI: Building API pages"
 
@@ -183,6 +185,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     #     if len(nav.items):
     #         nav.items.pop()
     #     return context
+    def on_serve(self, server: LiveReloadServer, *args, **kwargs) -> None:
+        self.server = server
 
     def on_shutdown(self) -> None:
         for path in self.api_dirs:
