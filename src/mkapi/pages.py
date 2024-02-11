@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import datetime
+import os.path
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import mkapi.markdown
@@ -16,7 +18,6 @@ from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from pathlib import Path
 
 
 @dataclass
@@ -207,7 +208,8 @@ def _replace_link_from_paths(
     fullname, from_mkapi = _resolve_fullname(fullname)
 
     if path := paths.get(fullname):
-        uri = path.relative_to(directory, walk_up=True).as_posix()
+        # uri = path.relative_to(directory, walk_up=True).as_posix()
+        uri = Path(os.path.relpath(path, directory)).as_posix()
         return f'[{name}]({uri}#{fullname} "{fullname}")'
 
     if from_mkapi:
@@ -237,7 +239,8 @@ def convert_source(html: str, path: Path, anchor: str) -> str:
     def replace(match: re.Match) -> str:
         open_tag, name, close_tag = match.groups()
         if object_path := object_paths.get(name):
-            uri = object_path.relative_to(path, walk_up=True).as_posix()
+            # uri = object_path.relative_to(path, walk_up=True).as_posix()
+            uri = Path(os.path.relpath(object_path, path)).as_posix()
             uri = uri[:-3]  # Remove `.md`
             uri = uri.replace("/README", "")  # Remove `/README`
             href = f"{uri}/#{name}"

@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.12']
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
       - uses: actions/checkout@v4
@@ -33,8 +33,14 @@ jobs:
         run: pip install --upgrade hatch
       - name: Check format
         run: hatch fmt --check
+      # - name: Run test
+      #   run: hatch run test
+      - name: Install dependencies
+        run : pip install --upgrade altair polars pytest-cov schemdraw
+      - name: Install package
+        run: pip install -e .
       - name: Run test
-        run: hatch run test
+        run: pytest
       - name: Upload Codecov Results
         if: success()
         uses: codecov/codecov-action@v4

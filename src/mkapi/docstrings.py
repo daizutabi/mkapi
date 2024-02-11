@@ -24,9 +24,10 @@ from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from typing import TypeAlias
 
 
-type Style = Literal["google", "numpy"]
+Style: TypeAlias = Literal["google", "numpy"]
 
 
 SPLIT_ITEM_PATTERN = re.compile(r"\n\S")

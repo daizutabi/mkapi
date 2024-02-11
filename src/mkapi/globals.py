@@ -19,6 +19,11 @@ from mkapi.utils import (
     iter_parent_module_names,
 )
 
+try:
+    from ast import TypeAlias
+except ImportError:
+    TypeAlias = None
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
@@ -50,10 +55,13 @@ def _iter_objects(module: str) -> Iterator[str]:
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
             yield f"{module}.{child.name}"
-        elif isinstance(child, ast.AnnAssign | ast.Assign | ast.TypeAlias):  # noqa: SIM102
-            if assign_name := mkapi.ast.get_assign_name(child):  # noqa: SIM102
-                if not assign_name.startswith("__"):
-                    yield f"{module}.{assign_name}"
+        elif (  # noqa: SIM102
+            isinstance(child, ast.AnnAssign | ast.Assign)
+            or TypeAlias
+            and isinstance(child, TypeAlias)
+        ) and (assign_name := mkapi.ast.get_assign_name(child)):
+            if not assign_name.startswith("__"):
+                yield f"{module}.{assign_name}"
 
 
 def _iter_all(node: ast.AST) -> Iterator[str]:

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import re
+import typing
 from ast import (
     AnnAssign,
     Assign,
@@ -16,20 +17,29 @@ from ast import (
     Name,
     NodeTransformer,
     Raise,
-    TypeAlias,
 )
 from inspect import Parameter, cleandoc
 from typing import TYPE_CHECKING
+
+try:
+    from ast import TypeAlias
+except ImportError:
+    TypeAlias = None
 
 if TYPE_CHECKING:
     from ast import AST
     from collections.abc import Callable, Iterator
     from inspect import _ParameterKind
 
-type Import_ = Import | ImportFrom
-type Def = AsyncFunctionDef | FunctionDef | ClassDef
-type Assign_ = AnnAssign | Assign | TypeAlias
-type Node = Import_ | Def | Assign_
+# type Import_ = Import | ImportFrom
+# type Def = AsyncFunctionDef | FunctionDef | ClassDef
+# type Assign_ = AnnAssign | Assign | TypeAlias
+# type Node = Import_ | Def | Assign_
+
+Import_: typing.TypeAlias = Import | ImportFrom
+Def: typing.TypeAlias = AsyncFunctionDef | FunctionDef | ClassDef
+Assign_: typing.TypeAlias = AnnAssign | Assign | TypeAlias  # type: ignore
+Node: typing.TypeAlias = Import_ | Def | Assign_
 
 
 def iter_child_nodes(node: AST) -> Iterator[Node]:
@@ -52,7 +62,7 @@ def _get_pseudo_docstring(node: AST) -> str | None:
 
 
 def _iter_assign_nodes(
-    node: AnnAssign | Assign | TypeAlias,
+    node: AnnAssign | Assign | TypeAlias,  # type: ignore
     it: Iterator[AST],
 ) -> Iterator[Node]:
     """Yield assign nodes."""
@@ -73,22 +83,22 @@ def _iter_assign_nodes(
         yield node
 
 
-def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:
+def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type: ignore
     """Return the name of the assign node."""
     if isinstance(node, AnnAssign) and isinstance(node.target, Name):
         return node.target.id
     if isinstance(node, Assign) and isinstance(node.targets[0], Name):
         return node.targets[0].id
-    if isinstance(node, TypeAlias) and isinstance(node.name, Name):
+    if TypeAlias and isinstance(node, TypeAlias) and isinstance(node.name, Name):
         return node.name.id
     return None
 
 
-def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:
+def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:  # type: ignore
     """Return a type annotation of the Assign or TypeAlias AST node."""
     if isinstance(node, AnnAssign):
         return node.annotation
-    if isinstance(node, TypeAlias):
+    if TypeAlias and isinstance(node, TypeAlias):
         return node.value
     return None
 
