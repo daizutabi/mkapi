@@ -170,8 +170,8 @@ There are three ways to collect modules:
 
 ## Example API documentations
 
-To demonstrate the Page mode, this MkAPI documentation ships with
-some references:
+To demonstrate the Page mode, try some libraries.
+For example, MkAPI is tested using following libraries:
 
 - [Schemdraw](https://schemdraw.readthedocs.io/en/stable/)
   － "Schemdraw is a Python package for producing high-quality
@@ -182,7 +182,19 @@ some references:
 - [Altair](https://altair-viz.github.io/)
   － "Vega-Altair is a declarative visualization library for Python."
 
-Click section tabs at the top bar or buttons below to see the API documentation.
+Use the following `nav` section in your `mkdocs.yml`
+if you want to check the output of MkAPI.
+
+```yaml title="mkdocs.yml"
+nav:
+  - index.md
+  - API: $api/mkapi.**  # API documentation of MkAPI itself
+  - Schemdraw: $api/schemdraw.***
+  - Polars: $api/polars.***
+  - Altair: $api/altair.***
+```
+
+<!-- Click section tabs at the top bar or buttons below to see the API documentation.
 
 <style type="text/css">
 .mkapi-center {
@@ -195,21 +207,4 @@ Click section tabs at the top bar or buttons below to see the API documentation.
 [Schemdraw][schemdraw]{.md-button .md-button--primary}
 [Polars][polars]{.md-button .md-button--primary}
 [Altair][altair]{.md-button .md-button--primary}
-</div>
-
-Here is the actual `nav` section in `mkdocs.yml` of this documentation.
-Use this to reproduce the similar navigation structure for your project if you like.
-
-```yaml
-nav:
-  - index.md
-  - Usage:
-    - usage/object.md
-    - usage/page.md
-    - usage/config.md
-  - API: $api/mkapi.**  # API documentation of MkAPI itself
-  - Examples: $api/examples.**  # for Object mode description
-  - Schemdraw: $api/schemdraw.***  # for Page mode demonstration
-  - Polars: $api/polars.***  # for Page mode demonstration
-  - Altair: $api/altair.***  # for Page mode demonstration
-```
+</div> -->

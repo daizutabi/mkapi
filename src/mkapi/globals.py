@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import ast
+import importlib
+import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -118,13 +120,16 @@ def resolve(name: str) -> str | None:
     """Resolve name."""
     if get_module_path(name) or "." not in name:
         return name
+
     module, _ = name.rsplit(".", maxsplit=1)
     if name in _iter_objects(module):
         return name
+
     if import_ := get_by_name(_iter_imports(module), name):
         if name == import_.fullname:
             return None
         return resolve(import_.fullname)
+
     return None
 
 
@@ -132,21 +137,58 @@ def resolve_with_attribute(name: str) -> str | None:
     """Resolve name with attribute."""
     if fullname := resolve(name):
         return fullname
+
     if "." in name:
         name_, attr = name.rsplit(".", maxsplit=1)
         if fullname := resolve(name_):
             return f"{fullname}.{attr}"
+
     return None
+
+
+def get_all_from_ast(module: str) -> dict[str, str]:
+    """Return name dictonary of __all__ using ast."""
+    names = {}
+    n = len(module) + 1
+
+    for name in _iter_objects_from_all(module):
+        if fullname := resolve(name):
+            names[name[n:]] = fullname
+
+    return names
+
+
+def get_all_from_importlib(module: str) -> dict[str, str]:
+    """Return name dictonary of __all__ using importlib."""
+    try:
+        module_type = importlib.import_module(module)
+    except ModuleNotFoundError:
+        return {}
+
+    members = getattr(module_type, "__dict__", {})  # Must use __dict__.
+    if not isinstance(members, dict) or "__all__" not in members:
+        return {}
+
+    names = {}
+    for name in members["__all__"]:
+        if not (obj := members.get(name)):
+            continue
+        if inspect.ismodule(obj):
+            names[name] = obj.__name__
+        elif not (modulename := getattr(obj, "__module__", None)):
+            continue
+        elif qualname := getattr(obj, "__qualname__", None):
+            names[name] = f"{modulename}.{qualname}"
+
+    return names
 
 
 def get_all(module: str) -> dict[str, str]:
     """Return name dictonary of __all__."""
-    names = {}
-    n = len(module) + 1
-    for name in _iter_objects_from_all(module):
-        if fullname := resolve(name):
-            names[name[n:]] = fullname
-    return names
+    all_from_ast = get_all_from_ast(module)
+    all_from_importlib = get_all_from_importlib(module)
+    all_from_ast.update(all_from_importlib)
+    return all_from_ast
 
 
 @dataclass(repr=False)
