@@ -66,6 +66,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         cache_clear()
         self.bar = None
         self.uri_width = 0
+
         self.page_title = _get_function("page_title", self)
         self.section_title = _get_function("section_title", self)
         self.toc_title = _get_function("toc_title", self)
@@ -111,6 +112,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Convert Markdown source to intermediate version."""
         uri = page.file.src_uri
         page_ = self.pages[uri]
+
         if page_.kind == "source":
             anchor = self.config.docs_anchor
         else:
@@ -121,6 +123,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         except Exception as e:  # noqa: BLE001
             if self.config.debug:
                 raise
+
             msg = f"{uri}:{type(e).__name__}: {e}"
             logger.warning(msg)
             return markdown
@@ -138,8 +141,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
         if page_.kind in ["object", "source"]:
             _replace_toc(page.toc, self.toc_title)
+
         if page_.kind == "source":
             html = convert_source(html, page_.path, self.config.docs_anchor)
+
         self._update_bar(page.file.src_uri)
         return html
 
@@ -179,16 +184,19 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
     if not (path_str := plugin.config.config):
         return None
+
     if not path_str.endswith(".py"):
         module = importlib.import_module(path_str)
     else:
         path = Path(path_str)
         if not path.is_absolute():
             path = Path(plugin.config.config_file_path).parent / path
+
         directory = os.path.normpath(path.parent)
         sys.path.insert(0, directory)
         module = importlib.import_module(path.stem)
         del sys.path[0]
+
     return getattr(module, name, None)
 
 
@@ -205,6 +213,7 @@ def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # no
 def _watch_directory(name: str, config: MkDocsConfig) -> None:
     if not name:
         return
+
     name, depth = split_name_depth(name)
     if path := get_module_path(name):
         path = str(path.parent if depth else path)
@@ -215,6 +224,7 @@ def _watch_directory(name: str, config: MkDocsConfig) -> None:
 def _mkdir(path: Path, paths: list[Path]) -> None:
     if path.exists() and path not in paths:
         logger.warning(f"API directory exists: {path}")
+
         ans = input("Delete the directory? [yes/no] ")
         if ans.lower() == "yes":
             logger.info(f"Deleting API directory: {path}")
@@ -222,8 +232,10 @@ def _mkdir(path: Path, paths: list[Path]) -> None:
         else:
             logger.error("Delete the directory manually.")
             sys.exit()
+
     if not path.exists():
         msg = f"Making API directory: {path}"
+
         logger.info(msg)
         path.mkdir(parents=True)
         paths.append(path)
@@ -283,8 +295,10 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
+
         spinner = Halo()
         spinner.start()
+
         mkapi.nav.update(
             config.nav,
             _create_page,
@@ -292,26 +306,32 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
             plugin.page_title,
             predicate,
         )
+
         spinner.stop()
 
 
 def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:  # noqa: ARG001
     root = Path(mkapi.__file__).parent / "stylesheets"
+
     docs_dir = config.docs_dir
     config.docs_dir = root.as_posix()
     stylesheet_files = get_files(config)
     config.docs_dir = docs_dir
+
     theme_name = config.theme.name or "mkdocs"
+
     files: list[File] = []
     css: list[str] = []
     for file in stylesheet_files:
         path = Path(file.src_path).as_posix()
+
         if path.endswith("mkapi-common.css"):
             files.insert(0, file)
             css.insert(0, path)
         elif path.endswith(f"mkapi-{theme_name}.css"):
             files.append(file)
             css.append(path)
+
     config.extra_css = [*css, *config.extra_css]
     return files
 
@@ -323,8 +343,10 @@ def _replace_toc(
 ) -> None:
     for link in toc:
         link.title = re.sub(r"\s+\[.+?\]", "", link.title)  # Remove source link.
+
         if title:
             link.title = title(link.title, depth)
         else:
             link.title = link.title.split(".")[-1]  # Remove prefix.
+
         _replace_toc(link.children, title, depth + 1)

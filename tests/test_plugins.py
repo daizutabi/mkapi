@@ -6,10 +6,11 @@ from mkdocs.commands.build import build
 from mkdocs.config import load_config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import PluginCollection
+from mkdocs.structure.files import Files
 from mkdocs.theme import Theme
 
 import mkapi
-from mkapi.plugins import MkAPIConfig, MkAPIPlugin, _get_function
+from mkapi.plugins import MkAPIConfig, MkAPIPlugin, _collect_stylesheets, _get_function
 
 
 @pytest.fixture(scope="module")
@@ -117,6 +118,11 @@ def test_on_config(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
             assert (Path(config.docs_dir) / path.replace("api/m", "src/m")).exists()
     path = "src/mkapi.md"
     assert (Path(config.docs_dir) / path).exists()
+
+
+def test_collect_stylesheets(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
+    files = Files(_collect_stylesheets(config, mkapi_plugin))
+    assert files.media_files()
 
 
 def test_build(config: MkDocsConfig):
