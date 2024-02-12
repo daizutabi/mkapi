@@ -31,14 +31,6 @@ TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
 
 
 @dataclass
-class Element:
-    """Element type."""
-
-    markdown: str = field(default="", init=False)
-    html: str = field(default="", init=False)
-
-
-@dataclass
 class Type:
     """Type class."""
 

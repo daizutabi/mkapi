@@ -20,9 +20,10 @@ documentation.
 A text between the leading `$` and the last `/`
 is used as a name of API directory
 as well as the prefix of URI.
-In this case, MkAPI creates a new API directory `api`
-in a `docs` directory.
-Module page(s) will be located under this directory automatically:
+In this case, MkAPI creates two directories
+`api` and `src` in a `docs` directory.
+`api` is for documentation and `src` is for source code.
+Module page(s) will be located under these directories automatically:
 
 ``` sh
 .
@@ -31,21 +32,30 @@ Module page(s) will be located under this directory automatically:
 │  │  └─ package
 │  │     └─ module.md
 │  ├─ src/
+│  │  └─ package
+│  │     └─ module.md
 │  └─ index.md
 └─ mkdocs.yml
 ```
 
+You can change the directory name for source code by
+splitting the prefix with a colon:
+
+```yaml title="mkdocs.yml"
+nav:
+  - index.md
+  - $api:src/package.module
+```
+
 !!! note
-    - You can change the name `api` as long as it is a valid
-      directory name and it does not exist.
-    - A `src` directory is also created to locate source codes.
-      The name `src` is configured by the plugin setting.
-      See [Configuration](config.md).
+    - You can change the names `api` and `src` as long as
+      it is a valid directory name and it does not exist.
     - Both `api` and `src` directories will be removed after
       building documentation by MkDocs.
 
 In the above example, just one `api/package/module.md` file
-will be created.
+for documentation and one `src/package/module.md` file
+for source code will be created.
 In order to obtain a collection of subpackages/submodules,
 you can use `*` symbols.
 Consider next directory structure:
