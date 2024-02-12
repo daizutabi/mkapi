@@ -324,9 +324,3 @@ def test_iter_objects_predicate():
         assert get_by_name(x, name)
     for name in others:
         assert not get_by_name(x, name)
-
-
-# schemdraw.elements.intcircuits.Ic
-# IcDIP
-# Keyword argsの違い
-# altair.utils.core.parse_shorthand: return
