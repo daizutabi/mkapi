@@ -24,7 +24,7 @@ import mkapi
 import mkapi.nav
 from mkapi import renderers
 from mkapi.nav import split_name_depth
-from mkapi.pages import Page, convert_source
+from mkapi.pages import Page, PageKind, convert_source
 from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
 
 if TYPE_CHECKING:
@@ -98,11 +98,12 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Collect plugin CSS and append them to `files`."""
         for file in files:
             if page := self.pages.get(file.src_uri):
-                if page.kind == "source":
+                if page.kind is PageKind.SOURCE:
                     file.inclusion = InclusionLevel.NOT_IN_NAV
+
             elif file.is_documentation_page():
                 path = Path(file.abs_src_path)
-                self.pages[file.src_uri] = Page("", path, [], "markdown")
+                self.pages[file.src_uri] = Page("", path, PageKind.MARKDOWN, [])
 
         for file in _collect_stylesheets(config, self):
             files.append(file)
@@ -123,7 +124,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         uri = page.file.src_uri
         page_ = self.pages[uri]
 
-        if page_.kind == "source":
+        if page_.kind is PageKind.SOURCE:
             anchor = self.config.docs_anchor
         else:
             anchor = self.config.src_anchor
@@ -149,10 +150,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         uri = page.file.src_uri
         page_ = self.pages[uri]
 
-        if page_.kind in ["object", "source"]:
+        if page_.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             _replace_toc(page.toc, self.toc_title)
 
-        if page_.kind == "source":
+        if page_.kind is PageKind.SOURCE:
             html = convert_source(html, page_.path, self.config.docs_anchor)
 
         self._update_bar(page.file.src_uri)
@@ -183,6 +184,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     #     if len(nav.items):
     #         nav.items.pop()
     #     return context
+
     def on_serve(self, server: LiveReloadServer, *args, **kwargs) -> None:
         self.server = server
 
@@ -288,13 +290,13 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         abs_path = Path(config.docs_dir) / object_uri
 
         if object_uri not in plugin.pages:
-            plugin.pages[object_uri] = Page(name, abs_path, filters, "object")
+            plugin.pages[object_uri] = Page(name, abs_path, PageKind.OBJECT, filters)
 
         source_uri = f"{source_path}/{uri}.md"
         abs_path = Path(config.docs_dir) / source_uri
 
         if source_uri not in plugin.pages:
-            plugin.pages[source_uri] = Page(name, abs_path, filters, "source")
+            plugin.pages[source_uri] = Page(name, abs_path, PageKind.SOURCE, filters)
 
         spinner.text = f"Collecting modules [{len(plugin.pages):>3}]: {name}"
 

@@ -5,6 +5,7 @@ import datetime
 import os.path
 import re
 from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -22,6 +23,8 @@ if TYPE_CHECKING:
 
     from mkapi.objects import Attribute, Class, Function, Module
 
+PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "MARKDOWN"])
+
 
 @dataclass
 class Page:
@@ -29,8 +32,8 @@ class Page:
 
     name: str
     path: Path
+    kind: PageKind
     filters: list[str]
-    kind: str
     markdown: str = ""
 
     def __post_init__(self) -> None:
@@ -44,27 +47,27 @@ class Page:
 
     def create_markdown(self) -> None:
         """Create markdown source."""
-        if self.kind in ["object", "source"]:
+        if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             with self.path.open("w") as file:
                 file.write(f"{datetime.datetime.now()}")
 
             self.markdown = create_markdown(
                 self.name,
                 self.path,
+                self.kind,
                 self.filters,
-                is_source=self.kind == "source",
             )
 
     def convert_markdown(self, markdown: str, anchor: str) -> str:
         """Return converted markdown."""
-        if self.kind in ["object", "source"]:
+        if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             markdown = self.markdown
 
         return convert_markdown(
             markdown,
             self.path,
+            self.kind,
             anchor,
-            is_source=self.kind == "source",
         )
 
 
@@ -75,10 +78,9 @@ source_paths: dict[str, Path] = {}
 def create_markdown(
     name: str,
     path: Path,
+    kind: PageKind,
     filters: list[str],
     predicate: Callable[[str], bool] | None = None,
-    *,
-    is_source: bool = False,
 ) -> str:
     """Create object page for an object."""
     if not (module := load_module(name)):
@@ -87,7 +89,7 @@ def create_markdown(
     filters_str = "|" + "|".join(filters) if filters else ""
     object_filter = ""
 
-    paths = source_paths if is_source else object_paths
+    paths = source_paths if kind is PageKind.SOURCE else object_paths
 
     predicate_ = partial(_predicate, predicate=predicate)
 
@@ -95,7 +97,7 @@ def create_markdown(
     for obj, depth in iter_objects_with_depth(module, 2, predicate_):
         paths[obj.fullname] = path
 
-        if is_source:
+        if kind is PageKind.SOURCE:
             object_filter = get_object_filter_for_source(obj, module)
             object_filter = f"|{object_filter}" if object_filter else ""
 
@@ -123,17 +125,16 @@ def _predicate(
 def convert_markdown(
     markdown: str,
     path: Path,
+    kind: PageKind,
     anchor: str,
-    *,
-    is_source: bool = False,
 ) -> str:
     """Return converted markdown."""
-    if is_source:
+    if kind is PageKind.SOURCE:
         markdown = _replace_source(markdown)
     else:
         markdown = mkapi.markdown.sub(OBJECT_PATTERN, _replace_object, markdown)
 
-    paths = source_paths if is_source else object_paths
+    paths = source_paths if kind is PageKind.SOURCE else object_paths
 
     def replace_link(match: re.Match) -> str:
         return _replace_link(match, path.parent, paths, anchor)
@@ -223,6 +224,7 @@ def _replace_link_from_paths(
     fullname, from_mkapi = _resolve_fullname(fullname)
 
     if path := paths.get(fullname):
+        # Python 3.12
         # uri = path.relative_to(directory, walk_up=True).as_posix()
         uri = Path(os.path.relpath(path, directory)).as_posix()
         return f'[{name}]({uri}#{fullname} "{fullname}")'
@@ -253,18 +255,23 @@ def convert_source(html: str, path: Path, anchor: str) -> str:
 
     def replace(match: re.Match) -> str:
         open_tag, name, close_tag = match.groups()
+
         if object_path := object_paths.get(name):
+            # Python 3.12
             # uri = object_path.relative_to(path, walk_up=True).as_posix()
             uri = Path(os.path.relpath(object_path, path)).as_posix()
             uri = uri[:-3]  # Remove `.md`
             uri = uri.replace("/README", "")  # Remove `/README`
+
             href = f"{uri}/#{name}"
             link = f'<a href="{href}">[{anchor}]</a>'
             link = f'<span id="{name}" class="mkapi-docs-link">{link}</span>'
         else:
             link = ""
+
         if open_tag.endswith(">"):
             return link
+
         return f"{open_tag}{close_tag}{link}"
 
     html = SOURCE_LINK_PATTERN.sub(replace, html)
