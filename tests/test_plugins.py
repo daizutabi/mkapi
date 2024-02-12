@@ -1,3 +1,4 @@
+import os
 import shutil
 from pathlib import Path
 
@@ -95,24 +96,30 @@ def test_get_function(mkapi_plugin):
 
 
 @pytest.fixture
-def config(mkdocs_config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
-    api_dir = Path(mkdocs_config.docs_dir) / "api"
-    src_dir = Path(mkdocs_config.docs_dir) / "src"
-    site_dir = Path(mkdocs_config.site_dir)
-    assert not api_dir.exists()
-    assert not src_dir.exists()
-    if site_dir.exists():
-        shutil.rmtree(site_dir)
-    yield mkdocs_config
-    mkapi_plugin.on_shutdown()
-    assert not api_dir.exists()
-    assert not src_dir.exists()
-    if site_dir.exists():
-        shutil.rmtree(site_dir)
+def config(tmpdir):
+    dest = Path(tmpdir)
+    root = Path(__file__).parent.parent
+    config_file = root / "mkdocs.yml"
+    shutil.copy(config_file, dest)
+    for src in ["docs", "src", "tests"]:
+        src_dir = root / src
+        shutil.copytree(src_dir, dest / src)
+    curdir = Path(os.curdir).absolute()
+    os.chdir(dest)
+    config = load_config("mkdocs.yml")
+    plugin = config.plugins["mkapi"]
+    print(id(plugin))
+    assert isinstance(plugin, MkAPIPlugin)
+    plugin.__init__()
+    yield config
+    config.plugins.on_shutdown()
+    os.chdir(curdir)
 
 
-def test_on_config(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
-    config = mkapi_plugin.on_config(config)
+def test_on_config(config: MkDocsConfig):
+    plugin = config.plugins["mkapi"]
+    assert isinstance(plugin, MkAPIPlugin)
+    plugin.on_config(config)
     nav = config.nav
     assert nav
     assert isinstance(nav[2]["API"], list)
@@ -126,15 +133,21 @@ def test_on_config(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
     assert (Path(config.docs_dir) / path).exists()
 
 
-def test_collect_stylesheets(config: MkDocsConfig, mkapi_plugin: MkAPIPlugin):
-    files = Files(_collect_stylesheets(config, mkapi_plugin))
+def test_collect_stylesheets(config: MkDocsConfig):
+    plugin = config.plugins["mkapi"]
+    assert isinstance(plugin, MkAPIPlugin)
+    files = Files(_collect_stylesheets(config, plugin))
     assert files.media_files()
 
 
-def test_build(config: MkDocsConfig):
-    assert build(config) is None
+@pytest.mark.parametrize("dirty", [False, True])
+def test_build(config: MkDocsConfig, dirty):
+    config.plugins.on_startup(command="build", dirty=dirty)
     plugin = config.plugins["mkapi"]
     assert isinstance(plugin, MkAPIPlugin)
+    assert not plugin.pages
+    build(config, dirty=dirty)
+    assert plugin.dirty == dirty
     pages = plugin.pages
     assert not pages["usage/object.md"].markdown
     page = pages["api/examples/styles/README.md"]

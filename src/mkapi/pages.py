@@ -93,7 +93,7 @@ def create_markdown(
 
     markdowns = []
     for obj, depth in iter_objects_with_depth(module, 2, predicate_):
-        paths.setdefault(obj.fullname, path)
+        paths[obj.fullname] = path
 
         if is_source:
             object_filter = get_object_filter_for_source(obj, module)

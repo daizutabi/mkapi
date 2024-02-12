@@ -442,7 +442,7 @@ def iter_objects(
         yield child
 
 
-def get_fullname_from_object(  # noqa: PLR0911
+def get_fullname_from_object(
     obj: Module | Class | Function | Attribute,
     name: str,
 ) -> str | None:
@@ -455,9 +455,7 @@ def get_fullname_from_object(  # noqa: PLR0911
     if obj.parent and isinstance(obj.parent, Class | Function):
         return get_fullname_from_object(obj.parent, name)
     if "." not in name:
-        if not isinstance(obj, Module):
-            return get_fullname_from_object(obj.module, name)
-        return None
+        return get_fullname_from_object(obj.module, name)
     parent, attr = name.rsplit(".", maxsplit=1)
     if parent == obj.name:
         return get_fullname_from_object(obj, attr)
@@ -482,7 +480,7 @@ def get_kind(obj: Object) -> str:
         return _get_kind_function(obj)
     if isinstance(obj, Attribute):
         return "property" if isinstance(obj.node, ast.FunctionDef) else "attribute"
-    return "unknown"
+    raise NotImplementedError
 
 
 def is_empty(obj: Object) -> bool:

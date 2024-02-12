@@ -92,6 +92,20 @@ def test_create_class(get):
     assert repr(cls) == "Class('ExampleClass')"
 
 
+def test_create_class_nested():
+    src = """
+    class A:
+        class B:
+            class C:
+                pass
+    """
+    node = ast.parse(inspect.cleandoc(src)).body[0]
+    assert isinstance(node, ast.ClassDef)
+    cls = create_class(node)
+    assert len(cls.classes) == 1
+    assert len(cls.classes[0].classes) == 1
+
+
 def test_create_module(google):
     module = create_module("google", google)
     assert module.name == "google"
@@ -115,30 +129,6 @@ def test_fullname(google):
     assert c.fullname == "examples.styles.google.ExampleClass"
     name = "examples.styles.google.ExampleClass.example_method"
     assert f.fullname == name
-
-
-def test_kind():
-    node = get_module_node("mkapi")
-    assert node
-    module = create_module("mkapi", node)
-    assert module.kind == "package"
-    node = get_module_node("mkapi.objects")
-    assert node
-    module = create_module("mkapi.objects", node)
-    assert module
-    assert module.kind == "module"
-    cls = get_by_name(module.classes, "Object")
-    assert cls
-    assert cls.kind == "dataclass"
-    func = get_by_name(module.functions, "create_function")
-    assert func
-    assert func.kind == "function"
-    method = get_by_name(cls.functions, "__post_init__")
-    assert method
-    assert method.kind == "method"
-    attr = get_by_name(cls.attributes, "node")
-    assert attr
-    assert attr.kind == "attribute"
 
 
 def test_attribute_comment():
@@ -324,3 +314,27 @@ def test_iter_objects_predicate():
         assert get_by_name(x, name)
     for name in others:
         assert not get_by_name(x, name)
+
+
+def test_kind():
+    node = get_module_node("mkapi")
+    assert node
+    module = create_module("mkapi", node)
+    assert module.kind == "package"
+    node = get_module_node("mkapi.objects")
+    assert node
+    module = create_module("mkapi.objects", node)
+    assert module
+    assert module.kind == "module"
+    cls = get_by_name(module.classes, "Object")
+    assert cls
+    assert cls.kind == "dataclass"
+    func = get_by_name(module.functions, "create_function")
+    assert func
+    assert func.kind == "function"
+    method = get_by_name(cls.functions, "__post_init__")
+    assert method
+    assert method.kind == "method"
+    attr = get_by_name(cls.attributes, "node")
+    assert attr
+    assert attr.kind == "attribute"

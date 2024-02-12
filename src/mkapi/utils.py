@@ -17,17 +17,17 @@ cached_objects = []
 
 @overload
 def cache(obj: Callable[..., Any]) -> Callable[..., Any]:
-    ...
+    ...  # no cov
 
 
 @overload
 def cache(obj: dict) -> dict:
-    ...
+    ...  # no cov
 
 
 @overload
 def cache(obj: list) -> list:
-    ...
+    ...  # no cov
 
 
 def cache(obj: Callable[..., Any] | dict | list) -> Callable[..., Any] | dict | list:
@@ -56,7 +56,7 @@ def get_module_path(name: str) -> Path | None:
         spec = find_spec(name)
     except ModuleNotFoundError:
         return None
-    if not spec or not hasattr(spec, "origin") or not spec.origin:
+    if not (spec and spec.origin):
         return None
     path = Path(spec.origin)
     if not path.exists() or path.suffix != ".py":  # for builtin, frozen
@@ -79,7 +79,11 @@ def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
 
 def is_package(name: str) -> bool:
     """Return True if the name is a package."""
-    if (spec := find_spec(name)) and spec.origin:
+    try:
+        spec = find_spec(name)
+    except ModuleNotFoundError:
+        return False
+    if spec and spec.origin:
         return Path(spec.origin).stem == "__init__"
     return False
 
