@@ -34,7 +34,7 @@ def test_render_sourcelink():
     assert x.startswith(m)
 
 
-def test_render_moduled():
+def test_render_module():
     obj = get_object("examples.styles")
     assert obj
     m = render(obj, 2, [])

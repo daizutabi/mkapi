@@ -4,7 +4,7 @@ from mkapi.importlib import (
     iter_base_classes,
     load_module,
 )
-from mkapi.objects import Class, Function
+from mkapi.objects import Class, Function, Module
 from mkapi.utils import get_by_name
 
 
@@ -95,3 +95,22 @@ def test_iter_dataclass_parameters():
     assert p[2].name == "text"
     assert p[3].name == "items"
     assert p[4].name == "kind"
+
+
+def test_inherit_base_classes_order():
+    module = load_module("mkapi.plugins")
+    assert isinstance(module, Module)
+    cls = get_by_name(module.classes, "MkAPIPlugin")
+    assert isinstance(cls, Class)
+    indexes = []
+    for name in ["on_startup", "on_nav", "on_shutdown", "on_env", "on_post_page"]:
+        func = get_by_name(cls.functions, name)
+        assert func
+        indexes.append(cls.functions.index(func))
+    assert indexes == sorted(indexes)
+    indexes.clear()
+    for name in ["api_dirs", "pages", "config_class", "config"]:
+        attr = get_by_name(cls.attributes, name)
+        assert attr
+        indexes.append(cls.attributes.index(attr))
+    assert indexes == sorted(indexes)

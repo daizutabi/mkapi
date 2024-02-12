@@ -68,7 +68,7 @@ omit = ["src/mkapi/__about__.py"]
 exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
 
 [tool.hatch.envs.docs]
-dependencies = ["altair", "polars", "schemdraw"]
+dependencies = ["altair", "polars", "pyparsing", "schemdraw"]
 python = "3.11"
 
 [tool.hatch.envs.docs.scripts]

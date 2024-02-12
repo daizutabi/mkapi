@@ -4,8 +4,9 @@ from __future__ import annotations
 import ast
 import itertools
 import re
+from collections.abc import Callable as Callable_
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.ast
 import mkapi.docstrings
@@ -384,52 +385,54 @@ def get_link_from_text(obj: Module | Class | Function | Attribute, text: str) ->
     return re.sub(LINK_PATTERN, replace, text)
 
 
-def _predicate(
-    child: Class | Function,
-    obj: Module | Class | Function,
-    *,
-    member_only: bool,
+Member_: TypeAlias = Module | Class | Function | Attribute
+Parent: TypeAlias = Module | Class | Function | None
+Predicate: TypeAlias = Callable_[[Member_, Parent], bool] | None
+
+
+def is_member(
+    obj: Module | Class | Function | Attribute,
+    parent: Module | Class | Function | None,
 ) -> bool:
-    if isinstance(obj, Module):
+    """Return True if obj is a member of parent."""
+    if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
         return True
-    if member_only and child.parent is not obj:
+    if obj.parent is not parent:
         return False
-    return child.module is obj.module  # correct ?
+    return obj.module is parent.module
 
 
 def iter_objects_with_depth(
     obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
+    predicate: Predicate = None,
     depth: int = 0,
-    *,
-    member_only: bool = False,
 ) -> Iterator[tuple[Module | Class | Function | Attribute, int]]:
     """Yield [Object] instances and depth."""
-    yield obj, depth
+    if not predicate or predicate(obj, None):
+        yield obj, depth
+
     if depth == maxdepth or isinstance(obj, Attribute):
         return
-    for child in obj.classes + obj.functions:
-        if _predicate(child, obj, member_only=member_only):
-            yield from iter_objects_with_depth(
-                child,
-                maxdepth,
-                depth + 1,
-                member_only=member_only,
-            )
+
+    for child in itertools.chain(obj.classes, obj.functions):
+        if not predicate or predicate(child, obj):
+            yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
+
     if isinstance(obj, Module | Class):
         for attr in obj.attributes:
-            yield attr, depth + 1
+            if not predicate or predicate(attr, obj):
+                yield attr, depth + 1
 
 
 def iter_objects(
     obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
-    *,
-    member_only: bool = False,
+    predicate: Predicate = None,
 ) -> Iterator[Module | Class | Function | Attribute]:
     """Yield [Object] instances."""
-    for obj_, _ in iter_objects_with_depth(obj, maxdepth, 0, member_only=member_only):
-        yield obj_
+    for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
+        yield child
 
 
 def get_fullname_from_object(  # noqa: PLR0911
@@ -454,18 +457,22 @@ def get_fullname_from_object(  # noqa: PLR0911
     return resolve_with_attribute(name)
 
 
-def get_kind(obj: Object) -> str:  # noqa: PLR0911
+def _get_kind_function(func: Function) -> str:
+    if mkapi.inspect.is_classmethod(func):
+        return "classmethod"
+    if mkapi.inspect.is_staticmethod(func):
+        return "staticmethod"
+    return "method" if isinstance(func.parent, Class) else "function"
+
+
+def get_kind(obj: Object) -> str:
     """Return object kind."""
     if isinstance(obj, Module):
         return "package" if is_package(obj.name) else "module"
     if isinstance(obj, Class):
         return "dataclass" if mkapi.inspect.is_dataclass(obj) else "class"
     if isinstance(obj, Function):
-        if mkapi.inspect.is_classmethod(obj):
-            return "classmethod"
-        if mkapi.inspect.is_staticmethod(obj):
-            return "staticmethod"
-        return "method" if "." in obj.qualname else "function"
+        return _get_kind_function(obj)
     if isinstance(obj, Attribute):
         return "property" if isinstance(obj.node, ast.FunctionDef) else "attribute"
     return "unknown"

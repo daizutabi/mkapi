@@ -5,6 +5,7 @@ import datetime
 import os.path
 import re
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -12,12 +13,14 @@ import mkapi.markdown
 import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object, load_module
-from mkapi.objects import is_empty, iter_objects_with_depth
+from mkapi.objects import is_empty, is_member, iter_objects_with_depth
 from mkapi.renderers import get_object_filter_for_source
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from mkapi.objects import Attribute, Class, Function, Module
 
 
 @dataclass
@@ -86,12 +89,10 @@ def create_markdown(
 
     paths = source_paths if is_source else object_paths
 
+    predicate_ = partial(_predicate, predicate=predicate)
+
     markdowns = []
-    for obj, depth in iter_objects_with_depth(module, 2, member_only=True):
-        if is_empty(obj):
-            continue
-        if predicate and not predicate(obj.fullname):
-            continue
+    for obj, depth in iter_objects_with_depth(module, 2, predicate_):
         paths.setdefault(obj.fullname, path)
 
         if is_source:
@@ -103,6 +104,20 @@ def create_markdown(
         markdowns.append(markdown)
 
     return "\n".join(markdowns)
+
+
+def _predicate(
+    obj: Module | Class | Function | Attribute,
+    parent: Module | Class | Function | None,
+    predicate: Callable[[str], bool] | None,
+) -> bool:
+    if not is_member(obj, parent):
+        return False
+    if is_empty(obj):
+        return False
+    if predicate and not predicate(obj.fullname):
+        return False
+    return True
 
 
 def convert_markdown(
