@@ -8,7 +8,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.importlib import add_sections_for_package, get_source
+from mkapi.importlib import add_sections_for_package  # , get_source
 from mkapi.inspect import get_signature
 from mkapi.objects import Attribute, Class, Function, Module
 
@@ -82,7 +82,8 @@ def get_object_filter_for_source(
 
 
 def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> str:
-    if source := get_source(obj):
+    # if source := get_source(obj):
+    if source := obj.source:
         lines = source.splitlines()
         for filter_ in filters:
             if filter_.startswith("__mkapi__:"):
