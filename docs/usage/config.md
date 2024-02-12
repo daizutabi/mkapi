@@ -49,11 +49,14 @@ Currently, five funtions can be called from MkAPI plugin.
 You can define your own functions to customize plugin behaviors
 or Navigation title for section, page, and/or toc.
 
+<!-- ```python title="config.py"
+--8<-- "config.py"
+``` -->
+
 ```python title="config.py"
 """Config functions."""
 from __future__ import annotations
 
-import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
