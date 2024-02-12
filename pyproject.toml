@@ -65,7 +65,12 @@ filterwarnings = [
 omit = ["src/mkapi/__about__.py"]
 
 [tool.coverage.report]
-exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
+exclude_lines = [
+  "no cov",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+  "except Exception as e:",
+]
 
 [tool.hatch.envs.docs]
 dependencies = ["altair", "polars", "pyparsing", "schemdraw"]
