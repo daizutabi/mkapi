@@ -59,7 +59,7 @@ def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
         name, type_, text = lines[0], "", ""
     rest = "\n".join(lines[1:])
     rest = textwrap.dedent(rest)
-    return name, type_, f"{text.strip()}\n{rest}".strip()
+    return name.strip(), type_.strip(), f"{text.strip()}\n{rest}".strip()
 
 
 def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:

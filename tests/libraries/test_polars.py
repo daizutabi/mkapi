@@ -1,5 +1,12 @@
 import pytest
 
+from mkapi.globals import (
+    _iter_objects_from_all,
+    get_all,
+    get_fullname,
+    get_globals,
+    resolve,
+)
 from mkapi.items import Parameters, SeeAlso
 from mkapi.objects import (
     Attribute,
@@ -136,6 +143,40 @@ def test_overload():
     func = get_by_name(module.functions, "repeat")
     assert isinstance(func, Function)
     assert func.doc.sections
+
+
+def test_resolve():
+    assert resolve("polars.DataFrame") == "polars.dataframe.frame.DataFrame"
+    assert resolve("polars.DataType") == "polars.datatypes.classes.DataType"
+    assert resolve("polars.col") == "polars.functions.col"
+    assert resolve("polars.row") is None
+
+
+def test_get_globals():
+    x = get_globals("polars.dataframe.frame")
+    n = get_by_name(x.names, "Workbook")
+    assert n
+
+
+def test_get_fullnamel():
+    x = get_fullname("polars.dataframe.frame", "DataType")
+    assert x == "polars.datatypes.classes.DataType"
+    x = get_fullname("polars.dataframe.frame", "Workbook")
+    assert x == "xlsxwriter.Workbook"
+    assert get_fullname("polars", "exceptions") != "polars.exceptions"
+    assert get_fullname("polars", "api") == "polars.api"
+
+
+def test_iter_objects_from_all():
+    x = list(_iter_objects_from_all("polars"))
+    assert "polars.DataFrame" in x
+    assert "polars.first" in x
+
+
+def test_get_all():
+    x = get_all("polars")
+    assert x["api"] == "polars.api"
+    assert x["ArrowError"] == "polars.exceptions.ArrowError"
 
 
 # LazyFrame.tail

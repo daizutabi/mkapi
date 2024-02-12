@@ -6,9 +6,6 @@ from mkapi.globals import (
     Global,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
-    _iter_objects_from_all,
-    get_all,
-    get_all_from_importlib,
     get_fullname,
     get_globals,
     get_link_from_type,
@@ -50,10 +47,6 @@ def test_resolve():
     assert resolve("logging.Template") == "string.Template"
     assert resolve("halo.Halo") == "halo.halo.Halo"
     assert resolve("jinja2.Template") == "jinja2.environment.Template"
-    assert resolve("polars.DataFrame") == "polars.dataframe.frame.DataFrame"
-    assert resolve("polars.DataType") == "polars.datatypes.classes.DataType"
-    assert resolve("polars.col") == "polars.functions.col"
-    assert resolve("polars.row") is None
     assert resolve("mkdocs.config.Config") == "mkdocs.config.base.Config"
 
 
@@ -71,26 +64,6 @@ def test_get_globals(name, fullname):
     n = get_by_name(x.names, name)
     assert n
     assert n.fullname == fullname
-
-
-def test_get_globals_polars():
-    x = get_globals("polars.dataframe.frame")
-    n = get_by_name(x.names, "Workbook")
-    assert n
-
-
-def test_get_globals_schemdraw():
-    from schemdraw.elements.cables import Element2Term, Segment  # type: ignore
-
-    x = get_globals("schemdraw.elements.cables")
-    n = get_by_name(x.names, "Segment")
-    assert n
-    a = f"{Segment.__module__}.{Segment.__name__}"
-    assert n.fullname == a
-    n = get_by_name(x.names, "Element2Term")
-    assert n
-    a = f"{Element2Term.__module__}.{Element2Term.__name__}"
-    assert n.fullname == a
 
 
 def test_get_globals_cache():
@@ -133,10 +106,6 @@ def test_get_fullname():
     assert x == "mkapi.objects"
     x = get_fullname("mkapi.objects", "mkapi.objects.Object")
     assert x == "mkapi.objects.Object"
-    x = get_fullname("polars.dataframe.frame", "DataType")
-    assert x == "polars.datatypes.classes.DataType"
-    x = get_fullname("polars.dataframe.frame", "Workbook")
-    assert x == "xlsxwriter.Workbook"
 
 
 def test_get_link_from_type():
@@ -177,24 +146,3 @@ def test_get_link_from_type_string():
     x = f("mkapi.objects", "1 Object or Class.")
     assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
     assert "or [Class][__mkapi__.mkapi.objects.Class]." in x
-
-
-def test_all():
-    assert get_fullname("polars", "exceptions") != "polars.exceptions"
-    assert get_fullname("polars", "api") == "polars.api"
-
-
-def test_iter_objects_from_all():
-    x = list(_iter_objects_from_all("polars"))
-    assert "polars.DataFrame" in x
-    assert "polars.first" in x
-
-
-def test_get_all():
-    x = get_all("polars")
-    assert x["api"] == "polars.api"
-    assert x["ArrowError"] == "polars.exceptions.ArrowError"
-
-
-def test_get_all_from_importlib():
-    assert get_all_from_importlib("altair")

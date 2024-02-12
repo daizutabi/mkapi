@@ -318,6 +318,13 @@ def merge_raises(obj: Class | Function) -> None:
 def merge_returns(obj: Function) -> None:
     """Merge returns."""
     if section := get_by_type(obj.doc.sections, Returns):
+        if len(obj.returns) == 1 and len(section.items) == 1:
+            item = section.items[0]
+            if not item.type.expr:
+                item.type = obj.returns[0].type
+            obj.returns[0].text = item.text
+            obj.returns[0].name = item.name
+            return
         section.items = list(iter_merged_items(obj.returns, section.items))
 
 

@@ -166,7 +166,7 @@ class Return(Item):
 
 
 def iter_returns(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Return]:
-    """Return a [Return] instance."""
+    """Yield one [Return] instance if it isn't None."""
     if node.returns:
         yield Return("", Type(node.returns), Text())
 
@@ -343,7 +343,7 @@ def create_returns(name: str, text: str, style: str) -> Returns:
     type_, text_ = split_without_name(text, style)
     name_ = ""
     if ":" in type_:
-        name_, type_ = type_.split(":", maxsplit=1)
+        name_, type_ = (x.strip() for x in type_.split(":", maxsplit=1))
     type_ = Type(ast.Constant(type_) if type_ else None)
     text_ = Text(text_ or None)
     returns = [Return(name_, type_, text_)]
