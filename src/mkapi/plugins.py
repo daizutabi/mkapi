@@ -311,15 +311,22 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         spinner = Halo()
         spinner.start()
 
-        mkapi.nav.update(
-            config.nav,
-            _create_page,
-            plugin.section_title,
-            plugin.page_title,
-            predicate,
-        )
+        try:
+            mkapi.nav.update(
+                config.nav,
+                _create_page,
+                plugin.section_title,
+                plugin.page_title,
+                predicate,
+            )
+        except Exception as e:
+            if plugin.config.debug:
+                raise
 
-        spinner.stop()
+            spinner.stop()
+            logger.exception(e)  # noqa: TRY401
+        else:
+            spinner.stop()
 
 
 def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:  # noqa: ARG001

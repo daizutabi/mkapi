@@ -102,12 +102,10 @@ def inherit_base_classes(cls: Class) -> None:
     # TODO: fix InitVar, ClassVar for dataclasses.
     bases = list(iter_base_classes(cls))
     for name in ["attributes", "functions", "classes"]:
-        members = {}
+        members = {member.name: member for member in getattr(cls, name)}
         for base in bases:
             for member in getattr(base, name):
-                members[member.name] = member
-        for member in getattr(cls, name):
-            members[member.name] = member
+                members.setdefault(member.name, member)
         setattr(cls, name, list(members.values()))
 
 

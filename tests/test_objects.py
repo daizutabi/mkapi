@@ -7,10 +7,12 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
+from mkapi.importlib import load_module
 from mkapi.objects import (
     LINK_PATTERN,
     Class,
     Function,
+    Module,
     create_class,
     create_function,
     create_module,
@@ -297,6 +299,31 @@ def test_set_markdown():
     assert isinstance(obj, Function)
     m = obj.doc.text.markdown
     assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."
+
+
+def test_iter_objects_predicate():
+    module = load_module("mkapi.plugins")
+    assert isinstance(module, Module)
+    cls = get_by_name(module.classes, "MkAPIPlugin")
+    assert isinstance(cls, Class)
+    x = list(iter_objects(cls))
+    members = ["MkAPIPlugin", "on_nav", "pages"]
+    others = ["load_config", "config"]
+    for name in members:
+        assert get_by_name(x, name)
+    for name in others:
+        assert get_by_name(x, name)
+
+    def predicate(obj, parent):
+        if parent is None:
+            return True
+        return obj.module is parent.module
+
+    x = list(iter_objects(cls, predicate=predicate))
+    for name in members:
+        assert get_by_name(x, name)
+    for name in others:
+        assert not get_by_name(x, name)
 
 
 # schemdraw.elements.intcircuits.Ic
