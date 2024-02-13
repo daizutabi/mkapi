@@ -8,7 +8,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 import mkapi
-from mkapi.importlib import add_sections_for_package  # , get_source
+from mkapi.importlib import add_sections_for_package
 from mkapi.inspect import get_signature
 from mkapi.objects import Attribute, Class, Function, Module
 
@@ -34,9 +34,10 @@ def render(
 ) -> str:
     """Return a rendered Markdown."""
     heading = f"h{level}" if level else "p"
-    prefix = obj.doc.type.markdown.split("..")
-    self = obj.name.split(".")[-1].replace("_", "\\_")
-    fullname = ".".join(prefix[:-1] + [self])
+    # prefix = obj.doc.type.markdown.split("..")
+    # self = obj.name.split(".")[-1].replace("_", "\\_")
+    # fullname = ".".join(prefix[:-1] + [self])
+    fullname = obj.doc.type.markdown.replace("..", ".")
     id_ = obj.fullname.replace("_", "\\_")
     names = [x.replace("_", "\\_") for x in obj.qualname.split(".")]
     if isinstance(obj, Module):
@@ -82,7 +83,6 @@ def get_object_filter_for_source(
 
 
 def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> str:
-    # if source := get_source(obj):
     if source := obj.source:
         lines = source.splitlines()
         for filter_ in filters:
