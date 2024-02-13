@@ -15,7 +15,6 @@ from mkapi.utils import (
     get_module_node,
     get_module_path,
     is_package,
-    iter_identifiers,
     iter_parent_module_names,
 )
 
@@ -242,29 +241,39 @@ def get_fullname(module: str, name: str) -> str | None:
     # return None
 
 
-def _get_link(module: str, name: str, asname: str) -> str:
-    fullname = get_fullname(module, name)
-    asname = asname.replace("_", "\\_")
-    return f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
+# def get_link_from_name(fullname: str) -> str:
+#     names = []
+#     parents = iter_parent_module_names(fullname)
+#     asnames = fullname.split(".")
+#     for name, asname in zip(parents, asnames, strict=True):
+#         asname_ = asname.replace("_", "\\_")
+#         names.append(f"[{asname_}][__mkapi__.{name}]")
+#     return ".".join(names)
 
 
-@cache
-def get_link_from_type(module: str, name: str, *, is_object: bool = False) -> str:
-    """Return markdown links from type."""
-    names = []
-    parents = iter_parent_module_names(name)
-    asnames = name.split(".")
-    for name, asname in zip(parents, asnames, strict=True):
-        names.append(_get_link(module, name, asname))
-    return "..".join(names) if is_object else ".".join(names)
+# def _get_link(module: str, name: str, asname: str) -> str:
+#     fullname = get_fullname(module, name)
+#     asname = asname.replace("_", "\\_")
+#     return f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
 
 
-def get_link_from_type_string(module: str, source: str) -> str:
-    """Return markdown links from string-type."""
-    strs = []
-    for name, isidentifier in iter_identifiers(source):
-        if isidentifier:
-            strs.append(get_link_from_type(module, name, is_object=False))
-        else:
-            strs.append(name)
-    return "".join(strs)
+# @cache
+# def get_link_from_type(module: str, name: str) -> str:
+#     """Return markdown links from type."""
+#     names = []
+#     parents = iter_parent_module_names(name)
+#     asnames = name.split(".")
+#     for name, asname in zip(parents, asnames, strict=True):
+#         names.append(_get_link(module, name, asname))
+#     return ".".join(names)
+
+
+# def get_link_from_type_string(module: str, source: str) -> str:
+#     """Return markdown links from string-type."""
+#     strs = []
+#     for name, isidentifier in iter_identifiers(source):
+#         if isidentifier:
+#             strs.append(get_link_from_type(module, name))
+#         else:
+#             strs.append(name)
+#     return "".join(strs)

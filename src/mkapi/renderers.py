@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 import mkapi
 from mkapi.importlib import add_sections_for_package
 from mkapi.inspect import get_signature
+from mkapi.link import get_markdown_from_name
 from mkapi.objects import Attribute, Class, Function, Module
 
 templates: dict[str, Template] = {}
@@ -37,7 +38,9 @@ def render(
     # prefix = obj.doc.type.markdown.split("..")
     # self = obj.name.split(".")[-1].replace("_", "\\_")
     # fullname = ".".join(prefix[:-1] + [self])
-    fullname = obj.doc.type.markdown.replace("..", ".")
+    # fullname = obj.doc.type.markdown.replace("..", ".")
+    # fullname = obj.fullname.replace("_", "\\_")  # Add link
+    fullname = get_markdown_from_name(obj.fullname)
     id_ = obj.fullname.replace("_", "\\_")
     names = [x.replace("_", "\\_") for x in obj.qualname.split(".")]
     if isinstance(obj, Module):

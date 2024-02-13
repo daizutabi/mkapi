@@ -6,11 +6,9 @@ from mkapi.globals import (
     Global,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
+    get_all,
     get_fullname,
     get_globals,
-    get_link_from_type,
-    get_link_from_type_string,
-    iter_identifiers,
     resolve,
 )
 from mkapi.objects import create_module
@@ -76,6 +74,15 @@ def test_get_globals_cache():
     assert c is d
 
 
+def test_get_all():
+    name = "tqdm"
+    x = get_all(name)
+    assert x["tqdm"] == "tqdm.std.tqdm"
+    assert x["main"] == "tqdm.cli.main"
+    assert x["TqdmTypeError"] == "tqdm.std.TqdmTypeError"
+    assert not get_all("__invalid__")
+
+
 def test_module():
     name = "mkapi.plugins"
     g = get_globals(name)
@@ -106,43 +113,3 @@ def test_get_fullname():
     assert x == "mkapi.objects"
     x = get_fullname("mkapi.objects", "mkapi.objects.Object")
     assert x == "mkapi.objects.Object"
-
-
-def test_get_link_from_type():
-    x = get_link_from_type("mkapi.objects", "Object")
-    assert x == "[Object][__mkapi__.mkapi.objects.Object]"
-    x = get_link_from_type("mkapi.objects", "Object.__repr__")
-    assert r".[\_\_repr\_\_][__mkapi__.mkapi.objects.Object.__repr__]" in x
-    x = get_link_from_type("mkapi.plugins", "MkDocsPage")
-    assert x == "[MkDocsPage][__mkapi__.mkdocs.structure.pages.Page]"
-    x = get_link_from_type("mkdocs.plugins", "jinja2.Template")
-    assert "[jinja2][__mkapi__.jinja2]." in x
-    assert "[Template][__mkapi__.jinja2.environment.Template]" in x
-    x = get_link_from_type("polars", "DataFrame")
-    assert x == "[DataFrame][__mkapi__.polars.dataframe.frame.DataFrame]"
-    assert get_link_from_type("mkapi.objects", "str") == "str"
-    assert get_link_from_type("mkapi.objects", "None") == "None"
-    x = get_link_from_type("mkapi.objects", "mkapi.objects", is_object=True)
-    assert x == "[mkapi][__mkapi__.mkapi]..[objects][__mkapi__.mkapi.objects]"
-
-
-def test_iter_identifiers():
-    x = "1"
-    assert next(iter_identifiers(x)) == ("1", False)
-    x = "a1"
-    assert next(iter_identifiers(x)) == ("a1", True)
-    x = "a,b"
-    assert list(iter_identifiers(x)) == [("a", True), (",", False), ("b", True)]
-    x = "dict, Sequence, ndarray, 'Series', or pandas.DataFrame."
-    x = list(iter_identifiers(x))
-    assert ("dict", True) in x
-    assert ("Sequence", True) in x
-    assert ("'Series'", False) in x
-    assert ("pandas.DataFrame", True) in x
-
-
-def test_get_link_from_type_string():
-    f = get_link_from_type_string
-    x = f("mkapi.objects", "1 Object or Class.")
-    assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
-    assert "or [Class][__mkapi__.mkapi.objects.Class]." in x

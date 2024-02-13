@@ -56,11 +56,11 @@ class Object:
     kind: str = field(init=False)
 
     def __post_init__(self) -> None:
-        self.doc.name = self.fullname
-        expr = ast.parse(self.fullname).body[0]
-        if isinstance(expr, ast.Expr):
-            self.doc.type.expr = expr.value
-            self.doc.type.kind = TypeKind.OBJECT
+        # self.doc.name = self.fullname
+        # expr = ast.parse(self.fullname).body[0]
+        # if isinstance(expr, ast.Expr):
+        #     self.doc.type.expr = expr.value
+        #     self.doc.type.kind = TypeKind.OBJECT
         self.kind = get_kind(self)
         objects[self.fullname] = self  # type:ignore
 

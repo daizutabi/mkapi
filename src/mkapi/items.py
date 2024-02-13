@@ -11,10 +11,7 @@ from typing import TYPE_CHECKING, TypeVar
 import mkapi.ast
 import mkapi.markdown
 from mkapi.ast import is_property
-from mkapi.globals import (
-    get_link_from_type,
-    get_link_from_type_string,
-)
+from mkapi.link import get_markdown_from_type, get_markdown_from_type_string
 from mkapi.utils import get_by_name, unique_names
 
 try:
@@ -31,12 +28,20 @@ TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
 
 
 @dataclass
+class Name:
+    """Name class."""
+
+    str: str
+    markdown: str
+
+
+@dataclass
 class Type:
     """Type class."""
 
     expr: ast.expr | None = None
     markdown: str = field(default="", init=False)
-    kind: TypeKind = TypeKind.REFERENCE
+    # kind: TypeKind = TypeKind.REFERENCE
 
     def __repr__(self) -> str:
         args = ast.unparse(self.expr) if self.expr else ""
@@ -46,7 +51,7 @@ class Type:
         """Copy an instance."""
         type_ = self.__class__(self.expr)
         type_.markdown = self.markdown
-        type_.kind = self.kind
+        # type_.kind = self.kind
         return type_
 
     def set_markdown(self, module: str) -> None:
@@ -54,14 +59,14 @@ class Type:
         if not self.expr or self.markdown:
             return
 
-        is_object = self.kind is TypeKind.OBJECT
-
-        def get_link(name: str) -> str:
-            return get_link_from_type(module, name, is_object=is_object)
+        # is_object = self.kind is TypeKind.OBJECT
 
         if isinstance(self.expr, ast.Constant) and isinstance(self.expr.value, str):
-            self.markdown = get_link_from_type_string(module, self.expr.value)
+            self.markdown = get_markdown_from_type_string(module, self.expr.value)
             return
+
+        def get_link(name: str) -> str:
+            return get_markdown_from_type(module, name)
 
         try:
             self.markdown = mkapi.ast.unparse(self.expr, get_link)

@@ -47,7 +47,7 @@
   {% for item in section.items %}
   <li markdown="block">
   {% if item.name -%}
-    <span class="mkapi-item-name">{{ item.name.replace("_", "\\_") }}</span>
+    <span class="mkapi-item-name">{{ item.name.replace("_", "\\_") }}</span>{# bare name -> markdown for link #}
   {%- endif -%}
   {%- if item.name and item.type.markdown %} : {% endif %}
   {% if item.type.markdown -%}

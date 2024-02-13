@@ -192,3 +192,15 @@ def test_iter_identifiers():
     x = "abc."
     y = list(iter_identifiers(x))
     assert y == [("abc", True), (".", False)]
+    x = "1"
+    assert next(iter_identifiers(x)) == ("1", False)
+    x = "a1"
+    assert next(iter_identifiers(x)) == ("a1", True)
+    x = "a,b"
+    assert list(iter_identifiers(x)) == [("a", True), (",", False), ("b", True)]
+    x = "dict, Sequence, ndarray, 'Series', or pandas.DataFrame."
+    x = list(iter_identifiers(x))
+    assert ("dict", True) in x
+    assert ("Sequence", True) in x
+    assert ("'Series'", False) in x
+    assert ("pandas.DataFrame", True) in x

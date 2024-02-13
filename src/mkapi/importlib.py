@@ -222,11 +222,16 @@ def add_sections_for_package(module: Module) -> None:
 
 
 def _get_item(obj: Module | Class | Function | Attribute) -> Item:
-    type_ = obj.doc.type.copy()
+    name = obj.name
     text = obj.doc.text.copy()
-    type_.markdown = type_.markdown.split("..")[-1]
-    text.markdown = text.markdown.split("\n\n")[0]
-    return Item("", type_, text)
+    text.markdown = text.markdown.split("\n\n")[0]  # summary line
+    type_ = obj.type if isinstance(obj, Attribute) else Type()
+    return Item(name, type_, text)
+    # type_ = obj.doc.type.copy()
+    # text = obj.doc.text.copy()
+    # type_.markdown = type_.markdown.split("..")[-1]
+    # text.markdown = text.markdown.split("\n\n")[0]
+    # return Item("", type_, text)
 
 
 def _get_item_attribute(attr: Attribute) -> Item:
