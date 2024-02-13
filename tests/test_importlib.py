@@ -1,6 +1,7 @@
 from mkapi.importlib import (
     get_object,
     get_source,
+    # inherit_base_classes,
     iter_base_classes,
     load_module,
 )
@@ -70,6 +71,7 @@ def test_iter_base_classes():
 
 
 def test_inherit_base_classes():
+    load_module("mkapi.plugins")
     cls = get_object("mkapi.plugins.MkAPIConfig")
     assert isinstance(cls, Class)
     # inherit_base_classes(cls)
@@ -114,3 +116,8 @@ def test_inherit_base_classes_order():
         assert attr
         indexes.append(cls.attributes.index(attr))
     assert indexes == sorted(indexes)
+
+
+def test_get_object_using_all():
+    assert get_object("schemdraw.Drawing")
+    assert get_object("schemdraw.svgconfig")

@@ -10,13 +10,15 @@ from typing import TYPE_CHECKING, TypeVar, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
-    from typing import Any
+    # from typing import Any
 
 cached_objects = []
 
+T = TypeVar("T")
+
 
 @overload
-def cache(obj: Callable[..., Any]) -> Callable[..., Any]:
+def cache(obj: Callable[..., T]) -> Callable[..., T]:
     ...  # no cov
 
 
@@ -30,7 +32,7 @@ def cache(obj: list) -> list:
     ...  # no cov
 
 
-def cache(obj: Callable[..., Any] | dict | list) -> Callable[..., Any] | dict | list:
+def cache(obj: Callable[..., T] | dict | list) -> Callable[..., T] | dict | list:
     """Cache a function and register it to clear cache."""
     if callable(obj):
         cached = functools.cache(obj)
