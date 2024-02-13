@@ -89,7 +89,7 @@ def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> 
             if filter_.startswith("__mkapi__:"):
                 name, index_str = filter_[10:].split("=")
                 index = int(index_str)
-                if len(lines[index]) > 80 and index:
+                if len(lines[index]) > 80 and index:  # noqa: PLR2004
                     index -= 1
                 line = lines[index]
                 if "## __mkapi__." not in line:

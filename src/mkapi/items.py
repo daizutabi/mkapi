@@ -171,10 +171,7 @@ class Base(Item):
 def iter_bases(node: ast.ClassDef) -> Iterator[Base]:
     """Yield [Base] instances."""
     for base in node.bases:
-        if isinstance(base, ast.Subscript):
-            name = ast.unparse(base.value)
-        else:
-            name = ast.unparse(base)
+        name = ast.unparse(base.value) if isinstance(base, ast.Subscript) else ast.unparse(base)
         yield Base(name, Type(base), Text())
 
 
@@ -194,11 +191,7 @@ class Assign(Item):
 def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
     """Yield [Assign] instances."""
     for child in mkapi.ast.iter_child_nodes(node):
-        if (
-            isinstance(child, ast.AnnAssign | ast.Assign)
-            or TypeAlias
-            and isinstance(child, TypeAlias)
-        ):
+        if isinstance(child, ast.AnnAssign | ast.Assign) or TypeAlias and isinstance(child, TypeAlias):
             attr = create_assign(child)
             if attr.name:
                 yield attr

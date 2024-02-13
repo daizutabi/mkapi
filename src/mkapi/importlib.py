@@ -157,10 +157,8 @@ def add_section(
 def add_section_attributes(obj: Module | Class) -> None:
     """Add an Attributes section."""
     name = "Attributes"
-    if section := get_by_name(obj.doc.sections, name):
-        index = obj.doc.sections.index(section)
-    else:
-        index = -1
+    sections = obj.doc.sections
+    index = sections.index(section) if (section := get_by_name(sections, name)) else -1
 
     items = []
     attributes = []

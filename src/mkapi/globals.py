@@ -56,9 +56,7 @@ def _iter_objects(module: str) -> Iterator[str]:
         if isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
             yield f"{module}.{child.name}"
         elif (  # noqa: SIM102
-            isinstance(child, ast.AnnAssign | ast.Assign)
-            or TypeAlias
-            and isinstance(child, TypeAlias)
+            isinstance(child, ast.AnnAssign | ast.Assign) or TypeAlias and isinstance(child, TypeAlias)
         ) and (assign_name := mkapi.ast.get_assign_name(child)):
             if not assign_name.startswith("__"):
                 yield f"{module}.{assign_name}"
@@ -112,7 +110,7 @@ def _iter_imports_from_import_from(
         module = parent
     elif node.level:
         names = parent.split(".")
-        if is_package(parent):
+        if is_package(parent):  # noqa: SIM108
             prefix = ".".join(names[: len(names) - node.level + 1])
         else:
             prefix = ".".join(names[: -node.level])

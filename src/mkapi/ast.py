@@ -135,10 +135,7 @@ def iter_parameters(
     """Yield parameters from a function node."""
     it = _iter_defaults(node)
     for arg, kind in _iter_parameters(node):
-        if kind in [Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD]:
-            default = None
-        else:
-            default = next(it)
+        default = None if kind in [Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD] else next(it)
         yield arg, kind, default
 
 
@@ -178,20 +175,20 @@ def create_expr(name: str) -> ast.expr:
     return ast.Constant(value=name)
 
 
-class Transformer(NodeTransformer):  # noqa: D101
+class Transformer(NodeTransformer):
     def _rename(self, name: str) -> Name:
         return Name(id=f"__mkapi__.{name}")
 
-    def visit_Name(self, node: Name) -> Name:  # noqa: N802, D102
+    def visit_Name(self, node: Name) -> Name:  # noqa: N802
         return self._rename(node.id)
 
-    def unparse(self, node: ast.AST) -> str:  # noqa: D102
+    def unparse(self, node: ast.AST) -> str:
         node_ = ast.parse(ast.unparse(node))  # copy node for avoiding in-place rename.
         return ast.unparse(self.visit(node_))
 
 
-class StringTransformer(Transformer):  # noqa: D101
-    def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802, D102
+class StringTransformer(Transformer):
+    def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802
         if isinstance(node.value, str):
             return self._rename(node.value)
         return node
@@ -263,7 +260,7 @@ def is_property(
             return True
         if read_only:
             continue
-        if len(deco_names) == 2 and deco_names[1] == "setter":
+        if len(deco_names) == 2 and deco_names[1] == "setter":  # noqa: PLR2004
             return True
     return False
 

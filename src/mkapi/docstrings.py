@@ -115,7 +115,7 @@ def _split_sections(doc: str, style: Style) -> Iterator[str]:
 # In Numpy style, if a section is indented, then a section break is
 # created by resuming unindented text.
 def _subsplit(doc: str, style: Style) -> list[str]:
-    if style == "google" or len(lines := doc.splitlines()) < 3:
+    if style == "google" or len(lines := doc.splitlines()) < 3:  # noqa: PLR2004
         return [doc]
     if not lines[2].startswith(" "):  # 2 == after '----' line.
         return [doc]
@@ -165,7 +165,7 @@ def _rename_section(section_name: str) -> str:
 def split_section(section: str, style: Style) -> tuple[str, str]:
     """Return a section name and its text."""
     lines = section.splitlines()
-    if len(lines) < 2:
+    if len(lines) < 2:  # noqa: PLR2004
         return "", section
     if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
         text = textwrap.dedent("\n".join(lines[1:]))

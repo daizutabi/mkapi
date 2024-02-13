@@ -28,7 +28,7 @@ from mkapi.utils import (
 
 @cache
 def f():
-    return datetime.datetime.now()
+    return datetime.datetime.now()  # noqa: DTZ005
 
 
 c = cache({})
