@@ -81,50 +81,23 @@ build = "mkdocs build --clean --strict {args}"
 serve = "mkdocs serve --dev-addr localhost:8000 {args}"
 deploy = "mkdocs gh-deploy --force"
 
+[tool.hatch.envs.hatch-static-analysis]
+config-path = "ruff_defaults.toml"
+
 [tool.ruff]
 target-version = "py311"
-line-length = 88
-select = ["ALL"]
-ignore = [
-  "ANN002",
-  "ANN003",
-  "ANN101",
-  "ANN102",
-  "BLE001",
-  "COM812",
-  "D105",
-  "D406",
-  "D407",
-  "DTZ005",
-  "EM102",
-  "ERA001",
-  "FIX002",
-  "FIX003",
-  "G004",
-  "ISC001",
-  "N812",
-  "PGH003",
-  "PLR2004",
-  "PT001",
-  "RET504",
-  "TD",
-  "TRY003",
-  "UP040",
-]
+extend = "ruff_defaults.toml"
 exclude = ["google.py", 'numpy.py']
 
 [tool.ruff.extend-per-file-ignores]
-"tests/*.py" = ["ANN", "D", "S101", "INP001", "T201", "PLR2004", "PGH003"]
-"plugins.py" = ["ANN", "D", "ARG002"]
+"tests/*.py" = ["TD"]
+"plugins.py" = ["ARG002", "G004"]
 
 [tool.ruff.lint]
 unfixable = [
-  "RUF100", # Don't touch noqa lines
   "F401",   # Don't touch unused imports
+  "RUF100", # Don't touch noqa lines
 ]
-
-[tool.ruff.isort]
-known-first-party = ["mkapi"]
 
 [tool.ruff.pydocstyle]
 convention = "google"

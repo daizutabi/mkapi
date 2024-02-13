@@ -49,7 +49,7 @@ class Page:
         """Create markdown source."""
         if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             with self.path.open("w") as file:
-                file.write(f"{datetime.datetime.now()}")
+                file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
 
             self.markdown = create_markdown(
                 self.name,
@@ -172,7 +172,7 @@ def _replace_source(markdown: str) -> str:
             break
 
         # Move to renderer.py
-        if level >= 2:
+        if level >= 2:  # noqa: PLR2004
             # 'markdown="1"' for toc.
             attr = f'class="mkapi-dummy-heading" id="{name}" markdown="1"'
             name_ = name.replace("_", "\\_")

@@ -30,9 +30,9 @@ def get_apinav(name: str, predicate: Callable[[str], bool] | None = None) -> lis
     find = partial(find_submodule_names, predicate=predicate)
     if depth == 1:
         return [name, *find(name)]
-    if depth == 2:
+    if depth == 2:  # noqa: PLR2004
         return _get_apinav_list(name, find)
-    if depth == 3:
+    if depth == 3:  # noqa: PLR2004
         return [_get_apinav_dict(name, find)]
     return [name]
 
@@ -91,7 +91,7 @@ def create_apinav(
     except StopIteration:
         return
     while True:
-        if is_section:
+        if is_section:  # noqa: SIM108
             value = section(name, depth) if section else name
         else:
             value = page(name, depth)

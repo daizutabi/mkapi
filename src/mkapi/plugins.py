@@ -25,7 +25,12 @@ import mkapi.nav
 from mkapi import renderers
 from mkapi.nav import split_name_depth
 from mkapi.pages import Page, PageKind, convert_source
-from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
+from mkapi.utils import (
+    cache_clear,
+    get_module_path,
+    is_module_cache_dirty,
+    is_package,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -72,7 +77,12 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         cache_clear()
 
         if self.dirty:
-            _create_markdown(list(self.pages.values()))
+            pages: list[Page] = []
+            for page in self.pages.values():
+                if page.name and is_module_cache_dirty(page.name):
+                    pages.append(page)  # noqa: PERF401
+            for page in pages:
+                page.create_markdown()
 
         self.bar = None
         self.uri_width = 0
@@ -124,14 +134,11 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         uri = page.file.src_uri
         page_ = self.pages[uri]
 
-        if page_.kind is PageKind.SOURCE:
-            anchor = self.config.docs_anchor
-        else:
-            anchor = self.config.src_anchor
+        anchor = self.config.docs_anchor if page_.kind is PageKind.SOURCE else self.config.src_anchor
 
         try:
             return page_.convert_markdown(markdown, anchor)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             if self.config.debug:
                 raise
 
@@ -371,13 +378,3 @@ def _replace_toc(
             link.title = link.title.split(".")[-1]  # Remove prefix.
 
         _replace_toc(link.children, title, depth + 1)
-
-
-def _create_markdown(pages: list[Page]) -> None:
-    names = []
-    for page in pages:
-        if page.name and is_module_cache_dirty(page.name):
-            names.append(page.name)  # noqa: PERF401
-    for page in pages:
-        if page.name in names:
-            page.create_markdown()

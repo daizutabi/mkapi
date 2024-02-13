@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -12,7 +13,13 @@ from mkdocs.structure.files import Files
 from mkdocs.theme import Theme
 
 import mkapi
-from mkapi.plugins import MkAPIConfig, MkAPIPlugin, _collect_stylesheets, _get_function
+from mkapi.plugins import (
+    MkAPIConfig,
+    MkAPIPlugin,
+    _collect_stylesheets,
+    _get_function,
+)
+from mkapi.utils import get_module_path, module_cache
 
 
 @pytest.fixture(scope="module")
@@ -108,7 +115,6 @@ def config(tmpdir):
     os.chdir(dest)
     config = load_config("mkdocs.yml")
     plugin = config.plugins["mkapi"]
-    print(id(plugin))
     assert isinstance(plugin, MkAPIPlugin)
     plugin.__init__()
     yield config
@@ -166,3 +172,41 @@ def test_build(config: MkDocsConfig, dirty):
     m = page.convert_markdown("", "DEF")
     assert "class ExamplePEP526Class:## __mkapi__.examples" in m
     assert 'ExampleClass.__special__" markdown="1">' in m
+
+
+def test_update_markdown_for_dirty_module(config: MkDocsConfig):
+    module_cache.clear()
+    sys.path.insert(0, ".")
+    config.nav = [{"API": "$x:y/AAA"}]
+
+    with Path("AAA.py").open("w") as f:
+        f.write("'''abc123'''")
+    assert get_module_path("AAA") == Path("AAA.py").absolute()
+
+    plugin = config.plugins["mkapi"]
+    assert isinstance(plugin, MkAPIPlugin)
+    config.plugins.on_startup(command="build", dirty=True)
+    build(config, dirty=True)
+
+    path_docs = "x/AAA.md"
+    path_src = "y/AAA.md"
+    with (Path("docs") / path_docs).open() as f:
+        ts1 = f.read()
+    with (Path("docs") / path_src).open() as f:
+        ts2 = f.read()
+    assert "\nabc123\n" in plugin.pages[path_docs].convert_markdown("", "a")
+    assert "'''abc123'''\n" in plugin.pages[path_src].convert_markdown("", "a")
+
+    with Path("AAA.py").open("w") as f:
+        f.write("'''def456'''")
+
+    build(config, dirty=True)
+
+    with (Path("docs") / path_docs).open() as f:
+        ts3 = f.read()
+    with (Path("docs") / path_src).open() as f:
+        ts4 = f.read()
+    assert "\ndef456\n" in plugin.pages[path_docs].convert_markdown("", "a")
+    assert "'''def456'''\n" in plugin.pages[path_src].convert_markdown("", "a")
+    assert ts1 != ts3
+    assert ts2 != ts4
