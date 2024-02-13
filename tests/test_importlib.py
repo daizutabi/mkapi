@@ -1,6 +1,6 @@
 from mkapi.importlib import (
     get_object,
-    # get_source,
+    get_source,
     # inherit_base_classes,
     iter_base_classes,
     load_module,
@@ -14,17 +14,17 @@ def test_load_module_source():
     assert module
     assert module.source
     assert "class File" in module.source
-    # module = load_module("mkapi.plugins")
-    # assert module
-    # cls = get_by_name(module.classes, "MkAPIConfig")
-    # assert cls
-    # assert cls.module is module
-    # src = get_source(cls)
-    # assert src
-    # assert src.startswith("class MkAPIConfig")
-    # src = get_source(module)
-    # assert src
-    # assert "MkAPIPlugin" in src
+    module = load_module("mkapi.plugins")
+    assert module
+    cls = get_by_name(module.classes, "MkAPIConfig")
+    assert cls
+    assert cls.module is module
+    src = get_source(cls)
+    assert src
+    assert src.startswith("class MkAPIConfig")
+    src = get_source(module)
+    assert src
+    assert "MkAPIPlugin" in src
 
 
 def test_get_object():

@@ -235,13 +235,13 @@ def _get_item_attribute(attr: Attribute) -> Item:
     return Item(attr.name, attr.type, attr.doc.text)
 
 
-# def get_source(obj: Module | Class | Function) -> str | None:
-#     """Return the source code of an object."""
-#     if isinstance(obj, Module):
-#         return obj.source
+def get_source(obj: Module | Class | Function) -> str | None:
+    """Return the source code of an object."""
+    if isinstance(obj, Module):
+        return obj.source
 
-#     if (module := obj.module) and (source := module.source):
-#         start, stop = obj.node.lineno - 1, obj.node.end_lineno
-#         return "\n".join(source.splitlines()[start:stop])
+    if (module := obj.module) and (source := module.source):
+        start, stop = obj.node.lineno - 1, obj.node.end_lineno
+        return "\n".join(source.splitlines()[start:stop])
 
-#     return None
+    return None
