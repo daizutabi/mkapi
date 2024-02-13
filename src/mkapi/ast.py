@@ -175,9 +175,12 @@ def create_expr(name: str) -> ast.expr:
     return ast.Constant(value=name)
 
 
+PREFIX = "__mkapi__."
+
+
 class Transformer(NodeTransformer):
     def _rename(self, name: str) -> Name:
-        return Name(id=f"__mkapi__.{name}")
+        return Name(id=f"{PREFIX}{name}")
 
     def visit_Name(self, node: Name) -> Name:  # noqa: N802
         return self._rename(node.id)
@@ -198,13 +201,13 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
     """Yield identifiers as a tuple of (code, isidentifier)."""
     start = 0
     while start < len(source):
-        index = source.find("__mkapi__.", start)
+        index = source.find(PREFIX, start)
         if index == -1:
             yield source[start:], False
             return
         if index != 0:
             yield source[start:index], False
-        start = stop = index + 10  # 10 == len("__mkapi__.")
+        start = stop = index + len(PREFIX)
         while stop < len(source):
             c = source[stop]
             if c == "." or c.isdigit() or c.isidentifier():

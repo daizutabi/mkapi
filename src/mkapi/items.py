@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING, TypeVar
 import mkapi.ast
 import mkapi.markdown
 from mkapi.ast import is_property
-from mkapi.link import get_markdown_from_type, get_markdown_from_type_string
+from mkapi.globals import get_fullname
+from mkapi.link import get_markdown, get_markdown_from_type_string
 from mkapi.utils import get_by_name, unique_names
 
 try:
@@ -34,6 +35,14 @@ class Name:
     str: str
     markdown: str
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.str!r})"
+
+    def set_markdown(self, module: str | None = None) -> None:
+        """Set Markdown text with link."""
+        if not self.expr:
+            return
+
 
 @dataclass
 class Type:
@@ -41,7 +50,6 @@ class Type:
 
     expr: ast.expr | None = None
     markdown: str = field(default="", init=False)
-    # kind: TypeKind = TypeKind.REFERENCE
 
     def __repr__(self) -> str:
         args = ast.unparse(self.expr) if self.expr else ""
@@ -51,22 +59,23 @@ class Type:
         """Copy an instance."""
         type_ = self.__class__(self.expr)
         type_.markdown = self.markdown
-        # type_.kind = self.kind
         return type_
 
     def set_markdown(self, module: str) -> None:
         """Set Markdown text with link."""
-        if not self.expr or self.markdown:
+        if not self.expr:
             return
 
-        # is_object = self.kind is TypeKind.OBJECT
+        def replace(name: str) -> str | None:
+            return get_fullname(module, name)
 
-        if isinstance(self.expr, ast.Constant) and isinstance(self.expr.value, str):
-            self.markdown = get_markdown_from_type_string(module, self.expr.value)
+        if isinstance(self.expr, ast.Constant):
+            value = str(self.expr.value)
+            self.markdown = get_markdown_from_type_string(value, replace)
             return
 
         def get_link(name: str) -> str:
-            return get_markdown_from_type(module, name)
+            return get_markdown(name, replace)
 
         try:
             self.markdown = mkapi.ast.unparse(self.expr, get_link)
@@ -78,9 +87,9 @@ class Type:
 class Default(Type):
     """Default class."""
 
-    def set_markdown(self, module: str) -> None:  # noqa: ARG002
+    def set_markdown(self, module: str | None = None) -> None:  # noqa: ARG002
         """Set Markdown text with link."""
-        if self.expr and not self.markdown:
+        if self.expr:
             self.markdown = ast.unparse(self.expr)
 
 

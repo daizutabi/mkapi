@@ -1,45 +1,34 @@
 """Link module."""
 from __future__ import annotations
 
-from mkapi.globals import get_fullname
-from mkapi.utils import cache, iter_identifiers, iter_parent_module_names
+from collections.abc import Callable
+from typing import TypeAlias
+
+from mkapi.utils import iter_identifiers, iter_parent_module_names
 
 PREFIX = "__mkapi__."
 
 
-def get_markdown_from_name(fullname: str) -> str:
-    names = []
-    parents = iter_parent_module_names(fullname)
-    asnames = fullname.split(".")
-    for name, asname in zip(parents, asnames, strict=True):
-        asname_ = asname.replace("_", "\\_")
-        names.append(f"[{asname_}][{PREFIX}{name}]")
-    return ".".join(names)
+def get_name_link(name: str, ref: str | None) -> str:
+    name_ = name.replace("_", "\\_")
+    return f"[{name_}][{PREFIX}{ref}]" if ref else name
 
 
-def _get_markdown(module: str, name: str, asname: str) -> str:
-    fullname = get_fullname(module, name)
-    asname = asname.replace("_", "\\_")
-    return f"[{asname}][{PREFIX}{fullname}]" if fullname else asname
+Replace: TypeAlias = Callable[[str], str | None] | None
 
 
-@cache
-def get_markdown_from_type(module: str, name: str) -> str:
-    """Return markdown links from type."""
-    names = []
-    parents = iter_parent_module_names(name)
-    asnames = name.split(".")
-    for name, asname in zip(parents, asnames, strict=True):
-        names.append(_get_markdown(module, name, asname))
-    return ".".join(names)
+def get_markdown(fullname: str, replace: Replace = None) -> str:
+    """Return markdown links"""
+    names = fullname.split(".")
+    refs = iter_parent_module_names(fullname)
+    if replace:
+        refs = [replace(ref) for ref in refs]
+    it = zip(names, refs, strict=True)
+    return ".".join(get_name_link(*names) for names in it)
 
 
-def get_markdown_from_type_string(module: str, source: str) -> str:
+def get_markdown_from_type_string(source: str, replace: Replace) -> str:
     """Return markdown links from string-type."""
-    strs = []
-    for name, isidentifier in iter_identifiers(source):
-        if isidentifier:
-            strs.append(get_markdown_from_type(module, name))
-        else:
-            strs.append(name)
-    return "".join(strs)
+    it = iter_identifiers(source)
+    markdowns = (get_markdown(name, replace) if is_ else name for name, is_ in it)
+    return "".join(markdowns)
