@@ -27,7 +27,7 @@ def test_render_sourcelink():
     assert obj
     c = '<div class="mkapi-content" markdown="1">\n'
     h = '<h2 class="mkapi-heading" id="examples" markdown="1">'
-    n = '<span class="mkapi-heading-name">examples</span>'
+    n = '<span class="mkapi-heading-name">[examples][__mkapi__.examples]</span>'
     s = '<span class="mkapi-source-link">[source][__mkapi__.__source__.examples]</span>'
     x = render(obj, 2, [])
     m = f"{c}\n{h}\n{n}\n{s}\n</h2>\n"
