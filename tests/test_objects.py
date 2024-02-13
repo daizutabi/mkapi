@@ -272,12 +272,12 @@ def test_set_markdown():
     module = create_module(name, node)
     assert module
     x = module.doc.type.markdown
-    assert x == "[mkapi][__mkapi__.mkapi]..[plugins][__mkapi__.mkapi.plugins]"
+    assert x == "[mkapi][__mkapi__.mkapi].[plugins][__mkapi__.mkapi.plugins]"
     obj = get_by_name(module.classes, "MkAPIPlugin")
     assert isinstance(obj, Class)
     m = obj.doc.type.markdown
-    assert "[mkapi][__mkapi__.mkapi].." in m
-    assert "..[plugins][__mkapi__.mkapi.plugins].." in m
+    assert "[mkapi][__mkapi__.mkapi]." in m
+    assert ".[plugins][__mkapi__.mkapi.plugins].." in m
     m = obj.bases[0].type.markdown
     assert "[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]" in m
     assert "[[MkAPIConfig][__mkapi__.mkapi.plugins.MkAPIConfig]]" in m

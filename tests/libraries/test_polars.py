@@ -47,8 +47,8 @@ def DataFrame() -> Class:  # noqa: N802
 def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
     obj = DataFrame
     m = obj.doc.type.markdown
-    assert "[polars][__mkapi__.polars]..[dataframe]" in m
-    assert "[__mkapi__.polars.dataframe]..[frame]" in m
+    assert "[polars][__mkapi__.polars].[dataframe]" in m
+    assert "[__mkapi__.polars.dataframe].[frame]" in m
     assert "[__mkapi__.polars.dataframe.frame]" in m
     func = get_by_name(obj.functions, "write_excel")
     assert isinstance(func, Function)
