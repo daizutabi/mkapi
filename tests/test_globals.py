@@ -99,17 +99,17 @@ def test_module():
 
 
 def test_get_fullname():
-    x = get_fullname("mkapi.plugins", "MkDocsPage")
+    x = get_fullname("MkDocsPage", "mkapi.plugins")
     assert x == "mkdocs.structure.pages.Page"
-    x = get_fullname("mkapi.plugins", "config_options.Type")
+    x = get_fullname("config_options.Type", "mkapi.plugins")
     assert x == "mkdocs.config.config_options.Type"
-    x = get_fullname("mkapi.plugins", "config_options.XXX")
+    x = get_fullname("config_options.XXX", "mkapi.plugins")
     assert x is None
-    x = get_fullname("mkdocs.plugins", "jinja2.Template")
+    x = get_fullname("jinja2.Template", "mkdocs.plugins")
     assert x == "jinja2.environment.Template"
-    x = get_fullname("mkapi.objects", "Object")
+    x = get_fullname("Object", "mkapi.objects")
     assert x == "mkapi.objects.Object"
     x = get_fullname("mkapi.objects", "mkapi.objects")
     assert x == "mkapi.objects"
-    x = get_fullname("mkapi.objects", "mkapi.objects.Object")
+    x = get_fullname("mkapi.objects.Object", "mkapi.objects")
     assert x == "mkapi.objects.Object"

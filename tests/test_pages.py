@@ -158,7 +158,7 @@ def test_convert_markdown_nolink(x, page):
 def test_convert_source(src, page):
     cache_clear()
     m = convert_markdown(src, page, PageKind.SOURCE, "A")
-    assert '<h1 id="mkapi.objects" class="mkapi-heading" markdown="1">' in m
+    assert '<h1 class="mkapi-heading" id="mkapi.objects" markdown="1">' in m
     assert '<span class="mkapi-docs-link">[[A]](../../api/a.md#mkapi.objects' in m
     assert "``` {.python .mkapi-source}" in m
     assert "class Attribute(Member):## __mkapi__.mkapi.objects.Attribute" in m

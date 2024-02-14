@@ -15,8 +15,8 @@ from mkapi.objects import (
     create_function,
     create_module,
     iter_objects,
-    merge_items,
     objects,
+    replace_from_object,
 )
 from mkapi.utils import get_by_name, get_module_node
 
@@ -85,8 +85,8 @@ def test_create_class(get):
     assert get_by_name(cls.attributes, "readwrite_property")
     func = get_by_name(cls.functions, "__init__")
     assert isinstance(func, Function)
-    assert func.qualname == "ExampleClass.__init__"
-    assert func.fullname == "__mkapi__.ExampleClass.__init__"
+    assert func.qualname.str == "ExampleClass.__init__"
+    assert func.fullname.str == "__mkapi__.ExampleClass.__init__"
     assert repr(cls) == "Class('ExampleClass')"
 
 
@@ -111,10 +111,10 @@ def test_create_module(google):
     assert len(module.classes) == 3
     cls = get_by_name(module.classes, "ExampleClass")
     assert isinstance(cls, Class)
-    assert cls.fullname == "google.ExampleClass"
+    assert cls.fullname.str == "google.ExampleClass"
     func = get_by_name(cls.functions, "example_method")
     assert isinstance(func, Function)
-    assert func.fullname == "google.ExampleClass.example_method"
+    assert func.fullname.str == "google.ExampleClass.example_method"
     assert repr(module) == "Module('google')"
 
 
@@ -124,9 +124,9 @@ def test_fullname(google):
     assert isinstance(c, Class)
     f = get_by_name(c.functions, "example_method")
     assert isinstance(f, Function)
-    assert c.fullname == "examples.styles.google.ExampleClass"
+    assert c.fullname.str == "examples.styles.google.ExampleClass"
     name = "examples.styles.google.ExampleClass.example_method"
-    assert f.fullname == name
+    assert f.fullname.str == name
 
 
 def test_attribute_comment():
@@ -192,7 +192,7 @@ def test_merge_items():
     assert get_by_name(items, "x")
     assert not get_by_name(items, "y")
     assert get_by_name(items, "z")
-    assert [item.name for item in items] == ["x", "z"]
+    assert [item.name.str for item in items] == ["x", "z"]
     # merge_returns(func)
     assert func.returns[0].type
     assert func.returns[0].text.str == "Return True."
@@ -228,17 +228,16 @@ def test_iter_objects():
     assert func
     cls = get_by_name(func.classes, "B")
     assert cls
-    assert cls.fullname == "x.A.f.B"
+    assert cls.fullname.str == "x.A.f.B"
     objs = iter_objects(module)
-    assert next(objs).name == "x"
-    assert next(objs).name == "A"
-    assert next(objs).name == "f"
-    assert next(objs).name == "B"
-    assert next(objs).name == "c"
-    assert next(objs).name == "a"
-    assert next(objs).name == "m"
-    assert next(objs).name == "n"
-    merge_items(module)
+    assert next(objs).name.str == "x"
+    assert next(objs).name.str == "A"
+    assert next(objs).name.str == "f"
+    assert next(objs).name.str == "B"
+    assert next(objs).name.str == "c"
+    assert next(objs).name.str == "a"
+    assert next(objs).name.str == "m"
+    assert next(objs).name.str == "n"
 
 
 def test_iter_objects_predicate():
@@ -276,9 +275,9 @@ def test_set_markdown():
     assert x == "[mkapi][__mkapi__.mkapi].[plugins][__mkapi__.mkapi.plugins]"
     obj = get_by_name(module.classes, "MkAPIPlugin")
     assert isinstance(obj, Class)
-    m = obj.doc.type.markdown
+    m = obj.fullname.markdown
     assert "[mkapi][__mkapi__.mkapi]." in m
-    assert ".[plugins][__mkapi__.mkapi.plugins].." in m
+    assert ".[plugins][__mkapi__.mkapi.plugins]." in m
     m = obj.bases[0].type.markdown
     assert "[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]" in m
     assert "[[MkAPIConfig][__mkapi__.mkapi.plugins.MkAPIConfig]]" in m

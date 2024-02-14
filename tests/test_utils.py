@@ -20,6 +20,7 @@ from mkapi.utils import (
     get_module_path,
     is_module_cache_dirty,
     is_package,
+    iter_by_name,
     iter_identifiers,
     iter_submodule_names,
     module_cache,
@@ -142,6 +143,8 @@ def test_get_by_name():
     assert a
     assert a.value == 1
     assert not get_by_name(x, Name("d"))
+    assert get_by_name(x, "b")
+    assert not get_by_name(x, "e")
 
 
 def test_get_by_kind():

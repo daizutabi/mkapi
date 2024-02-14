@@ -15,7 +15,7 @@ def test_get_markdown():
 
 def test_get_markdown_from_fullname_replace():
     def replace(name: str) -> str | None:  # type: ignore
-        return get_fullname("mkapi.objects", name)
+        return get_fullname(name, "mkapi.objects")
 
     x = get_markdown("Object", replace)
     assert x == "[Object][__mkapi__.mkapi.objects.Object]"
@@ -23,13 +23,13 @@ def test_get_markdown_from_fullname_replace():
     assert r".[\_\_repr\_\_][__mkapi__.mkapi.objects.Object.__repr__]" in x
 
     def replace(name: str) -> str | None:  # type: ignore
-        return get_fullname("mkapi.plugins", name)
+        return get_fullname(name, "mkapi.plugins")
 
     x = get_markdown("MkDocsPage", replace)
     assert x == "[MkDocsPage][__mkapi__.mkdocs.structure.pages.Page]"
 
     def replace(name: str) -> str | None:
-        return get_fullname("mkdocs.plugins", name)
+        return get_fullname(name, "mkdocs.plugins")
 
     x = get_markdown("jinja2.Template", replace)
     assert "[jinja2][__mkapi__.jinja2]." in x
@@ -42,7 +42,7 @@ def test_get_markdown_from_fullname_replace():
 
 def test_get_markdown_from_type_string():
     def replace(name: str) -> str | None:
-        return get_fullname("mkapi.objects", name)
+        return get_fullname(name, "mkapi.objects")
 
     type_string = "1 Object or Class."
     x = get_markdown_from_type_string(type_string, replace)
@@ -74,7 +74,7 @@ def test_link_pattern():
 
 def test_get_markdown_from_docstring_text():
     def replace(name: str) -> str | None:  # type: ignore
-        return get_fullname("mkapi.objects", name)
+        return get_fullname(name, "mkapi.objects")
 
     x = get_markdown_from_docstring_text("Class", replace)
     assert x == "Class"
@@ -88,7 +88,7 @@ def test_get_markdown_from_docstring_text():
     assert get_markdown_from_docstring_text(m, replace) == m
 
     def replace(name: str) -> str | None:
-        return get_fullname("mkapi.plugins", name)
+        return get_fullname(name, "mkapi.plugins")
 
     x = get_markdown_from_docstring_text("a [MkAPIPlugin][] b", replace)
     assert x == "a [MkAPIPlugin][__mkapi__.mkapi.plugins.MkAPIPlugin] b"

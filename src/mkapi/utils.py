@@ -168,9 +168,14 @@ T = TypeVar("T")
 def iter_by_name(items: Iterable[T], name: str | Name, attr: str = "name") -> Iterator[T]:
     """Yield items with a name from an item list."""
     if isinstance(name, str):
-        return (item for item in items if getattr(item, attr) == name)
+        for item in items:
+            name_ = getattr(item, attr)
 
-    return (item for item in items if getattr(item, attr).str == name.str)
+            if isinstance(name_, str) and name_ == name or not isinstance(name_, str) and name_.str == name:
+                yield item
+
+    else:
+        yield from (item for item in items if getattr(item, attr).str == name.str)
 
 
 def get_by_name(items: Iterable[T], name: str | Name, attr: str = "name") -> T | None:

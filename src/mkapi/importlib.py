@@ -96,7 +96,7 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
     for node in cls.node.bases:
         name = next(mkapi.ast.iter_identifiers(node))
 
-        if fullname := get_fullname(cls.module.name.str, name):
+        if fullname := get_fullname(name, cls.module.name.str):
             base = get_object(fullname)
 
             if base and isinstance(base, Class):

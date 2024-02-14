@@ -162,6 +162,7 @@ def test_build(config: MkDocsConfig, dirty):
     page = pages["api/examples/styles/README.md"]
     assert page.markdown == "# ::: examples.styles\n"
     m = page.convert_markdown("", "ABC")
+    print(m)
     assert '[examples](../README.md#examples "examples")' in m
     assert "[[ABC]](../../../src/examples/styles.md#examples.styles" in m
     assert "[ExampleClassGoogle](google.md#examples.styles.google.ExampleClass" in m

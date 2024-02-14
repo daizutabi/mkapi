@@ -5,6 +5,7 @@ import ast
 import itertools
 from collections.abc import Callable as Callable_
 from dataclasses import dataclass, field
+from functools import partial
 from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.ast
@@ -12,6 +13,7 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
+from mkapi.globals import get_fullname, resolve_with_attribute
 from mkapi.items import (
     Assign,
     Assigns,
@@ -66,7 +68,7 @@ class Object:
             yield self.fullname
 
     def __repr__(self) -> str:
-        return f"{self.kind.title()}({self.name!r})"
+        return f"{self.kind.title()}({self.name.str!r})"
 
 
 @dataclass(repr=False)
@@ -361,17 +363,37 @@ def merge_attributes(obj: Module | Class) -> None:
 
 def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
-    for obj in iter_objects(module):
-        for elem in itertools.chain(obj, obj.doc):
-            if not elem.markdown:
-                elem.set_markdown(module.name.str)
+    _replace_from_module = partial(get_fullname, module=module.name.str)
 
-            # if isinstance(elem, Name | Type):
-            #     elem.set_markdown(module.name)
-            # elif elem.str and not elem.markdown:
-            #     text = _add_new_line(elem.str)
-            #     # TODO: use mkapi.markdown.sub
-            #     elem.markdown = get_link_from_text(obj, text)
+    for obj in iter_objects(module):
+        _replace_from_object = partial(replace_from_object, obj=obj)
+
+        for elem in itertools.chain(obj, obj.doc):
+            if isinstance(elem, Name | Type):
+                elem.set_markdown(_replace_from_module)
+
+            elif not elem.markdown:
+                elem.set_markdown(_replace_from_object)
+
+
+def replace_from_object(
+    name: str,
+    obj: Module | Class | Function | Attribute,
+) -> str | None:
+    """Return fullname from object."""
+    for child in iter_objects(obj, maxdepth=1):
+        if child.name.str == name:
+            return child.fullname.str
+    if isinstance(obj, Module):
+        return get_fullname(name, obj.name.str)
+    if obj.parent:
+        return replace_from_object(name, obj.parent)
+    if "." not in name:
+        return replace_from_object(name, obj.module)
+    parent, attr = name.rsplit(".", maxsplit=1)
+    if obj.name.str == parent:
+        return replace_from_object(attr, obj)
+    return resolve_with_attribute(name)
 
 
 Member_: TypeAlias = Module | Class | Function | Attribute

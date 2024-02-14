@@ -7,9 +7,11 @@ from pathlib import Path
 import pytest
 
 from mkapi.ast import iter_child_nodes
+from mkapi.globals import get_fullname
 from mkapi.items import (
     Assign,
     Item,
+    Name,
     Text,
     Type,
     create_admonition,
@@ -256,7 +258,7 @@ def test_iter_merged_items():
     items_ast = func.parameters
     items_doc = func.doc.sections[0].items
     item = next(iter_merged_items(items_ast, items_doc))
-    assert item.name == "x"
+    assert item.name.str == "x"
     assert item.type.expr.id == "int"  # type: ignore
     assert item.default.expr.value == 0  # type: ignore
     assert item.text.str == "parameter."
@@ -264,20 +266,20 @@ def test_iter_merged_items():
 
 def test_iter_merged_items_():
     a = [
-        Item("a", Type(), Text("item a")),
-        Item("b", Type(ast.Constant("int")), Text("item b")),
+        Item(Name("a"), Type(), Text("item a")),
+        Item(Name("b"), Type(ast.Constant("int")), Text("item b")),
     ]
     b = [
-        Item("a", Type(ast.Constant("str")), Text("item A")),
-        Item("c", Type(ast.Constant("list")), Text("item c")),
+        Item(Name("a"), Type(ast.Constant("str")), Text("item A")),
+        Item(Name("c"), Type(ast.Constant("list")), Text("item c")),
     ]
     c = list(iter_merged_items(a, b))
-    assert c[0].name == "a"
+    assert c[0].name.str == "a"
     assert c[0].type.expr.value == "str"  # type: ignore
     assert c[0].text.str == "item a"
-    assert c[1].name == "b"
+    assert c[1].name.str == "b"
     assert c[1].type.expr.value == "int"  # type: ignore
-    assert c[2].name == "c"
+    assert c[2].name.str == "c"
     assert c[2].type.expr.value == "list"  # type: ignore
 
 

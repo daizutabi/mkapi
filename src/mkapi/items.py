@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, TypeVar
 import mkapi.ast
 import mkapi.markdown
 from mkapi.ast import is_property
-from mkapi.globals import get_fullname
 from mkapi.link import get_markdown, get_markdown_from_docstring_text, get_markdown_from_type_string
 from mkapi.utils import get_by_name, unique_names
 
@@ -20,7 +19,7 @@ except ImportError:
     TypeAlias = None
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Sequence
 
 
 @dataclass
@@ -34,10 +33,10 @@ class Name:
         name = self.str or ""
         return f"{self.__class__.__name__}({name!r})"
 
-    def set_markdown(self, module: str) -> None:  # noqa: ARG002
+    def set_markdown(self, replace: Callable[[str], str | None] | None = None) -> None:
         """Set Markdown name with link."""
         if self.str:
-            self.markdown = get_markdown(self.str)
+            self.markdown = get_markdown(self.str, replace)
 
     def join(self, name: Name) -> Name:
         if self.str:
@@ -59,24 +58,21 @@ class Type:
         args = ast.unparse(self.expr) if self.expr else ""
         return f"{self.__class__.__name__}({args})"
 
-    def set_markdown(self, module: str) -> None:
+    def set_markdown(self, replace: Callable[[str], str | None] | None = None) -> None:
         """Set Markdown text with link."""
         if not (expr := self.expr):
             return
-
-        def replace(name: str) -> str | None:
-            return get_fullname(module, name)
-
-        def get_link(name: str) -> str:
-            return get_markdown(name, replace)
 
         if isinstance(expr, ast.Constant):
             value = expr.value
             if isinstance(value, str):
                 self.markdown = get_markdown_from_type_string(value, replace)
             else:
-                self.markdown = value
+                self.markdown = str(value)
             return
+
+        def get_link(name: str) -> str:
+            return get_markdown(name, replace)
 
         try:
             self.markdown = mkapi.ast.unparse(expr, get_link)
@@ -105,16 +101,13 @@ class Text:
         text = self.str or ""
         return f"{self.__class__.__name__}({text!r})"
 
-    def set_markdown(self, module: str) -> None:
+    def set_markdown(self, replace: Callable[[str], str | None] | None = None) -> None:
         if not (text := self.str):
             return
 
         for c in ["*", "+", "-"]:
             if text.startswith(f"{c} ") and f"\n{c} " in text:
                 text = f"\n{text}"
-
-        def replace(name: str) -> str | None:
-            return get_fullname(module, name)
 
         self.markdown = get_markdown_from_docstring_text(text, replace)
 

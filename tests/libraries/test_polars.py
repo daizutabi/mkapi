@@ -46,7 +46,9 @@ def DataFrame() -> Class:  # noqa: N802
 
 def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
     obj = DataFrame
-    m = obj.doc.type.markdown
+    m = obj.name.markdown
+    assert m == "[DataFrame][__mkapi__.polars.dataframe.frame.DataFrame]"
+    m = obj.fullname.markdown
     assert "[polars][__mkapi__.polars].[dataframe]" in m
     assert "[__mkapi__.polars.dataframe].[frame]" in m
     assert "[__mkapi__.polars.dataframe.frame]" in m
@@ -68,11 +70,11 @@ def test_iter_merged_parameters(DataFrame: Class):  # noqa: N803
     params = get_by_type(func.doc.sections, Parameters)
     assert params
     x = params.items
-    assert x[0].name == "function"
+    assert x[0].name.str == "function"
     assert "typing.Callable][[Concatenate][__mkapi__" in x[0].type.markdown
-    assert x[1].name == "*args"
+    assert x[1].name.str == "*args"
     assert "[P][__mkapi_" in x[1].type.markdown
-    assert x[2].name == "**kwargs"
+    assert x[2].name.str == "**kwargs"
     assert "frame.P].[kwargs][__" in x[2].type.markdown
 
 
@@ -158,13 +160,13 @@ def test_get_globals():
     assert n
 
 
-def test_get_fullnamel():
-    x = get_fullname("polars.dataframe.frame", "DataType")
+def test_get_fullname():
+    x = get_fullname("DataType", "polars.dataframe.frame")
     assert x == "polars.datatypes.classes.DataType"
-    x = get_fullname("polars.dataframe.frame", "Workbook")
+    x = get_fullname("Workbook", "polars.dataframe.frame")
     assert x == "xlsxwriter.Workbook"
-    assert get_fullname("polars", "exceptions") != "polars.exceptions"
-    assert get_fullname("polars", "api") == "polars.api"
+    assert get_fullname("exceptions", "polars") != "polars.exceptions"
+    assert get_fullname("api", "polars") == "polars.api"
 
 
 def test_iter_objects_from_all():

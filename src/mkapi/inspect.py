@@ -23,7 +23,7 @@ def iter_decorator_names(obj: Class | Function) -> Iterator[str]:
     """Yield decorator_names."""
     for deco in obj.node.decorator_list:
         deco_name = next(mkapi.ast.iter_identifiers(deco))
-        if name := get_fullname(obj.module.name.str, deco_name):
+        if name := get_fullname(deco_name, obj.module.name.str):
             yield name
         else:
             yield deco_name
@@ -33,7 +33,7 @@ def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
     """Return a decorator expr by name."""
     for deco in obj.node.decorator_list:
         deco_name = next(mkapi.ast.iter_identifiers(deco))
-        if get_fullname(obj.module.name.str, deco_name) == name:
+        if get_fullname(deco_name, obj.module.name.str) == name:
             return deco
         if deco_name == name:
             return deco

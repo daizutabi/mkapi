@@ -222,7 +222,7 @@ def get_globals(module: str) -> Globals:
 
 
 @cache
-def get_fullname(module: str, name: str) -> str | None:
+def get_fullname(name: str, module: str) -> str | None:
     """Return the fullname of an object in the module."""
     if name.startswith(module) or module.startswith(name):
         return name

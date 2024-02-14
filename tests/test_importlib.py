@@ -56,18 +56,18 @@ def test_iter_base_classes():
     assert func.qualname.str == "MkAPIPlugin.on_config"
     assert func.fullname.str == "mkapi.plugins.MkAPIPlugin.on_config"
     base = next(iter_base_classes(cls))
-    assert base.name == "BasePlugin"
-    assert base.fullname == "mkdocs.plugins.BasePlugin"
+    assert base.name.str == "BasePlugin"
+    assert base.fullname.str == "mkdocs.plugins.BasePlugin"
     func = get_by_name(base.functions, "on_config")
     assert func
-    assert func.qualname == "BasePlugin.on_config"
-    assert func.fullname == "mkdocs.plugins.BasePlugin.on_config"
+    assert func.qualname.str == "BasePlugin.on_config"
+    assert func.fullname.str == "mkdocs.plugins.BasePlugin.on_config"
     cls = get_object("mkapi.plugins.MkAPIConfig")
     assert isinstance(cls, Class)
     base = next(iter_base_classes(cls))
-    assert base.name == "Config"
-    assert base.qualname == "Config"
-    assert base.fullname == "mkdocs.config.base.Config"
+    assert base.name.str == "Config"
+    assert base.qualname.str == "Config"
+    assert base.fullname.str == "mkdocs.config.base.Config"
 
 
 def test_inherit_base_classes():
@@ -92,11 +92,11 @@ def test_iter_dataclass_parameters():
     assert isinstance(cls, Class)
     p = cls.parameters
     assert len(p) == 5
-    assert p[0].name == "name"
-    assert p[1].name == "type"
-    assert p[2].name == "text"
-    assert p[3].name == "items"
-    assert p[4].name == "kind"
+    assert p[0].name.str == "name"
+    assert p[1].name.str == "type"
+    assert p[2].name.str == "text"
+    assert p[3].name.str == "items"
+    assert p[4].name.str == "kind"
 
 
 def test_inherit_base_classes_order():

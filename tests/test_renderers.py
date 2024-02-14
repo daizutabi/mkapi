@@ -38,9 +38,9 @@ def test_render_module():
     obj = get_object("examples.styles")
     assert obj
     m = render(obj, 2, [])
-    s = '<p class="mkapi-object" markdown="1">\n  <'
+    s = '<p class="mkapi-object" markdown="1">\n<'
     assert s in m
-    assert '>\n  <span class="mkapi-object-kind">package</span>\n  <' in m
+    assert '>\n<span class="mkapi-object-kind">package</span>\n<' in m
     assert "styles</span></span></p>" in m
 
 
@@ -48,10 +48,10 @@ def test_render_method():
     obj = get_object("examples.styles.google.ExampleClass.example_method")
     assert obj
     m = render(obj, 2, [])
-    s = '<p class="mkapi-object" markdown="1">\n  <'
+    s = '<p class="mkapi-object" markdown="1">\n<'
     assert s in m
-    assert '>\n  <span class="mkapi-object-kind">method</span>\n  <' in m
-    assert '>\n  <span class="mkapi-object-name"><span' in m
+    assert '>\n<span class="mkapi-object-kind">method</span>\n<' in m
+    assert '>\n<span class="mkapi-object-name"><span' in m
     assert '><span class="mkapi-paren">)</span></span></p>' in m
 
 
@@ -59,9 +59,9 @@ def test_render_attribute():
     obj = get_object("examples.styles.google.module_level_variable1")
     assert obj
     m = render(obj, 2, [])
-    s = '<p class="mkapi-object" markdown="1">\n  <'
+    s = '<p class="mkapi-object" markdown="1">\n<'
     assert s in m
-    assert '>\n  <span class="mkapi-object-kind">attribute</span>\n  <' in m
+    assert '>\n<span class="mkapi-object-kind">attribute</span>\n<' in m
     assert '</span></span>\n    <span class="mkapi-colon">:</span>\n' in m
     assert ':</span>\n    <span class="mkapi-object-type">int</span></p>' in m
 
