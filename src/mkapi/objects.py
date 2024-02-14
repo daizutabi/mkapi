@@ -223,9 +223,10 @@ class Module(Object):
     """Module class."""
 
     node: ast.Module
-    attributes: list[Attribute] = field(default_factory=list, init=False)
+    modules: list[Module] = field(default_factory=list, init=False)
     classes: list[Class] = field(default_factory=list, init=False)
     functions: list[Function] = field(default_factory=list, init=False)
+    attributes: list[Attribute] = field(default_factory=list, init=False)
     source: str | None = None
 
     def __post_init__(self) -> None:

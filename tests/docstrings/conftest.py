@@ -1,6 +1,4 @@
 import ast
-import sys
-from pathlib import Path
 
 import pytest
 
@@ -8,21 +6,14 @@ from mkapi.ast import iter_child_nodes
 from mkapi.utils import get_module_node
 
 
-def load_module(name):
-    path = str(Path(__file__).parent.parent)
-    if path not in sys.path:
-        sys.path.insert(0, str(path))
-    return get_module_node(name)
-
-
 @pytest.fixture(scope="module")
 def google():
-    return load_module("examples.styles.google")
+    return get_module_node("examples.styles.google")
 
 
 @pytest.fixture(scope="module")
 def numpy():
-    return load_module("examples.styles.numpy")
+    return get_module_node("examples.styles.numpy")
 
 
 @pytest.fixture(scope="module")

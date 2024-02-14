@@ -181,6 +181,10 @@ def test_del_by_name():
     assert get_by_name(x, Name("c"))
     del_by_name(x, Name("c"))
     assert not get_by_name(x, Name("c"))
+    x = [A(Name("a"), 1), A(Name("a"), 2), A(Name("b"), 3), A(Name("c"), 4)]
+    assert get_by_name(x, "c")
+    del_by_name(x, "c")
+    assert not get_by_name(x, "c")
 
 
 def test_unique_names():

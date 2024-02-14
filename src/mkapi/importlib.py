@@ -32,7 +32,11 @@ def load_module(name: str) -> Module | None:
         return None
 
     module = create_module(name, *node_source)
-    _postprocess(module)
+
+    for cls in module.classes:
+        _postprocess_class(cls)
+
+    _postprocess_module(module)
 
     return module
 
@@ -50,18 +54,21 @@ def get_object(fullname: str, skip: str | None = None) -> Module | Class | Funct
     return None
 
 
-def _postprocess(obj: Module | Class) -> None:
-    if isinstance(obj, Class):
-        _postprocess_class(obj)
+# def _postprocess(obj: Module | Class) -> None:
+#     if isinstance(obj, Class):
+#         _postprocess_class(obj)
 
-    for cls in obj.classes:
-        _postprocess(cls)
+#     for cls in obj.classes:
+#         _postprocess(cls)
 
-    if isinstance(obj, Module):
-        _postprocess_module(obj)
+#     if isinstance(obj, Module):
+#         _postprocess_module(obj)
 
 
 def _postprocess_class(cls: Class) -> None:
+    for child in cls.classes:
+        _postprocess_class(child)
+
     inherit_base_classes(cls)
 
     if init := get_by_name(cls.functions, "__init__"):
@@ -109,49 +116,22 @@ def inherit_base_classes(cls: Class) -> None:
 
 def _postprocess_module(module: Module) -> None:
     for name, fullname in get_all(module.name.str).items():
-        objects[f"{module.name.str}.{name}"] = get_object(fullname, module.name.str)
+        obj = get_object(fullname, module.name.str)
+
+        asname = f"{module.name.str}.{name}"
+        objects[asname] = obj
+
+        # TODO: asname
+        if isinstance(obj, Module):
+            module.modules.append(obj)
+        elif isinstance(obj, Class):
+            module.classes.append(obj)
+        elif isinstance(obj, Function):
+            module.functions.append(obj)
+        elif isinstance(obj, Attribute):
+            module.attributes.append(obj)
 
     add_sections(module)
-
-
-ASNAME_PATTERN = re.compile(r"^\[.+?\]\[(__mkapi__\..+?)\]$")
-
-
-def add_sections_for_package(module: Module) -> None:
-    """Add __all__ members for a package."""
-    modules = []
-    classes = []
-    functions = []
-    attributes = []
-
-    for name, fullname in get_all(module.name.str).items():
-        if obj := get_object(fullname):
-            item = _get_item(obj)
-            asname = f"[{name}][\\1]"
-            item.type.markdown = ASNAME_PATTERN.sub(asname, item.type.markdown)
-
-            if isinstance(obj, Module):
-                modules.append(item)
-            elif isinstance(obj, Class):
-                classes.append(item)
-            elif isinstance(obj, Function):
-                functions.append(item)
-            elif isinstance(obj, Attribute):
-                attributes.append(item)
-
-    it = [
-        (modules, "Modules"),
-        (classes, "Classes"),
-        (functions, "Functions"),
-        (attributes, "Attributes"),
-    ]
-
-    for items, name in it:
-        if get_by_name(module.doc.sections, name):
-            continue
-        if items:
-            section = Section(name, Type(), Text(), items)
-            module.doc.sections.append(section)
 
 
 def add_sections(module: Module) -> None:

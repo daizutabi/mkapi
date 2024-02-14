@@ -128,3 +128,18 @@ def test_get_object_nest():
     cache_clear()
     assert get_object("mkapi.items.Name.set_markdown")
     assert get_object("mkapi.items.Name")
+
+
+def test_get_object_inherit():
+    cache_clear()
+    module = load_module("examples.styles.google")
+    assert module
+    cls = get_by_name(module.classes, "ExampleClass")
+    assert isinstance(cls, Class)
+    assert not get_by_name(cls.functions, "__init__")
+    cache_clear()
+    module = load_module("examples.styles")
+    assert module
+    cls = get_by_name(module.classes, "ExampleClass")
+    assert isinstance(cls, Class)
+    assert not get_by_name(cls.functions, "__init__")

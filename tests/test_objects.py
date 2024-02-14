@@ -1,7 +1,5 @@
 import ast
 import inspect
-import sys
-from pathlib import Path
 
 import pytest
 
@@ -16,16 +14,12 @@ from mkapi.objects import (
     create_module,
     iter_objects,
     objects,
-    replace_from_object,
 )
 from mkapi.utils import get_by_name, get_module_node
 
 
 @pytest.fixture(scope="module")
 def google():
-    path = str(Path(__file__).parent)
-    if path not in sys.path:
-        sys.path.insert(0, str(path))
     return get_module_node("examples.styles.google")
 
 

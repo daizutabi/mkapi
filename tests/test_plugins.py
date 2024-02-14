@@ -211,3 +211,5 @@ def test_update_markdown_for_dirty_module(config: MkDocsConfig):
     assert "'''def456'''\n" in plugin.pages[path_src].convert_markdown("", "a")
     assert ts1 != ts3
     assert ts2 != ts4
+
+    sys.path.pop(0)

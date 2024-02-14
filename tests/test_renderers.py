@@ -1,6 +1,3 @@
-import sys
-from pathlib import Path
-
 from mkapi.importlib import get_object
 from mkapi.objects import Class, Module
 from mkapi.renderers import (
@@ -10,10 +7,6 @@ from mkapi.renderers import (
     templates,
 )
 from mkapi.utils import cache_clear, get_by_name
-
-path = str(Path(__file__).parent)
-if path not in sys.path:
-    sys.path.insert(0, str(path))
 
 
 def test_load_templates():

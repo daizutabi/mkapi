@@ -5,10 +5,9 @@ import os
 from pathlib import Path
 from typing import Any
 
-from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
+from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
-from mkapi.importlib import add_sections_for_package
 from mkapi.inspect import get_signature
 from mkapi.link import get_markdown
 from mkapi.objects import Attribute, Class, Function, Module
@@ -21,7 +20,7 @@ def load_templates(path: Path | None = None) -> None:
     if not path:
         path = Path(mkapi.__file__).parent / "templates"
     loader = FileSystemLoader(path)
-    env = Environment(loader=loader, autoescape=select_autoescape(["jinja2"]))
+    env = Environment(loader=loader, autoescape=True)
     for name in os.listdir(path):
         templates[Path(name).stem] = env.get_template(name)
 
@@ -35,20 +34,16 @@ def render(
 ) -> str:
     """Return a rendered Markdown."""
     heading = f"h{level}" if level else "p"
-    fullname = get_markdown(obj.fullname.str)
-    id_ = obj.fullname.str.replace("_", "\\_")
+    # fullname = get_markdown(obj.fullname.str)
     names = [x.replace("_", "\\_") for x in obj.qualname.str.split(".")]
     if isinstance(obj, Module):
         qualnames = [[x, "name"] for x in names]
     else:
         qualnames = [[x, "prefix"] for x in names]
         qualnames[-1][1] = "name"
-    if isinstance(obj, Module) and obj.kind == "package":
-        add_sections_for_package(obj)
     context = {
         "heading": heading,
-        "id": id_,
-        "fullname": fullname,
+        # "fullname": fullname,
         "qualnames": qualnames,
         "obj": obj,
         "doc": obj.doc,

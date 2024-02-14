@@ -110,9 +110,6 @@ def test_get_attributes():
 
 
 def load_module(name):
-    path = str(Path(__file__).parent)
-    if path not in sys.path:
-        sys.path.insert(0, str(path))
     path = get_module_path(name)
     assert path
     with path.open("r", encoding="utf-8") as f:

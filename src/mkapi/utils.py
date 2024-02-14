@@ -165,17 +165,18 @@ def iter_parent_module_names(fullname: str, *, reverse: bool = False) -> Iterato
 T = TypeVar("T")
 
 
+def _is_equal(item, name: str | Name, attr: str = "name") -> bool:
+    name_ = getattr(item, attr)
+    if isinstance(name_, str):
+        return name_ == name if isinstance(name, str) else name_ == name.str
+    return name_.str == name if isinstance(name, str) else name_.str == name.str
+
+
 def iter_by_name(items: Iterable[T], name: str | Name, attr: str = "name") -> Iterator[T]:
     """Yield items with a name from an item list."""
-    if isinstance(name, str):
-        for item in items:
-            name_ = getattr(item, attr)
-
-            if isinstance(name_, str) and name_ == name or not isinstance(name_, str) and name_.str == name:
-                yield item
-
-    else:
-        yield from (item for item in items if getattr(item, attr).str == name.str)
+    for item in items:
+        if _is_equal(item, name, attr):
+            yield item
 
 
 def get_by_name(items: Iterable[T], name: str | Name, attr: str = "name") -> T | None:
@@ -205,14 +206,8 @@ def del_by_name(items: list[T], name: str | Name, attr: str = "name") -> None:
 
     The first argument `items` is changed in-place.
     """
-
-    def is_equal(item) -> bool:
-        if isinstance(name, str):
-            return getattr(item, attr) == name
-        return getattr(item, attr).str == name.str
-
     for k, item in enumerate(items):
-        if is_equal(item):
+        if _is_equal(item, name, attr):
             del items[k]
             return
 
