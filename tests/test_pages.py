@@ -6,8 +6,8 @@ import pytest
 import mkapi.renderers
 from mkapi.pages import (
     PageKind,
+    convert_html,
     convert_markdown,
-    convert_source,
     create_markdown,
     object_paths,
     source_paths,
@@ -155,18 +155,18 @@ def test_convert_markdown_nolink(x, page):
     assert convert_markdown(x, page, PageKind.OBJECT, "A") == x
 
 
-def test_convert_source(src, page):
+def test_convert_html(src, page):
     cache_clear()
     m = convert_markdown(src, page, PageKind.SOURCE, "A")
-    assert '<h1 class="mkapi-heading" id="mkapi.objects" markdown="1">' in m
+    assert '<h1 class="mkapi-header" id="mkapi.objects" markdown="1">' in m
     assert '<span class="mkapi-docs-link">[[A]](../../api/a.md#mkapi.objects' in m
     assert "``` {.python .mkapi-source}" in m
     assert "class Attribute(Member):## __mkapi__.mkapi.objects.Attribute" in m
 
     es = ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]
     h = markdown.markdown(m, extensions=es)
-    assert '<h2 class="mkapi-dummy-heading" id="mkapi.objects.Object">' in h
+    assert '<h2 class="mkapi-heading" id="mkapi.objects.Object">' in h
 
-    h = convert_source(h, page, "AAA")
+    h = convert_html(h, page, "AAA")
     assert "mkapi-dummy-heading" not in h
     assert '<a href="../../../api/a/#mkapi.objects.is_empty">[AAA]</a></span>' in h

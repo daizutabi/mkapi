@@ -49,7 +49,7 @@ class Page:
         """Create markdown source."""
         if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             with self.path.open("w") as file:
-                file.write(f"{datetime.datetime.now(tz=datetime.UTC)}")
+                file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
 
             self.markdown = create_markdown(
                 self.name,
@@ -182,7 +182,7 @@ def _replace_source(markdown: str) -> str:
         # Move to renderer.py
         if level >= 2:  # noqa: PLR2004
             # 'markdown="1"' for toc.
-            attr = f'class="mkapi-dummy-heading" id="{name}" markdown="1"'
+            attr = f'class="mkapi-heading" id="{name}" markdown="1"'
             name_ = name.replace("_", "\\_")
             heading = f"<h{level} {attr}>{name_}</h{level}>"
             headings.append(heading)
@@ -255,7 +255,7 @@ def _resolve_fullname(fullname: str) -> tuple[str, bool]:
 
 
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
-HEADING_PATTERN = re.compile(r"<h\d.+?mkapi-dummy-heading.+?</h\d>\n?")
+HEADING_PATTERN = re.compile(r"<h\d.+?mkapi-heading.+?</h\d>\n?")
 
 
 def convert_html(html: str, path: Path, anchor: str) -> str:

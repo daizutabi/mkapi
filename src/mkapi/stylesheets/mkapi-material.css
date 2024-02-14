@@ -1,6 +1,6 @@
 [data-md-color-scheme="default"],
 [data-md-color-scheme="slate"] {
-  --mkapi-heading-name-color: var(--md-default-fg-color--lighter);
+  --mkapi-header-name-color: var(--md-default-fg-color--lighter);
   --mkapi-object-border-color: var(--md-default-fg-color--light);
   --mkapi-object-kind-color: var(--md-default-fg-color--light);
   --mkapi-object-name-color: var(--md-code-hl-name-color);
