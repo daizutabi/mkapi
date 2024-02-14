@@ -1,7 +1,6 @@
 """importlib module."""
 from __future__ import annotations
 
-import re
 from typing import TYPE_CHECKING
 
 import mkapi.ast
@@ -52,17 +51,6 @@ def get_object(fullname: str, skip: str | None = None) -> Module | Class | Funct
 
     objects[fullname] = None
     return None
-
-
-# def _postprocess(obj: Module | Class) -> None:
-#     if isinstance(obj, Class):
-#         _postprocess_class(obj)
-
-#     for cls in obj.classes:
-#         _postprocess(cls)
-
-#     if isinstance(obj, Module):
-#         _postprocess_module(obj)
 
 
 def _postprocess_class(cls: Class) -> None:
@@ -188,6 +176,7 @@ def add_section_attributes(obj: Module | Class) -> None:
 
     if section := get_by_name(sections, name):
         index = sections.index(section)
+        section.items = items
         obj.doc.sections[index] = section
     else:
         section = Section(Name(name), Type(), Text(), items)

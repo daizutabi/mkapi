@@ -284,6 +284,9 @@ class Section(Item):
     items: list[Item]
     kind: str | None = None
 
+    def __post_init__(self) -> None:
+        self.name.markdown = self.name.str
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(items={len(self.items)})"
 

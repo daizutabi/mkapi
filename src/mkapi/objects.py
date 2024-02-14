@@ -45,14 +45,21 @@ objects: dict[str, Module | Class | Function | Attribute | None] = cache({})
 
 
 @dataclass
-class Object:
-    """Object class."""
-
+class Names:
     name: Name
-    node: ast.AST | None
-    doc: Docstring
     qualname: Name = field(init=False)
     fullname: Name = field(init=False)
+
+
+@dataclass
+class Object(Names):
+    """Object class."""
+
+    # name: Name
+    node: ast.AST | None
+    doc: Docstring
+    # qualname: Name = field(init=False)
+    # fullname: Name = field(init=False)
     kind: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -344,21 +351,28 @@ def merge_attributes(obj: Module | Class) -> None:
     if not (section := get_by_type(obj.doc.sections, Assigns)):
         return
     section.name = Name("Attributes")
+
     module = obj if isinstance(obj, Module) else obj.module
     parent = obj if isinstance(obj, Class) else None
+
     attributes = []
     for assign in section.items:
         if not (attr := get_by_name(obj.attributes, assign.name)):
             attr = create_attribute(assign, module, parent)
+
         else:
             if not attr.doc.text.str:
                 attr.doc.text.str = assign.text.str
+
             if not attr.type.expr:
                 attr.type.expr = assign.type.expr
+
         attributes.append(attr)
+
     for attr in obj.attributes:
         if not get_by_name(attributes, attr.name):
             attributes.append(attr)
+
     obj.attributes = attributes
 
 

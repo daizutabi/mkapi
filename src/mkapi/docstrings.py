@@ -231,6 +231,9 @@ class Docstring(Item):
 
     sections: list[Section]
 
+    def __post_init__(self) -> None:
+        self.name.markdown = self.name.str
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
 

@@ -122,6 +122,8 @@ def test_get_object_using_all():
     cache_clear()
     assert get_object("schemdraw.Drawing")
     assert get_object("schemdraw.svgconfig")
+    assert get_object("examples.styles.ExampleClassGoogle")
+    assert get_object("examples.styles.ExampleClassNumPy")
 
 
 def test_get_object_nest():
@@ -131,6 +133,21 @@ def test_get_object_nest():
 
 
 def test_get_object_inherit():
+    cache_clear()
+    module = load_module("examples.styles.google")
+    assert module
+    cls = get_by_name(module.classes, "ExampleClass")
+    assert isinstance(cls, Class)
+    assert not get_by_name(cls.functions, "__init__")
+    cache_clear()
+    module = load_module("examples.styles")
+    assert module
+    cls = get_by_name(module.classes, "ExampleClass")
+    assert isinstance(cls, Class)
+    assert not get_by_name(cls.functions, "__init__")
+
+
+def test_section_attribute():
     cache_clear()
     module = load_module("examples.styles.google")
     assert module

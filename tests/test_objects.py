@@ -110,6 +110,7 @@ def test_create_module(google):
     assert isinstance(func, Function)
     assert func.fullname.str == "google.ExampleClass.example_method"
     assert repr(module) == "Module('google')"
+    assert len(module.attributes) == 2
 
 
 def test_fullname(google):

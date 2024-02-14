@@ -80,4 +80,4 @@ def test_source():
     f = get_object_filter_for_source(cls, module)
     assert f
     m = render(module, 1, [f], is_source=True)
-    assert "\nclass Object:## __mkapi__.mkapi.objects.Object\n" in m
+    assert "\nclass Object(Names):## __mkapi__.mkapi.objects.Object\n" in m
