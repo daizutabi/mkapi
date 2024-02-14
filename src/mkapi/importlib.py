@@ -190,10 +190,13 @@ def _get_item(obj: Module | Class | Function | Attribute) -> Item:
     return Item(obj.name, type_, text)
 
 
-def get_source(obj: Module | Class | Function) -> str | None:
+def get_source(obj: Module | Class | Function | Attribute) -> str | None:
     """Return the source code of an object."""
     if isinstance(obj, Module):
         return obj.source
+
+    if not obj.node:
+        return None
 
     if (module := obj.module) and (source := module.source):
         start, stop = obj.node.lineno - 1, obj.node.end_lineno

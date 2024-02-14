@@ -20,7 +20,6 @@ from mkapi.utils import (
     get_module_path,
     is_module_cache_dirty,
     is_package,
-    iter_by_name,
     iter_identifiers,
     iter_submodule_names,
     module_cache,
@@ -30,7 +29,7 @@ from mkapi.utils import (
 
 @cache
 def f():
-    return datetime.datetime.now()  # noqa: DTZ005
+    return datetime.datetime.now(datetime.UTC)
 
 
 c = cache({})

@@ -24,7 +24,7 @@ import mkapi
 import mkapi.nav
 from mkapi import renderers
 from mkapi.nav import split_name_depth
-from mkapi.pages import Page, PageKind, convert_source
+from mkapi.pages import Page, PageKind
 from mkapi.utils import (
     cache_clear,
     get_module_path,
@@ -160,8 +160,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         if page_.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             _replace_toc(page.toc, self.toc_title)
 
-        if page_.kind is PageKind.SOURCE:
-            html = convert_source(html, page_.path, self.config.docs_anchor)
+        html = page_.convert_html(html, self.config.docs_anchor)
 
         self._update_bar(page.file.src_uri)
         return html

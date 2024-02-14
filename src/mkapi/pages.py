@@ -49,7 +49,7 @@ class Page:
         """Create markdown source."""
         if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             with self.path.open("w") as file:
-                file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
+                file.write(f"{datetime.datetime.now(tz=datetime.UTC)}")
 
             self.markdown = create_markdown(
                 self.name,
@@ -69,6 +69,14 @@ class Page:
             self.kind,
             anchor,
         )
+
+    def convert_html(self, html: str, anchor: str) -> str:
+        """Return converted html."""
+        # if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
+        if self.kind == PageKind.SOURCE:
+            return convert_html(html, self.path, anchor)
+
+        return html
 
 
 object_paths: dict[str, Path] = {}
@@ -250,7 +258,7 @@ SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
 HEADING_PATTERN = re.compile(r"<h\d.+?mkapi-dummy-heading.+?</h\d>\n?")
 
 
-def convert_source(html: str, path: Path, anchor: str) -> str:
+def convert_html(html: str, path: Path, anchor: str) -> str:
     """Convert HTML for source pages."""
 
     def replace(match: re.Match) -> str:
