@@ -1,6 +1,5 @@
 import ast
 import inspect
-import re
 import sys
 from pathlib import Path
 
@@ -9,7 +8,6 @@ import pytest
 from mkapi.ast import iter_child_nodes
 from mkapi.importlib import load_module
 from mkapi.objects import (
-    LINK_PATTERN,
     Class,
     Function,
     Module,
@@ -51,9 +49,9 @@ def test_create_function(get):
     assert isinstance(node, ast.FunctionDef)
     func = create_function(node)
     assert isinstance(func, Function)
-    assert func.name == "module_level_function"
-    assert func.qualname == "module_level_function"
-    assert func.fullname == "__mkapi__.module_level_function"
+    assert func.name.str == "module_level_function"
+    assert func.qualname.str == "module_level_function"
+    assert func.fullname.str == "__mkapi__.module_level_function"
     assert "__mkapi__.module_level_function" in objects
     assert objects["__mkapi__.module_level_function"] is func
     assert len(func.parameters) == 4
@@ -72,7 +70,7 @@ def test_create_class(get):
     assert isinstance(node, ast.ClassDef)
     cls = create_class(node)
     assert isinstance(cls, Class)
-    assert cls.name == "ExampleClass"
+    assert cls.name.str == "ExampleClass"
     assert len(cls.parameters) == 0
     assert len(cls.raises) == 0
     assert len(cls.functions) == 6
@@ -108,7 +106,7 @@ def test_create_class_nested():
 
 def test_create_module(google):
     module = create_module("google", google)
-    assert module.name == "google"
+    assert module.name.str == "google"
     assert len(module.functions) == 4
     assert len(module.classes) == 3
     cls = get_by_name(module.classes, "ExampleClass")
@@ -241,28 +239,6 @@ def test_iter_objects():
     assert next(objs).name == "m"
     assert next(objs).name == "n"
     merge_items(module)
-
-
-def test_link_pattern():
-    def f(m: re.Match) -> str:
-        name = m.group(1)
-        if name == "abc":
-            return f"[{name}][_{name}]"
-        return m.group()
-
-    assert re.search(LINK_PATTERN, "X[abc]Y")
-    assert not re.search(LINK_PATTERN, "X[ab c]Y")
-    assert re.search(LINK_PATTERN, "X[abc][]Y")
-    assert not re.search(LINK_PATTERN, "X[abc](xyz)Y")
-    assert not re.search(LINK_PATTERN, "X[abc][xyz]Y")
-    assert re.sub(LINK_PATTERN, f, "X[abc]Y") == "X[abc][_abc]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc[abc]]Y") == "X[abc[abc][_abc]]Y"
-    assert re.sub(LINK_PATTERN, f, "X[ab]Y") == "X[ab]Y"
-    assert re.sub(LINK_PATTERN, f, "X[ab c]Y") == "X[ab c]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc] c]Y") == "X[abc][_abc] c]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc][]Y") == "X[abc][_abc]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc](xyz)Y") == "X[abc](xyz)Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc][xyz]Y") == "X[abc][xyz]Y"
 
 
 def test_set_markdown():

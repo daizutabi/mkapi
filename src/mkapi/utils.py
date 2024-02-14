@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, TypeVar, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
-    # from typing import Any
+
+    from mkapi.items import Name
 
 cached_objects = []
 
@@ -164,14 +165,15 @@ def iter_parent_module_names(fullname: str, *, reverse: bool = False) -> Iterato
 T = TypeVar("T")
 
 
-def iter_by_name(items: Iterable[T], name: str, attr: str = "name") -> Iterator[T]:
+def iter_by_name(items: Iterable[T], name: str | Name, attr: str = "name") -> Iterator[T]:
     """Yield items with a name from an item list."""
-    for item in items:
-        if getattr(item, attr, None) == name:
-            yield item
+    if isinstance(name, str):
+        return (item for item in items if getattr(item, attr) == name)
+
+    return (item for item in items if getattr(item, attr).str == name.str)
 
 
-def get_by_name(items: Iterable[T], name: str, attr: str = "name") -> T | None:
+def get_by_name(items: Iterable[T], name: str | Name, attr: str = "name") -> T | None:
     """Get the first item with a name from an item list."""
     for item in iter_by_name(items, name, attr):
         return item
@@ -193,13 +195,19 @@ def get_by_type(items: Iterable, type_: type[T]) -> T | None:
     return None
 
 
-def del_by_name(items: list[T], name: str, attr: str = "name") -> None:
+def del_by_name(items: list[T], name: str | Name, attr: str = "name") -> None:
     """Delete the first item with a name from an item list.
 
     The first argument `items` is changed in-place.
     """
+
+    def is_equal(item) -> bool:
+        if isinstance(name, str):
+            return getattr(item, attr) == name
+        return getattr(item, attr).str == name.str
+
     for k, item in enumerate(items):
-        if getattr(item, attr, None) == name:
+        if is_equal(item):
             del items[k]
             return
 

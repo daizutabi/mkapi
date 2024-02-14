@@ -1,5 +1,7 @@
+import re
+
 from mkapi.globals import get_fullname
-from mkapi.link import get_markdown, get_markdown_from_type_string
+from mkapi.link import LINK_PATTERN, get_markdown, get_markdown_from_type_string
 
 
 def test_get_markdown():
@@ -35,14 +37,36 @@ def test_get_markdown_from_fullname_replace():
 
     assert get_markdown("str", replace) == "str"
     assert get_markdown("None", replace) == "None"
-    assert get_markdown("_abc", replace) == "_abc"
+    assert get_markdown("_abc", replace) == "\\_abc"
 
 
 def test_get_markdown_from_type_string():
     def replace(name: str) -> str | None:
         return get_fullname("mkapi.objects", name)
 
-    source = "1 Object or Class."
-    x = get_markdown_from_type_string(source, replace)
+    type_string = "1 Object or Class."
+    x = get_markdown_from_type_string(type_string, replace)
     assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
     assert "or [Class][__mkapi__.mkapi.objects.Class]." in x
+
+
+def test_link_pattern():
+    def f(m: re.Match) -> str:
+        name = m.group(1)
+        if name == "abc":
+            return f"[{name}][_{name}]"
+        return m.group()
+
+    assert re.search(LINK_PATTERN, "X[abc]Y")
+    assert not re.search(LINK_PATTERN, "X[ab c]Y")
+    assert re.search(LINK_PATTERN, "X[abc][]Y")
+    assert not re.search(LINK_PATTERN, "X[abc](xyz)Y")
+    assert not re.search(LINK_PATTERN, "X[abc][xyz]Y")
+    assert re.sub(LINK_PATTERN, f, "X[abc]Y") == "X[abc][_abc]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc[abc]]Y") == "X[abc[abc][_abc]]Y"
+    assert re.sub(LINK_PATTERN, f, "X[ab]Y") == "X[ab]Y"
+    assert re.sub(LINK_PATTERN, f, "X[ab c]Y") == "X[ab c]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc] c]Y") == "X[abc][_abc] c]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc][]Y") == "X[abc][_abc]Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc](xyz)Y") == "X[abc](xyz)Y"
+    assert re.sub(LINK_PATTERN, f, "X[abc][xyz]Y") == "X[abc][xyz]Y"

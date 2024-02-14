@@ -8,7 +8,7 @@ import mkapi.ast
 import mkapi.docstrings
 from mkapi.globals import get_all, get_fullname
 from mkapi.inspect import is_dataclass, iter_dataclass_parameters
-from mkapi.items import Item, Section, Text, Type
+from mkapi.items import Item, Name, Section, Text, Type
 from mkapi.objects import (
     Attribute,
     Class,
@@ -96,7 +96,7 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
     for node in cls.node.bases:
         name = next(mkapi.ast.iter_identifiers(node))
 
-        if fullname := get_fullname(cls.module.name, name):
+        if fullname := get_fullname(cls.module.name.str, name):
             base = get_object(fullname)
 
             if base and isinstance(base, Class):
@@ -109,19 +109,19 @@ def inherit_base_classes(cls: Class) -> None:
     bases = list(iter_base_classes(cls))
 
     for name in ["attributes", "functions", "classes"]:
-        members = {member.name: member for member in getattr(cls, name)}
+        members = {member.name.str: member for member in getattr(cls, name)}
 
         for base in bases:
             for member in getattr(base, name):
-                members.setdefault(member.name, member)
+                members.setdefault(member.name.str, member)
 
         setattr(cls, name, list(members.values()))
 
 
 def _postprocess_module(module: Module) -> None:
-    for name, fullname in get_all(module.name).items():
-        if module.name != fullname.rsplit(".", maxsplit=1)[0]:
-            objects[f"{module.name}.{name}"] = get_object(fullname)
+    for name, fullname in get_all(module.name.str).items():
+        if module.name.str != fullname.rsplit(".", maxsplit=1)[0]:
+            objects[f"{module.name.str}.{name}"] = get_object(fullname)
 
     add_sections(module)
 
@@ -150,7 +150,7 @@ def add_section(
         return
 
     if items := [_get_item(child) for child in children if not is_empty(child)]:
-        section = Section(name, Type(), Text(), items)
+        section = Section(Name(name), Type(), Text(), items)
         obj.doc.sections.append(section)
 
 
@@ -174,7 +174,7 @@ def add_section_attributes(obj: Module | Class) -> None:
     obj.attributes = attributes
 
     if items:
-        section = Section(name, Type(), Text(), items)
+        section = Section(Name(name), Type(), Text(), items)
         if index == -1:
             obj.doc.sections.append(section)
         else:
@@ -191,7 +191,7 @@ def add_sections_for_package(module: Module) -> None:
     functions = []
     attributes = []
 
-    for name, fullname in get_all(module.name).items():
+    for name, fullname in get_all(module.name.str).items():
         if obj := get_object(fullname):
             item = _get_item(obj)
             asname = f"[{name}][\\1]"
@@ -223,8 +223,8 @@ def add_sections_for_package(module: Module) -> None:
 
 def _get_item(obj: Module | Class | Function | Attribute) -> Item:
     name = obj.name
-    text = obj.doc.text.copy()
-    text.markdown = text.markdown.split("\n\n")[0]  # summary line
+    text = Text(obj.doc.text.str)
+    text.markdown = obj.doc.text.markdown.split("\n\n")[0]  # summary line
     type_ = obj.type if isinstance(obj, Attribute) else Type()
     return Item(name, type_, text)
     # type_ = obj.doc.type.copy()

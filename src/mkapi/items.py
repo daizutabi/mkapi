@@ -4,7 +4,6 @@ from __future__ import annotations
 import ast
 import textwrap
 from dataclasses import dataclass, field
-from enum import Enum
 from inspect import _ParameterKind
 from typing import TYPE_CHECKING, TypeVar
 
@@ -22,26 +21,31 @@ except ImportError:
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
-    from typing import Self
-
-
-TypeKind = Enum("TypeKind", ["OBJECT", "REFERENCE"])
 
 
 @dataclass
 class Name:
     """Name class."""
 
-    str: str
-    markdown: str
+    str: str  # noqa: A003, RUF100
+    markdown: str = field(default="", compare=False)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.str!r})"
+        name = self.str or ""
+        return f"{self.__class__.__name__}({name!r})"
 
-    def set_markdown(self, module: str | None = None) -> None:
-        """Set Markdown text with link."""
-        if not self.expr:
-            return
+    def set_markdown(self, module: str | Name | None = None) -> None:  # noqa: ARG002
+        """Set Markdown name with link."""
+        if self.str:
+            self.markdown = get_markdown(self.str)
+
+    def join(self, name: Name) -> Name:
+        if self.str:
+            return Name(f"{self.str}.{name.str}")
+        return Name(name.str)
+
+    def replace(self, old: str, new: str) -> Name:
+        return Name(self.str.replace(old, new))
 
 
 @dataclass
@@ -49,33 +53,33 @@ class Type:
     """Type class."""
 
     expr: ast.expr | None = None
-    markdown: str = field(default="", init=False)
+    markdown: str = ""
 
     def __repr__(self) -> str:
         args = ast.unparse(self.expr) if self.expr else ""
         return f"{self.__class__.__name__}({args})"
 
-    def copy(self) -> Self:
-        """Copy an instance."""
-        type_ = self.__class__(self.expr)
-        type_.markdown = self.markdown
-        return type_
-
-    def set_markdown(self, module: str) -> None:
+    def set_markdown(self, module: str | Name) -> None:
         """Set Markdown text with link."""
+        if isinstance(module, Name):
+            module = module.str or ""
+
         if not self.expr:
             return
 
         def replace(name: str) -> str | None:
             return get_fullname(module, name)
 
-        if isinstance(self.expr, ast.Constant):
-            value = str(self.expr.value)
-            self.markdown = get_markdown_from_type_string(value, replace)
-            return
-
         def get_link(name: str) -> str:
             return get_markdown(name, replace)
+
+        if isinstance(self.expr, ast.Constant):
+            value = self.expr.value
+            if isinstance(value, str):
+                self.markdown = get_markdown_from_type_string(value, replace)
+            else:
+                self.markdown = value
+            return
 
         try:
             self.markdown = mkapi.ast.unparse(self.expr, get_link)
@@ -98,31 +102,27 @@ class Text:
     """Text class."""
 
     str: str | None = None  # noqa: A003, RUF100
-    markdown: str = field(default="", init=False)
+    markdown: str = ""
 
     def __repr__(self) -> str:
         text = self.str or ""
         return f"{self.__class__.__name__}({text!r})"
 
-    def copy(self) -> Self:
-        """Copy an instance."""
-        text = self.__class__(self.str)
-        text.markdown = self.markdown
-        return text
-
 
 @dataclass
 class Item:
-    """Element class."""
+    """Item class."""
 
-    name: str
+    name: Name
     type: Type  # noqa: A003, RUF100
     text: Text
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r})"
+        return f"{self.__class__.__name__}({self.name.str!r})"
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
+        if self.name.str:
+            yield self.name
         if self.type.expr:
             yield self.type
         if self.text.str:
@@ -136,7 +136,7 @@ class Parameter(Item):
     default: Default
     kind: _ParameterKind = _ParameterKind.POSITIONAL_OR_KEYWORD
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
         yield from super().__iter__()
         if self.default.expr:
             yield self.default
@@ -147,8 +147,9 @@ def iter_parameters(
 ) -> Iterator[Parameter]:
     """Yield [Parameter] instances."""
     for arg, kind, default in mkapi.ast.iter_parameters(node):
+        name = Name(arg.arg)
         type_ = Type(arg.annotation)
-        yield Parameter(arg.arg, type_, Text(), Default(default), kind)
+        yield Parameter(name, type_, Text(), Default(default), kind)
 
 
 @dataclass(repr=False)
@@ -162,7 +163,7 @@ def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]
         if type_ := raise_.exc:
             if isinstance(type_, ast.Call):
                 type_ = type_.func
-            name = ast.unparse(type_)
+            name = Name(ast.unparse(type_))
             yield Raise(name, Type(type_), Text())
 
 
@@ -174,7 +175,7 @@ class Return(Item):
 def iter_returns(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Return]:
     """Yield one [Return] instance if it isn't None."""
     if node.returns:
-        yield Return("", Type(node.returns), Text())
+        yield Return(Name(""), Type(node.returns), Text())
 
 
 @dataclass(repr=False)
@@ -186,7 +187,7 @@ def iter_bases(node: ast.ClassDef) -> Iterator[Base]:
     """Yield [Base] instances."""
     for base in node.bases:
         name = ast.unparse(base.value) if isinstance(base, ast.Subscript) else ast.unparse(base)
-        yield Base(name, Type(base), Text())
+        yield Base(Name(name), Type(base), Text())
 
 
 @dataclass(repr=False)
@@ -196,7 +197,7 @@ class Assign(Item):
     default: Default
     node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
         yield from super().__iter__()
         if self.default.expr:
             yield self.default
@@ -219,14 +220,14 @@ def create_assign(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Assign:
     type_ = mkapi.ast.get_assign_type(node)
     type_, text = _assign_type_text(type_, node.__doc__)
     default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
-    return Assign(name, type_, text, Default(default), node)
+    return Assign(Name(name), type_, text, Default(default), node)
 
 
 def create_assign_from_property(node: ast.FunctionDef) -> Assign:
     """Return an [Assign] instance from a property."""
     node.__doc__ = ast.get_docstring(node)
     type_, text = _assign_type_text(node.returns, node.__doc__)
-    return Assign(node.name, type_, text, Default(), node)
+    return Assign(Name(node.name), type_, text, Default(), node)
 
 
 def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
@@ -283,7 +284,7 @@ class Section(Item):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(items={len(self.items)})"
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
         yield from super().__iter__()
         for item in self.items:
             yield from item
@@ -296,10 +297,10 @@ class Parameters(Section):
     items: list[Parameter]
 
 
-def create_parameters(items: Iterable[tuple[str, Type, Text]]) -> Parameters:
+def create_parameters(items: Iterable[tuple[Name, Type, Text]]) -> Parameters:
     """Return a parameters section."""
     parameters = [Parameter(*args, Default()) for args in items]
-    return Parameters("Parameters", Type(), Text(), parameters)
+    return Parameters(Name("Parameters"), Type(), Text(), parameters)
 
 
 @dataclass(repr=False)
@@ -309,10 +310,10 @@ class Assigns(Section):
     items: list[Assign]
 
 
-def create_assigns(items: Iterable[tuple[str, Type, Text]]) -> Assigns:
+def create_assigns(items: Iterable[tuple[Name, Type, Text]]) -> Assigns:
     """Return an Assigns section."""
     assigns = [Assign(*args, Default(), None) for args in items]
-    return Assigns("Assigns", Type(), Text(), assigns)
+    return Assigns(Name("Assigns"), Type(), Text(), assigns)
 
 
 @dataclass(repr=False)
@@ -322,12 +323,12 @@ class Raises(Section):
     items: list[Raise]
 
 
-def create_raises(items: Iterable[tuple[str, Type, Text]]) -> Raises:
+def create_raises(items: Iterable[tuple[Name, Type, Text]]) -> Raises:
     """Return a raises section."""
     raises = [Raise(*args) for args in items]
     for raise_ in raises:
         raise_.type.expr = ast.Constant(raise_.name)
-    return Raises("Raises", Type(), Text(), raises)
+    return Raises(Name("Raises"), Type(), Text(), raises)
 
 
 @dataclass(repr=False)
@@ -345,8 +346,8 @@ def create_returns(name: str, text: str, style: str) -> Returns:
         name_, type_ = (x.strip() for x in type_.split(":", maxsplit=1))
     type_ = Type(ast.Constant(type_) if type_ else None)
     text_ = Text(text_ or None)
-    returns = [Return(name_, type_, text_)]
-    return Returns(name, Type(), Text(), returns)
+    returns = [Return(Name(name_), type_, text_)]
+    return Returns(Name(name), Type(), Text(), returns)
 
 
 @dataclass(repr=False)
@@ -386,4 +387,4 @@ def create_admonition(name: str, text: str) -> Admonition:
     else:
         raise NotImplementedError
     text = mkapi.markdown.get_admonition(kind, name, text)
-    return cls(name, Type(), Text(text), [], kind)
+    return cls(Name(name), Type(), Text(text), [], kind)

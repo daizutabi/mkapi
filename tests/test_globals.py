@@ -92,9 +92,9 @@ def test_module():
     assert module
     members = module.classes + module.functions + module.attributes
     for member in members:
-        x = get_by_name(g.names, member.name)
+        x = get_by_name(g.names, member.name.str)
         assert isinstance(x, Global)
-        assert x.fullname == member.fullname
+        assert x.fullname == member.fullname.str
     assert len(members) == len([x for x in g.names if isinstance(x, Global)])
 
 

@@ -40,9 +40,9 @@ def render(
     # fullname = ".".join(prefix[:-1] + [self])
     # fullname = obj.doc.type.markdown.replace("..", ".")
     # fullname = obj.fullname.replace("_", "\\_")  # Add link
-    fullname = get_markdown(obj.fullname)
-    id_ = obj.fullname.replace("_", "\\_")
-    names = [x.replace("_", "\\_") for x in obj.qualname.split(".")]
+    fullname = get_markdown(obj.fullname.str)
+    id_ = obj.fullname.str.replace("_", "\\_")
+    names = [x.replace("_", "\\_") for x in obj.qualname.str.split(".")]
     if isinstance(obj, Module):
         qualnames = [[x, "name"] for x in names]
     else:
@@ -79,9 +79,9 @@ def get_object_filter_for_source(
 ) -> str | None:
     """Return a filter for an object used in source code pages."""
     if isinstance(obj, Module):
-        return f"__mkapi__:{obj.fullname}=0"
-    if obj.module.name == module.name and obj.node:
-        return f"__mkapi__:{obj.fullname}={obj.node.lineno-1}"
+        return f"__mkapi__:{obj.fullname.str}=0"
+    if obj.module.name.str == module.name.str and obj.node:
+        return f"__mkapi__:{obj.fullname.str}={obj.node.lineno-1}"
     return None
 
 

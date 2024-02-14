@@ -141,29 +141,29 @@ def get(google):
 def test_create_parameters_google(get):
     func = get("function_with_pep484_type_annotations")
     x = list(iter_parameters(func))
-    assert x[0].name == "param1"
+    assert x[0].name.str == "param1"
     assert isinstance(x[0].type.expr, ast.Name)
     assert x[0].type.expr.id == "int"
-    assert x[1].name == "param2"
+    assert x[1].name.str == "param2"
     assert isinstance(x[1].type.expr, ast.Name)
     assert x[1].type.expr.id == "str"
 
     func = get("module_level_function")
     x = list(iter_parameters(func))
-    assert x[0].name == "param1"
+    assert x[0].name.str == "param1"
     assert x[0].type.expr is None
     assert x[0].default.expr is None
     assert x[0].kind is Parameter.POSITIONAL_OR_KEYWORD
-    assert x[1].name == "param2"
+    assert x[1].name.str == "param2"
     assert x[1].type.expr is None
     assert isinstance(x[1].default.expr, ast.Constant)
     assert x[1].default.expr.value is None
     assert x[1].kind is Parameter.POSITIONAL_OR_KEYWORD
-    assert x[2].name == "args"
+    assert x[2].name.str == "args"
     assert x[2].type.expr is None
     assert x[2].default.expr is None
     assert x[2].kind is Parameter.VAR_POSITIONAL
-    assert x[3].name == "kwargs"
+    assert x[3].name.str == "kwargs"
     assert x[3].type.expr is None
     assert x[3].default.expr is None
     assert x[3].kind is Parameter.VAR_KEYWORD
@@ -172,7 +172,7 @@ def test_create_parameters_google(get):
 def test_create_raises(get):
     func = get("module_level_function")
     x = next(iter_raises(func))
-    assert x.name == "ValueError"
+    assert x.name.str == "ValueError"
     assert isinstance(x.type.expr, ast.Name)
     assert x.type.expr.id == "ValueError"
 
@@ -180,19 +180,19 @@ def test_create_raises(get):
 def test_create_returns(get):
     func = get("function_with_pep484_type_annotations")
     x = next(iter_returns(func))
-    assert x.name == ""
+    assert x.name.str == ""
     assert isinstance(x.type.expr, ast.Name)
     assert x.type.expr.id == "bool"
 
 
 def test_create_assings(google, get):
     x = list(iter_assigns(google))
-    assert x[0].name == "module_level_variable1"
+    assert x[0].name.str == "module_level_variable1"
     assert x[0].type.expr is None
     assert x[0].text.str is None
     assert isinstance(x[0].default.expr, ast.Constant)
     assert x[0].default.expr.value == 12345
-    assert x[1].name == "module_level_variable2"
+    assert x[1].name.str == "module_level_variable2"
     assert isinstance(x[1].type.expr, ast.Name)
     assert x[1].type.expr.id == "int"
     assert x[1].text.str
@@ -202,10 +202,10 @@ def test_create_assings(google, get):
     assert x[1].default.expr.value == 98765
     cls = get("ExamplePEP526Class")
     x = list(iter_assigns(cls))
-    assert x[0].name == "attr1"
+    assert x[0].name.str == "attr1"
     assert isinstance(x[0].type.expr, ast.Name)
     assert x[0].type.expr.id == "str"
-    assert x[1].name == "attr2"
+    assert x[1].name.str == "attr2"
     assert isinstance(x[1].type.expr, ast.Name)
     assert x[1].type.expr.id == "int"
 
@@ -213,12 +213,12 @@ def test_create_assings(google, get):
 def test_create_assigns_from_property(get):
     cls = get("ExampleClass")
     x = list(iter_assigns(cls))
-    assert x[0].name == "readonly_property"
+    assert x[0].name.str == "readonly_property"
     assert isinstance(x[0].type.expr, ast.Name)
     assert x[0].type.expr.id == "str"
     assert x[0].text.str
     assert x[0].text.str.startswith("Properties should")
-    assert x[1].name == "readwrite_property"
+    assert x[1].name.str == "readwrite_property"
     assert isinstance(x[1].type.expr, ast.Subscript)
     assert x[1].text.str
     assert x[1].text.str.startswith("Properties with")
@@ -230,11 +230,11 @@ def test_create_bases():
     assert isinstance(cls, ast.ClassDef)
     bases = iter_bases(cls)
     base = next(bases)
-    assert base.name == "B"
+    assert base.name.str == "B"
     assert isinstance(base.type.expr, ast.Name)
     assert base.type.expr.id == "B"
     base = next(bases)
-    assert base.name == "C"
+    assert base.name.str == "C"
     assert isinstance(base.type.expr, ast.Subscript)
     assert isinstance(base.type.expr.slice, ast.Name)
 

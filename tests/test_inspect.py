@@ -99,6 +99,8 @@ def test_iter_signature_kind():
 
 def test_get_signature():
     obj = get("def f(x_:str='s',/,*y_,z_=1,**kwargs)->int: pass")
+    for x in obj.parameters:
+        print(x.name.str, x.name.markdown)
     s = list(get_signature(obj))
     assert s[0].kind == "paren"
     assert s[0].markdown == "("

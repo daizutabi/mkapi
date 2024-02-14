@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal
 import mkapi.markdown
 from mkapi.items import (
     Item,
+    Name,
     Section,
     Text,
     Type,
@@ -84,13 +85,13 @@ def split_item(item: str, style: Style) -> tuple[str, str, str]:
 TYPE_STRING_PATTERN = re.compile(r"\[__mkapi__.(\S+?)\]\[\]")
 
 
-def iter_items(section: str, style: Style) -> Iterator[tuple[str, Type, Text]]:
+def iter_items(section: str, style: Style) -> Iterator[tuple[Name, Type, Text]]:
     """Yield tuples of (name, type, text)."""
     for item in _iter_items(section):
         name, type_, text = split_item(item, style)
         type_ = TYPE_STRING_PATTERN.sub(r"\1", type_)
         type_ = ast.Constant(type_) if type_ else None
-        yield name, Type(type_), Text(text)
+        yield Name(name), Type(type_), Text(text)
 
 
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
@@ -212,7 +213,7 @@ def _create_section_items(name: str, text: str, style: Style) -> Section:
 def _create_section(name: str, text: str) -> Section:
     if name in ["Note", "Notes", "Warning", "Warnings", "See Also"]:
         return create_admonition(name, text)
-    return Section(name, Type(), Text(text), [])
+    return Section(Name(name), Type(), Text(text), [])
 
 
 def iter_sections(doc: str, style: Style) -> Iterator[Section]:
@@ -233,7 +234,7 @@ class Docstring(Item):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
         yield from super().__iter__()
         for section in self.sections:
@@ -243,19 +244,19 @@ class Docstring(Item):
 def parse(text: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
     if not text:
-        return Docstring("Docstring", Type(), Text(), [])
+        return Docstring(Name("Docstring"), Type(), Text(), [])
     style = style or get_style(text)
     text = mkapi.markdown.convert(text)
     text = mkapi.markdown.replace(text, ["<", ">"], ["&lt;", "&gt;"])
     sections = list(iter_sections(text, style))
-    if sections and not sections[0].name:
+    if sections and not sections[0].name.str:
         type_ = sections[0].type
         text_ = sections[0].text
         del sections[0]
     else:
         type_ = Type()
         text_ = Text()
-    return Docstring("Docstring", type_, text_, sections)
+    return Docstring(Name("Docstring"), type_, text_, sections)
 
 
 def merge_sections(a: Section, b: Section) -> Section:
@@ -299,7 +300,7 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
     type_ = a.type  # if a.type.expr else b.type
     text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
     text.markdown = f"{a.text.markdown}\n\n{b.text.markdown}".strip()
-    return Docstring("Docstring", type_, text, sections)
+    return Docstring(Name("Docstring"), type_, text, sections)
 
 
 def is_empty(doc: Docstring) -> bool:

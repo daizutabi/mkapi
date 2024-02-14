@@ -23,7 +23,7 @@ def iter_decorator_names(obj: Class | Function) -> Iterator[str]:
     """Yield decorator_names."""
     for deco in obj.node.decorator_list:
         deco_name = next(mkapi.ast.iter_identifiers(deco))
-        if name := get_fullname(obj.module.name, deco_name):
+        if name := get_fullname(obj.module.name.str, deco_name):
             yield name
         else:
             yield deco_name
@@ -33,7 +33,7 @@ def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
     """Return a decorator expr by name."""
     for deco in obj.node.decorator_list:
         deco_name = next(mkapi.ast.iter_identifiers(deco))
-        if get_fullname(obj.module.name, deco_name) == name:
+        if get_fullname(obj.module.name.str, deco_name) == name:
             return deco
         if deco_name == name:
             return deco
@@ -68,14 +68,14 @@ def is_staticmethod(func: Function) -> bool:
 
 def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
     """Yield [Parameter] instances a for dataclass signature."""
-    if not cls.module or not (module_name := cls.module.name):
+    if not cls.module or not (module_name := cls.module.name.str):
         raise NotImplementedError
     try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:
         return
     members = dict(inspect.getmembers(module, inspect.isclass))
-    obj = members[cls.name]
+    obj = members[cls.name.str]
 
     for param in inspect.signature(obj).parameters.values():
         if attr := get_by_name(cls.attributes, param.name):
@@ -136,7 +136,7 @@ def iter_signature(obj: Class | Function) -> Iterator[tuple[str, str]]:
             continue
         kind = PARAMETER_KIND_ATTRIBUTE[param.kind]
         yield from _iter_sep(kind, prev_kind)
-        yield param.name.replace("_", "\\_"), "arg"
+        yield param.name.str.replace("_", "\\_"), "arg"
         yield from _iter_param(param)
         if k < n - 1:
             yield ", ", "comma"

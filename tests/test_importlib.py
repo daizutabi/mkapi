@@ -49,12 +49,12 @@ def test_get_object():
 def test_iter_base_classes():
     cls = get_object("mkapi.plugins.MkAPIPlugin")
     assert isinstance(cls, Class)
-    assert cls.qualname == "MkAPIPlugin"
-    assert cls.fullname == "mkapi.plugins.MkAPIPlugin"
+    assert cls.qualname.str == "MkAPIPlugin"
+    assert cls.fullname.str == "mkapi.plugins.MkAPIPlugin"
     func = get_by_name(cls.functions, "on_config")
     assert func
-    assert func.qualname == "MkAPIPlugin.on_config"
-    assert func.fullname == "mkapi.plugins.MkAPIPlugin.on_config"
+    assert func.qualname.str == "MkAPIPlugin.on_config"
+    assert func.fullname.str == "mkapi.plugins.MkAPIPlugin.on_config"
     base = next(iter_base_classes(cls))
     assert base.name == "BasePlugin"
     assert base.fullname == "mkdocs.plugins.BasePlugin"

@@ -18,12 +18,12 @@ from mkapi.items import (
     Assign,
     Assigns,
     Default,
+    Name,
     Parameters,
     Raises,
     Returns,
     Text,
     Type,
-    TypeKind,
     _assign_type_text,
     create_raises,
     iter_assigns,
@@ -48,11 +48,11 @@ objects: dict[str, Module | Class | Function | Attribute | None] = cache({})
 class Object:
     """Object class."""
 
-    name: str
+    name: Name
     node: ast.AST | None
     doc: Docstring
-    qualname: str = field(init=False)
-    fullname: str = field(init=False)
+    qualname: Name = field(init=False)
+    fullname: Name = field(init=False)
     kind: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -62,7 +62,7 @@ class Object:
         #     self.doc.type.expr = expr.value
         #     self.doc.type.kind = TypeKind.OBJECT
         self.kind = get_kind(self)
-        objects[self.fullname] = self  # type:ignore
+        objects[self.fullname.str] = self  # type:ignore
 
     def __repr__(self) -> str:
         return f"{self.kind.title()}({self.name!r})"
@@ -77,10 +77,10 @@ class Member(Object):
 
     def __post_init__(self) -> None:
         if self.parent:
-            self.qualname = f"{self.parent.qualname}.{self.name}"
+            self.qualname = self.parent.qualname.join(self.name)
         else:
-            self.qualname = self.name
-        self.fullname = f"{self.module.name}.{self.qualname}"
+            self.qualname = Name(self.name.str)
+        self.fullname = self.module.name.join(self.qualname)
         super().__post_init__()
 
 
@@ -93,11 +93,15 @@ class Attribute(Member):
     default: Default
     text: Text = field(default_factory=Text, init=False)
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
+        if self.name.str:
+            yield self.name
         if self.type.expr:
             yield self.type
         if self.default.expr:
             yield self.default
+        if self.text.str:
+            yield self.text
 
 
 def create_attribute(
@@ -115,7 +119,7 @@ def create_attribute(
                 _, lines[0] = lines[0].split(":", maxsplit=1)
                 doc.text.str = "\n".join(lines).strip()
     else:
-        doc = Docstring("", Type(), assign.text, [])
+        doc = Docstring(Name("Docstring"), Type(), assign.text, [])
     name, type_, default = assign.name, assign.type, assign.default
     return Attribute(name, node, doc, module, parent, type_, default)
 
@@ -138,7 +142,7 @@ class Function(Callable):
     returns: list[Return]
     raises: list[Raise]
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
         for item in itertools.chain(self.parameters, self.returns):
             yield from item
@@ -151,12 +155,13 @@ def create_function(
 ) -> Function:
     """Return a [Function] instance."""
     module = module or _create_empty_module()
+    name = Name(node.name)
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
     params = list(iter_parameters(node))
     returns = list(iter_returns(node))
     raises = list(iter_raises(node))
-    func = Function(node.name, node, doc, module, parent, params, returns, raises)
+    func = Function(name, node, doc, module, parent, params, returns, raises)
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             cls = create_class(child, module, func)
@@ -177,7 +182,7 @@ class Class(Callable):
     parameters: list[Parameter] = field(default_factory=list, init=False)
     raises: list[Raise] = field(default_factory=list, init=False)
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
         for item in itertools.chain(self.bases, self.attributes, self.parameters):
             yield from item
@@ -189,7 +194,7 @@ def create_class(
     parent: Class | Function | None = None,
 ) -> Class:
     """Return a [Class] instance."""
-    name = node.name
+    name = Name(node.name)
     module = module or _create_empty_module()
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
@@ -223,22 +228,22 @@ class Module(Object):
         self.fullname = self.qualname = self.name
         super().__post_init__()
 
-    def __iter__(self) -> Iterator[Type | Text]:
+    def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
         for item in self.attributes:
             yield from item
 
 
 def _create_empty_module() -> Module:
-    doc = Docstring("Docstring", Type(), Text(), [])
-    return Module("__mkapi__", ast.Module(), doc, None)
+    doc = Docstring(Name("Docstring"), Type(), Text(), [])
+    return Module(Name("__mkapi__"), ast.Module(), doc, None)
 
 
 def create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
     """Return a [Module] instance from an [ast.Module] node."""
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
-    module = Module(name, node, doc, source)
+    module = Module(Name(name), node, doc, source)
     for child in iter_assigns(node):
         attr = create_attribute(child, module)
         module.attributes.append(attr)
@@ -312,7 +317,7 @@ def merge_raises(obj: Class | Function) -> None:
         obj.doc.sections.append(section)
     section.items = list(iter_merged_items(obj.raises, section.items))
     for item in section.items:
-        item.name = ""
+        item.name = Name("")
 
 
 def merge_returns(obj: Function) -> None:
@@ -332,7 +337,7 @@ def merge_attributes(obj: Module | Class) -> None:
     """Merge attributes."""
     if not (section := get_by_type(obj.doc.sections, Assigns)):
         return
-    section.name = "Attributes"
+    section.name = Name("Attributes")
     module = obj if isinstance(obj, Module) else obj.module
     parent = obj if isinstance(obj, Class) else None
     attributes = []
@@ -355,10 +360,11 @@ def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
     for obj in iter_objects(module):
         for elem in itertools.chain(obj, obj.doc):
-            if isinstance(elem, Type):
+            if isinstance(elem, Name | Type):
                 elem.set_markdown(module.name)
             elif elem.str and not elem.markdown:
                 text = _add_new_line(elem.str)
+                # TODO: use mkapi.markdown.sub
                 elem.markdown = get_link_from_text(obj, text)
 
 
@@ -448,16 +454,16 @@ def get_fullname_from_object(
 ) -> str | None:
     """Return fullname from object."""
     for child in iter_objects(obj, maxdepth=1):
-        if child.name == name:
-            return child.fullname
+        if child.name.str == name:
+            return child.fullname.str
     if isinstance(obj, Module):
-        return get_fullname(obj.name, name)
+        return get_fullname(obj.name.str, name)
     if obj.parent and isinstance(obj.parent, Class | Function):
         return get_fullname_from_object(obj.parent, name)
     if "." not in name:
         return get_fullname_from_object(obj.module, name)
     parent, attr = name.rsplit(".", maxsplit=1)
-    if parent == obj.name:
+    if parent == obj.name.str:
         return get_fullname_from_object(obj, attr)
     return resolve_with_attribute(name)
 
@@ -473,7 +479,7 @@ def _get_kind_function(func: Function) -> str:
 def get_kind(obj: Object) -> str:
     """Return object kind."""
     if isinstance(obj, Module):
-        return "package" if is_package(obj.name) else "module"
+        return "package" if is_package(obj.name.str) else "module"
     if isinstance(obj, Class):
         return "dataclass" if mkapi.inspect.is_dataclass(obj) else "class"
     if isinstance(obj, Function):
@@ -489,6 +495,6 @@ def is_empty(obj: Object) -> bool:
         return False
     if isinstance(obj, Attribute):
         return True
-    if isinstance(obj, Function) and obj.name.startswith("_"):
+    if isinstance(obj, Function) and obj.name.str.startswith("_"):
         return True
     return False

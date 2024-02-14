@@ -95,14 +95,14 @@ def create_markdown(
 
     markdowns = []
     for obj, depth in iter_objects_with_depth(module, 2, predicate_):
-        paths[obj.fullname] = path
+        paths[obj.fullname.str] = path
 
         if kind is PageKind.SOURCE:
             object_filter = get_object_filter_for_source(obj, module)
             object_filter = f"|{object_filter}" if object_filter else ""
 
         heading = "#" * (depth + 1)
-        markdown = f"{heading} ::: {obj.fullname}{filters_str}{object_filter}\n"
+        markdown = f"{heading} ::: {obj.fullname.str}{filters_str}{object_filter}\n"
         markdowns.append(markdown)
 
     return "\n".join(markdowns)
@@ -117,7 +117,7 @@ def _predicate(
         return False
     if is_empty(obj):
         return False
-    if predicate and not predicate(obj.fullname):
+    if predicate and not predicate(obj.fullname.str):
         return False
     return True
 
