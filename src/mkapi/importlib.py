@@ -19,7 +19,7 @@ from mkapi.objects import (
     iter_objects,
     objects,
 )
-from mkapi.utils import cache, del_by_name, get_by_name, get_module_node_source
+from mkapi.utils import cache, del_by_name, get_by_name, get_module_node_source, iter_parent_module_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -32,33 +32,22 @@ def load_module(name: str) -> Module | None:
         return None
 
     module = create_module(name, *node_source)
-
     _postprocess(module)
-    # _postprocess_module(module)
-    # add_sections(module)
 
     return module
 
 
-def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
+def get_object(fullname: str, skip: str | None = None) -> Module | Class | Function | Attribute | None:
     """Return an [Object] instance by the fullname."""
     if fullname in objects:
         return objects[fullname]
 
-    if module := load_module(fullname):
-        return module
-
-    if "." in fullname:
-        name, _ = fullname.rsplit(".", maxsplit=1)
-        if load_module(name) and fullname in objects:
+    for name in iter_parent_module_names(fullname):
+        if name != skip and load_module(name) and fullname in objects:
             return objects[fullname]
 
     objects[fullname] = None
     return None
-
-    # for module_name in iter_parent_module_names(fullname):
-    #     if load_module(module_name) and fullname in objects:
-    #         return objects[fullname]
 
 
 def _postprocess(obj: Module | Class) -> None:
@@ -120,65 +109,9 @@ def inherit_base_classes(cls: Class) -> None:
 
 def _postprocess_module(module: Module) -> None:
     for name, fullname in get_all(module.name.str).items():
-        if module.name.str != fullname.rsplit(".", maxsplit=1)[0]:
-            objects[f"{module.name.str}.{name}"] = get_object(fullname)
+        objects[f"{module.name.str}.{name}"] = get_object(fullname, module.name.str)
 
     add_sections(module)
-
-
-def add_sections(module: Module) -> None:
-    """Add sections."""
-    for obj in iter_objects(module):
-        if isinstance(obj, Module | Class):
-            add_section(obj, obj.classes, "Classes")
-
-        if isinstance(obj, Module | Class | Function):
-            name = "Methods" if isinstance(obj, Class) else "Functions"
-            add_section(obj, obj.functions, name)
-
-        if isinstance(obj, Module | Class):
-            add_section_attributes(obj)
-
-
-def add_section(
-    obj: Module | Class | Function,
-    children: Iterable[Class | Function | Attribute],
-    name: str,
-) -> None:
-    """Add Section."""
-    if get_by_name(obj.doc.sections, name):
-        return
-
-    if items := [_get_item(child) for child in children if not is_empty(child)]:
-        section = Section(Name(name), Type(), Text(), items)
-        obj.doc.sections.append(section)
-
-
-def add_section_attributes(obj: Module | Class) -> None:
-    """Add an Attributes section."""
-    name = "Attributes"
-    sections = obj.doc.sections
-    index = sections.index(section) if (section := get_by_name(sections, name)) else -1
-
-    items = []
-    attributes = []
-    for attr in obj.attributes:
-        if not is_empty(attr):
-            if attr.doc.sections:
-                items.append(_get_item(attr))
-            else:
-                items.append(_get_item_attribute(attr))
-                continue
-        attributes.append(attr)
-
-    obj.attributes = attributes
-
-    if items:
-        section = Section(Name(name), Type(), Text(), items)
-        if index == -1:
-            obj.doc.sections.append(section)
-        else:
-            obj.doc.sections[index] = section
 
 
 ASNAME_PATTERN = re.compile(r"^\[.+?\]\[(__mkapi__\..+?)\]$")
@@ -221,21 +154,71 @@ def add_sections_for_package(module: Module) -> None:
             module.doc.sections.append(section)
 
 
+def add_sections(module: Module) -> None:
+    """Add sections."""
+    for obj in iter_objects(module):
+        if isinstance(obj, Module | Class):
+            add_section(obj, obj.classes, "Classes")
+
+        if isinstance(obj, Module | Class | Function):
+            name = "Methods" if isinstance(obj, Class) else "Functions"
+            add_section(obj, obj.functions, name)
+
+        if isinstance(obj, Module | Class):
+            add_section_attributes(obj)
+
+
+def add_section(
+    obj: Module | Class | Function,
+    children: Iterable[Class | Function | Attribute],
+    name: str,
+) -> None:
+    """Add Section."""
+    if get_by_name(obj.doc.sections, name):
+        return
+
+    if items := [_get_item(child) for child in children if not is_empty(child)]:
+        section = Section(Name(name), Type(), Text(), items)
+        obj.doc.sections.append(section)
+
+
+def add_section_attributes(obj: Module | Class) -> None:
+    """Add an Attributes section."""
+
+    items = []
+    attributes = []
+
+    for attr in obj.attributes:
+        if attr.doc.sections:
+            items.append(_get_item(attr))
+        elif not is_empty(attr):
+            item = Item(attr.name, attr.type, attr.doc.text)
+            items.append(item)
+            continue
+
+        attributes.append(attr)
+
+    obj.attributes = attributes
+
+    if not items:
+        return
+
+    name = "Attributes"
+    sections = obj.doc.sections
+
+    if section := get_by_name(sections, name):
+        index = sections.index(section)
+        obj.doc.sections[index] = section
+    else:
+        section = Section(Name(name), Type(), Text(), items)
+        obj.doc.sections.append(section)
+
+
 def _get_item(obj: Module | Class | Function | Attribute) -> Item:
-    name = obj.name
     text = Text(obj.doc.text.str)
     text.markdown = obj.doc.text.markdown.split("\n\n")[0]  # summary line
     type_ = obj.type if isinstance(obj, Attribute) else Type()
-    return Item(name, type_, text)
-    # type_ = obj.doc.type.copy()
-    # text = obj.doc.text.copy()
-    # type_.markdown = type_.markdown.split("..")[-1]
-    # text.markdown = text.markdown.split("\n\n")[0]
-    # return Item("", type_, text)
-
-
-def _get_item_attribute(attr: Attribute) -> Item:
-    return Item(attr.name, attr.type, attr.doc.text)
+    return Item(obj.name, type_, text)
 
 
 def get_source(obj: Module | Class | Function) -> str | None:

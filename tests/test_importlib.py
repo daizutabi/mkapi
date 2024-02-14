@@ -6,7 +6,7 @@ from mkapi.importlib import (
     load_module,
 )
 from mkapi.objects import Class, Function, Module
-from mkapi.utils import get_by_name
+from mkapi.utils import cache_clear, get_by_name
 
 
 def test_load_module_source():
@@ -119,5 +119,12 @@ def test_inherit_base_classes_order():
 
 
 def test_get_object_using_all():
+    cache_clear()
     assert get_object("schemdraw.Drawing")
     assert get_object("schemdraw.svgconfig")
+
+
+def test_get_object_nest():
+    cache_clear()
+    assert get_object("mkapi.items.Name.set_markdown")
+    assert get_object("mkapi.items.Name")
