@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import ast
 import itertools
-import re
 from collections.abc import Callable as Callable_
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, TypeAlias
@@ -13,7 +12,6 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring
-from mkapi.globals import get_fullname, resolve_with_attribute
 from mkapi.items import (
     Assign,
     Assigns,
@@ -33,7 +31,7 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.utils import cache, get_by_name, get_by_type, is_identifier, is_package
+from mkapi.utils import cache, get_by_name, get_by_type, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -56,13 +54,16 @@ class Object:
     kind: str = field(init=False)
 
     def __post_init__(self) -> None:
-        # self.doc.name = self.fullname
-        # expr = ast.parse(self.fullname).body[0]
-        # if isinstance(expr, ast.Expr):
-        #     self.doc.type.expr = expr.value
-        #     self.doc.type.kind = TypeKind.OBJECT
         self.kind = get_kind(self)
         objects[self.fullname.str] = self  # type:ignore
+
+    def __iter__(self) -> Iterator[Name]:
+        if self.name.str:
+            yield self.name
+        if self.qualname.str:
+            yield self.qualname
+        if self.fullname.str:
+            yield self.fullname
 
     def __repr__(self) -> str:
         return f"{self.kind.title()}({self.name!r})"
@@ -94,8 +95,7 @@ class Attribute(Member):
     text: Text = field(default_factory=Text, init=False)
 
     def __iter__(self) -> Iterator[Name | Type | Text]:
-        if self.name.str:
-            yield self.name
+        yield from super().__iter__()
         if self.type.expr:
             yield self.type
         if self.default.expr:
@@ -144,7 +144,8 @@ class Function(Callable):
 
     def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
-        for item in itertools.chain(self.parameters, self.returns):
+        yield from super().__iter__()
+        for item in itertools.chain(self.parameters, self.returns, self.raises):
             yield from item
 
 
@@ -184,7 +185,8 @@ class Class(Callable):
 
     def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
-        for item in itertools.chain(self.bases, self.attributes, self.parameters):
+        yield from super().__iter__()
+        for item in itertools.chain(self.bases, self.attributes, self.parameters, self.raises):
             yield from item
 
 
@@ -230,6 +232,7 @@ class Module(Object):
 
     def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
+        yield from super().__iter__()
         for item in self.attributes:
             yield from item
 
@@ -360,42 +363,15 @@ def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
     for obj in iter_objects(module):
         for elem in itertools.chain(obj, obj.doc):
-            if isinstance(elem, Name | Type):
-                elem.set_markdown(module.name)
-            elif elem.str and not elem.markdown:
-                text = _add_new_line(elem.str)
-                # TODO: use mkapi.markdown.sub
-                elem.markdown = get_link_from_text(obj, text)
+            if not elem.markdown:
+                elem.set_markdown(module.name.str)
 
-
-def _add_new_line(text: str) -> str:
-    for c in ["*", "+", "-"]:
-        if text.startswith(f"{c} ") and f"\n{c} " in text:
-            text = f"\n{text}"
-    return text
-
-
-LINK_PATTERN = re.compile(r"(?<!\])\[(?P<name>[^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
-
-
-def get_link_from_text(obj: Module | Class | Function | Attribute, text: str) -> str:
-    """Return markdown links from text."""
-
-    def replace(match: re.Match) -> str:
-        name = match.group("name")
-        if name.startswith("__mkapi__."):
-            from_mkapi = True
-            name = name[10:]
-        else:
-            from_mkapi = False
-        if is_identifier(name) and (fullname := get_fullname_from_object(obj, name)):
-            name_ = name.replace("_", "\\_")
-            return f"[{name_}][__mkapi__.{fullname}]"
-        if from_mkapi:
-            return name
-        return match.group()
-
-    return re.sub(LINK_PATTERN, replace, text)
+            # if isinstance(elem, Name | Type):
+            #     elem.set_markdown(module.name)
+            # elif elem.str and not elem.markdown:
+            #     text = _add_new_line(elem.str)
+            #     # TODO: use mkapi.markdown.sub
+            #     elem.markdown = get_link_from_text(obj, text)
 
 
 Member_: TypeAlias = Module | Class | Function | Attribute
@@ -446,26 +422,6 @@ def iter_objects(
     """Yield [Object] instances."""
     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
         yield child
-
-
-def get_fullname_from_object(
-    obj: Module | Class | Function | Attribute,
-    name: str,
-) -> str | None:
-    """Return fullname from object."""
-    for child in iter_objects(obj, maxdepth=1):
-        if child.name.str == name:
-            return child.fullname.str
-    if isinstance(obj, Module):
-        return get_fullname(obj.name.str, name)
-    if obj.parent and isinstance(obj.parent, Class | Function):
-        return get_fullname_from_object(obj.parent, name)
-    if "." not in name:
-        return get_fullname_from_object(obj.module, name)
-    parent, attr = name.rsplit(".", maxsplit=1)
-    if parent == obj.name.str:
-        return get_fullname_from_object(obj, attr)
-    return resolve_with_attribute(name)
 
 
 def _get_kind_function(func: Function) -> str:

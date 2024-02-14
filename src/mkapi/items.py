@@ -11,7 +11,7 @@ import mkapi.ast
 import mkapi.markdown
 from mkapi.ast import is_property
 from mkapi.globals import get_fullname
-from mkapi.link import get_markdown, get_markdown_from_type_string
+from mkapi.link import get_markdown, get_markdown_from_docstring_text, get_markdown_from_type_string
 from mkapi.utils import get_by_name, unique_names
 
 try:
@@ -34,7 +34,7 @@ class Name:
         name = self.str or ""
         return f"{self.__class__.__name__}({name!r})"
 
-    def set_markdown(self, module: str | Name | None = None) -> None:  # noqa: ARG002
+    def set_markdown(self, module: str) -> None:  # noqa: ARG002
         """Set Markdown name with link."""
         if self.str:
             self.markdown = get_markdown(self.str)
@@ -59,12 +59,9 @@ class Type:
         args = ast.unparse(self.expr) if self.expr else ""
         return f"{self.__class__.__name__}({args})"
 
-    def set_markdown(self, module: str | Name) -> None:
+    def set_markdown(self, module: str) -> None:
         """Set Markdown text with link."""
-        if isinstance(module, Name):
-            module = module.str or ""
-
-        if not self.expr:
+        if not (expr := self.expr):
             return
 
         def replace(name: str) -> str | None:
@@ -73,8 +70,8 @@ class Type:
         def get_link(name: str) -> str:
             return get_markdown(name, replace)
 
-        if isinstance(self.expr, ast.Constant):
-            value = self.expr.value
+        if isinstance(expr, ast.Constant):
+            value = expr.value
             if isinstance(value, str):
                 self.markdown = get_markdown_from_type_string(value, replace)
             else:
@@ -82,16 +79,16 @@ class Type:
             return
 
         try:
-            self.markdown = mkapi.ast.unparse(self.expr, get_link)
+            self.markdown = mkapi.ast.unparse(expr, get_link)
         except ValueError:
-            self.markdown = ast.unparse(self.expr)
+            self.markdown = ast.unparse(expr)
 
 
 @dataclass(repr=False)
 class Default(Type):
     """Default class."""
 
-    def set_markdown(self, module: str | None = None) -> None:  # noqa: ARG002
+    def set_markdown(self, module: str) -> None:  # noqa: ARG002
         """Set Markdown text with link."""
         if self.expr:
             self.markdown = ast.unparse(self.expr)
@@ -107,6 +104,19 @@ class Text:
     def __repr__(self) -> str:
         text = self.str or ""
         return f"{self.__class__.__name__}({text!r})"
+
+    def set_markdown(self, module: str) -> None:
+        if not (text := self.str):
+            return
+
+        for c in ["*", "+", "-"]:
+            if text.startswith(f"{c} ") and f"\n{c} " in text:
+                text = f"\n{text}"
+
+        def replace(name: str) -> str | None:
+            return get_fullname(module, name)
+
+        self.markdown = get_markdown_from_docstring_text(text, replace)
 
 
 @dataclass

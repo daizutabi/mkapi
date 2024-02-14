@@ -35,11 +35,6 @@ def render(
 ) -> str:
     """Return a rendered Markdown."""
     heading = f"h{level}" if level else "p"
-    # prefix = obj.doc.type.markdown.split("..")
-    # self = obj.name.split(".")[-1].replace("_", "\\_")
-    # fullname = ".".join(prefix[:-1] + [self])
-    # fullname = obj.doc.type.markdown.replace("..", ".")
-    # fullname = obj.fullname.replace("_", "\\_")  # Add link
     fullname = get_markdown(obj.fullname.str)
     id_ = obj.fullname.str.replace("_", "\\_")
     names = [x.replace("_", "\\_") for x in obj.qualname.str.split(".")]

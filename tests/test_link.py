@@ -1,7 +1,7 @@
 import re
 
 from mkapi.globals import get_fullname
-from mkapi.link import LINK_PATTERN, get_markdown, get_markdown_from_type_string
+from mkapi.link import LINK_PATTERN, get_markdown, get_markdown_from_docstring_text, get_markdown_from_type_string
 
 
 def test_get_markdown():
@@ -70,3 +70,34 @@ def test_link_pattern():
     assert re.sub(LINK_PATTERN, f, "X[abc][]Y") == "X[abc][_abc]Y"
     assert re.sub(LINK_PATTERN, f, "X[abc](xyz)Y") == "X[abc](xyz)Y"
     assert re.sub(LINK_PATTERN, f, "X[abc][xyz]Y") == "X[abc][xyz]Y"
+
+
+def test_get_markdown_from_docstring_text():
+    def replace(name: str) -> str | None:  # type: ignore
+        return get_fullname("mkapi.objects", name)
+
+    x = get_markdown_from_docstring_text("Class", replace)
+    assert x == "Class"
+    x = get_markdown_from_docstring_text("a [Class] b", replace)
+    assert x == "a [Class][__mkapi__.mkapi.objects.Class] b"
+    x = get_markdown_from_docstring_text("a [Class][] b", replace)
+    assert x == "a [Class][__mkapi__.mkapi.objects.Class] b"
+    x = get_markdown_from_docstring_text("a [Class][a] b", replace)
+    assert x == "a [Class][a] b"
+    m = "a \n```\n[Class][a]\n```\n b"
+    assert get_markdown_from_docstring_text(m, replace) == m
+
+    def replace(name: str) -> str | None:
+        return get_fullname("mkapi.plugins", name)
+
+    x = get_markdown_from_docstring_text("a [MkAPIPlugin][] b", replace)
+    assert x == "a [MkAPIPlugin][__mkapi__.mkapi.plugins.MkAPIPlugin] b"
+    x = get_markdown_from_docstring_text("a [BasePlugin][] b", replace)
+    assert x == "a [BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin] b"
+    x = get_markdown_from_docstring_text("a [MkDocsConfig][] b", replace)
+    assert x == "a [MkDocsConfig][__mkapi__.mkdocs.config.defaults.MkDocsConfig] b"
+
+    x = get_markdown_from_docstring_text("a [__mkapi__.b] c", replace)
+    assert x == "a b c"
+    x = get_markdown_from_docstring_text("a [b] c", replace)
+    assert x == "a [b] c"
