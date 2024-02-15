@@ -286,6 +286,19 @@ def test_set_markdown():
     assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."
 
 
+def test_set_markdown_class():
+    name = "mkapi.ast"
+    node = get_module_node(name)
+    assert node
+    module = create_module(name, node)
+    assert module
+    cls = get_by_name(module.classes, "Transformer")
+    assert isinstance(cls, Class)
+    for x in cls.functions:
+        print(x, x.name.markdown)
+    assert 0
+
+
 def test_kind():
     node = get_module_node("mkapi")
     assert node

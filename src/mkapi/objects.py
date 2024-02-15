@@ -378,16 +378,11 @@ def merge_attributes(obj: Module | Class) -> None:
 
 def set_markdown(module: Module) -> None:
     """Set markdown text with link."""
-    _replace_from_module = partial(get_fullname, module=module.name.str)
-
     for obj in iter_objects(module):
         _replace_from_object = partial(replace_from_object, obj=obj)
 
         for elem in itertools.chain(obj, obj.doc):
-            if isinstance(elem, Name | Type):
-                elem.set_markdown(_replace_from_module)
-
-            elif not elem.markdown:
+            if isinstance(elem, Name | Type) or not elem.markdown:
                 elem.set_markdown(_replace_from_object)
 
 

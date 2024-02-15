@@ -72,8 +72,8 @@ class Page:
 
     def convert_html(self, html: str, anchor: str) -> str:
         """Return converted html."""
-        # if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
-        if self.kind == PageKind.SOURCE:
+        if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
+            # if self.kind == PageKind.SOURCE:
             return convert_html(html, self.path, anchor)
 
         return html
