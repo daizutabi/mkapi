@@ -98,31 +98,20 @@ def test_iter_items_class(google, get, get_node):
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
     x = list(iter_items(section, "google"))
-    assert x[0][0].str == "attr1"
-    assert x[0][1].expr.value == "str"  # type: ignore
-    assert x[0][2].str == "Description of `attr1`."
-    assert x[1][0].str == "attr2"
-    assert x[1][1].expr.value == ":obj:`int`, optional"  # type: ignore
-    assert x[1][2].str == "Description of `attr2`."
+    assert x[0].name.str == "attr1"
+    assert x[0].type.expr.value == "str"  # type: ignore
+    assert x[0].text.str == "Description of `attr1`."
+    assert x[1].name.str == "attr2"
+    assert x[1].type.expr.value == ":obj:`int`, optional"  # type: ignore
+    assert x[1].text.str == "Description of `attr2`."
     doc = get(get_node(google, "ExampleClass"), "__init__")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
     x = list(iter_items(section, "google"))
-    assert x[0][0].str == "param1"
-    assert x[0][1].expr.value == "str"  # type: ignore
-    assert x[0][2].str == "Description of `param1`."
-    assert x[1][2].str == "Description of `param2`. Multiple\nlines are supported."
-
-
-def test_iter_items_raises(google, get):
-    doc = get(google, "module_level_function")
-    assert isinstance(doc, str)
-    name, section = list(_iter_sections(doc, "google"))[3]
-    assert name == "Raises"
-    items = list(iter_items(section, "google"))
-    assert len(items) == 2
-    assert items[0][0].str == "AttributeError"
-    assert items[1][0].str == "ValueError"
+    assert x[0].name.str == "param1"
+    assert x[0].type.expr.value == "str"  # type: ignore
+    assert x[0].text.str == "Description of `param1`."
+    assert x[1].text.str == "Description of `param2`. Multiple\nlines are supported."
 
 
 def test_parse(google):

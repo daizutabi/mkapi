@@ -5,15 +5,13 @@ import ast
 import itertools
 from collections.abc import Callable as Callable_
 from dataclasses import dataclass, field
-from functools import partial
 from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.ast
 import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
-from mkapi.docstrings import Docstring
-from mkapi.globals import get_fullname, resolve_with_attribute
+from mkapi.docstrings import Docstring, iter_merged_items, split_item_without_name
 from mkapi.items import (
     Assign,
     Assigns,
@@ -24,14 +22,14 @@ from mkapi.items import (
     Returns,
     Text,
     Type,
-    _assign_type_text,
     create_raises,
     iter_assigns,
     iter_bases,
-    iter_merged_items,
     iter_parameters,
     iter_raises,
     iter_returns,
+    merge_parameters,
+    merge_returns,
 )
 from mkapi.utils import cache, get_by_name, get_by_type, is_package
 
@@ -45,21 +43,18 @@ objects: dict[str, Module | Class | Function | Attribute | None] = cache({})
 
 
 @dataclass
-class Names:
+class Named:
     name: Name
     qualname: Name = field(init=False)
     fullname: Name = field(init=False)
 
 
 @dataclass
-class Object(Names):
+class Object(Named):
     """Object class."""
 
-    # name: Name
     node: ast.AST | None
     doc: Docstring
-    # qualname: Name = field(init=False)
-    # fullname: Name = field(init=False)
     kind: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -69,8 +64,10 @@ class Object(Names):
     def __iter__(self) -> Iterator[Name]:
         if self.name.str:
             yield self.name
+
         if self.qualname.str:
             yield self.qualname
+
         if self.fullname.str:
             yield self.fullname
 
@@ -90,6 +87,7 @@ class Member(Object):
             self.qualname = self.parent.qualname.join(self.name)
         else:
             self.qualname = Name(self.name.str)
+
         self.fullname = self.module.name.join(self.qualname)
         super().__post_init__()
 
@@ -101,16 +99,15 @@ class Attribute(Member):
     node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
     type: Type  # noqa: A003, RUF100
     default: Default
-    text: Text = field(default_factory=Text, init=False)
 
     def __iter__(self) -> Iterator[Name | Type | Text]:
         yield from super().__iter__()
+
         if self.type.expr:
             yield self.type
+
         if self.default.expr:
             yield self.default
-        if self.text.str:
-            yield self.text
 
 
 def create_attribute(
@@ -121,16 +118,69 @@ def create_attribute(
     """Return an [Attribute] instance."""
     node = assign.node
     module = module or _create_empty_module()
-    if assign.node and assign.node.__doc__:
-        doc = docstrings.parse(assign.node.__doc__)
+
+    if assign.node:
+        if isinstance(assign.node, ast.FunctionDef | ast.AsyncFunctionDef):
+            text = ast.get_docstring(assign.node)
+        else:
+            text = assign.node.__doc__
+
+        doc = docstrings.parse(text)
+
         if doc.text.str and (lines := doc.text.str.splitlines()):  # noqa: SIM102
             if ":" in lines[0]:
-                _, lines[0] = lines[0].split(":", maxsplit=1)
+                type_, lines[0] = (x.strip() for x in lines[0].split(":", maxsplit=1))
                 doc.text.str = "\n".join(lines).strip()
+
+                if not assign.type.expr:
+                    type_ = type_.replace("(", "[").replace(")", "]")
+                    assign.type.expr = mkapi.ast.create_expr(type_)
+
     else:
         doc = Docstring(Name("Docstring"), Type(), assign.text, [])
+
     name, type_, default = assign.name, assign.type, assign.default
     return Attribute(name, node, doc, module, parent, type_, default)
+
+
+def iter_attributes(
+    node: ast.ClassDef | ast.Module,
+    module: Module | None,
+    parent: Class | None,
+) -> Iterator[Attribute]:
+    for child in iter_assigns(node):
+        yield create_attribute(child, module, parent)
+
+
+# def _add_doc_comments(attrs: list[Attribute], source: str | None = None) -> None:
+#     if not source:
+#         return
+#     lines = source.splitlines()
+#     for attr in attrs:
+#         if attr.doc.text.str or not (node := attr.node):
+#             continue
+#         line = lines[node.lineno - 1][node.end_col_offset :].strip()
+#         if line.startswith("#:"):
+#             _add_doc_comment(attr, line[2:].strip())
+#         elif node.lineno > 1:
+#             line = lines[node.lineno - 2][node.col_offset :]
+#             if line.startswith("#:"):
+#                 _add_doc_comment(attr, line[2:].strip())
+
+
+# def _add_doc_comment(attr: Attribute, text: str) -> None:
+#     attr.type, attr.doc.text = _assign_type_text(attr.type.expr, text)
+
+
+# def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
+#     if not text:
+#         return Type(type_), Text()
+#     type_doc, text = split_item_without_name(text, "google")
+#     if not type_ and type_doc:
+#         # ex. 'list(str)' -> 'list[str]' for ast.expr
+#         type_doc = type_doc.replace("(", "[").replace(")", "]")
+#         type_ = mkapi.ast.create_expr(type_doc)
+#     return Type(type_), Text(text)
 
 
 @dataclass(repr=False)
@@ -154,6 +204,7 @@ class Function(Callable):
     def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
         yield from super().__iter__()
+
         for item in itertools.chain(self.parameters, self.returns, self.raises):
             yield from item
 
@@ -164,21 +215,34 @@ def create_function(
     parent: Class | Function | None = None,
 ) -> Function:
     """Return a [Function] instance."""
-    module = module or _create_empty_module()
     name = Name(node.name)
+
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
+
+    module = module or _create_empty_module()
+
     params = list(iter_parameters(node))
+    if section := get_by_type(doc.sections, Parameters):
+        merge_parameters(section, params)
+
     returns = list(iter_returns(node))
+    if section := get_by_type(doc.sections, Returns):
+        merge_returns(section, returns)
+
     raises = list(iter_raises(node))
+
     func = Function(name, node, doc, module, parent, params, returns, raises)
+
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             cls = create_class(child, module, func)
             func.classes.append(cls)
+
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
             func_ = create_function(child, module, func)
             func.functions.append(func_)
+
     return func
 
 
@@ -195,7 +259,8 @@ class Class(Callable):
     def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
         yield from super().__iter__()
-        for item in itertools.chain(self.bases, self.attributes, self.parameters, self.raises):
+
+        for item in itertools.chain(self.bases, self.parameters, self.raises):
             yield from item
 
 
@@ -206,22 +271,30 @@ def create_class(
 ) -> Class:
     """Return a [Class] instance."""
     name = Name(node.name)
-    module = module or _create_empty_module()
+
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
+
+    module = module or _create_empty_module()
+
     bases = list(iter_bases(node))
+
     cls = Class(name, node, doc, module, parent, bases)
+
     for child in iter_assigns(node):
         attr = create_attribute(child, module, cls)
         cls.attributes.append(attr)
+
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             cls_ = create_class(child, module, cls)
             cls.classes.append(cls_)
+
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
             if mkapi.ast.is_function(child):
                 func = create_function(child, module, cls)
                 cls.functions.append(func)
+
     return cls
 
 
@@ -239,12 +312,6 @@ class Module(Object):
     def __post_init__(self) -> None:
         self.fullname = self.qualname = self.name
         super().__post_init__()
-
-    def __iter__(self) -> Iterator[Name | Type | Text]:
-        """Yield [Type] or [Text] instances."""
-        yield from super().__iter__()
-        for item in self.attributes:
-            yield from item
 
 
 def _create_empty_module() -> Module:
@@ -268,82 +335,22 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
             if mkapi.ast.is_function(child):
                 func = create_function(child, module)
                 module.functions.append(func)
-    merge_items(module)
-    set_markdown(module)
+    # merge_items(module)
+    # set_markdown(module)
     return module
 
 
-def merge_items(module: Module) -> None:
-    """Merge items."""
-    for obj in iter_objects(module):
-        if isinstance(obj, Function | Class):
-            merge_parameters(obj)
-            merge_raises(obj)
-        if isinstance(obj, Function):
-            merge_returns(obj)
-        if isinstance(obj, Module | Class):
-            _add_doc_comments(obj.attributes, module.source)
-            merge_attributes(obj)
-
-
-def _add_doc_comments(attrs: list[Attribute], source: str | None = None) -> None:
-    if not source:
-        return
-    lines = source.splitlines()
-    for attr in attrs:
-        if attr.doc.text.str or not (node := attr.node):
-            continue
-        line = lines[node.lineno - 1][node.end_col_offset :].strip()
-        if line.startswith("#:"):
-            _add_doc_comment(attr, line[2:].strip())
-        elif node.lineno > 1:
-            line = lines[node.lineno - 2][node.col_offset :]
-            if line.startswith("#:"):
-                _add_doc_comment(attr, line[2:].strip())
-
-
-def _add_doc_comment(attr: Attribute, text: str) -> None:
-    attr.type, attr.doc.text = _assign_type_text(attr.type.expr, text)
-
-
-def merge_parameters(obj: Class | Function) -> None:
-    """Merge parameters."""
-    if not (section := get_by_type(obj.doc.sections, Parameters)):
-        return
-    for param_doc in section.items:
-        name = param_doc.name.replace("*", "")
-        if param_ast := get_by_name(obj.parameters, name):
-            if not param_doc.type.expr:
-                param_doc.type = param_ast.type
-            if not param_doc.default.expr:
-                param_doc.default = param_ast.default
-            param_doc.kind = param_ast.kind
-
-
-def merge_raises(obj: Class | Function) -> None:
-    """Merge raises."""
-    section = get_by_type(obj.doc.sections, Raises)
-    if not section:
-        if not obj.raises:
-            return
-        section = create_raises([])
-        obj.doc.sections.append(section)
-    section.items = list(iter_merged_items(obj.raises, section.items))
-    for item in section.items:
-        item.name = Name("")
-
-
-def merge_returns(obj: Function) -> None:
-    """Merge returns."""
-    if section := get_by_type(obj.doc.sections, Returns):
-        if len(obj.returns) == 1 and len(section.items) == 1:
-            item = section.items[0]
-            if not item.type.expr:
-                item.type = obj.returns[0].type
-            obj.returns[0].text = item.text
-            obj.returns[0].name = item.name
-            return
-        section.items = list(iter_merged_items(obj.returns, section.items))
+# def merge_items(module: Module) -> None:
+#     """Merge items."""
+#     for obj in iter_objects(module):
+#         if isinstance(obj, Function | Class):
+#             merge_parameters(obj)
+#             merge_raises(obj)
+#         if isinstance(obj, Function):
+#             merge_returns(obj)
+#         if isinstance(obj, Module | Class):
+#             _add_doc_comments(obj.attributes, module.source)
+#             merge_attributes(obj)
 
 
 def merge_attributes(obj: Module | Class) -> None:
@@ -374,36 +381,6 @@ def merge_attributes(obj: Module | Class) -> None:
             attributes.append(attr)
 
     obj.attributes = attributes
-
-
-def set_markdown(module: Module) -> None:
-    """Set markdown text with link."""
-    for obj in iter_objects(module):
-        _replace_from_object = partial(replace_from_object, obj=obj)
-
-        for elem in itertools.chain(obj, obj.doc):
-            if isinstance(elem, Name | Type) or not elem.markdown:
-                elem.set_markdown(_replace_from_object)
-
-
-def replace_from_object(
-    name: str,
-    obj: Module | Class | Function | Attribute,
-) -> str | None:
-    """Return fullname from object."""
-    for child in iter_objects(obj, maxdepth=1):
-        if child.name.str == name:
-            return child.fullname.str
-    if isinstance(obj, Module):
-        return get_fullname(name, obj.name.str)
-    if obj.parent:
-        return replace_from_object(name, obj.parent)
-    if "." not in name:
-        return replace_from_object(name, obj.module)
-    parent, attr = name.rsplit(".", maxsplit=1)
-    if obj.name.str == parent:
-        return replace_from_object(attr, obj)
-    return resolve_with_attribute(name)
 
 
 Member_: TypeAlias = Module | Class | Function | Attribute

@@ -163,22 +163,12 @@ def test_section_attribute():
 
 
 def test_add_section():
+    cache_clear()
     module = load_module("examples.styles.google")
     assert module
     cls = get_by_name(module.classes, "ExampleClass")
     assert isinstance(cls, Class)
-    section = cls.doc.sections[-1]
-    print(section.name.markdown)
-    for item in section.items:
-        print(item, item.name.markdown)
-    for f in cls.functions:
-        print(f, f.name.markdown)
-    for f in module.attributes:
-        print(f, f.name.markdown)
-    for f in module.functions:
-        print(f, f.name.markdown)
-
-    assert 0
-
-
-## BUG: mkapi.ast.Transformer -> unparse
+    section = get_by_name(cls.doc.sections, "Methods")
+    assert section
+    for x in section.items:
+        assert "][__mkapi__.examples.styles.google." in x.name.markdown

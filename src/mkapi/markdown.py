@@ -267,8 +267,8 @@ def replace(text: str, olds: list[str], news: list[str]) -> str:
     return "".join(_replace())
 
 
-def add_link(text: str) -> str:
-    """Add link for a "See Also" section."""
+def get_see_also(text: str) -> str:
+    """Return an See Also markdown."""
     if "\n" in text:
         text = re.sub(r"\n\s+", " ", text)
         text = textwrap.indent(text, "* ")

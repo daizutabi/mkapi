@@ -101,3 +101,75 @@ def test_get_markdown_from_docstring_text():
     assert x == "a b c"
     x = get_markdown_from_docstring_text("a [b] c", replace)
     assert x == "a [b] c"
+
+
+# def test_set_markdown():
+#     name = "mkapi.plugins"
+#     node = get_module_node(name)
+#     assert node
+#     module = create_module(name, node)
+#     assert module
+#     x = module.name.markdown
+#     assert x == "[mkapi][__mkapi__.mkapi].[plugins][__mkapi__.mkapi.plugins]"
+#     obj = get_by_name(module.classes, "MkAPIPlugin")
+#     assert isinstance(obj, Class)
+#     m = obj.fullname.markdown
+#     assert "[mkapi][__mkapi__.mkapi]." in m
+#     assert ".[plugins][__mkapi__.mkapi.plugins]." in m
+#     m = obj.bases[0].type.markdown
+#     assert "[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]" in m
+#     assert "[[MkAPIConfig][__mkapi__.mkapi.plugins.MkAPIConfig]]" in m
+#     name = "mkapi.items"
+#     node = get_module_node(name)
+#     assert node
+#     module = create_module(name, node)
+#     obj = get_by_name(module.functions, "iter_raises")
+#     assert isinstance(obj, Function)
+#     m = obj.doc.text.markdown
+#     assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."
+
+
+# def test_set_markdown_class():
+#     name = "mkapi.ast"
+#     node = get_module_node(name)
+#     assert node
+#     module = create_module(name, node)
+#     assert module
+#     cls = get_by_name(module.classes, "Transformer")
+#     assert isinstance(cls, Class)
+#     for x in cls.functions:
+#         m = x.name.markdown
+#         if x.name.str == "_rename":
+#             assert m == r"[\_rename][__mkapi__.mkapi.ast.Transformer._rename]"
+#         if x.name.str == "visit_Name":
+#             assert m == r"[visit\_Name][__mkapi__.mkapi.ast.Transformer.visit_Name]"
+#         if x.name.str == "unparse":
+#             assert m == r"[unparse][__mkapi__.mkapi.ast.Transformer.unparse]"
+
+
+# def test_set_markdown_class_doc():
+#     name = "mkapi.ast"
+#     node = get_module_node(name)
+#     assert node
+#     module = create_module(name, node)
+#     assert module
+#     cls = get_by_name(module.classes, "Transformer")
+#     assert isinstance(cls, Class)
+#     for x in cls.functions:
+#         m = x.name.markdown
+#         if x.name.str == "_rename":
+#             assert m == r"[\_rename][__mkapi__.mkapi.ast.Transformer._rename]"
+#         if x.name.str == "visit_Name":
+#             assert m == r"[visit\_Name][__mkapi__.mkapi.ast.Transformer.visit_Name]"
+#         if x.name.str == "unparse":
+#             assert m == r"[unparse][__mkapi__.mkapi.ast.Transformer.unparse]"
+
+
+# def test_set_markdown_attribute():
+#     name = "examples.styles.google"
+#     node = get_module_node(name)
+#     assert node
+#     module = create_module(name, node)
+#     assert module
+#     for x in module.attributes:
+#         assert "][__mkapi__.examples.styles.google.module_level_v" in x.name.markdown

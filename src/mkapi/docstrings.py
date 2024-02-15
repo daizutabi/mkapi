@@ -35,17 +35,19 @@ SPLIT_ITEM_PATTERN = re.compile(r"\n\S")
 SPLIT_NAME_TYPE_TEXT_PATTERN = re.compile(r"^\s*(\S+?)\s*\((.+?)\)\s*:\s*(.*)$")
 
 
-def _iter_items(section: str) -> Iterator[str]:
+def _iter_items(text: str) -> Iterator[str]:
     """Yield items for Parameters, Attributes, Returns, or Raises sections.
 
     Items may include a type and/or text (description).
     """
     start = 0
-    for m in SPLIT_ITEM_PATTERN.finditer(section):
-        if item := section[start : m.start()].strip():
+    for m in SPLIT_ITEM_PATTERN.finditer(text):
+        if item := text[start : m.start()].strip():
             yield item
+
         start = m.start()
-    if item := section[start:].strip():
+
+    if item := text[start:].strip():
         yield item
 
 
@@ -53,13 +55,17 @@ def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
     """Split an item into a tuple of (name, type, text) in the Google style."""
     if m := re.match(SPLIT_NAME_TYPE_TEXT_PATTERN, lines[0]):
         name, type_, text = m.groups()
+
     elif ":" in lines[0]:
         name, text = lines[0].split(":", maxsplit=1)
         type_ = ""
+
     else:
         name, type_, text = lines[0], "", ""
+
     rest = "\n".join(lines[1:])
     rest = textwrap.dedent(rest)
+
     return name.strip(), type_.strip(), f"{text.strip()}\n{rest}".strip()
 
 
@@ -67,31 +73,63 @@ def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:
     """Split an item into a tuple of (name, type, text) in the NumPy style."""
     if ":" in lines[0]:
         name, type_ = lines[0].split(":", maxsplit=1)
+
     else:
         name, type_ = lines[0], ""
+
     text = "\n".join(lines[1:])
     text = textwrap.dedent(text)
+
     return name.strip(), type_.strip(), text
 
 
-def split_item(item: str, style: Style) -> tuple[str, str, str]:
+def split_item(text: str, style: Style) -> tuple[str, str, str]:
     """Split an item into a tuple of (name, type, text)."""
-    lines = item.splitlines()
+    lines = text.splitlines()
+
     if style == "google":
         return _split_item_google(lines)
+
     return _split_item_numpy(lines)
+
+
+def split_item_without_name(text: str, style: str) -> tuple[str, str]:
+    """Return a tuple of (type, text) for Returns or Yields section."""
+    lines = text.splitlines()
+
+    if style == "google" and ":" in lines[0]:
+        type_, text = lines[0].split(":", maxsplit=1)
+        return type_.strip(), "\n".join([text.strip(), *lines[1:]])
+
+    if style == "numpy" and len(lines) > 1 and lines[1].startswith(" "):
+        text = textwrap.dedent("\n".join(lines[1:]))
+        return lines[0], text
+
+    return "", text
 
 
 TYPE_STRING_PATTERN = re.compile(r"\[__mkapi__.(\S+?)\]\[\]")
 
 
-def iter_items(section: str, style: Style) -> Iterator[tuple[Name, Type, Text]]:
-    """Yield tuples of (name, type, text)."""
-    for item in _iter_items(section):
+def iter_items(text: str, style: Style) -> Iterator[Item]:
+    """Yield [Item] instances."""
+    for item in _iter_items(text):
         name, type_, text = split_item(item, style)
+
         type_ = TYPE_STRING_PATTERN.sub(r"\1", type_)
         type_ = ast.Constant(type_) if type_ else None
-        yield Name(name), Type(type_), Text(text)
+        yield Item(Name(name), Type(type_), Text(text))
+
+
+def iter_items_without_name(text: str, style: Style) -> Iterator[Item]:
+    name = ""
+    type_, text = split_item_without_name(text, style)
+
+    if ":" in type_:
+        name, type_ = (x.strip() for x in type_.split(":", maxsplit=1))
+
+    type_ = ast.Constant(type_) if type_ else None
+    yield Item(Name(name), Type(type_), Text(text))
 
 
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
@@ -100,27 +138,33 @@ SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
 }
 
 
-def _split_sections(doc: str, style: Style) -> Iterator[str]:
+def _split_sections(text: str, style: Style) -> Iterator[str]:
     pattern = SPLIT_SECTION_PATTERNS[style]
-    if not (m := re.search("\n\n", doc)):
-        yield doc.strip()
+
+    if not (m := re.search("\n\n", text)):
+        yield text.strip()
         return
+
     start = m.end()
-    yield doc[:start].strip()
-    for m in pattern.finditer(doc, start):
-        yield from _subsplit(doc[start : m.start()].strip(), style)
+    yield text[:start].strip()
+
+    for m in pattern.finditer(text, start):
+        yield from _subsplit(text[start : m.start()].strip(), style)
         start = m.start()
-    yield from _subsplit(doc[start:].strip(), style)
+
+    yield from _subsplit(text[start:].strip(), style)
 
 
 # In Numpy style, if a section is indented, then a section break is
 # created by resuming unindented text.
-def _subsplit(doc: str, style: Style) -> list[str]:
-    if style == "google" or len(lines := doc.splitlines()) < 3:  # noqa: PLR2004
-        return [doc]
+def _subsplit(text: str, style: Style) -> list[str]:
+    if style == "google" or len(lines := text.splitlines()) < 3:  # noqa: PLR2004
+        return [text]
+
     if not lines[2].startswith(" "):  # 2 == after '----' line.
-        return [doc]
-    return doc.split("\n\n")
+        return [text]
+
+    return text.split("\n\n")
 
 
 SECTION_NAMES: list[tuple[str, ...]] = [
@@ -142,16 +186,17 @@ SECTION_NAMES: list[tuple[str, ...]] = [
 CURRENT_DOCSTRING_STYLE: list[Style] = ["google"]
 
 
-def get_style(doc: str) -> Style:
+def get_style(text: str) -> Style:
     """Return the docstring style.
 
     If the style can't be determined, the current style is returned.
     """
     for names in SECTION_NAMES:
         for name in names:
-            if f"\n\n{name}\n----" in doc or f"\n\n{name}\n====" in doc:
+            if f"\n\n{name}\n----" in text or f"\n\n{name}\n====" in text:
                 CURRENT_DOCSTRING_STYLE[0] = "numpy"
                 return "numpy"
+
     CURRENT_DOCSTRING_STYLE[0] = "google"
     return "google"
 
@@ -160,69 +205,85 @@ def _rename_section(section_name: str) -> str:
     for section_names in SECTION_NAMES:
         if section_name in section_names:
             return section_names[0]
+
     return section_name
 
 
-def split_section(section: str, style: Style) -> tuple[str, str]:
+def split_section(text: str, style: Style) -> tuple[str, str]:
     """Return a section name and its text."""
-    lines = section.splitlines()
+    lines = text.splitlines()
     if len(lines) < 2:  # noqa: PLR2004
-        return "", section
+        return "", text
+
     if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
         text = textwrap.dedent("\n".join(lines[1:]))
         return lines[0][:-1], text
+
     if style == "numpy" and re.match(r"^[\-=]+?$", lines[1]):
         text = textwrap.dedent("\n".join(lines[2:]))
         return lines[0], text
-    return "", section
+
+    return "", text
 
 
-def _iter_sections(doc: str, style: Style) -> Iterator[tuple[str, str]]:
+def _iter_sections(text: str, style: Style) -> Iterator[tuple[str, str]]:
     """Yield (section name, text) pairs by splitting a docstring."""
     prev_name, prev_text = "", ""
-    for section in _split_sections(doc, style):
+    for section in _split_sections(text, style):
         if not section:
             continue
+
         name, text = split_section(section, style)
         if not text:
             continue
+
         name = _rename_section(name)
         if prev_name == name == "":  # successive 'plain' section.
             prev_text = f"{prev_text}\n\n{text}" if prev_text else text
             continue
+
         elif prev_name == "" and name != "" and prev_text:
             yield prev_name, prev_text
+
         yield name, text
         prev_name, prev_text = name, ""
+
     if prev_text:
         yield "", prev_text
 
 
-def _create_section_items(name: str, text: str, style: Style) -> Section:
+def _create_section_with_items(name: str, text: str, style: Style) -> Section:
     if name == "Parameters":
         return create_parameters(iter_items(text, style))
+
     if name == "Assigns":
         return create_assigns(iter_items(text, style))
+
     if name == "Raises":
         return create_raises(iter_items(text, style))
+
     if name in ["Returns", "Yields"]:
-        return create_returns(name, text, style)
+        it = iter_items_without_name(text, style)
+        return create_returns(it, name)
+
     raise NotImplementedError
 
 
 def _create_section(name: str, text: str) -> Section:
     if name in ["Note", "Notes", "Warning", "Warnings", "See Also"]:
         return create_admonition(name, text)
+
     return Section(Name(name), Type(), Text(text), [])
 
 
-def iter_sections(doc: str, style: Style) -> Iterator[Section]:
+def iter_sections(text: str, style: Style) -> Iterator[Section]:
     """Yield [Section] instances by splitting a docstring."""
-    for name, text in _iter_sections(doc, style):
+    for name, text_ in _iter_sections(text, style):
         if name in ["Parameters", "Assigns", "Raises", "Returns", "Yields"]:
-            yield _create_section_items(name, text, style)
+            yield _create_section_with_items(name, text_, style)
+
         else:
-            yield _create_section(name, text)
+            yield _create_section(name, text_)
 
 
 @dataclass
@@ -230,9 +291,6 @@ class Docstring(Item):
     """Docstring class."""
 
     sections: list[Section]
-
-    def __post_init__(self) -> None:
-        self.name.markdown = self.name.str
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
@@ -248,17 +306,22 @@ def parse(text: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
     if not text:
         return Docstring(Name("Docstring"), Type(), Text(), [])
+
     style = style or get_style(text)
+
     text = mkapi.markdown.convert(text)
     text = mkapi.markdown.replace(text, ["<", ">"], ["&lt;", "&gt;"])
+
     sections = list(iter_sections(text, style))
     if sections and not sections[0].name.str:
         type_ = sections[0].type
         text_ = sections[0].text
         del sections[0]
+
     else:
         type_ = Type()
         text_ = Text()
+
     return Docstring(Name("Docstring"), type_, text_, sections)
 
 
@@ -268,7 +331,6 @@ def merge_sections(a: Section, b: Section) -> Section:
         raise ValueError
     type_ = a.type if a.type.expr else b.type
     text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
-    text.markdown = f"{a.text.markdown}\n\n{b.text.markdown}".strip()
     return Section(a.name, type_, text, list(iter_merged_items(a.items, b.items)))
 
 
@@ -302,7 +364,6 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
     sections.extend(s for s in b.sections if not s.name)
     type_ = a.type  # if a.type.expr else b.type
     text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
-    text.markdown = f"{a.text.markdown}\n\n{b.text.markdown}".strip()
     return Docstring(Name("Docstring"), type_, text, sections)
 
 

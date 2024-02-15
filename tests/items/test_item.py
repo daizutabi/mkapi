@@ -1,13 +1,10 @@
 import ast
 import inspect
-import sys
 from inspect import Parameter
-from pathlib import Path
 
 import pytest
 
 from mkapi.ast import iter_child_nodes
-from mkapi.globals import get_fullname
 from mkapi.items import (
     Assign,
     Item,
@@ -17,7 +14,6 @@ from mkapi.items import (
     create_admonition,
     iter_assigns,
     iter_bases,
-    iter_merged_items,
     iter_parameters,
     iter_raises,
     iter_returns,
@@ -32,7 +28,7 @@ def _get_parameters(source: str):
     return list(iter_parameters(node))
 
 
-def test_create_parameters():
+def test_iter_parameters():
     args = _get_parameters("def f():\n pass")
     assert not args
     args = _get_parameters("def f(x):\n pass")
@@ -53,7 +49,7 @@ def test_create_parameters():
     assert x.type.expr.value == "X"
 
 
-def test_create_parameters_tuple():
+def test_iter_parameters_tuple():
     x = _get_parameters("def f(x:tuple[int]=(1,)):\n pass")[0]
     assert x.type
     node = x.type.expr
@@ -67,7 +63,7 @@ def test_create_parameters_tuple():
     assert x.default.expr.elts[0].value == 1
 
 
-def test_create_parameters_slice():
+def test_iter_parameters_slice():
     x = _get_parameters("def f(x:tuple[int,str]=(1,'s')):\n pass")[0]
     assert x.type
     node = x.type.expr
@@ -80,29 +76,31 @@ def test_create_parameters_slice():
     assert isinstance(x.default.expr, ast.Tuple)
 
 
-def _get_attributes(source: str):
+def _get_assigns(source: str):
     node = ast.parse(source).body[0]
     assert isinstance(node, ast.ClassDef)
     return list(iter_assigns(node))
 
 
-def test_get_attributes():
+def test_iter_assigns():
     src = "class A:\n x=f.g(1,p='2')\n '''docstring'''"
-    x = _get_attributes(src)[0]
+    x = _get_assigns(src)[0]
     assert isinstance(x, Assign)
     assert x.type.expr is None
     assert isinstance(x.default.expr, ast.Call)
     assert ast.unparse(x.default.expr.func) == "f.g"
-    assert x.text.str == "docstring"
+    assert not x.text.str
+    assert x.node.__doc__ == "docstring"
     src = "class A:\n x:X\n y:y\n '''docstring\n a'''\n z=0"
-    assigns = _get_attributes(src)
+    assigns = _get_assigns(src)
     x, y, z = assigns
     assert isinstance(x, Assign)
     assert isinstance(y, Assign)
     assert isinstance(z, Assign)
     assert not x.text.str
     assert x.default.expr is None
-    assert y.text.str == "docstring\na"
+    assert not y.text.str
+    assert y.node.__doc__ == "docstring\na"
     assert not z.text.str
     assert isinstance(z.default.expr, ast.Constant)
     assert z.default.expr.value == 0
@@ -171,7 +169,7 @@ def test_create_parameters_google(get):
 def test_create_raises(get):
     func = get("module_level_function")
     x = next(iter_raises(func))
-    assert x.name.str == "ValueError"
+    assert not x.name.str
     assert isinstance(x.type.expr, ast.Name)
     assert x.type.expr.id == "ValueError"
 
@@ -179,24 +177,21 @@ def test_create_raises(get):
 def test_create_returns(get):
     func = get("function_with_pep484_type_annotations")
     x = next(iter_returns(func))
-    assert x.name.str == ""
+    assert not x.name.str
     assert isinstance(x.type.expr, ast.Name)
     assert x.type.expr.id == "bool"
 
 
-def test_create_assings(google, get):
+def test_iter_assigns_google(google, get):
     x = list(iter_assigns(google))
     assert x[0].name.str == "module_level_variable1"
     assert x[0].type.expr is None
-    assert x[0].text.str is None
+    assert not x[0].text.str
     assert isinstance(x[0].default.expr, ast.Constant)
     assert x[0].default.expr.value == 12345
     assert x[1].name.str == "module_level_variable2"
-    assert isinstance(x[1].type.expr, ast.Name)
-    assert x[1].type.expr.id == "int"
-    assert x[1].text.str
-    assert x[1].text.str.startswith("Module level")
-    assert x[1].text.str.endswith("by a colon.")
+    assert not x[1].type.expr
+    assert not x[1].text.str
     assert isinstance(x[1].default.expr, ast.Constant)
     assert x[1].default.expr.value == 98765
     cls = get("ExamplePEP526Class")
@@ -213,14 +208,11 @@ def test_create_assigns_from_property(get):
     cls = get("ExampleClass")
     x = list(iter_assigns(cls))
     assert x[0].name.str == "readonly_property"
-    assert isinstance(x[0].type.expr, ast.Name)
-    assert x[0].type.expr.id == "str"
-    assert x[0].text.str
-    assert x[0].text.str.startswith("Properties should")
+    assert not x[0].type.expr
+    assert not x[0].text.str
     assert x[1].name.str == "readwrite_property"
-    assert isinstance(x[1].type.expr, ast.Subscript)
-    assert x[1].text.str
-    assert x[1].text.str.startswith("Properties with")
+    assert not x[1].type.expr
+    assert not x[1].text.str
 
 
 def test_create_bases():
@@ -229,55 +221,13 @@ def test_create_bases():
     assert isinstance(cls, ast.ClassDef)
     bases = iter_bases(cls)
     base = next(bases)
-    assert base.name.str == "B"
+    assert not base.name.str
     assert isinstance(base.type.expr, ast.Name)
     assert base.type.expr.id == "B"
     base = next(bases)
-    assert base.name.str == "C"
+    assert not base.name.str
     assert isinstance(base.type.expr, ast.Subscript)
     assert isinstance(base.type.expr.slice, ast.Name)
-
-
-def test_iter_merged_items():
-    """'''test'''
-    def f(x: int=0):
-        '''function.
-
-        Args:
-            x: parameter.'''
-    """
-    src = inspect.getdoc(test_iter_merged_items)
-    assert src
-    node = ast.parse(src)
-    module = create_module("x", node)
-    func = get_by_name(module.functions, "f")
-    assert func
-    items_ast = func.parameters
-    items_doc = func.doc.sections[0].items
-    item = next(iter_merged_items(items_ast, items_doc))
-    assert item.name.str == "x"
-    assert item.type.expr.id == "int"  # type: ignore
-    assert item.default.expr.value == 0  # type: ignore
-    assert item.text.str == "parameter."
-
-
-def test_iter_merged_items_():
-    a = [
-        Item(Name("a"), Type(), Text("item a")),
-        Item(Name("b"), Type(ast.Constant("int")), Text("item b")),
-    ]
-    b = [
-        Item(Name("a"), Type(ast.Constant("str")), Text("item A")),
-        Item(Name("c"), Type(ast.Constant("list")), Text("item c")),
-    ]
-    c = list(iter_merged_items(a, b))
-    assert c[0].name.str == "a"
-    assert c[0].type.expr.value == "str"  # type: ignore
-    assert c[0].text.str == "item a"
-    assert c[1].name.str == "b"
-    assert c[1].type.expr.value == "int"  # type: ignore
-    assert c[2].name.str == "c"
-    assert c[2].type.expr.value == "list"  # type: ignore
 
 
 def test_create_admonition():

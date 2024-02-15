@@ -18,13 +18,12 @@ def test_load_templates():
 def test_render_sourcelink():
     obj = get_object("examples")
     assert obj
-    c = '<div class="mkapi-content" markdown="1">\n'
     h = '<h2 class="mkapi-header" id="examples" markdown="1">'
     n = '<span class="mkapi-header-name">[examples][__mkapi__.examples]</span>'
     s = '<span class="mkapi-source-link">[source][__mkapi__.__source__.examples]</span>'
     x = render(obj, 2, [])
-    m = f"{c}\n{h}\n{n}\n{s}\n</h2>\n"
-    assert x.startswith(m)
+    m = f"{h}\n{n}\n{s}\n</h2>\n"
+    assert m in x
 
 
 def test_render_module():

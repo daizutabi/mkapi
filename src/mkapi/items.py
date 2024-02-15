@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import ast
-import textwrap
 from dataclasses import dataclass, field
 from inspect import _ParameterKind
 from typing import TYPE_CHECKING, TypeVar
@@ -10,8 +9,7 @@ from typing import TYPE_CHECKING, TypeVar
 import mkapi.ast
 import mkapi.markdown
 from mkapi.ast import is_property
-from mkapi.link import get_markdown, get_markdown_from_docstring_text, get_markdown_from_type_string
-from mkapi.utils import get_by_name, unique_names
+from mkapi.utils import get_by_name, get_by_type, unique_names
 
 try:
     from ast import TypeAlias
@@ -19,32 +17,25 @@ except ImportError:
     TypeAlias = None
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Sequence
+    from collections.abc import Iterable, Iterator, Sequence
 
 
 @dataclass
 class Name:
     """Name class."""
 
-    str: str  # noqa: A003, RUF100
+    str: str = ""  # noqa: A003, RUF100
     markdown: str = field(default="", compare=False)
 
     def __repr__(self) -> str:
-        name = self.str or ""
+        name = self.str
         return f"{self.__class__.__name__}({name!r})"
-
-    def set_markdown(self, replace: Callable[[str], str | None] | None = None) -> None:
-        """Set Markdown name with link."""
-        if self.str:
-            self.markdown = get_markdown(self.str, replace)
 
     def join(self, name: Name) -> Name:
         if self.str:
             return Name(f"{self.str}.{name.str}")
-        return Name(name.str)
 
-    def replace(self, old: str, new: str) -> Name:
-        return Name(self.str.replace(old, new))
+        return Name(name.str)
 
 
 @dataclass
@@ -55,61 +46,25 @@ class Type:
     markdown: str = ""
 
     def __repr__(self) -> str:
-        args = ast.unparse(self.expr) if self.expr else ""
-        return f"{self.__class__.__name__}({args})"
-
-    def set_markdown(self, replace: Callable[[str], str | None] | None = None) -> None:
-        """Set Markdown text with link."""
-        if not (expr := self.expr):
-            return
-
-        if isinstance(expr, ast.Constant):
-            value = expr.value
-            if isinstance(value, str):
-                self.markdown = get_markdown_from_type_string(value, replace)
-            else:
-                self.markdown = str(value)
-            return
-
-        def get_link(name: str) -> str:
-            return get_markdown(name, replace)
-
-        try:
-            self.markdown = mkapi.ast.unparse(expr, get_link)
-        except ValueError:
-            self.markdown = ast.unparse(expr)
+        type_str = ast.unparse(self.expr) if self.expr else ""
+        return f"{self.__class__.__name__}({type_str})"
 
 
 @dataclass(repr=False)
 class Default(Type):
     """Default class."""
 
-    def set_markdown(self, module: str) -> None:  # noqa: ARG002
-        """Set Markdown text with link."""
-        if self.expr:
-            self.markdown = ast.unparse(self.expr)
-
 
 @dataclass
 class Text:
     """Text class."""
 
-    str: str | None = None  # noqa: A003, RUF100
+    str: str = ""  # noqa: A003, RUF100
     markdown: str = ""
 
     def __repr__(self) -> str:
-        text = self.str or ""
+        text = self.str
         return f"{self.__class__.__name__}({text!r})"
-
-    def set_markdown(self, replace: Callable[[str], str | None] | None = None) -> None:
-        if not (text := self.str):
-            return
-
-        for c in ["*", "+", "-"]:
-            if text.startswith(f"{c} ") and f"\n{c} " in text:
-                text = f"\n{text}"
-
-        self.markdown = get_markdown_from_docstring_text(text, replace)
 
 
 @dataclass
@@ -121,13 +76,17 @@ class Item:
     text: Text
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name.str!r})"
+        class_name = self.__class__.__name__
+        type_str = ast.unparse(self.type.expr) if self.type.expr else ""
+        return f"{class_name}({self.name.str}:{type_str})"
 
     def __iter__(self) -> Iterator[Name | Type | Text]:
         if self.name.str:
             yield self.name
+
         if self.type.expr:
             yield self.type
+
         if self.text.str:
             yield self.text
 
@@ -141,6 +100,7 @@ class Parameter(Item):
 
     def __iter__(self) -> Iterator[Name | Type | Text]:
         yield from super().__iter__()
+
         if self.default.expr:
             yield self.default
 
@@ -150,9 +110,40 @@ def iter_parameters(
 ) -> Iterator[Parameter]:
     """Yield [Parameter] instances."""
     for arg, kind, default in mkapi.ast.iter_parameters(node):
-        name = Name(arg.arg)
-        type_ = Type(arg.annotation)
-        yield Parameter(name, type_, Text(), Default(default), kind)
+        yield Parameter(Name(arg.arg), Type(arg.annotation), Text(), Default(default), kind)
+
+
+@dataclass(repr=False)
+class Assign(Item):
+    """Assign class for [Module] or [Class]."""
+
+    default: Default
+    node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
+
+
+def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
+    """Yield [Assign] instances."""
+    for child in mkapi.ast.iter_child_nodes(node):
+        if isinstance(child, ast.AnnAssign | ast.Assign) or TypeAlias and isinstance(child, TypeAlias):
+            attr = create_assign(child)
+            if attr.name:
+                yield attr
+
+        elif isinstance(child, ast.FunctionDef) and is_property(child, read_only=True):
+            yield create_assign_from_property(child)
+
+
+def create_assign(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Assign:
+    """Return an [Assign] instance."""
+    name = mkapi.ast.get_assign_name(node) or ""
+    type_ = mkapi.ast.get_assign_type(node)
+    default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
+    return Assign(Name(name), Type(type_), Text(), Default(default), node)
+
+
+def create_assign_from_property(node: ast.FunctionDef) -> Assign:
+    """Return an [Assign] instance from a property."""
+    return Assign(Name(node.name), Type(node.returns), Text(), Default(), node)
 
 
 @dataclass(repr=False)
@@ -166,8 +157,7 @@ def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]
         if type_ := raise_.exc:
             if isinstance(type_, ast.Call):
                 type_ = type_.func
-            name = Name(ast.unparse(type_))
-            yield Raise(name, Type(type_), Text())
+            yield Raise(Name(), Type(type_), Text())
 
 
 @dataclass(repr=False)
@@ -178,7 +168,7 @@ class Return(Item):
 def iter_returns(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Return]:
     """Yield one [Return] instance if it isn't None."""
     if node.returns:
-        yield Return(Name(""), Type(node.returns), Text())
+        yield Return(Name(), Type(node.returns), Text())
 
 
 @dataclass(repr=False)
@@ -189,92 +179,7 @@ class Base(Item):
 def iter_bases(node: ast.ClassDef) -> Iterator[Base]:
     """Yield [Base] instances."""
     for base in node.bases:
-        name = ast.unparse(base.value) if isinstance(base, ast.Subscript) else ast.unparse(base)
-        yield Base(Name(name), Type(base), Text())
-
-
-@dataclass(repr=False)
-class Assign(Item):
-    """Assign class for [Module] or [Class]."""
-
-    default: Default
-    node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
-
-    def __iter__(self) -> Iterator[Name | Type | Text]:
-        yield from super().__iter__()
-        if self.default.expr:
-            yield self.default
-
-
-def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
-    """Yield [Assign] instances."""
-    for child in mkapi.ast.iter_child_nodes(node):
-        if isinstance(child, ast.AnnAssign | ast.Assign) or TypeAlias and isinstance(child, TypeAlias):
-            attr = create_assign(child)
-            if attr.name:
-                yield attr
-        elif isinstance(child, ast.FunctionDef) and is_property(child, read_only=True):
-            yield create_assign_from_property(child)
-
-
-def create_assign(node: ast.AnnAssign | ast.Assign | ast.TypeAlias) -> Assign:
-    """Return an [Assign] instance."""
-    name = mkapi.ast.get_assign_name(node) or ""
-    type_ = mkapi.ast.get_assign_type(node)
-    type_, text = _assign_type_text(type_, node.__doc__)
-    default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
-    return Assign(Name(name), type_, text, Default(default), node)
-
-
-def create_assign_from_property(node: ast.FunctionDef) -> Assign:
-    """Return an [Assign] instance from a property."""
-    node.__doc__ = ast.get_docstring(node)
-    type_, text = _assign_type_text(node.returns, node.__doc__)
-    return Assign(Name(node.name), type_, text, Default(), node)
-
-
-def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
-    if not text:
-        return Type(type_), Text()
-    type_doc, text = split_without_name(text, "google")
-    if not type_ and type_doc:
-        # ex. 'list(str)' -> 'list[str]' for ast.expr
-        type_doc = type_doc.replace("(", "[").replace(")", "]")
-        type_ = mkapi.ast.create_expr(type_doc)
-    return Type(type_), Text(text)
-
-
-def split_without_name(text: str, style: str) -> tuple[str, str]:
-    """Return a tuple of (type, text) for Returns or Yields section."""
-    lines = text.splitlines()
-    if style == "google" and ":" in lines[0]:
-        type_, text_ = lines[0].split(":", maxsplit=1)
-        return type_.strip(), "\n".join([text_.strip(), *lines[1:]])
-    if style == "numpy" and len(lines) > 1 and lines[1].startswith(" "):
-        text_ = textwrap.dedent("\n".join(lines[1:]))
-        return lines[0], text_
-    return "", text
-
-
-T = TypeVar("T")
-
-
-def iter_merged_items(items_ast: Sequence[T], items_doc: Sequence[T]) -> Iterator[T]:
-    """Yield merged [Item] instances.
-
-    `items_ast` are overwritten in-place.
-    """
-    for name in unique_names(items_ast, items_doc):
-        item_ast, item_doc = get_by_name(items_ast, name), get_by_name(items_doc, name)
-        if item_ast and not item_doc:
-            yield item_ast
-        elif not item_ast and item_doc:
-            yield item_doc
-        if isinstance(item_ast, Item) and isinstance(item_doc, Item):
-            item_ast.name = item_ast.name or item_doc.name
-            item_ast.type = item_ast.type if item_ast.type.expr else item_doc.type
-            item_ast.text = item_ast.text if item_ast.text.str else item_doc.text
-            yield item_ast
+        yield Base(Name(), Type(base), Text())
 
 
 @dataclass(repr=False)
@@ -284,14 +189,12 @@ class Section(Item):
     items: list[Item]
     kind: str | None = None
 
-    def __post_init__(self) -> None:
-        self.name.markdown = self.name.str
-
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(items={len(self.items)})"
 
     def __iter__(self) -> Iterator[Name | Type | Text]:
         yield from super().__iter__()
+
         for item in self.items:
             yield from item
 
@@ -303,9 +206,9 @@ class Parameters(Section):
     items: list[Parameter]
 
 
-def create_parameters(items: Iterable[tuple[Name, Type, Text]]) -> Parameters:
+def create_parameters(items: Iterable[Item]) -> Parameters:
     """Return a parameters section."""
-    parameters = [Parameter(*args, Default()) for args in items]
+    parameters = [Parameter(item.name, item.type, item.text, Default()) for item in items]
     return Parameters(Name("Parameters"), Type(), Text(), parameters)
 
 
@@ -316,9 +219,9 @@ class Assigns(Section):
     items: list[Assign]
 
 
-def create_assigns(items: Iterable[tuple[Name, Type, Text]]) -> Assigns:
+def create_assigns(items: Iterable[Item]) -> Assigns:
     """Return an Assigns section."""
-    assigns = [Assign(*args, Default(), None) for args in items]
+    assigns = [Assign(item.name, item.type, item.text, Default(), None) for item in items]
     return Assigns(Name("Assigns"), Type(), Text(), assigns)
 
 
@@ -329,11 +232,9 @@ class Raises(Section):
     items: list[Raise]
 
 
-def create_raises(items: Iterable[tuple[Name, Type, Text]]) -> Raises:
-    """Return a raises section."""
-    raises = [Raise(*args) for args in items]
-    for raise_ in raises:
-        raise_.type.expr = ast.Constant(raise_.name)
+def create_raises(items: Iterable[Item]) -> Raises:
+    """Return a [Raises] section."""
+    raises = [Raise(Name(), Type(ast.Constant(item.name.str)), item.text) for item in items]
     return Raises(Name("Raises"), Type(), Text(), raises)
 
 
@@ -344,15 +245,9 @@ class Returns(Section):
     items: list[Return]
 
 
-def create_returns(name: str, text: str, style: str) -> Returns:
-    """Return a returns section."""
-    type_, text_ = split_without_name(text, style)
-    name_ = ""
-    if ":" in type_:
-        name_, type_ = (x.strip() for x in type_.split(":", maxsplit=1))
-    type_ = Type(ast.Constant(type_) if type_ else None)
-    text_ = Text(text_ or None)
-    returns = [Return(Name(name_), type_, text_)]
+def create_returns(items: Iterable[Item], name: str) -> Returns:
+    """Return a [Returns] section."""
+    returns = [Return(item.name, item.type, item.text) for item in items]
     return Returns(Name(name), Type(), Text(), returns)
 
 
@@ -389,8 +284,70 @@ def create_admonition(name: str, text: str) -> Admonition:
     elif name.startswith("See Also"):
         cls = SeeAlso
         kind = "info"
-        text = mkapi.markdown.add_link(text)
+        text = mkapi.markdown.get_see_also(text)
     else:
         raise NotImplementedError
     text = mkapi.markdown.get_admonition(kind, name, text)
     return cls(Name(name), Type(), Text(text), [], kind)
+
+
+def merge_parameters(sections: list[Section], parameters: list[Parameter]) -> None:
+    """Merge parameters."""
+    if not (section := get_by_type(sections, Parameters)):
+        return
+
+    for item in section.items:
+        name = item.name.str.replace("*", "")
+
+        if param := get_by_name(parameters, name):
+            if not item.type.expr:
+                item.type = param.type
+
+            if not item.default.expr:
+                item.default = param.default
+
+            item.kind = param.kind
+
+
+def merge_returns(sections: list[Section], returns: list[Return]) -> None:
+    """Merge returns."""
+    if not (section := get_by_type(sections, Returns)):
+        return
+
+    if len(returns) == 1 and len(section.items) == 1:
+        item = section.items[0]
+
+        if not item.type.expr:
+            item.type = returns[0].type
+
+
+def merge_raises(sections: list[Section], raises: list[Raise]) -> None:
+    """Merge raises."""
+    section = get_by_type(sections, Raises)
+
+    if not section:
+        if not raises:
+            return
+
+        section = create_raises([])
+        sections.append(section)
+
+    section.items = list(iter_merged_items(section.items, raises))
+
+
+T = TypeVar("T")
+
+
+def iter_merged_items(items_doc: Sequence[T], items_ast: Sequence[T]) -> Iterator[T]:
+    """Yield merged [Item] instances."""
+    for name in unique_names(items_doc, items_ast):
+        item_doc, item_ast = get_by_name(items_doc, name), get_by_name(items_ast, name)
+        if item_doc and not item_ast:
+            yield item_doc
+        elif not item_doc and item_ast:
+            yield item_ast
+        elif isinstance(item_doc, Item) and isinstance(item_ast, Item):
+            item_doc.name = item_doc.name if item_doc.name.str else item_ast.name
+            item_doc.type = item_doc.type if item_doc.type.expr else item_ast.type
+            item_doc.text = item_doc.text if item_doc.text.str else item_ast.text
+            yield item_doc

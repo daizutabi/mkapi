@@ -57,7 +57,7 @@ def get_module_path(name: str) -> Path | None:
     """Return the source path of the module name."""
     try:
         spec = find_spec(name)
-    except ModuleNotFoundError:
+    except (ModuleNotFoundError, ValueError):
         return None
     if not (spec and spec.origin):
         return None

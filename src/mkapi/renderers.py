@@ -9,7 +9,6 @@ from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
 from mkapi.inspect import get_signature
-from mkapi.link import get_markdown
 from mkapi.objects import Attribute, Class, Function, Module
 
 templates: dict[str, Template] = {}

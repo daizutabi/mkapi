@@ -113,3 +113,6 @@ def test_get_fullname():
     assert x == "mkapi.objects"
     x = get_fullname("mkapi.objects.Object", "mkapi.objects")
     assert x == "mkapi.objects.Object"
+
+
+# TODO: get_fullname: import ast -> get ast.AST
