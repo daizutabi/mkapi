@@ -9,7 +9,7 @@ from mkapi.link import (
     get_markdown_from_type_string,
     set_markdown,
 )
-from mkapi.objects import Attribute, Class, Function
+from mkapi.objects import Class, Function
 from mkapi.utils import get_by_name
 
 

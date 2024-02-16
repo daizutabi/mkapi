@@ -8,6 +8,7 @@ from mkapi.globals import (
     resolve,
 )
 from mkapi.items import Parameters, SeeAlso
+from mkapi.link import set_markdown
 from mkapi.objects import (
     Attribute,
     Class,
@@ -46,6 +47,7 @@ def DataFrame() -> Class:  # noqa: N802
 
 def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
     obj = DataFrame
+    set_markdown(obj)
     m = obj.name.markdown
     assert m == "[DataFrame][__mkapi__.polars.dataframe.frame.DataFrame]"
     m = obj.fullname.markdown
@@ -54,6 +56,7 @@ def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
     assert "[__mkapi__.polars.dataframe.frame]" in m
     func = get_by_name(obj.functions, "write_excel")
     assert isinstance(func, Function)
+    set_markdown(func)
     p = func.parameters[1]
     assert "[Workbook][__mkapi__.xlsxwriter.Workbook]" in p.type.markdown
 
@@ -61,6 +64,7 @@ def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
 def test_set_markdown_object(DataFrame: Class):  # noqa: N803
     attr = get_by_name(DataFrame.attributes, "width")
     assert isinstance(attr, Attribute)
+    set_markdown(attr)
     assert attr.type.markdown == "int"
 
 
@@ -71,6 +75,7 @@ def test_iter_merged_parameters(DataFrame: Class):  # noqa: N803
     assert params
     x = params.items
     assert x[0].name.str == "function"
+    set_markdown(func)
     assert "typing.Callable][[Concatenate][__mkapi__" in x[0].type.markdown
     assert x[1].name.str == "*args"
     assert "[P][__mkapi_" in x[1].type.markdown
@@ -83,11 +88,13 @@ def test_see_also(DataFrame: Class):  # noqa: N803
     assert isinstance(func, Function)
     see = get_by_type(func.doc.sections, SeeAlso)
     assert see
+    set_markdown(func)
     assert "[__mkapi__.polars.dataframe.frame.DataFrame.tail]" in see.text.markdown
     func = get_by_name(DataFrame.functions, "_read_csv")
     assert isinstance(func, Function)
     see = get_by_type(func.doc.sections, SeeAlso)
     assert see
+    set_markdown(func)
     assert "[__mkapi__.polars.io.csv.functions.read_csv]" in see.text.markdown
 
 
@@ -103,6 +110,7 @@ def test_see_also_text():
     assert attr
     see = get_by_type(attr.doc.sections, SeeAlso)
     assert see
+    set_markdown(attr)
     m = see.text.markdown
     assert "[schema][__mkapi__.polars.lazyframe.frame.LazyFrame.schema]" in m
     assert "Returns a" in m
@@ -110,6 +118,7 @@ def test_see_also_text():
     assert func
     see = get_by_type(func.doc.sections, SeeAlso)
     assert see
+    set_markdown(func)
     m = see.text.markdown
     assert "[__mkapi__.polars.lazyframe.frame.LazyFrame.serialize]" in m
     name = "polars.io.csv.functions"
@@ -121,6 +130,7 @@ def test_see_also_text():
     assert func
     see = get_by_type(func.doc.sections, SeeAlso)
     assert see
+    set_markdown(func)
     m = see.text.markdown
     assert "[__mkapi__.polars.io.csv.functions.scan_csv]" in m
 

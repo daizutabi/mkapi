@@ -47,6 +47,7 @@ def test_iter_base_classes():
 
 
 def test_inherit_base_classes():
+    cache_clear()
     load_module("mkapi.plugins")
     cls = get_object("mkapi.plugins.MkAPIConfig")
     assert isinstance(cls, Class)
