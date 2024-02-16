@@ -1,4 +1,5 @@
 import ast
+import inspect
 
 from mkapi.objects import Function, create_function, objects
 from mkapi.utils import get_by_name
@@ -23,3 +24,34 @@ def test_create_function(get):
     assert len(func.raises) == 1
     assert len(func.doc.sections) == 3
     assert repr(func) == "Function('module_level_function')"
+
+
+def test_merge_items():
+    """'''test'''
+    def f(x: int = 0, y: str = 's') -> bool:
+        '''function.
+
+        Args:
+            x: parameter x.
+            z: parameter z.
+
+        Returns:
+            Return True.'''
+    """
+    src = inspect.getdoc(test_merge_items)
+    assert src
+    node = ast.parse(src).body[1]
+    assert isinstance(node, ast.FunctionDef)
+    func = create_function(node)
+    assert get_by_name(func.parameters, "x")
+    assert get_by_name(func.parameters, "y")
+    assert not get_by_name(func.parameters, "z")
+    items = get_by_name(func.doc.sections, "Parameters").items  # type: ignore
+    assert get_by_name(items, "x")
+    assert not get_by_name(items, "y")
+    assert get_by_name(items, "z")
+    assert [item.name.str for item in items] == ["x", "z"]
+    assert func.returns[0].type
+    items = get_by_name(func.doc.sections, "Returns").items  # type: ignore
+    assert items[0].text.str == "Return True."
+    assert items[0].type.expr.id == "bool"  # type: ignore

@@ -154,12 +154,15 @@ def iter_attributes(
 
 def create_attributes(
     node: ast.ClassDef | ast.Module | ast.FunctionDef | ast.AsyncFunctionDef,
-    module: Module,
-    parent: Class | Function | None,
+    module: Module | None = None,
+    parent: Class | Function | None = None,
     self: str = "",
 ) -> list[Attribute]:
+    module = module or _create_empty_module()
+
     attrs = list(iter_attributes(node, module, parent, self))
     merge_attributes(attrs, module, parent)
+
     return attrs
 
 
@@ -432,8 +435,6 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
 
     module = Module(Name(name), node, doc, source)
 
-    module.attributes = list(iter_attributes(node, module, None))
-
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             cls = create_class(child, module)
@@ -444,20 +445,9 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
                 func = create_function(child, module)
                 module.functions.append(func)
 
+    module.attributes = create_attributes(node, module, None)
+
     return module
-
-
-# def merge_items(module: Module) -> None:
-#     """Merge items."""
-#     for obj in iter_objects(module):
-#         if isinstance(obj, Function | Class):
-#             merge_parameters(obj)
-#             merge_raises(obj)
-#         if isinstance(obj, Function):
-#             merge_returns(obj)
-#         if isinstance(obj, Module | Class):
-#             _add_doc_comments(obj.attributes, module.source)
-#             merge_attributes(obj)
 
 
 Member_: TypeAlias = Module | Class | Function | Attribute

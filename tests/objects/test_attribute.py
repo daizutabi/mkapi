@@ -154,7 +154,7 @@ def test_clssss_attribute(google, source, get):
 
 def test_create_module_attribute_with_module(google, source):
     module = create_module("google", google, source)
-    attrs = create_attributes(google, module, None)
+    attrs = module.attributes
     assert len(attrs) == 2
     attr = attrs[0]
     assert attr.name.str == "module_level_variable1"
