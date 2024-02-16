@@ -8,7 +8,8 @@ from typing import TypeAlias
 from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
-from mkapi.objects import Attribute, Class, Function, Module, get_source, iter_objects
+from mkapi.link import set_markdown
+from mkapi.objects import Attribute, Class, Function, Module, get_source, is_member, iter_objects
 from mkapi.signatures import get_signature
 
 templates: dict[str, Template] = {}
@@ -27,9 +28,15 @@ def load_templates(path: Path | None = None) -> None:
 Object: TypeAlias = Module | Class | Function | Attribute
 
 
-def render_header(obj: Object, *, is_source: bool = False) -> str:
-    kind = "source" if is_source else "object"
-    return templates["header"].render(obj=obj, kind=kind)
+def render_heading(obj: Object, level: int, cls: str = "mkapi-heading") -> str:
+    id_ = obj.fullname.str
+    name = obj.fullname.str.replace("_", "\\_")
+    context = {"level": level, "id": id_, "class": cls, "name": name}
+    return templates["heading"].render(context)
+
+
+def render_header(obj: Object, namespace: str) -> str:
+    return templates["header"].render(obj=obj, namespace=namespace)
 
 
 def render_object(obj: Object) -> str:
@@ -58,7 +65,7 @@ def render_source(obj: Object, attr: str = "") -> str:
     return ""
 
 
-def _get_source(obj: Object) -> str:
+def _get_source(obj: Object, *, skip_self: bool = True) -> str:
     if not (source := get_source(obj)) or not obj.node:
         return ""
 
@@ -66,12 +73,14 @@ def _get_source(obj: Object) -> str:
     start = 1 if isinstance(obj, Module) else obj.node.lineno
 
     for child in iter_objects(obj):
+        if skip_self and child is obj or isinstance(obj, Attribute) or not child.node:
+            continue
         if isinstance(child, Module):
             index = 0
-        elif child.node:
-            index = child.node.lineno - start
-        else:
+        elif child != obj and not is_member(child, obj):
             continue
+        else:
+            index = child.node.lineno - start
 
         if len(lines[index]) > 80 and index:  # noqa: PLR2004
             index -= 1
@@ -83,22 +92,21 @@ def _get_source(obj: Object) -> str:
     return "\n".join(lines)
 
 
-def render(obj: Object, filters: list[str], *, is_source: bool = False) -> str:
+def render(obj: Object, level: int, namespace: str, filters: list[str]) -> str:
     """Return a rendered Markdown."""
-    header = render_header(obj, is_source=is_source)
-    object_ = render_object(obj)
-    document = render_document(obj)
-    source = render_source(obj)
-    return "\n\n".join([header, object_, document, source])  # noqa: FLY002
+    set_markdown(obj)
 
-    # heading = f"h{level}" if level else "p"
-    # # fullname = get_markdown(obj.fullname.str)
-    # names = [x.replace("_", "\\_") for x in obj.qualname.str.split(".")]
-    # if isinstance(obj, Module):
-    #     qualnames = [[x, "name"] for x in names]
-    # else:
-    #     qualnames = [[x, "prefix"] for x in names]
-    #     qualnames[-1][1] = "name"
+    heading = render_heading(obj, level) if level else ""
+
+    header = render_header(obj, namespace)
+
+    object_ = render_object(obj)
+
+    document = render_document(obj)
+
+    source = render_source(obj)
+
+    return "\n\n".join([heading, header, object_, document, source])  # noqa: FLY002
 
 
 # def add_sections(module: Module) -> None:

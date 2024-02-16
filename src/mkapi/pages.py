@@ -4,27 +4,26 @@ from __future__ import annotations
 import datetime
 import os.path
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.markdown
 import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object, load_module
 from mkapi.objects import is_empty, is_member, iter_objects_with_depth
-
-# from mkapi.renderers import get_object_filter_for_source
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from mkapi.objects import Attribute, Class, Function, Module
 
 PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "MARKDOWN"])
+
+object_paths: dict[str, dict[str, Path]] = {}
 
 
 @dataclass
@@ -41,6 +40,7 @@ class Page:
         if not self.path.exists():
             if not self.path.parent.exists():
                 self.path.parent.mkdir(parents=True)
+
             self.create_markdown()
 
     def __repr__(self) -> str:
@@ -52,69 +52,61 @@ class Page:
             with self.path.open("w") as file:
                 file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
 
-            self.markdown = create_markdown(
-                self.name,
-                self.path,
-                self.kind,
-                self.filters,
-            )
+            self.markdown, names = create_markdown(self.name, self.filters)
 
-    def convert_markdown(self, markdown: str, anchor: str) -> str:
+            namespace = "source" if PageKind.SOURCE else "object"
+
+            if namespace not in object_paths:
+                object_paths[namespace] = {}
+
+            for name in names:
+                object_paths[namespace][name] = self.path
+
+    def convert_markdown(self, markdown: str, anchors: dict[str, str]) -> str:
         """Return converted markdown."""
         if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             markdown = self.markdown
 
-        return convert_markdown(
-            markdown,
-            self.path,
-            self.kind,
-            anchor,
-        )
+        namespaces = ("object", "source") if PageKind.SOURCE else ("source", "object")
 
-    def convert_html(self, html: str, anchor: str) -> str:
+        return convert_markdown(markdown, self.path, namespaces, object_paths, anchors)
+
+    def convert_html(self, html: str, anchors: dict[str, str]) -> str:
         """Return converted html."""
-        if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
-            # if self.kind == PageKind.SOURCE:
-            return convert_html(html, self.path, anchor)
 
-        return html
+        namespace = "object" if PageKind.SOURCE else "source"
+        paths = object_paths[namespace]
+        anchor = anchors[namespace]
+
+        return convert_html(html, self.path, paths, anchor)
 
 
-object_paths: dict[str, Path] = {}
-source_paths: dict[str, Path] = {}
+Predicate: TypeAlias = Callable[[str], bool] | None
 
 
 def create_markdown(
     name: str,
-    path: Path,
-    kind: PageKind,
     filters: list[str],
-    predicate: Callable[[str], bool] | None = None,
-) -> str:
+    predicate: Predicate = None,
+) -> tuple[str, list[str]]:
     """Create object page for an object."""
     if not (module := load_module(name)):
-        return f"!!! failure\n\n    module {name!r} not found.\n"
+        return f"!!! failure\n\n    module {name!r} not found.\n", []
 
     filters_str = "|" + "|".join(filters) if filters else ""
-    object_filter = ""
-
-    paths = source_paths if kind is PageKind.SOURCE else object_paths
 
     predicate_ = partial(_predicate, predicate=predicate)
 
     markdowns = []
+    names = []
+
     for obj, depth in iter_objects_with_depth(module, 2, predicate_):
-        paths[obj.fullname.str] = path
-
-        if kind is PageKind.SOURCE:
-            object_filter = get_object_filter_for_source(obj, module)
-            object_filter = f"|{object_filter}" if object_filter else ""
-
+        names.append(obj.fullname.str)
         heading = "#" * (depth + 1)
-        markdown = f"{heading} ::: {obj.fullname.str}{filters_str}{object_filter}\n"
+        markdown = f"{heading} ::: {obj.fullname.str}{filters_str}\n"
         markdowns.append(markdown)
 
-    return "\n".join(markdowns)
+    return "\n".join(markdowns), names
 
 
 def _predicate(
@@ -131,106 +123,80 @@ def _predicate(
     return True
 
 
+OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
+LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
+
+
 def convert_markdown(
     markdown: str,
     path: Path,
-    kind: PageKind,
-    anchor: str,
+    namespaces: tuple[str, str],
+    paths: dict[str, dict[str, Path]],
+    anchors: dict[str, str],
 ) -> str:
     """Return converted markdown."""
-    if kind is PageKind.SOURCE:
-        markdown = _replace_source(markdown)
-    else:
-        markdown = mkapi.markdown.sub(OBJECT_PATTERN, _replace_object, markdown)
-
-    paths = source_paths if kind is PageKind.SOURCE else object_paths
+    render = partial(_render, namespace=namespaces[1])
+    markdown = mkapi.markdown.sub(OBJECT_PATTERN, render, markdown)
 
     def replace_link(match: re.Match) -> str:
-        return _replace_link(match, path.parent, paths, anchor)
+        return _replace_link(match, path.parent, namespaces[0], paths, anchors)
 
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 
 
-OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
-
-
-def _get_level_name_filters(match: re.Match) -> tuple[str, int, list[str]]:
+def _render(match: re.Match, namespace: str) -> str:
     heading, name = match.groups()
     level = len(heading)
     name, filters = split_filters(name)
-    return name, level, filters
-
-
-def _replace_object(match: re.Match) -> str:
-    name, level, filters = _get_level_name_filters(match)
 
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    return mkapi.renderers.render(obj, level, filters, is_source=False)
+    return mkapi.renderers.render(obj, level, namespace, filters)
 
 
-def _replace_source(markdown: str) -> str:
-    module = None
-    filters = []
-    headings = []
-
-    for match in re.finditer(OBJECT_PATTERN, markdown):
-        name, level, object_filter = _get_level_name_filters(match)
-        if level == 1 and not (module := load_module(name)):
-            break
-
-        # Move to renderer.py
-        if level >= 2:  # noqa: PLR2004
-            # 'markdown="1"' for toc.
-            attr = f'class="mkapi-heading" id="{name}" markdown="1"'
-            name_ = name.replace("_", "\\_")
-            heading = f"<h{level} {attr}>{name_}</h{level}>"
-            headings.append(heading)
-            filters.extend(object_filter)
-
-    if not module:
-        return "!!! failure\n\n    module not found."
-
-    source = mkapi.renderers.render(module, 1, filters, is_source=True)
-    return "\n".join([source, *headings])
-
-
-LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
+OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
 
 
 def _replace_link(
     match: re.Match,
     directory: Path,
-    paths: dict[str, Path],
-    anchor: str,
+    namespace: str,
+    paths: dict[str, dict[str, Path]],
+    anchors: dict[str, str],
 ) -> str:
     name, fullname = match.groups()
     fullname, filters = split_filters(fullname)
 
-    if fullname.startswith("__mkapi__.__source__."):
-        name = f"[{anchor}]"
-        paths = source_paths
-        return _replace_link_from_paths(name, fullname[21:], directory, paths) or ""
+    asname = ""
 
-    if fullname.startswith("__mkapi__.__object__."):
-        name = f"[{anchor}]"
-        paths = object_paths
-        return _replace_link_from_paths(name, fullname[21:], directory, paths) or ""
+    if m := OBJECT_LINK_PATTERN.match(fullname):
+        namespace, fullname = m.groups()
 
-    if "source" in filters:
-        paths = source_paths
+        if namespace in anchors and namespace in paths:
+            name = f"[{anchors[namespace]}]"
+            paths_ = paths[namespace]
+        else:
+            return ""
 
-    return _replace_link_from_paths(name, fullname, directory, paths) or match.group()
+    else:
+        paths_ = paths[namespace]
+        asname = match.group()
+
+    # if "source" in filters:
+    #     paths = source_paths
+
+    return _replace_link_from_paths(name, fullname, directory, paths_) or asname
 
 
-def _replace_link_from_paths(
-    name: str,
-    fullname: str,
-    directory: Path,
-    paths: dict[str, Path],
-) -> str | None:
-    fullname, from_mkapi = _resolve_fullname(fullname)
+def _replace_link_from_paths(name: str, fullname: str, directory: Path, paths: dict[str, Path]) -> str | None:
+    if fullname.startswith("__mkapi__."):
+        from_mkapi = True
+        fullname = fullname[10:]
+    else:
+        from_mkapi = False
+
+    fullname = resolve_with_attribute(fullname) or fullname
 
     if path := paths.get(fullname):
         # Python 3.12
@@ -244,28 +210,17 @@ def _replace_link_from_paths(
     return None
 
 
-def _resolve_fullname(fullname: str) -> tuple[str, bool]:
-    if fullname.startswith("__mkapi__."):
-        from_mkapi = True
-        fullname = fullname[10:]
-    else:
-        from_mkapi = False
-
-    fullname = resolve_with_attribute(fullname) or fullname
-    return fullname, from_mkapi
-
-
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
 HEADING_PATTERN = re.compile(r"<h\d.+?mkapi-heading.+?</h\d>\n?")
 
 
-def convert_html(html: str, path: Path, anchor: str) -> str:
+def convert_html(html: str, path: Path, paths: dict[str, Path], anchor: str) -> str:
     """Convert HTML for source pages."""
 
     def replace(match: re.Match) -> str:
         open_tag, name, close_tag = match.groups()
 
-        if object_path := object_paths.get(name):
+        if object_path := paths.get(name):
             # Python 3.12
             # uri = object_path.relative_to(path, walk_up=True).as_posix()
             uri = Path(os.path.relpath(object_path, path)).as_posix()
@@ -274,7 +229,7 @@ def convert_html(html: str, path: Path, anchor: str) -> str:
 
             href = f"{uri}/#{name}"
             link = f'<a href="{href}">[{anchor}]</a>'
-            link = f'<span id="{name}" class="mkapi-docs-link">{link}</span>'
+            link = f'<span class="mkapi-source-link" id="{name}">{link}</span>'
         else:
             link = ""
 
