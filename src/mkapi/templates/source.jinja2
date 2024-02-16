@@ -1,22 +1,3 @@
-<div class="mkapi-content" markdown="1">
-
-<{{ heading }} class="mkapi-header" id="{{ obj.fullname.str }}" markdown="1">
-<span class="mkapi-header-name">{{ obj.fullname.markdown|safe }}</span>
-<span class="mkapi-docs-link">[docs][__mkapi__.__object__.{{ obj.fullname.str }}]</span>
-</{{ heading }}>
-
-<p class="mkapi-object" markdown="1">
-<span class="mkapi-object-kind">{{ obj.kind }}</span>
-<span class="mkapi-object-name">
-{%- for name, kind in qualnames -%}
-<span class="{{ kind }}">{{ name }}</span>
-{%- if not loop.last %}<span class="dot">.</span>{% endif -%}
-{%- endfor -%}
-</span>
-</p>
-
-``` {.python .mkapi-source}
+``` {.python .mkapi-source{% if attr %} {{ attr }}{% endif %}}
 {{ source|safe }}
 ```
-
-</div>

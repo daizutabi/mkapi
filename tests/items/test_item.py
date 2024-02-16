@@ -1,5 +1,4 @@
 import ast
-import inspect
 from inspect import Parameter
 
 import pytest
@@ -7,10 +6,6 @@ import pytest
 from mkapi.ast import iter_child_nodes
 from mkapi.items import (
     Assign,
-    Item,
-    Name,
-    Text,
-    Type,
     create_admonition,
     iter_assigns,
     iter_bases,
@@ -18,8 +13,7 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
 )
-from mkapi.objects import create_module
-from mkapi.utils import get_by_name, get_module_path
+from mkapi.utils import get_module_path
 
 
 def _get_parameters(source: str):

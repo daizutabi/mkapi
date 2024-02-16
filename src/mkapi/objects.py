@@ -225,6 +225,7 @@ def union_attributes(la: list[Attribute], lb: list[Attribute]) -> Iterator[Attri
             yield b
 
         elif isinstance(a, Attribute) and isinstance(b, Attribute):
+            a.node = a.node if a.node else b.node
             a.type = a.type if a.type.expr else b.type
             a.doc = mkapi.docstrings.merge(a.doc, b.doc)
             yield a

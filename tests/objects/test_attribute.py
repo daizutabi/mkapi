@@ -147,6 +147,7 @@ def test_clssss_attribute(google, source, get):
     for k, name in enumerate(names):
         assert attrs[k].name.str == name
         assert attrs[k].fullname.str == f"google.ExampleClass.{name}"
+        assert attrs[k].node
     assert not get_by_name(cls.functions, "__init__")
 
 

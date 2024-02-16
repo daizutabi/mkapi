@@ -15,7 +15,8 @@ import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
 from mkapi.importlib import get_object, load_module
 from mkapi.objects import is_empty, is_member, iter_objects_with_depth
-from mkapi.renderers import get_object_filter_for_source
+
+# from mkapi.renderers import get_object_filter_for_source
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
