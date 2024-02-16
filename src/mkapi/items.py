@@ -121,12 +121,21 @@ class Assign(Item):
     node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
 
 
-def iter_assigns(node: ast.ClassDef | ast.Module) -> Iterator[Assign]:
+def iter_assigns(
+    node: ast.ClassDef | ast.Module | ast.FunctionDef | ast.AsyncFunctionDef,
+    self: str = "",
+) -> Iterator[Assign]:
     """Yield [Assign] instances."""
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.AnnAssign | ast.Assign) or TypeAlias and isinstance(child, TypeAlias):
             attr = create_assign(child)
-            if attr.name:
+            name = attr.name.str
+
+            if isinstance(node, ast.ClassDef | ast.Module) and name and "." not in name:
+                yield attr
+
+            elif name.startswith(f"{self}."):
+                attr.name = Name(name[len(self) + 1 :])
                 yield attr
 
         elif isinstance(child, ast.FunctionDef) and is_property(child, read_only=True):
@@ -338,16 +347,16 @@ def merge_raises(sections: list[Section], raises: list[Raise]) -> None:
 T = TypeVar("T")
 
 
-def iter_merged_items(items_doc: Sequence[T], items_ast: Sequence[T]) -> Iterator[T]:
+def iter_merged_items(la: Sequence[T], lb: Sequence[T]) -> Iterator[T]:
     """Yield merged [Item] instances."""
-    for name in unique_names(items_doc, items_ast):
-        item_doc, item_ast = get_by_name(items_doc, name), get_by_name(items_ast, name)
-        if item_doc and not item_ast:
-            yield item_doc
-        elif not item_doc and item_ast:
-            yield item_ast
-        elif isinstance(item_doc, Item) and isinstance(item_ast, Item):
-            item_doc.name = item_doc.name if item_doc.name.str else item_ast.name
-            item_doc.type = item_doc.type if item_doc.type.expr else item_ast.type
-            item_doc.text = item_doc.text if item_doc.text.str else item_ast.text
-            yield item_doc
+    for name in unique_names(la, lb):
+        a, b = get_by_name(la, name), get_by_name(lb, name)
+        if a and not b:
+            yield a
+        elif not a and b:
+            yield b
+        elif isinstance(a, Item) and isinstance(b, Item):
+            a.name = a.name if a.name.str else b.name
+            a.type = a.type if a.type.expr else b.type
+            a.text = a.text if a.text.str else b.text
+            yield a

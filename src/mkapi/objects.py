@@ -16,10 +16,9 @@ from mkapi.items import (
     Assign,
     Assigns,
     Default,
+    Item,
     Name,
-    Parameters,
-    Raises,
-    Returns,
+    Section,
     Text,
     Type,
     create_raises,
@@ -29,9 +28,10 @@ from mkapi.items import (
     iter_raises,
     iter_returns,
     merge_parameters,
+    merge_raises,
     merge_returns,
 )
-from mkapi.utils import cache, get_by_name, get_by_type, is_package
+from mkapi.utils import cache, del_by_name, get_by_name, get_by_type, is_package, unique_names
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -112,8 +112,8 @@ class Attribute(Member):
 
 def create_attribute(
     assign: Assign,
-    module: Module | None = None,
-    parent: Class | None = None,
+    module: Module,
+    parent: Class | Function | None,
 ) -> Attribute:
     """Return an [Attribute] instance."""
     node = assign.node
@@ -129,12 +129,11 @@ def create_attribute(
 
         if doc.text.str and (lines := doc.text.str.splitlines()):  # noqa: SIM102
             if ":" in lines[0]:
-                type_, lines[0] = (x.strip() for x in lines[0].split(":", maxsplit=1))
+                type_, lines[0] = (x.lstrip(" ").rstrip() for x in lines[0].split(":", maxsplit=1))
                 doc.text.str = "\n".join(lines).strip()
 
                 if not assign.type.expr:
-                    type_ = type_.replace("(", "[").replace(")", "]")
-                    assign.type.expr = mkapi.ast.create_expr(type_)
+                    assign.type.expr = ast.Constant(type_)
 
     else:
         doc = Docstring(Name("Docstring"), Type(), assign.text, [])
@@ -144,43 +143,121 @@ def create_attribute(
 
 
 def iter_attributes(
-    node: ast.ClassDef | ast.Module,
-    module: Module | None,
-    parent: Class | None,
+    node: ast.ClassDef | ast.Module | ast.FunctionDef | ast.AsyncFunctionDef,
+    module: Module,
+    parent: Class | Function | None,
+    self: str = "",
 ) -> Iterator[Attribute]:
-    for child in iter_assigns(node):
+    for child in iter_assigns(node, self):
         yield create_attribute(child, module, parent)
 
 
-# def _add_doc_comments(attrs: list[Attribute], source: str | None = None) -> None:
-#     if not source:
-#         return
-#     lines = source.splitlines()
-#     for attr in attrs:
-#         if attr.doc.text.str or not (node := attr.node):
+def create_attributes(
+    node: ast.ClassDef | ast.Module | ast.FunctionDef | ast.AsyncFunctionDef,
+    module: Module,
+    parent: Class | Function | None,
+    self: str = "",
+) -> list[Attribute]:
+    attrs = list(iter_attributes(node, module, parent, self))
+    merge_attributes(attrs, module, parent)
+    return attrs
+
+
+def merge_attributes(
+    attributes: list[Attribute],
+    module: Module,
+    parent: Class | Function | None,
+) -> None:
+    """Merge attributes."""
+    sections = parent.doc.sections if parent else module.doc.sections
+
+    if section := get_by_type(sections, Assigns):
+        for attr in attributes:
+            _merge_attribute_docstring(attr, section)
+
+        for item in reversed(section.items):
+            attr = create_attribute(item, module, parent)
+            attributes.insert(0, attr)
+
+        index = sections.index(section)
+        del sections[index]
+
+    if module.source:
+        _merge_attributes_comment(attributes, module.source)
+
+
+def _merge_attribute_docstring(attr: Attribute, section: Assigns):
+    if item := get_by_name(section.items, attr.name):
+        if not attr.doc.text.str:
+            attr.doc.text.str = item.text.str
+
+        if not attr.type.expr:
+            attr.type.expr = item.type.expr
+
+        index = section.items.index(item)
+        del section.items[index]
+
+
+def _merge_attributes_comment(attrs: list[Attribute], source: str) -> None:
+    lines = source.splitlines()
+
+    for attr in attrs:
+        if attr.doc.text.str or not (node := attr.node):
+            continue
+
+        line = lines[node.lineno - 1][node.end_col_offset :].strip()
+
+        if line.startswith("#:"):
+            _add_text_from_comment(attr, line[2:].strip())
+
+        elif node.lineno > 1:
+            line = lines[node.lineno - 2][node.col_offset :]
+            if line.startswith("#:"):
+                _add_text_from_comment(attr, line[2:].strip())
+
+
+def _add_text_from_comment(attr: Attribute, text: str) -> None:
+    if not text:
+        return
+
+    type_, text = split_item_without_name(text, "google")
+    if not attr.type.expr:
+        attr.type.expr = ast.Constant(type_)
+
+    attr.doc.text.str = text
+
+
+# def add_section_attributes(obj: Module | Class) -> None:
+#     """Add an Attributes section."""
+
+#     items = []
+#     attributes = []
+
+#     for attr in obj.attributes:
+#         if attr.doc.sections:
+#             items.append(_get_item(attr))
+#         elif not is_empty(attr):
+#             item = Item(attr.name, attr.type, attr.doc.text)
+#             items.append(item)
 #             continue
-#         line = lines[node.lineno - 1][node.end_col_offset :].strip()
-#         if line.startswith("#:"):
-#             _add_doc_comment(attr, line[2:].strip())
-#         elif node.lineno > 1:
-#             line = lines[node.lineno - 2][node.col_offset :]
-#             if line.startswith("#:"):
-#                 _add_doc_comment(attr, line[2:].strip())
 
+#         attributes.append(attr)
 
-# def _add_doc_comment(attr: Attribute, text: str) -> None:
-#     attr.type, attr.doc.text = _assign_type_text(attr.type.expr, text)
+#     obj.attributes = attributes
 
+#     if not items:
+#         return
 
-# def _assign_type_text(type_: ast.expr | None, text: str | None) -> tuple[Type, Text]:
-#     if not text:
-#         return Type(type_), Text()
-#     type_doc, text = split_item_without_name(text, "google")
-#     if not type_ and type_doc:
-#         # ex. 'list(str)' -> 'list[str]' for ast.expr
-#         type_doc = type_doc.replace("(", "[").replace(")", "]")
-#         type_ = mkapi.ast.create_expr(type_doc)
-#     return Type(type_), Text(text)
+#     name = "Attributes"
+#     sections = obj.doc.sections
+
+#     if section := get_by_name(sections, name):
+#         index = sections.index(section)
+#         section.items = items
+#         obj.doc.sections[index] = section
+#     else:
+#         section = Section(Name(name), Type(), Text(), items)
+#         obj.doc.sections.append(section)
 
 
 @dataclass(repr=False)
@@ -223,14 +300,13 @@ def create_function(
     module = module or _create_empty_module()
 
     params = list(iter_parameters(node))
-    if section := get_by_type(doc.sections, Parameters):
-        merge_parameters(section, params)
+    merge_parameters(doc.sections, params)
 
     returns = list(iter_returns(node))
-    if section := get_by_type(doc.sections, Returns):
-        merge_returns(section, returns)
+    merge_returns(doc.sections, returns)
 
     raises = list(iter_raises(node))
+    merge_raises(doc.sections, raises)
 
     func = Function(name, node, doc, module, parent, params, returns, raises)
 
@@ -281,10 +357,6 @@ def create_class(
 
     cls = Class(name, node, doc, module, parent, bases)
 
-    for child in iter_assigns(node):
-        attr = create_attribute(child, module, cls)
-        cls.attributes.append(attr)
-
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             cls_ = create_class(child, module, cls)
@@ -295,7 +367,41 @@ def create_class(
                 func = create_function(child, module, cls)
                 cls.functions.append(func)
 
+    cls.attributes = create_attributes(node, module, cls)
+    merge_init(cls)
+
     return cls
+
+
+def merge_init(cls: Class):
+    if not (init := get_by_name(cls.functions, "__init__")):
+        return
+
+    cls.parameters = init.parameters
+    cls.raises = init.raises
+
+    if init.parameters:
+        self = init.parameters[0].name.str
+        attrs = create_attributes(init.node, cls.module, cls, self)
+        attrs = union_attributes(cls.attributes, attrs)
+        cls.attributes = sorted(attrs, key=lambda attr: attr.node.lineno if attr.node else -1)
+
+    cls.doc = mkapi.docstrings.merge(cls.doc, init.doc)
+    del_by_name(cls.functions, "__init__")
+
+
+def union_attributes(la: list[Attribute], lb: list[Attribute]) -> Iterator[Attribute]:
+    """Yield merged [Attribute] instances."""
+    for name in unique_names(la, lb):
+        a, b = get_by_name(la, name), get_by_name(lb, name)
+        if a and not b:
+            yield a
+        elif not a and b:
+            yield b
+        elif isinstance(a, Attribute) and isinstance(b, Attribute):
+            a.type = a.type if a.type.expr else b.type
+            a.doc = mkapi.docstrings.merge(a.doc, b.doc)
+            yield a
 
 
 @dataclass(repr=False)
@@ -323,20 +429,21 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
     """Return a [Module] instance from an [ast.Module] node."""
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
+
     module = Module(Name(name), node, doc, source)
-    for child in iter_assigns(node):
-        attr = create_attribute(child, module)
-        module.attributes.append(attr)
+
+    module.attributes = list(iter_attributes(node, module, None))
+
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             cls = create_class(child, module)
             module.classes.append(cls)
+
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
             if mkapi.ast.is_function(child):
                 func = create_function(child, module)
                 module.functions.append(func)
-    # merge_items(module)
-    # set_markdown(module)
+
     return module
 
 
@@ -351,36 +458,6 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
 #         if isinstance(obj, Module | Class):
 #             _add_doc_comments(obj.attributes, module.source)
 #             merge_attributes(obj)
-
-
-def merge_attributes(obj: Module | Class) -> None:
-    """Merge attributes."""
-    if not (section := get_by_type(obj.doc.sections, Assigns)):
-        return
-    section.name = Name("Attributes")
-
-    module = obj if isinstance(obj, Module) else obj.module
-    parent = obj if isinstance(obj, Class) else None
-
-    attributes = []
-    for assign in section.items:
-        if not (attr := get_by_name(obj.attributes, assign.name)):
-            attr = create_attribute(assign, module, parent)
-
-        else:
-            if not attr.doc.text.str:
-                attr.doc.text.str = assign.text.str
-
-            if not attr.type.expr:
-                attr.type.expr = assign.type.expr
-
-        attributes.append(attr)
-
-    for attr in obj.attributes:
-        if not get_by_name(attributes, attr.name):
-            attributes.append(attr)
-
-    obj.attributes = attributes
 
 
 Member_: TypeAlias = Module | Class | Function | Attribute

@@ -132,8 +132,8 @@ def add_sections(module: Module) -> None:
             name = "Methods" if isinstance(obj, Class) else "Functions"
             add_section(obj, obj.functions, name)
 
-        if isinstance(obj, Module | Class):
-            add_section_attributes(obj)
+        # if isinstance(obj, Module | Class):
+        #     add_section_attributes(obj)
 
 
 def add_section(
@@ -150,37 +150,37 @@ def add_section(
         obj.doc.sections.append(section)
 
 
-def add_section_attributes(obj: Module | Class) -> None:
-    """Add an Attributes section."""
+# def add_section_attributes(obj: Module | Class) -> None:
+#     """Add an Attributes section."""
 
-    items = []
-    attributes = []
+#     items = []
+#     attributes = []
 
-    for attr in obj.attributes:
-        if attr.doc.sections:
-            items.append(_get_item(attr))
-        elif not is_empty(attr):
-            item = Item(attr.name, attr.type, attr.doc.text)
-            items.append(item)
-            continue
+#     for attr in obj.attributes:
+#         if attr.doc.sections:
+#             items.append(_get_item(attr))
+#         elif not is_empty(attr):
+#             item = Item(attr.name, attr.type, attr.doc.text)
+#             items.append(item)
+#             continue
 
-        attributes.append(attr)
+#         attributes.append(attr)
 
-    obj.attributes = attributes
+#     obj.attributes = attributes
 
-    if not items:
-        return
+#     if not items:
+#         return
 
-    name = "Attributes"
-    sections = obj.doc.sections
+#     name = "Attributes"
+#     sections = obj.doc.sections
 
-    if section := get_by_name(sections, name):
-        index = sections.index(section)
-        section.items = items
-        obj.doc.sections[index] = section
-    else:
-        section = Section(Name(name), Type(), Text(), items)
-        obj.doc.sections.append(section)
+#     if section := get_by_name(sections, name):
+#         index = sections.index(section)
+#         section.items = items
+#         obj.doc.sections[index] = section
+#     else:
+#         section = Section(Name(name), Type(), Text(), items)
+#         obj.doc.sections.append(section)
 
 
 def _get_item(obj: Module | Class | Function | Attribute) -> Item:

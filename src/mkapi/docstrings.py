@@ -58,6 +58,8 @@ def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
 
     elif ":" in lines[0]:
         name, text = lines[0].split(":", maxsplit=1)
+        name = name.strip()
+        text = text.strip()
         type_ = ""
 
     else:
@@ -66,13 +68,15 @@ def _split_item_google(lines: list[str]) -> tuple[str, str, str]:
     rest = "\n".join(lines[1:])
     rest = textwrap.dedent(rest)
 
-    return name.strip(), type_.strip(), f"{text.strip()}\n{rest}".strip()
+    return name, type_, f"{text}\n{rest}".rstrip()
 
 
 def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:
     """Split an item into a tuple of (name, type, text) in the NumPy style."""
     if ":" in lines[0]:
         name, type_ = lines[0].split(":", maxsplit=1)
+        name = name.strip()
+        type_ = type_.strip()
 
     else:
         name, type_ = lines[0], ""
@@ -80,7 +84,7 @@ def _split_item_numpy(lines: list[str]) -> tuple[str, str, str]:
     text = "\n".join(lines[1:])
     text = textwrap.dedent(text)
 
-    return name.strip(), type_.strip(), text
+    return name, type_, text
 
 
 def split_item(text: str, style: Style) -> tuple[str, str, str]:
@@ -99,7 +103,9 @@ def split_item_without_name(text: str, style: str) -> tuple[str, str]:
 
     if style == "google" and ":" in lines[0]:
         type_, text = lines[0].split(":", maxsplit=1)
-        return type_.strip(), "\n".join([text.strip(), *lines[1:]])
+        type_ = type_.strip()
+        text = text.strip(" ").rstrip()
+        return type_, "\n".join([text, *lines[1:]])
 
     if style == "numpy" and len(lines) > 1 and lines[1].startswith(" "):
         text = textwrap.dedent("\n".join(lines[1:]))

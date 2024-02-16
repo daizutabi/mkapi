@@ -8,6 +8,7 @@ from ast import (
     AnnAssign,
     Assign,
     AsyncFunctionDef,
+    Attribute,
     ClassDef,
     Constant,
     Expr,
@@ -45,11 +46,14 @@ Node: typing.TypeAlias = Import_ | Def | Assign_
 def iter_child_nodes(node: AST) -> Iterator[Node]:
     """Yield child nodes."""
     yield_type = Import | ImportFrom | AsyncFunctionDef | FunctionDef | ClassDef
+
     for child in (it := ast.iter_child_nodes(node)):
         if isinstance(child, yield_type):
             yield child
+
         elif isinstance(child, AnnAssign | Assign | TypeAlias):
             yield from _iter_assign_nodes(child, it)
+
         else:
             yield from iter_child_nodes(child)
 
@@ -58,6 +62,7 @@ def _get_pseudo_docstring(node: AST) -> str | None:
     if isinstance(node, Expr) and isinstance(node.value, Constant):
         doc = node.value.value
         return cleandoc(doc) if isinstance(doc, str) else None
+
     return None
 
 
@@ -67,17 +72,21 @@ def _iter_assign_nodes(
 ) -> Iterator[Node]:
     """Yield assign nodes."""
     node.__doc__ = None
+
     try:
         next_node = next(it)
     except StopIteration:
         yield node
         return
+
     if isinstance(next_node, AnnAssign | Assign | TypeAlias):
         yield node
         yield from _iter_assign_nodes(next_node, it)
+
     elif isinstance(next_node, AsyncFunctionDef | FunctionDef | ClassDef):
         yield node
         yield next_node
+
     else:
         node.__doc__ = _get_pseudo_docstring(next_node)
         yield node
@@ -85,12 +94,21 @@ def _iter_assign_nodes(
 
 def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type: ignore
     """Return the name of the assign node."""
-    if isinstance(node, AnnAssign) and isinstance(node.target, Name):
-        return node.target.id
-    if isinstance(node, Assign) and isinstance(node.targets[0], Name):
-        return node.targets[0].id
-    if TypeAlias and isinstance(node, TypeAlias) and isinstance(node.name, Name):
-        return node.name.id
+    if isinstance(node, Assign):
+        target = node.targets[0]
+
+    elif isinstance(node, AnnAssign):
+        target = node.target
+
+    elif TypeAlias and isinstance(node, TypeAlias):
+        target = node.name
+
+    else:
+        return None
+
+    if isinstance(target, Name | Attribute):
+        return ast.unparse(target)
+
     return None
 
 
@@ -98,8 +116,10 @@ def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:  #
     """Return a type annotation of the Assign or TypeAlias AST node."""
     if isinstance(node, AnnAssign):
         return node.annotation
+
     if TypeAlias and isinstance(node, TypeAlias):
         return node.value
+
     return None
 
 
@@ -125,6 +145,7 @@ def _iter_defaults(node: AsyncFunctionDef | FunctionDef) -> Iterator[ast.expr | 
     args = node.args
     num_positional = len(args.posonlyargs) + len(args.args)
     nones = [None] * num_positional
+
     yield from [*nones, *args.defaults][-num_positional:]
     yield from args.kw_defaults
 
@@ -146,6 +167,7 @@ def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]
         if isinstance(child, ast.Raise) and (type_ := child.exc):
             if isinstance(type_, ast.Call):
                 type_ = type_.func
+
             if (name := ast.unparse(type_)) not in names:
                 yield child
                 names.append(name)
@@ -170,8 +192,10 @@ def create_expr(name: str) -> ast.expr:
             expr = ast.parse(name).body[0]
         except SyntaxError:
             return ast.Constant("")
+
         if isinstance(expr, ast.Expr):
             return expr.value
+
     return ast.Constant(value=name)
 
 
@@ -194,6 +218,7 @@ class StringTransformer(Transformer):
     def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802
         if isinstance(node.value, str):
             return self._rename(node.value)
+
         return node
 
 
@@ -202,18 +227,24 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
     start = 0
     while start < len(source):
         index = source.find(PREFIX, start)
+
         if index == -1:
             yield source[start:], False
             return
+
         if index != 0:
             yield source[start:index], False
+
         start = stop = index + len(PREFIX)
+
         while stop < len(source):
             c = source[stop]
             if c == "." or c.isdigit() or c.isidentifier():
                 stop += 1
+
             else:
                 break
+
         yield source[start:stop], True
         start = stop
 
@@ -237,6 +268,7 @@ def _unparse(
     for code, isidentifier in _iter_identifiers(source):
         if isidentifier:
             yield callback(code)
+
         else:
             yield code
 
@@ -259,12 +291,16 @@ def is_property(
     """Return True if a function is a property."""
     for deco in node.decorator_list:
         deco_names = next(iter_identifiers(deco)).split(".")
+
         if len(deco_names) == 1 and deco_names[0] == "property":
             return True
+
         if read_only:
             continue
+
         if len(deco_names) == 2 and deco_names[1] == "setter":  # noqa: PLR2004
             return True
+
     return False
 
 
@@ -274,6 +310,7 @@ def has_overload(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
         deco_names = next(iter_identifiers(deco)).split(".")
         if len(deco_names) == 1 and deco_names[0] == "overload":
             return True
+
     return False
 
 

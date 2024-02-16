@@ -42,8 +42,6 @@ def test_iter_merged_items():
     assert item.default.expr.value == 0  # type: ignore
     assert item.text.str == "parameter."
 
-
-def test_iter_merged_items_():
     a = [
         Item(Name("a"), Type(), Text("item a")),
         Item(Name("b"), Type(ast.Constant("int")), Text("item b")),
