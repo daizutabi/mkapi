@@ -1,30 +1,6 @@
-from mkapi.importlib import (
-    get_object,
-    get_source,
-    # inherit_base_classes,
-    iter_base_classes,
-    load_module,
-)
+from mkapi.importlib import get_object, iter_base_classes, load_module
 from mkapi.objects import Class, Function, Module
 from mkapi.utils import cache_clear, get_by_name
-
-
-def test_load_module_source():
-    module = load_module("mkdocs.structure.files")
-    assert module
-    assert module.source
-    assert "class File" in module.source
-    module = load_module("mkapi.plugins")
-    assert module
-    cls = get_by_name(module.classes, "MkAPIConfig")
-    assert cls
-    assert cls.module is module
-    src = get_source(cls)
-    assert src
-    assert src.startswith("class MkAPIConfig")
-    src = get_source(module)
-    assert src
-    assert "MkAPIPlugin" in src
 
 
 def test_get_object():
@@ -74,11 +50,9 @@ def test_inherit_base_classes():
     load_module("mkapi.plugins")
     cls = get_object("mkapi.plugins.MkAPIConfig")
     assert isinstance(cls, Class)
-    # inherit_base_classes(cls)
     assert get_by_name(cls.attributes, "config_file_path")
     cls = get_object("mkapi.plugins.MkAPIPlugin")
     assert isinstance(cls, Class)
-    # inherit_base_classes(cls)
     assert get_by_name(cls.functions, "on_page_read_source")
     cls = get_object("mkapi.items.Parameters")
     assert isinstance(cls, Class)
@@ -128,7 +102,7 @@ def test_get_object_using_all():
 
 def test_get_object_nest():
     cache_clear()
-    assert get_object("mkapi.items.Name.set_markdown")
+    assert get_object("mkapi.items.Name.__repr__")
     assert get_object("mkapi.items.Name")
 
 
@@ -147,7 +121,7 @@ def test_get_object_inherit():
     assert not get_by_name(cls.functions, "__init__")
 
 
-def test_section_attribute():
+def test_postprocess_module():
     cache_clear()
     module = load_module("examples.styles.google")
     assert module
@@ -160,15 +134,3 @@ def test_section_attribute():
     cls = get_by_name(module.classes, "ExampleClass")
     assert isinstance(cls, Class)
     assert not get_by_name(cls.functions, "__init__")
-
-
-def test_add_section():
-    cache_clear()
-    module = load_module("examples.styles.google")
-    assert module
-    cls = get_by_name(module.classes, "ExampleClass")
-    assert isinstance(cls, Class)
-    section = get_by_name(cls.doc.sections, "Methods")
-    assert section
-    for x in section.items:
-        assert "][__mkapi__.examples.styles.google." in x.name.markdown

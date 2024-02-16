@@ -458,6 +458,22 @@ def iter_objects(
         yield child
 
 
+def get_source(obj: Module | Class | Function | Attribute) -> str | None:
+    """Return the source code of an object."""
+    if isinstance(obj, Module):
+        return obj.source
+
+    if not obj.node:
+        return None
+
+    if (module := obj.module) and (source := module.source):
+        start, stop = obj.node.lineno - 1, obj.node.end_lineno
+        lines = source.split("\n")
+        return "\n".join(lines[start:stop]) + "\n"
+
+    return None
+
+
 def _get_kind_function(func: Function) -> str:
     if mkapi.inspect.is_classmethod(func):
         return "classmethod"
@@ -488,36 +504,3 @@ def is_empty(obj: Object) -> bool:
     if isinstance(obj, Function) and obj.name.str.startswith("_"):
         return True
     return False
-
-
-# def add_section_attributes(obj: Module | Class) -> None:
-#     """Add an Attributes section."""
-
-#     items = []
-#     attributes = []
-
-#     for attr in obj.attributes:
-#         if attr.doc.sections:
-#             items.append(_get_item(attr))
-#         elif not is_empty(attr):
-#             item = Item(attr.name, attr.type, attr.doc.text)
-#             items.append(item)
-#             continue
-
-#         attributes.append(attr)
-
-#     obj.attributes = attributes
-
-#     if not items:
-#         return
-
-#     name = "Attributes"
-#     sections = obj.doc.sections
-
-#     if section := get_by_name(sections, name):
-#         index = sections.index(section)
-#         section.items = items
-#         obj.doc.sections[index] = section
-#     else:
-#         section = Section(Name(name), Type(), Text(), items)
-#         obj.doc.sections.append(section)

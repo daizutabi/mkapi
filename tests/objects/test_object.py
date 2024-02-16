@@ -2,7 +2,7 @@ import ast
 import inspect
 
 from mkapi.importlib import load_module
-from mkapi.objects import Class, Function, Module, create_module, iter_objects
+from mkapi.objects import Class, Function, Module, create_class, create_module, get_source, iter_objects
 from mkapi.utils import get_by_name, get_module_node
 
 
@@ -104,3 +104,17 @@ def test_kind():
     attr = get_by_name(cls.attributes, "node")
     assert attr
     assert attr.kind == "attribute"
+
+
+def test_get_source(google, source, get):
+    module = create_module("google", google, source)
+    x = get_source(module)
+    assert x
+    assert x.startswith('"""Example')
+    assert x.endswith("attr2: int\n")
+    node = get("ExampleClass")
+    cls = create_class(node, module, None)
+    x = get_source(cls)
+    assert x
+    assert x.startswith("class ExampleClass")
+    assert x.endswith("pass\n")

@@ -91,3 +91,71 @@ def _render_source(obj: Module, context: dict[str, Any], filters: list[str]) -> 
         source = ""
     context["source"] = source
     return templates["source"].render(context)
+
+
+# def add_sections(module: Module) -> None:
+#     """Add sections."""
+#     for obj in iter_objects(module):
+#         if isinstance(obj, Module | Class):
+#             add_section(obj, obj.classes, "Classes")
+
+#         if isinstance(obj, Module | Class | Function):
+#             name = "Methods" if isinstance(obj, Class) else "Functions"
+#             add_section(obj, obj.functions, name)
+
+#         # if isinstance(obj, Module | Class):
+#         #     add_section_attributes(obj)
+
+
+# def add_section(
+#     obj: Module | Class | Function,
+#     children: Iterable[Class | Function | Attribute],
+#     name: str,
+# ) -> None:
+#     """Add Section."""
+#     if get_by_name(obj.doc.sections, name):
+#         return
+
+#     if items := [_get_item(child) for child in children if not is_empty(child)]:
+#         section = Section(Name(name), Type(), Text(), items)
+#         obj.doc.sections.append(section)
+
+
+# def add_section_attributes(obj: Module | Class) -> None:
+#     """Add an Attributes section."""
+
+#     items = []
+#     attributes = []
+
+#     for attr in obj.attributes:
+#         if attr.doc.sections:
+#             items.append(_get_item(attr))
+#         elif not is_empty(attr):
+#             item = Item(attr.name, attr.type, attr.doc.text)
+#             items.append(item)
+#             continue
+
+#         attributes.append(attr)
+
+#     obj.attributes = attributes
+
+#     if not items:
+#         return
+
+#     name = "Attributes"
+#     sections = obj.doc.sections
+
+#     if section := get_by_name(sections, name):
+#         index = sections.index(section)
+#         section.items = items
+#         obj.doc.sections[index] = section
+#     else:
+#         section = Section(Name(name), Type(), Text(), items)
+#         obj.doc.sections.append(section)
+
+
+# def _get_item(obj: Module | Class | Function | Attribute) -> Item:
+#     text = Text(obj.doc.text.str)
+#     text.markdown = obj.doc.text.markdown.split("\n\n")[0]  # summary line
+#     type_ = obj.type if isinstance(obj, Attribute) else Type()
+#     return Item(obj.name, type_, text)
