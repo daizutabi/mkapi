@@ -195,8 +195,10 @@ def test_update_markdown_for_dirty_module(config: MkDocsConfig):
         ts1 = f.read()
     with (Path("docs") / path_src).open() as f:
         ts2 = f.read()
-    assert "\nabc123\n" in plugin.pages[path_docs].convert_markdown("", "a")
-    assert "'''abc123'''\n" in plugin.pages[path_src].convert_markdown("", "a")
+    m = plugin.pages[path_docs].convert_markdown("", {"source": "a"})
+    assert "\nabc123\n" in m
+    m = plugin.pages[path_src].convert_markdown("", {"object": "a"})
+    assert "'''abc123'''\n" in m
 
     with Path("AAA.py").open("w") as f:
         f.write("'''def456'''")
@@ -207,8 +209,10 @@ def test_update_markdown_for_dirty_module(config: MkDocsConfig):
         ts3 = f.read()
     with (Path("docs") / path_src).open() as f:
         ts4 = f.read()
-    assert "\ndef456\n" in plugin.pages[path_docs].convert_markdown("", "a")
-    assert "'''def456'''\n" in plugin.pages[path_src].convert_markdown("", "a")
+    m = plugin.pages[path_docs].convert_markdown("", {"source": "a"})
+    assert "\ndef456\n" in m
+    m = plugin.pages[path_src].convert_markdown("", {"object": "a"})
+    assert "'''def456'''\n" in m
     assert ts1 != ts3
     assert ts2 != ts4
 

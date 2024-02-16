@@ -134,10 +134,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         uri = page.file.src_uri
         page_ = self.pages[uri]
 
-        anchor = self.config.docs_anchor if page_.kind is PageKind.SOURCE else self.config.src_anchor
+        anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
 
         try:
-            return page_.convert_markdown(markdown, anchor)
+            return page_.convert_markdown(markdown, anchors)
         except Exception as e:  # noqa: BLE001
             if self.config.debug:
                 raise
@@ -160,7 +160,9 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         if page_.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             _replace_toc(page.toc, self.toc_title)
 
-        html = page_.convert_html(html, self.config.docs_anchor)
+        anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
+
+        html = page_.convert_html(html, anchors)
 
         self._update_bar(page.file.src_uri)
         return html

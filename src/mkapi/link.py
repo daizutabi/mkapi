@@ -118,12 +118,18 @@ def set_markdown(obj: Module | Class | Function | Attribute) -> None:
     _replace_from_object = partial(replace_from_object, obj=obj)
 
     for elem in itertools.chain(obj, obj.doc):
+        # if elem.markdown:
+        #     continue
+
         if isinstance(elem, Name):
             set_markdown_name(elem, _replace_from_object)  # replace = None ?
+
         elif isinstance(elem, Type):
             set_markdown_type(elem, _replace_from_module)
+
         elif isinstance(elem, Text):
             set_markdown_text(elem, _replace_from_object)
+
         elif isinstance(elem, Default):
             set_markdown_default(elem, _replace_from_module)
 

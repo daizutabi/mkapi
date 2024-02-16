@@ -21,9 +21,11 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-@cache
-def load_module(name: str) -> Module | None:
+def load_module(name: str, skip: list[str] | None = None) -> Module | None:
     """Return a [Module] instance by the name."""
+    if name in objects:
+        return objects[name]  # type: ignore
+
     if not (node_source := get_module_node_source(name)):
         return None
 
@@ -32,18 +34,24 @@ def load_module(name: str) -> Module | None:
     for cls in module.classes:
         _postprocess_class(cls)
 
-    _postprocess_module(module)
+    skip = [*skip, module.name.str] if skip else [module.name.str]
+    _postprocess_module(module, skip)
 
     return module
 
 
-def get_object(fullname: str, skip: str | None = None) -> Module | Class | Function | Attribute | None:
+def get_object(
+    fullname: str,
+    skip: list[str] | None = None,
+) -> Module | Class | Function | Attribute | None:
     """Return an [Object] instance by the fullname."""
+    skip = skip or []
+
     if fullname in objects:
         return objects[fullname]
 
     for name in iter_parent_module_names(fullname):
-        if name != skip and load_module(name) and fullname in objects:
+        if name not in skip and load_module(name, skip) and fullname in objects:
             return objects[fullname]
 
     objects[fullname] = None
@@ -87,9 +95,9 @@ def inherit_base_classes(cls: Class) -> None:
         setattr(cls, name, list(members.values()))
 
 
-def _postprocess_module(module: Module) -> None:
+def _postprocess_module(module: Module, skip: list[str]) -> None:
     for name, fullname in get_all(module.name.str).items():
-        obj = get_object(fullname, module.name.str)
+        obj = get_object(fullname, skip)
 
         asname = f"{module.name.str}.{name}"
         objects[asname] = obj

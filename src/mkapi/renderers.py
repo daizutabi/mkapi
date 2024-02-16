@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from pathlib import Path
 from typing import TypeAlias
 
@@ -71,17 +72,17 @@ def _get_source(obj: Object, *, skip_self: bool = True) -> str:
 
     lines = source.splitlines()
     start = 1 if isinstance(obj, Module) else obj.node.lineno
+    module = obj if isinstance(obj, Module) else obj.module
 
     for child in iter_objects(obj):
         if skip_self and child is obj or isinstance(obj, Attribute) or not child.node:
             continue
         if isinstance(child, Module):
             index = 0
-        elif child != obj and not is_member(child, obj):
+        elif child != obj and (not is_member(child, obj) or child.module is not module):
             continue
         else:
             index = child.node.lineno - start
-
         if len(lines[index]) > 80 and index:  # noqa: PLR2004
             index -= 1
 
@@ -92,21 +93,32 @@ def _get_source(obj: Object, *, skip_self: bool = True) -> str:
     return "\n".join(lines)
 
 
-def render(obj: Object, level: int, namespace: str, filters: list[str]) -> str:
+def render(
+    obj: Object,
+    level: int,
+    namespace: str,
+    filters: list[str],
+    predicate: Callable[[str, str], bool] | None = None,
+) -> str:
     """Return a rendered Markdown."""
     set_markdown(obj)
 
-    heading = render_heading(obj, level) if level else ""
+    fullname = obj.fullname.str
+    markdowns = [render_heading(obj, level) if level else ""]
 
-    header = render_header(obj, namespace)
+    if not predicate or predicate(fullname, "header"):
+        markdowns.append(render_header(obj, namespace))
 
-    object_ = render_object(obj)
+    if not predicate or predicate(fullname, "object"):
+        markdowns.append(render_object(obj))
 
-    document = render_document(obj)
+    if not predicate or predicate(fullname, "document"):
+        markdowns.append(render_document(obj))
 
-    source = render_source(obj)
+    if not predicate or predicate(fullname, "source"):
+        markdowns.append(render_source(obj))
 
-    return "\n\n".join([heading, header, object_, document, source])  # noqa: FLY002
+    return "\n\n".join(markdowns)
 
 
 # def add_sections(module: Module) -> None:

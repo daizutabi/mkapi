@@ -176,7 +176,8 @@ def get_all_from_importlib(module: str) -> dict[str, str]:
 
     names = {}
     for name in members["__all__"]:
-        if not (obj := members.get(name)):
+        obj = members.get(name)
+        if obj is None:
             continue
         if inspect.ismodule(obj):
             names[name] = obj.__name__

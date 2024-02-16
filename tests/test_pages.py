@@ -81,6 +81,7 @@ def test_convert_markdown():
 
 
 def test_convert_html():
+    cache_clear()
     source = "## ::: mkapi.objects.Object\n"
     path = Path("/root/a/b/c.md")
     paths = {}

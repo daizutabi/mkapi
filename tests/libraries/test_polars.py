@@ -7,6 +7,7 @@ from mkapi.globals import (
     get_globals,
     resolve,
 )
+from mkapi.importlib import load_module
 from mkapi.items import Parameters, SeeAlso
 from mkapi.link import set_markdown
 from mkapi.objects import (
@@ -192,3 +193,8 @@ def test_get_all():
 
 
 # LazyFrame.tail
+
+
+def test_load_module():
+    name = "polars"
+    assert load_module(name)

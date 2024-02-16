@@ -84,11 +84,11 @@ def iter_signature(obj: Class | Function) -> Iterator[tuple[str, str]]:
 
     yield ")", "paren"
 
-    if isinstance(obj, Class):
+    if isinstance(obj, Class) or not obj.returns:
         return
 
     yield " → ", "arrow"
-    yield obj.returns[0].type.markdown, "return"  # type: ignore
+    yield obj.returns[0].type.markdown, "return"
 
 
 def get_signature(obj: Class | Function | Attribute) -> Signature:

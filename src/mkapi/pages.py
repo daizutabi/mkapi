@@ -19,6 +19,8 @@ from mkapi.objects import is_empty, is_member, iter_objects_with_depth
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from mkapi.objects import Attribute, Class, Function, Module
 
 PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "MARKDOWN"])
@@ -54,7 +56,7 @@ class Page:
 
             self.markdown, names = create_markdown(self.name, self.filters)
 
-            namespace = "source" if PageKind.SOURCE else "object"
+            namespace = "source" if self.kind is PageKind.SOURCE else "object"
 
             if namespace not in object_paths:
                 object_paths[namespace] = {}
@@ -67,14 +69,21 @@ class Page:
         if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
             markdown = self.markdown
 
-        namespaces = ("object", "source") if PageKind.SOURCE else ("source", "object")
+        namespaces = ("source", "object") if self.kind is PageKind.SOURCE else ("object", "source")
 
-        return convert_markdown(markdown, self.path, namespaces, object_paths, anchors)
+        def predicate(name: str, content: str) -> bool:
+            if self.kind is PageKind.SOURCE:
+                if self.name == name and content == "source":
+                    return True
+                return False
+            return False
+
+        return convert_markdown(markdown, self.path, namespaces, object_paths, anchors, predicate)
 
     def convert_html(self, html: str, anchors: dict[str, str]) -> str:
         """Return converted html."""
 
-        namespace = "object" if PageKind.SOURCE else "source"
+        namespace = "object" if self.kind is PageKind.SOURCE else "source"
         paths = object_paths[namespace]
         anchor = anchors[namespace]
 
@@ -133,9 +142,10 @@ def convert_markdown(
     namespaces: tuple[str, str],
     paths: dict[str, dict[str, Path]],
     anchors: dict[str, str],
+    predicate: Callable[[str, str], bool] | None = None,
 ) -> str:
     """Return converted markdown."""
-    render = partial(_render, namespace=namespaces[1])
+    render = partial(_render, namespace=namespaces[1], predicate=predicate)
     markdown = mkapi.markdown.sub(OBJECT_PATTERN, render, markdown)
 
     def replace_link(match: re.Match) -> str:
@@ -144,7 +154,7 @@ def convert_markdown(
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 
 
-def _render(match: re.Match, namespace: str) -> str:
+def _render(match: re.Match, namespace: str, predicate: Callable[[str, str], bool] | None = None) -> str:
     heading, name = match.groups()
     level = len(heading)
     name, filters = split_filters(name)
@@ -152,7 +162,7 @@ def _render(match: re.Match, namespace: str) -> str:
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    return mkapi.renderers.render(obj, level, namespace, filters)
+    return mkapi.renderers.render(obj, level, namespace, filters, predicate)
 
 
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
