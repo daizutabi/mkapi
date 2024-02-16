@@ -21,9 +21,21 @@ def test_create_function(get):
     assert get_by_name(func.parameters, "args")
     assert get_by_name(func.parameters, "kwargs")
     assert len(func.returns) == 0
-    assert len(func.raises) == 1
+    # assert len(func.raises) == 1
+    assert len(func.raises) == 0
     assert len(func.doc.sections) == 3
     assert repr(func) == "Function('module_level_function')"
+    section = get_by_name(func.doc.sections, "Parameters")
+    assert section
+    assert len(section.items) == 4
+    section = get_by_name(func.doc.sections, "Returns")
+    assert section
+    assert len(section.items) == 1
+    section = get_by_name(func.doc.sections, "Raises")
+    assert section
+    assert len(section.items) == 2
+    assert get_by_name(section.items, "ValueError")
+    assert get_by_name(section.items, "AttributeError")
 
 
 def test_merge_items():

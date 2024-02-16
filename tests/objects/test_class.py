@@ -1,8 +1,22 @@
 import ast
 import inspect
 
-from mkapi.objects import Class, create_class
+from mkapi.objects import Class, create_class, get_object
 from mkapi.utils import get_by_name
+
+
+def test_create_class_nested():
+    src = """
+    class A:
+        class B:
+            class C:
+                pass
+    """
+    node = ast.parse(inspect.cleandoc(src)).body[0]
+    assert isinstance(node, ast.ClassDef)
+    cls = create_class(node)
+    assert len(cls.classes) == 1
+    assert len(cls.classes[0].classes) == 1
 
 
 def test_create_class(get):
@@ -28,15 +42,9 @@ def test_create_class(get):
     assert repr(cls) == "Class('ExampleClass')"
 
 
-def test_create_class_nested():
-    src = """
-    class A:
-        class B:
-            class C:
-                pass
-    """
-    node = ast.parse(inspect.cleandoc(src)).body[0]
-    assert isinstance(node, ast.ClassDef)
-    cls = create_class(node)
-    assert len(cls.classes) == 1
-    assert len(cls.classes[0].classes) == 1
+def test_update_attributes():
+    cls = get_object("examples.styles.google.ExampleClass")
+    assert isinstance(cls, Class)
+    a = cls.attributes[0]
+    b = get_object("examples.styles.google.ExampleClass.attr1")
+    assert a is b

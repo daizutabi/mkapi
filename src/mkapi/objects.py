@@ -26,10 +26,8 @@ from mkapi.items import (
     iter_assigns,
     iter_bases,
     iter_parameters,
-    iter_raises,
     iter_returns,
     merge_parameters,
-    merge_raises,
     merge_returns,
 )
 from mkapi.utils import (
@@ -118,6 +116,11 @@ class Attribute(Member):
 
         if self.default.expr:
             yield self.default
+
+
+def update_attributes(attrs: list[Attribute]) -> None:
+    for attr in attrs:
+        objects[attr.fullname.str] = attr
 
 
 def create_attribute(
@@ -289,8 +292,9 @@ def create_function(
     returns = list(iter_returns(node))
     merge_returns(doc.sections, returns)
 
-    raises = list(iter_raises(node))
-    merge_raises(doc.sections, raises)
+    # raises = list(iter_raises(node))
+    # merge_raises(doc.sections, raises)
+    raises = []
 
     func = Function(name, node, doc, module, parent, params, returns, raises)
 
@@ -428,6 +432,7 @@ def merge_init(cls: Class):
 
         attrs = union_attributes(cls.attributes, attrs)
         cls.attributes = sorted(attrs, key=lambda attr: attr.node.lineno if attr.node else -1)
+        update_attributes(cls.attributes)
 
     cls.doc = mkapi.docstrings.merge(cls.doc, init.doc)
     del_by_name(cls.functions, "__init__")

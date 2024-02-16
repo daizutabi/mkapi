@@ -72,7 +72,8 @@ def test_render_document():
     assert obj
     set_markdown(obj)
     x = render_document(obj)
-    print(x)
+    assert '<span class="mkapi-item-name">**kwargs</span>' in x
+    assert '<span class="mkapi-item-type">ValueError</span>&mdash;' in x
 
 
 def test_render_source():
@@ -81,19 +82,6 @@ def test_render_source():
     x = render_source(obj, attr=".test")
     assert x.startswith("``` {.python .mkapi-source .test}\n")
     assert x.endswith("    pass\n```\n")
-
-
-def test_render():
-    cls = get_object("examples.styles.google.ExampleClass")
-    a = cls.attributes[0]
-    print(a.doc.text.str)
-    obj = get_object("examples.styles.google.ExampleClass.attr1")
-    assert obj
-    x = render(obj, 2, "object", [])
-    print(obj, a, obj is a)
-    print(x)
-
-    assert 0
 
 
 def test_get_source_class():
