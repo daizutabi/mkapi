@@ -6,11 +6,9 @@ from mkapi.objects import (
     _create_empty_module,
     _merge_attributes_comment,
     create_attribute,
-    create_attributes,
     create_class,
     create_module,
     iter_attributes,
-    merge_attributes,
 )
 from mkapi.utils import get_by_name, get_by_type
 

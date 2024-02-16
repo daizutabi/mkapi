@@ -11,17 +11,14 @@ import mkapi.ast
 import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
-from mkapi.docstrings import Docstring, iter_merged_items, split_item_without_name
+from mkapi.docstrings import Docstring, split_item_without_name
 from mkapi.items import (
     Assign,
     Assigns,
     Default,
-    Item,
     Name,
-    Section,
     Text,
     Type,
-    create_raises,
     iter_assigns,
     iter_bases,
     iter_parameters,
@@ -152,20 +149,6 @@ def iter_attributes(
         yield create_attribute(child, module, parent)
 
 
-def create_attributes(
-    node: ast.ClassDef | ast.Module | ast.FunctionDef | ast.AsyncFunctionDef,
-    module: Module | None = None,
-    parent: Class | Function | None = None,
-    self: str = "",
-) -> list[Attribute]:
-    module = module or _create_empty_module()
-
-    attrs = list(iter_attributes(node, module, parent, self))
-    merge_attributes(attrs, module, parent)
-
-    return attrs
-
-
 def merge_attributes(
     attributes: list[Attribute],
     module: Module,
@@ -230,37 +213,21 @@ def _add_text_from_comment(attr: Attribute, text: str) -> None:
     attr.doc.text.str = text
 
 
-# def add_section_attributes(obj: Module | Class) -> None:
-#     """Add an Attributes section."""
+def union_attributes(la: list[Attribute], lb: list[Attribute]) -> Iterator[Attribute]:
+    """Yield merged [Attribute] instances."""
+    for name in unique_names(la, lb):
+        a, b = get_by_name(la, name), get_by_name(lb, name)
 
-#     items = []
-#     attributes = []
+        if a and not b:
+            yield a
 
-#     for attr in obj.attributes:
-#         if attr.doc.sections:
-#             items.append(_get_item(attr))
-#         elif not is_empty(attr):
-#             item = Item(attr.name, attr.type, attr.doc.text)
-#             items.append(item)
-#             continue
+        elif not a and b:
+            yield b
 
-#         attributes.append(attr)
-
-#     obj.attributes = attributes
-
-#     if not items:
-#         return
-
-#     name = "Attributes"
-#     sections = obj.doc.sections
-
-#     if section := get_by_name(sections, name):
-#         index = sections.index(section)
-#         section.items = items
-#         obj.doc.sections[index] = section
-#     else:
-#         section = Section(Name(name), Type(), Text(), items)
-#         obj.doc.sections.append(section)
+        elif isinstance(a, Attribute) and isinstance(b, Attribute):
+            a.type = a.type if a.type.expr else b.type
+            a.doc = mkapi.docstrings.merge(a.doc, b.doc)
+            yield a
 
 
 @dataclass(repr=False)
@@ -370,7 +337,8 @@ def create_class(
                 func = create_function(child, module, cls)
                 cls.functions.append(func)
 
-    cls.attributes = create_attributes(node, module, cls)
+    cls.attributes = list(iter_attributes(node, module, cls))
+    merge_attributes(cls.attributes, module, cls)
     merge_init(cls)
 
     return cls
@@ -385,26 +353,15 @@ def merge_init(cls: Class):
 
     if init.parameters:
         self = init.parameters[0].name.str
-        attrs = create_attributes(init.node, cls.module, cls, self)
+
+        attrs = list(iter_attributes(init.node, cls.module, cls, self))
+        merge_attributes(attrs, cls.module, cls)
+
         attrs = union_attributes(cls.attributes, attrs)
         cls.attributes = sorted(attrs, key=lambda attr: attr.node.lineno if attr.node else -1)
 
     cls.doc = mkapi.docstrings.merge(cls.doc, init.doc)
     del_by_name(cls.functions, "__init__")
-
-
-def union_attributes(la: list[Attribute], lb: list[Attribute]) -> Iterator[Attribute]:
-    """Yield merged [Attribute] instances."""
-    for name in unique_names(la, lb):
-        a, b = get_by_name(la, name), get_by_name(lb, name)
-        if a and not b:
-            yield a
-        elif not a and b:
-            yield b
-        elif isinstance(a, Attribute) and isinstance(b, Attribute):
-            a.type = a.type if a.type.expr else b.type
-            a.doc = mkapi.docstrings.merge(a.doc, b.doc)
-            yield a
 
 
 @dataclass(repr=False)
@@ -445,7 +402,8 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
                 func = create_function(child, module)
                 module.functions.append(func)
 
-    module.attributes = create_attributes(node, module, None)
+    module.attributes = list(iter_attributes(node, module, None))
+    merge_attributes(module.attributes, module, None)
 
     return module
 
@@ -530,3 +488,36 @@ def is_empty(obj: Object) -> bool:
     if isinstance(obj, Function) and obj.name.str.startswith("_"):
         return True
     return False
+
+
+# def add_section_attributes(obj: Module | Class) -> None:
+#     """Add an Attributes section."""
+
+#     items = []
+#     attributes = []
+
+#     for attr in obj.attributes:
+#         if attr.doc.sections:
+#             items.append(_get_item(attr))
+#         elif not is_empty(attr):
+#             item = Item(attr.name, attr.type, attr.doc.text)
+#             items.append(item)
+#             continue
+
+#         attributes.append(attr)
+
+#     obj.attributes = attributes
+
+#     if not items:
+#         return
+
+#     name = "Attributes"
+#     sections = obj.doc.sections
+
+#     if section := get_by_name(sections, name):
+#         index = sections.index(section)
+#         section.items = items
+#         obj.doc.sections[index] = section
+#     else:
+#         section = Section(Name(name), Type(), Text(), items)
+#         obj.doc.sections.append(section)
