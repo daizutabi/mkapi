@@ -304,6 +304,7 @@ class Docstring(Item):
     def __iter__(self) -> Iterator[Name | Type | Text]:
         """Yield [Type] or [Text] instances."""
         yield from super().__iter__()
+
         for section in self.sections:
             yield from section
 

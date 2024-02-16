@@ -14,9 +14,9 @@ from mkapi.markdown import (
     _iter_literal_block,
     _replace,
     _split_block,
-    add_link,
     convert,
     finditer,
+    get_see_also,
     sub,
 )
 
@@ -388,19 +388,19 @@ def test_replace():
     assert "[xxx]:\nXXX\nzzz\n[yyy]: YYY" in text
 
 
-def test_add_link():
+def test_get_see_also():
     src = """
     abc, def
     ghi: jkl
     """
     src = inspect.cleandoc(src)
-    text = add_link(src)
+    text = get_see_also(src)
     assert text
     assert "[__mkapi__.abc][], [__mkapi__.def][]\n" in text
     assert "[__mkapi__.ghi][]: jkl" in text
 
 
-def test_add_link_items():
+def test_get_see_also_items():
     src = """
     abc: def
     ghi: jkl
@@ -408,7 +408,7 @@ def test_add_link_items():
     pqr: stu
     """
     src = inspect.cleandoc(src)
-    text = add_link(src)
+    text = get_see_also(src)
     lines = text.splitlines()
     assert lines[0] == "* [__mkapi__.abc][]: def"
     assert lines[1] == "* [__mkapi__.ghi][]: jkl mno"
