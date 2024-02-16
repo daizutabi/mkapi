@@ -1,5 +1,5 @@
 from mkapi.globals import get_globals
-from mkapi.importlib import load_module
+from mkapi.objects import create_module
 from mkapi.utils import get_by_name
 
 

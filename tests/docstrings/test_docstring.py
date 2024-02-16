@@ -5,7 +5,7 @@ import pytest
 
 from mkapi.docstrings import is_empty, iter_merge_sections, iter_merged_items, merge_sections, parse
 from mkapi.items import Item, Name, Text, Type
-from mkapi.objects import create_module
+from mkapi.objects import _create_module
 from mkapi.utils import get_by_name
 
 
@@ -31,7 +31,7 @@ def test_iter_merged_items():
     src = inspect.getdoc(test_iter_merged_items)
     assert src
     node = ast.parse(src)
-    module = create_module("x", node)
+    module = _create_module("x", node)
     func = get_by_name(module.functions, "f")
     assert func
     items_ast = func.parameters

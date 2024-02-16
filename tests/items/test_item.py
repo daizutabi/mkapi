@@ -101,7 +101,7 @@ def test_iter_assigns():
     assert list(assigns) == [x, y, z]
 
 
-def load_module(name):
+def create_module(name):
     path = get_module_path(name)
     assert path
     with path.open("r", encoding="utf-8") as f:
@@ -111,7 +111,7 @@ def load_module(name):
 
 @pytest.fixture(scope="module")
 def google():
-    return load_module("examples.styles.google")
+    return create_module("examples.styles.google")
 
 
 @pytest.fixture(scope="module")

@@ -14,13 +14,10 @@ from typing import TYPE_CHECKING, TypeAlias
 import mkapi.markdown
 import mkapi.renderers
 from mkapi.globals import resolve_with_attribute
-from mkapi.importlib import get_object, load_module
-from mkapi.objects import is_empty, is_member, iter_objects_with_depth
+from mkapi.objects import create_module, get_object, is_empty, is_member, iter_objects_with_depth
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from mkapi.objects import Attribute, Class, Function, Module
 
 PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "MARKDOWN"])
@@ -73,10 +70,12 @@ class Page:
 
         def predicate(name: str, content: str) -> bool:
             if self.kind is PageKind.SOURCE:
-                if self.name == name and content == "source":
+                if self.name == name and content in ["header", "source"]:
                     return True
+
                 return False
-            return False
+
+            return content != "source"
 
         return convert_markdown(markdown, self.path, namespaces, object_paths, anchors, predicate)
 
@@ -99,7 +98,7 @@ def create_markdown(
     predicate: Predicate = None,
 ) -> tuple[str, list[str]]:
     """Create object page for an object."""
-    if not (module := load_module(name)):
+    if not (module := create_module(name)):
         return f"!!! failure\n\n    module {name!r} not found.\n", []
 
     filters_str = "|" + "|".join(filters) if filters else ""

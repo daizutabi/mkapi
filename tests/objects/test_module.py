@@ -1,9 +1,9 @@
-from mkapi.objects import Class, Function, create_module
+from mkapi.objects import Class, Function, _create_module
 from mkapi.utils import get_by_name
 
 
 def test_create_module(google):
-    module = create_module("google", google)
+    module = _create_module("google", google)
     assert module.name.str == "google"
     assert len(module.functions) == 4
     assert len(module.classes) == 3

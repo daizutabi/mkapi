@@ -1,8 +1,9 @@
-from mkapi.importlib import get_object
 from mkapi.link import set_markdown
+from mkapi.objects import get_object
 from mkapi.renderers import (
     _get_source,
     load_templates,
+    render,
     render_document,
     render_header,
     render_heading,
@@ -82,6 +83,19 @@ def test_render_source():
     assert x.endswith("    pass\n```\n")
 
 
+def test_render():
+    cls = get_object("examples.styles.google.ExampleClass")
+    a = cls.attributes[0]
+    print(a.doc.text.str)
+    obj = get_object("examples.styles.google.ExampleClass.attr1")
+    assert obj
+    x = render(obj, 2, "object", [])
+    print(obj, a, obj is a)
+    print(x)
+
+    assert 0
+
+
 def test_get_source_class():
     obj = get_object("examples.styles.google")
     assert obj
@@ -104,70 +118,3 @@ def test_get_source_module():
     x = _get_source(obj, skip_self=False)
     assert "class ExampleClass:## __mkapi__.examples.styles.google.ExampleClass" in x
     assert "self.attr1 = param1## __mkapi__.examples.styles.google.ExampleClass.attr1" in x
-
-
-# def test_render_sourcelink():
-#     obj = get_object("examples")
-#     assert obj
-#     h = '<h2 class="mkapi-header" id="examples" markdown="1">'
-#     n = '<span class="mkapi-header-name">[examples][__mkapi__.examples]</span>'
-#     s = '<span class="mkapi-source-link">[source][__mkapi__.__source__.examples]</span>'
-#     x = render(obj, 2, [])
-#     m = f"{h}\n{n}\n{s}\n</h2>\n"
-#     assert m in x
-
-
-# def test_render_module():
-#     obj = get_object("examples.styles")
-#     assert obj
-#     m = render(obj, 2, [])
-#     s = '<p class="mkapi-object" markdown="1">\n<'
-#     assert s in m
-#     assert '>\n<span class="mkapi-object-kind">package</span>\n<' in m
-#     assert "styles</span></span></p>" in m
-
-
-# def test_render_method():
-#     obj = get_object("examples.styles.google.ExampleClass.example_method")
-#     assert obj
-#     m = render(obj, 2, [])
-#     s = '<p class="mkapi-object" markdown="1">\n<'
-#     assert s in m
-#     assert '>\n<span class="mkapi-object-kind">method</span>\n<' in m
-#     assert '>\n<span class="mkapi-object-name"><span' in m
-#     assert '><span class="mkapi-paren">)</span></span></p>' in m
-
-
-# def test_render_attribute():
-#     obj = get_object("examples.styles.google.module_level_variable1")
-#     assert obj
-#     m = render(obj, 2, [])
-#     s = '<p class="mkapi-object" markdown="1">\n<'
-#     assert s in m
-#     assert '>\n<span class="mkapi-object-kind">attribute</span>\n<' in m
-#     assert '</span></span>\n    <span class="mkapi-colon">:</span>\n' in m
-#     assert ':</span>\n    <span class="mkapi-object-type">int</span></p>' in m
-
-
-# def test_render_class():
-#     obj = get_object("mkapi.objects.Class")
-#     assert isinstance(obj, Class)
-#     bases = obj.bases
-#     obj.bases = bases * 2
-#     m = render(obj, 2, [])
-#     s = "</span></span></p>\n"
-#     assert s in m
-#     assert '.Callable]</span><span class="mkapi-comma">, </span>\n' in m
-#     obj.bases = bases
-
-
-# def test_source():
-#     cache_clear()
-#     module = get_object("mkapi.objects")
-#     assert isinstance(module, Module)
-#     cls = get_by_name(module.classes, "Object")
-#     assert isinstance(cls, Class)
-#     f = get_object_filter_for_source(cls, module)
-#     assert f
-#     m = render(module, 1, [f], is_source=True)
-#     assert "\nclass Object(Names):## __mkapi__.mkapi.objects.Object\n" in m

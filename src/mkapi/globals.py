@@ -239,42 +239,29 @@ def get_fullname(name: str, module: str) -> str | None:
     if isinstance(global_, Import):
         return resolve(f"{global_.fullname}.{attr}")
     return name
-    # return None
 
 
-# def get_link_from_name(fullname: str) -> str:
-#     names = []
-#     parents = iter_parent_module_names(fullname)
-#     asnames = fullname.split(".")
-#     for name, asname in zip(parents, asnames, strict=True):
-#         asname_ = asname.replace("_", "\\_")
-#         names.append(f"[{asname_}][__mkapi__.{name}]")
-#     return ".".join(names)
+def get_modulename(fullname: str) -> str | None:
+    names = fullname.split(".")
 
+    for k in range(len(names), 0, -1):
+        module_name = ".".join(names[:k])
+        member_name = names[k] if k < len(names) else None
 
-# def _get_link(module: str, name: str, asname: str) -> str:
-#     fullname = get_fullname(module, name)
-#     asname = asname.replace("_", "\\_")
-#     return f"[{asname}][__mkapi__.{fullname}]" if fullname else asname
+        try:
+            module = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            continue
 
+        if not member_name:
+            return module_name
 
-# @cache
-# def get_link_from_type(module: str, name: str) -> str:
-#     """Return markdown links from type."""
-#     names = []
-#     parents = iter_parent_module_names(name)
-#     asnames = name.split(".")
-#     for name, asname in zip(parents, asnames, strict=True):
-#         names.append(_get_link(module, name, asname))
-#     return ".".join(names)
+        members = dict(inspect.getmembers(module))
 
+        if (obj := members.get(member_name)) is None:
+            continue
 
-# def get_link_from_type_string(module: str, source: str) -> str:
-#     """Return markdown links from string-type."""
-#     strs = []
-#     for name, isidentifier in iter_identifiers(source):
-#         if isidentifier:
-#             strs.append(get_link_from_type(module, name))
-#         else:
-#             strs.append(name)
-#     return "".join(strs)
+        if module := inspect.getmodule(obj):
+            return module.__name__
+
+    return None

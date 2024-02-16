@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import ast
+import importlib
+import inspect
 import itertools
 from collections.abc import Callable as Callable_
 from dataclasses import dataclass, field
@@ -12,11 +14,13 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring, split_item_without_name
+from mkapi.globals import get_fullname
 from mkapi.items import (
     Assign,
     Assigns,
     Default,
     Name,
+    Parameter,
     Text,
     Type,
     iter_assigns,
@@ -28,12 +32,21 @@ from mkapi.items import (
     merge_raises,
     merge_returns,
 )
-from mkapi.utils import cache, del_by_name, get_by_name, get_by_type, is_package, unique_names
+from mkapi.utils import (
+    cache,
+    del_by_name,
+    get_by_name,
+    get_by_type,
+    get_module_node_source,
+    is_package,
+    iter_parent_module_names,
+    unique_names,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.items import Base, Parameter, Raise, Return
+    from mkapi.items import Base, Raise, Return
 
 
 objects: dict[str, Module | Class | Function | Attribute | None] = cache({})
@@ -340,9 +353,64 @@ def create_class(
 
     cls.attributes = list(iter_attributes(node, module, cls))
     merge_attributes(cls.attributes, module, cls)
-    merge_init(cls)
+
+    inherit_base_classes(cls)
+
+    if mkapi.inspect.is_dataclass(cls):
+        cls.parameters = list(iter_dataclass_parameters(cls))
+    else:
+        merge_init(cls)
 
     return cls
+
+
+def iter_base_classes(cls: Class) -> Iterator[Class]:
+    """Yield base classes."""
+    for node in cls.node.bases:
+        name = next(mkapi.ast.iter_identifiers(node))
+
+        if fullname := get_fullname(name, cls.module.name.str):
+            base = _get_object(fullname)
+
+            if base and isinstance(base, Class):
+                yield base
+
+
+def inherit_base_classes(cls: Class) -> None:
+    """Inherit objects from base classes."""
+    # TODO: fix InitVar, ClassVar for dataclasses.
+    bases = list(iter_base_classes(cls))
+
+    for name in ["attributes", "functions", "classes"]:
+        members = {member.name.str: member for member in getattr(cls, name)}
+
+        for base in bases:
+            for member in getattr(base, name):
+                members.setdefault(member.name.str, member)
+
+        setattr(cls, name, list(members.values()))
+
+
+def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
+    """Yield [Parameter] instances a for dataclass signature."""
+    if not cls.module or not (module_name := cls.module.name.str):
+        raise NotImplementedError
+
+    try:
+        module = importlib.import_module(module_name)
+    except ModuleNotFoundError:
+        return
+
+    members = dict(inspect.getmembers(module, inspect.isclass))
+    obj = members[cls.name.str]
+
+    for param in inspect.signature(obj).parameters.values():
+        if attr := get_by_name(cls.attributes, param.name):
+            args = (attr.name, attr.type, attr.doc.text, attr.default)
+            yield Parameter(*args, param.kind)
+
+        else:
+            raise NotImplementedError
 
 
 def merge_init(cls: Class):
@@ -386,7 +454,7 @@ def _create_empty_module() -> Module:
     return Module(Name("__mkapi__"), ast.Module(), doc, None)
 
 
-def create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
+def _create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
     """Return a [Module] instance from an [ast.Module] node."""
     text = ast.get_docstring(node)
     doc = docstrings.parse(text)
@@ -409,9 +477,39 @@ def create_module(name: str, node: ast.Module, source: str | None = None) -> Mod
     return module
 
 
+@cache
+def create_module(name: str) -> Module | None:
+    """Return a [Module] instance by the name."""
+    if name in objects:
+        return objects[name]  # type: ignore
+
+    if not (node_source := get_module_node_source(name)):
+        return None
+
+    return _create_module(name, *node_source)
+
+
 Member_: TypeAlias = Module | Class | Function | Attribute
 Parent: TypeAlias = Module | Class | Function | None
 Predicate: TypeAlias = Callable_[[Member_, Parent], bool] | None
+
+
+def _get_object(fullname: str) -> Module | Class | Function | Attribute | None:
+    """Return an [Object] instance by the fullname."""
+    if fullname in objects:
+        return objects[fullname]
+
+    for name in iter_parent_module_names(fullname):
+        if create_module(name) and fullname in objects:
+            return objects[fullname]
+
+    objects[fullname] = None
+    return None
+
+
+@cache
+def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
+    return _get_object(fullname)
 
 
 def is_member(
@@ -421,8 +519,10 @@ def is_member(
     """Return True if obj is a member of parent."""
     if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
         return True
+
     if obj.parent is not parent:
         return False
+
     return obj.module is parent.module
 
 
@@ -478,8 +578,10 @@ def get_source(obj: Module | Class | Function | Attribute) -> str | None:
 def _get_kind_function(func: Function) -> str:
     if mkapi.inspect.is_classmethod(func):
         return "classmethod"
+
     if mkapi.inspect.is_staticmethod(func):
         return "staticmethod"
+
     return "method" if isinstance(func.parent, Class) else "function"
 
 
@@ -487,12 +589,16 @@ def get_kind(obj: Object) -> str:
     """Return object kind."""
     if isinstance(obj, Module):
         return "package" if is_package(obj.name.str) else "module"
+
     if isinstance(obj, Class):
         return "dataclass" if mkapi.inspect.is_dataclass(obj) else "class"
+
     if isinstance(obj, Function):
         return _get_kind_function(obj)
+
     if isinstance(obj, Attribute):
         return "property" if isinstance(obj.node, ast.FunctionDef) else "attribute"
+
     raise NotImplementedError
 
 
@@ -500,8 +606,11 @@ def is_empty(obj: Object) -> bool:
     """Return True if a [Object] instance is empty."""
     if not docstrings.is_empty(obj.doc):
         return False
+
     if isinstance(obj, Attribute):
         return True
+
     if isinstance(obj, Function) and obj.name.str.startswith("_"):
         return True
+
     return False

@@ -7,13 +7,13 @@ from mkapi.globals import (
     get_globals,
     resolve,
 )
-from mkapi.importlib import load_module
 from mkapi.items import Parameters, SeeAlso
 from mkapi.link import set_markdown
 from mkapi.objects import (
     Attribute,
     Class,
     Function,
+    _create_module,
     create_module,
     iter_objects,
 )
@@ -24,7 +24,7 @@ def test_iter_objects_polars():
     name = "polars.dataframe.frame"
     node = get_module_node(name)
     assert node
-    module = create_module(name, node)
+    module = _create_module(name, node)
     x = list(iter_objects(module, 0))
     assert len(x) == 1
     x = list(iter_objects(module, 1))
@@ -39,7 +39,7 @@ def test_iter_objects_polars():
 def DataFrame() -> Class:  # noqa: N802
     node = get_module_node("polars.dataframe.frame")
     assert node
-    module = create_module("polars.dataframe.frame", node)
+    module = _create_module("polars.dataframe.frame", node)
     assert module
     cls = get_by_name(module.classes, "DataFrame")
     assert isinstance(cls, Class)
@@ -103,7 +103,7 @@ def test_see_also_text():
     name = "polars.lazyframe.frame"
     node = get_module_node(name)
     assert node
-    module = create_module(name, node)
+    module = _create_module(name, node)
     assert module
     cls = get_by_name(module.classes, "LazyFrame")
     assert isinstance(cls, Class)
@@ -125,7 +125,7 @@ def test_see_also_text():
     name = "polars.io.csv.functions"
     node = get_module_node(name)
     assert node
-    module = create_module(name, node)
+    module = _create_module(name, node)
     assert module
     func = get_by_name(module.functions, "read_csv")
     assert func
@@ -140,7 +140,7 @@ def test_property():
     name = "polars.dataframe.frame"
     node = get_module_node(name)
     assert node
-    module = create_module(name, node)
+    module = _create_module(name, node)
     cls = get_by_name(module.classes, "DataFrame")
     assert isinstance(cls, Class)
     assert not get_by_name(cls.functions, "plot")
@@ -151,7 +151,7 @@ def test_overload():
     name = "polars.functions.repeat"
     node = get_module_node(name)
     assert node
-    module = create_module(name, node)
+    module = _create_module(name, node)
     assert len(list(iter_by_name(module.functions, "repeat"))) == 1
     func = get_by_name(module.functions, "repeat")
     assert isinstance(func, Function)
@@ -195,6 +195,6 @@ def test_get_all():
 # LazyFrame.tail
 
 
-def test_load_module():
+def test_create_module():
     name = "polars"
-    assert load_module(name)
+    assert create_module(name)

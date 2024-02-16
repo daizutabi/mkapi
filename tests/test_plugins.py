@@ -161,8 +161,7 @@ def test_build(config: MkDocsConfig, dirty):
     assert not pages["usage/object.md"].markdown
     page = pages["api/examples/styles/README.md"]
     assert page.markdown == "# ::: examples.styles\n"
-    m = page.convert_markdown("", "ABC")
-    print(m)
+    m = page.convert_markdown("", {"object": "ABC", "source": "DEF"})
     assert '[examples](../README.md#examples "examples")' in m
     assert "[[ABC]](../../../src/examples/styles.md#examples.styles" in m
     assert "[ExampleClassGoogle](google.md#examples.styles.google.ExampleClass" in m
@@ -170,7 +169,7 @@ def test_build(config: MkDocsConfig, dirty):
     m = page.markdown
     assert "## ::: examples.styles.google.ExampleError|__mkapi__" in m
     assert ":examples.styles.google.ExampleError=152" in m
-    m = page.convert_markdown("", "DEF")
+    m = page.convert_markdown("", {"object": "ABC", "source": "DEF"})
     assert "class ExamplePEP526Class:## __mkapi__.examples" in m
     assert 'ExampleClass.__special__" markdown="1">' in m
 

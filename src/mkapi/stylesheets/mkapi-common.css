@@ -99,7 +99,7 @@ p.mkapi-object-bases {
 .mkapi-source code {
   font-size: 85%;
 }
-.mkapi-docs-link {
+.mkapi-source-link {
   font-family: var(--mkapi-docs-link-font-family);
   display: block;
   float: right;

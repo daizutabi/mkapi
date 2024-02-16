@@ -11,7 +11,7 @@ from mkapi.globals import (
     get_globals,
     resolve,
 )
-from mkapi.objects import create_module
+from mkapi.objects import _create_module
 from mkapi.utils import get_by_name, get_module_node
 
 
@@ -88,7 +88,7 @@ def test_module():
     g = get_globals(name)
     node = get_module_node(name)
     assert node
-    module = create_module(name, node)
+    module = _create_module(name, node)
     assert module
     members = module.classes + module.functions + module.attributes
     for member in members:

@@ -4,10 +4,10 @@ import inspect
 from mkapi.items import Assigns, iter_assigns
 from mkapi.objects import (
     _create_empty_module,
+    _create_module,
     _merge_attributes_comment,
     create_attribute,
     create_class,
-    create_module,
     iter_attributes,
 )
 from mkapi.utils import get_by_name, get_by_type
@@ -35,7 +35,7 @@ def test_merge_attributes_comment():
     '''
     source = inspect.cleandoc(src)
     node = ast.parse(source)
-    module = create_module("a", node, source)
+    module = _create_module("a", node, source)
     attrs = list(iter_attributes(node, module, None))
     _merge_attributes_comment(attrs, source)
     assert len(attrs) == 2
@@ -136,7 +136,7 @@ def test_create_attribute_pep526_without_module(get):
 
 
 def test_clssss_attribute(google, source, get):
-    module = create_module("google", google, source)
+    module = _create_module("google", google, source)
     node = get("ExampleClass")
     assert node
     cls = create_class(node, module, None)
@@ -148,11 +148,12 @@ def test_clssss_attribute(google, source, get):
         assert attrs[k].name.str == name
         assert attrs[k].fullname.str == f"google.ExampleClass.{name}"
         assert attrs[k].node
+        assert attrs[k].doc.text.str
     assert not get_by_name(cls.functions, "__init__")
 
 
 def test_create_module_attribute_with_module(google, source):
-    module = create_module("google", google, source)
+    module = _create_module("google", google, source)
     attrs = module.attributes
     assert len(attrs) == 2
     attr = attrs[0]

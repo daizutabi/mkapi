@@ -1,7 +1,6 @@
 import re
 
 from mkapi.globals import get_fullname
-from mkapi.importlib import load_module
 from mkapi.link import (
     LINK_PATTERN,
     get_markdown,
@@ -9,7 +8,7 @@ from mkapi.link import (
     get_markdown_from_type_string,
     set_markdown,
 )
-from mkapi.objects import Class, Function
+from mkapi.objects import Class, Function, create_module
 from mkapi.utils import get_by_name
 
 
@@ -114,7 +113,7 @@ def test_get_markdown_from_docstring_text():
 
 def test_set_markdown_module():
     name = "mkapi.plugins"
-    module = load_module(name)
+    module = create_module(name)
     assert module
     set_markdown(module)
     x = module.name.markdown
@@ -132,7 +131,7 @@ def test_set_markdown_module():
 
 def test_set_markdown_text():
     name = "mkapi.items"
-    module = load_module(name)
+    module = create_module(name)
     assert module
     func = get_by_name(module.functions, "iter_raises")
     assert isinstance(func, Function)
@@ -143,7 +142,7 @@ def test_set_markdown_text():
 
 def test_set_markdown_class():
     name = "mkapi.ast"
-    module = load_module(name)
+    module = create_module(name)
     assert module
     cls = get_by_name(module.classes, "Transformer")
     assert isinstance(cls, Class)
@@ -166,7 +165,7 @@ def test_set_markdown_class():
 
 def test_set_markdown_attribute():
     name = "examples.styles.google"
-    module = load_module(name)
+    module = create_module(name)
     assert module
     assert module
     for attr in module.attributes:

@@ -1,14 +1,10 @@
 """importlib module."""
 from __future__ import annotations
 
-import importlib
-import inspect
 from typing import TYPE_CHECKING
 
 import mkapi.ast
 from mkapi.globals import get_fullname
-from mkapi.items import Parameter
-from mkapi.utils import get_by_name
 
 if TYPE_CHECKING:
     import ast
@@ -56,28 +52,6 @@ def is_classmethod(func: Function) -> bool:
 def is_staticmethod(func: Function) -> bool:
     """Return True if the [Function] instance is a staticmethod."""
     return get_decorator(func, "staticmethod") is not None
-
-
-def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
-    """Yield [Parameter] instances a for dataclass signature."""
-    if not cls.module or not (module_name := cls.module.name.str):
-        raise NotImplementedError
-
-    try:
-        module = importlib.import_module(module_name)
-    except ModuleNotFoundError:
-        return
-
-    members = dict(inspect.getmembers(module, inspect.isclass))
-    obj = members[cls.name.str]
-
-    for param in inspect.signature(obj).parameters.values():
-        if attr := get_by_name(cls.attributes, param.name):
-            args = (attr.name, attr.type, attr.doc.text, attr.default)
-            yield Parameter(*args, param.kind)
-
-        else:
-            raise NotImplementedError
 
 
 # def _iter_decorator_args(deco: ast.expr) -> Iterator[tuple[str, Any]]:
