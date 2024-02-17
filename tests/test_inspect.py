@@ -74,8 +74,6 @@ def test_get_fullname():
     assert x == "mkdocs.structure.pages.Page"
     x = get_fullname("config_options.Type", "mkapi.plugins")
     assert x == "mkdocs.config.config_options.Type"
-    x = get_fullname("config_options.XXX", "mkapi.plugins")
-    assert x is None
     x = get_fullname("jinja2.Template", "mkdocs.plugins")
     assert x == "jinja2.environment.Template"
     x = get_fullname("Object", "mkapi.objects")
@@ -138,8 +136,11 @@ def test_is_method():
     assert is_staticmethod(cls.functions[0])
 
 
-def test_a():
-    x = get_members("polars.dataframe.frame")
-    for a in x:
-        print(a)
-    assert 0
+def test_():
+    x = get_members("mkapi.inspect")
+    # for a in x.items():
+    #     print(a)
+
+    # for x in get_all("_collections_abc"):
+    #     print(x)
+    # assert 0

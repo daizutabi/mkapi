@@ -28,6 +28,7 @@ def test_get_markdown_from_fullname_replace():
     x = get_markdown("Object", replace)
     assert x == "[Object][__mkapi__.mkapi.objects.Object]"
     x = get_markdown("Object.__repr__", replace)
+    print(x)
     assert r".[\_\_repr\_\_][__mkapi__.mkapi.objects.Object.__repr__]" in x
 
     def replace(name: str) -> str | None:  # type: ignore

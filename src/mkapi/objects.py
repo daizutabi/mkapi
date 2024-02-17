@@ -373,6 +373,8 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
     for node in cls.node.bases:
         name = next(mkapi.ast.iter_identifiers(node))
 
+        print(name, cls.module.name.str)
+
         if base := get_by_name(cls.module.classes, name):
             yield base
 

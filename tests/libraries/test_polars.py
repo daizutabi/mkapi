@@ -57,14 +57,6 @@ def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
     assert isinstance(func, Function)
     set_markdown(func)
     p = func.parameters[1]
-    from mkapi.inspect import get_members
-
-    x = get_members("polars.dataframe.frame")
-    # for a in x.items():
-    #     print(a)
-    print("Workbook" in x)
-    assert 0
-
     assert "[Workbook][__mkapi__.xlsxwriter.Workbook]" in p.type.markdown
 
 

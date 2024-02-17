@@ -99,7 +99,8 @@ def _iter_names(module: str) -> Iterator[Module | Object | Assign | Import]:
 
         elif isinstance(child, ast.ImportFrom):
             if child.names[0].name == "*":
-                yield from _iter_names_from_all(child, module)
+                pass
+                # yield from _iter_names_from_all(child, module)
             else:
                 for name, fullname in _iter_imports_from_import_from(child, module):
                     yield Import(name, module, fullname, child)
@@ -147,18 +148,12 @@ def _iter_names_from_all(node: ast.ImportFrom, module: str) -> Iterator[Module |
 @cache
 def get_members(module: str) -> dict[str, Module | Object | Assign | Import]:
     members = {}
-    for member in _iter_names(module):
-        if isinstance(member, Import) and member.fullname == "xlsxwriter.Workbook":
-            print("DDDDDDDDDDDDDDDDD")
-        if isinstance(member, Module | Object | Assign):
-            members[member.name] = member
 
-        elif resolved := _resolve(member.fullname):
-            # if isinstance(resolved, Import):
-            #     print("SSSSSSSSSS", resolved)
-            #     members[resolved.name] = resolved
-            # else:
+    for member in _iter_names(module):
+        if isinstance(member, Import) and (resolved := _resolve(member.fullname)):
             members[member.name] = resolved
+        else:
+            members[member.name] = member
 
     return members
 
@@ -166,6 +161,7 @@ def get_members(module: str) -> dict[str, Module | Object | Assign | Import]:
 @cache
 def _resolve(fullname: str) -> Module | Object | Assign | Import | None:
     """Resolve name."""
+
     if node := get_module_node(fullname):
         return Module(fullname, node)
 
@@ -181,7 +177,7 @@ def _resolve(fullname: str) -> Module | Object | Assign | Import | None:
         if member.fullname == fullname:
             return None
 
-        return _resolve(member.fullname) or member
+        return _resolve(member.fullname)
 
     return None
 
@@ -234,9 +230,18 @@ def get_fullname(name: str, module: str) -> str | None:
     if member := get_member(name, module):
         return member.name if isinstance(member, Module) else member.fullname
 
+    if "." not in name:
+        return None
+
+    name, attr = name.rsplit(".", maxsplit=1)
+    if member := get_member(name, module):
+        fullname = member.name if isinstance(member, Module) else member.fullname
+        return f"{fullname}.{attr}"
+
     return None
 
 
+@cache
 def get_members_all(module: str) -> dict[str, Module | Object | Assign]:
     members = get_members(module)
 
@@ -255,6 +260,7 @@ def get_members_all(module: str) -> dict[str, Module | Object | Assign]:
     return members_all
 
 
+@cache
 def get_all_from_ast(module: str) -> dict[str, str]:
     """Return name dictonary of __all__ using ast."""
     names = {}
@@ -266,6 +272,7 @@ def get_all_from_ast(module: str) -> dict[str, str]:
     return names
 
 
+@cache
 def get_all_from_importlib(module: str) -> dict[str, str]:
     """Return name dictonary of __all__ using importlib."""
     try:
@@ -292,6 +299,7 @@ def get_all_from_importlib(module: str) -> dict[str, str]:
     return names
 
 
+@cache
 def get_all(module: str) -> dict[str, str]:
     """Return name dictonary of __all__."""
     all_from_ast = get_all_from_ast(module)
