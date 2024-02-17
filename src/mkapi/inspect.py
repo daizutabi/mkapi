@@ -4,11 +4,10 @@ from __future__ import annotations
 import ast
 import importlib
 import inspect
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mkapi.ast
-from mkapi.globals import get_fullname
 from mkapi.utils import (
     cache,
     get_by_name,
@@ -32,8 +31,8 @@ if TYPE_CHECKING:
 class Name:
     """Name class."""
 
-    module: str
     name: str
+    module: str
     fullname: str
     node: ast.AST
 
@@ -63,15 +62,25 @@ class Import(Name):
 
 
 @dataclass(repr=False)
-class Module(Name):
+class Module:
     """Module class."""
 
+    name: str
     node: ast.Module | None
-    module: str = field(init=False)
-    fullname: str = field(init=False)
 
-    def __post_init__(self):
-        self.module = self.fullname = self.name
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name})"
+
+
+# class Module(Name):
+#     """Module class."""
+
+#     node: ast.Module | None
+#     module: str = field(init=False)
+#     fullname: str = field(init=False)
+
+#     def __post_init__(self):
+#         self.module = self.fullname = self.name
 
 
 def _is_assign(node: ast.AST) -> bool:
@@ -90,21 +99,21 @@ def _iter_names(module: str) -> Iterator[Module | Object | Assign | Import]:
 
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
-            yield Object(module, child.name, f"{module}.{child.name}", child)
+            yield Object(child.name, module, f"{module}.{child.name}", child)
 
         elif _is_assign(child) and (name := mkapi.ast.get_assign_name(child)):
-            yield Assign(module, name, f"{module}.{name}", child)
+            yield Assign(name, module, f"{module}.{name}", child)
 
         elif isinstance(child, ast.Import):
             for name, fullname in _iter_imports_from_import(child):
-                yield Import(module, name, fullname, child)
+                yield Import(name, module, fullname, child)
 
         elif isinstance(child, ast.ImportFrom):
             if child.names[0].name == "*":
                 yield from _iter_names_from_all(child, module)
             else:
                 for name, fullname in _iter_imports_from_import_from(child, module):
-                    yield Import(module, name, fullname, child)
+                    yield Import(name, module, fullname, child)
 
 
 def _iter_imports_from_import(node: ast.Import) -> Iterator[tuple[str, str]]:
@@ -149,19 +158,18 @@ def _iter_names_from_all(node: ast.ImportFrom, module: str) -> Iterator[Module |
 @cache
 def get_members(module: str) -> dict[str, Module | Object | Assign]:
     members = {}
-
     for member in _iter_names(module):
         if isinstance(member, Module | Object | Assign):
             members[member.name] = member
 
-        elif resolved := resolve(member.fullname):
+        elif resolved := _resolve(member.fullname):
             members[member.name] = resolved
 
     return members
 
 
 @cache
-def resolve(fullname: str) -> Module | Object | Assign | None:
+def _resolve(fullname: str) -> Module | Object | Assign | None:
     """Resolve name."""
     if node := get_module_node(fullname):
         return Module(fullname, node)
@@ -178,88 +186,87 @@ def resolve(fullname: str) -> Module | Object | Assign | None:
         if member.fullname == fullname:
             return None
 
-        return resolve(member.fullname)
+        return _resolve(member.fullname)
 
     return None
 
 
-# def resolve_with_attribute(name: str) -> str | None:
-#     """Resolve name with attribute."""
-#     if fullname := resolve(name):
-#         return fullname
+def resolve(fullname: str) -> str | None:
+    if resolved := _resolve(fullname):
+        return resolved.name if isinstance(resolved, Module) else resolved.fullname
 
-#     if "." in name:
-#         name_, attr = name.rsplit(".", maxsplit=1)
-#         if fullname := resolve(name_):
-#             return f"{fullname}.{attr}"
-
-#     return None
+    return None
 
 
-# def _iter_globals(module: str) -> Iterator[Object | Import]:
-#     n = len(module) + 1
-#     for name in _iter_objects(module):
-#         yield Object(name[n:], name)
-#     for import_ in _iter_imports(module):
-#         name = import_.name[n:]
-#         if fullname := resolve(import_.fullname):
-#             yield Import(name, fullname)
-#         else:
-#             yield Import(name, import_.fullname)
+def resolve_with_attribute(fullname: str) -> str | None:
+    """Resolve name with attribute."""
+    if resolved := resolve(fullname):
+        return resolved
+
+    if "." in fullname:
+        name, attr = fullname.rsplit(".", maxsplit=1)
+        if resolved := resolve(name):
+            return f"{resolved}.{attr}"
+
+    return None
 
 
-# @cache
-# def get_globals(module: str) -> list[Object | Import]:
-#     """Return a global list of a module."""
-#     return list(_iter_globals(module))
+@cache
+def get_member(name: str, module: str) -> Module | Object | Assign | None:
+    """Return an object in the module."""
+    members = get_members(module)
+
+    if name in members:
+        return members[name]
+
+    if "." not in name:
+        return None
+
+    name, attr = name.rsplit(".", maxsplit=1)
+    if name in members and isinstance(members[name], Module):
+        module = members[name].name
+        return get_member(attr, module)
+
+    return None
 
 
-# @cache
-# def get_fullname(name: str, module: str) -> str | None:
-#     """Return the fullname of an object in the module."""
-#     if name.startswith(module) or module.startswith(name):
-#         return name
-#     names = get_globals(module)
-#     if global_ := get_by_name(names, name):
-#         return global_.fullname
-#     if "." not in name:
-#         return None
-#     name_, attr = name.rsplit(".", maxsplit=1)
-#     global_ = get_by_name(names, name_)
-#     if isinstance(global_, Object):
-#         return f"{global_.fullname}.{attr}"
-#     if isinstance(global_, Import):
-#         return resolve(f"{global_.fullname}.{attr}")
-#     return name
+@cache
+def get_fullname(name: str, module: str) -> str | None:
+    """Return the fullname of an object in the module."""
+    if name.startswith(module) or module.startswith(name):
+        return name
+
+    if member := get_member(name, module):
+        return member.name if isinstance(member, Module) else member.fullname
+
+    return None
 
 
-def _iter_all(node: ast.AST) -> Iterator[str]:
-    if isinstance(node, ast.Assign):  # noqa: SIM102
-        if mkapi.ast.get_assign_name(node) == "__all__":  # noqa: SIM102
-            if isinstance(node.value, ast.List | ast.Tuple):
-                for arg in node.value.elts:
-                    if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                        yield arg.value
+def get_members_all(module: str) -> dict[str, Module | Object | Assign]:
+    members = get_members(module)
 
+    member_all = get_member("__all__", module)
+    if not member_all:
+        return {}
 
-def _iter_objects_from_all(module: str) -> Iterator[str]:
-    if not (node := get_module_node(module)):
-        return
-    for child in ast.iter_child_nodes(node):
-        if names := list(_iter_all(child)):
-            for name in names:
-                yield f"{module}.{name}"
-            return
+    members_all = {}
+    node = member_all.node
+    if isinstance(node, ast.Assign) and isinstance(node.value, ast.List | ast.Tuple):
+        for arg in node.value.elts:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):  # noqa: SIM102
+                if arg.value in members:
+                    members_all[arg.value] = members[arg.value]
+
+    return members_all
 
 
 def get_all_from_ast(module: str) -> dict[str, str]:
     """Return name dictonary of __all__ using ast."""
     names = {}
-    n = len(module) + 1
 
-    for name in _iter_objects_from_all(module):
-        if fullname := resolve(name):
-            names[name[n:]] = fullname
+    for name, member in get_members_all(module).items():
+        fullname = member.name if isinstance(member, Module) else member.fullname
+        names[name] = fullname
 
     return names
 

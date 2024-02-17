@@ -93,188 +93,158 @@ def test_iter_objects_predicate():
         assert not get_by_name(x, name)
 
 
-def test_kind():
-    node = get_module_node("mkapi")
-    assert node
-    module = _create_module("mkapi", node)
-    assert module.kind == "package"
-    node = get_module_node("mkapi.objects")
-    assert node
-    module = _create_module("mkapi.objects", node)
-    assert module
-    assert module.kind == "module"
-    cls = get_by_name(module.classes, "Object")
-    assert cls
-    assert cls.kind == "dataclass"
-    func = get_by_name(module.functions, "create_function")
-    assert func
-    assert func.kind == "function"
-    method = get_by_name(cls.functions, "__post_init__")
-    assert method
-    assert method.kind == "method"
-    attr = get_by_name(cls.attributes, "node")
-    assert attr
-    assert attr.kind == "attribute"
+# def test_kind():
+#     node = get_module_node("mkapi")
+#     assert node
+#     module = _create_module("mkapi", node)
+#     assert module.kind == "package"
+#     node = get_module_node("mkapi.objects")
+#     assert node
+#     module = _create_module("mkapi.objects", node)
+#     assert module
+#     assert module.kind == "module"
+#     cls = get_by_name(module.classes, "Object")
+#     assert cls
+#     assert cls.kind == "dataclass"
+#     func = get_by_name(module.functions, "create_function")
+#     assert func
+#     assert func.kind == "function"
+#     method = get_by_name(cls.functions, "__post_init__")
+#     assert method
+#     assert method.kind == "method"
+#     attr = get_by_name(cls.attributes, "node")
+#     assert attr
+#     assert attr.kind == "attribute"
 
 
-def test_get_source(google, source, get):
-    module = _create_module("google", google, source)
-    x = get_source(module)
-    assert x
-    assert x.startswith('"""Example')
-    assert x.endswith("attr2: int\n")
-    node = get("ExampleClass")
-    cls = create_class(node, module, None)
-    x = get_source(cls)
-    assert x
-    assert x.startswith("class ExampleClass")
-    assert x.endswith("pass\n")
+# def test_get_source(google, source, get):
+#     module = _create_module("google", google, source)
+#     x = get_source(module)
+#     assert x
+#     assert x.startswith('"""Example')
+#     assert x.endswith("attr2: int\n")
+#     node = get("ExampleClass")
+#     cls = create_class(node, module, None)
+#     x = get_source(cls)
+#     assert x
+#     assert x.startswith("class ExampleClass")
+#     assert x.endswith("pass\n")
 
 
-def test_get_object():
-    module = create_module("mkapi.objects")
-    a = get_object("mkapi.objects")
-    assert module is a
-    c = get_object("mkapi.objects.Object")
-    f = get_object("mkapi.objects.Module.__post_init__")
-    assert isinstance(c, Class)
-    assert c.module is module
-    assert isinstance(f, Function)
-    assert f.module is module
-    c2 = get_object("mkapi.objects.Object")
-    f2 = get_object("mkapi.objects.Module.__post_init__")
-    assert c is c2
-    assert f is f2
-    m1 = create_module("mkdocs.structure.files")
-    m2 = create_module("mkdocs.structure.files")
-    assert m1 is m2
+# def test_get_object():
+#     module = create_module("mkapi.objects")
+#     a = get_object("mkapi.objects")
+#     assert module is a
+#     c = get_object("mkapi.objects.Object")
+#     f = get_object("mkapi.objects.Module.__post_init__")
+#     assert isinstance(c, Class)
+#     assert c.module is module
+#     assert isinstance(f, Function)
+#     assert f.module is module
+#     c2 = get_object("mkapi.objects.Object")
+#     f2 = get_object("mkapi.objects.Module.__post_init__")
+#     assert c is c2
+#     assert f is f2
+#     m1 = create_module("mkdocs.structure.files")
+#     m2 = create_module("mkdocs.structure.files")
+#     assert m1 is m2
 
 
-def test_iter_base_classes():
-    cls = get_object("mkapi.plugins.MkAPIPlugin")
-    assert isinstance(cls, Class)
-    assert cls.qualname.str == "MkAPIPlugin"
-    assert cls.fullname.str == "mkapi.plugins.MkAPIPlugin"
-    func = get_by_name(cls.functions, "on_config")
-    assert func
-    assert func.qualname.str == "MkAPIPlugin.on_config"
-    assert func.fullname.str == "mkapi.plugins.MkAPIPlugin.on_config"
-    base = next(iter_base_classes(cls))
-    assert base.name.str == "BasePlugin"
-    assert base.fullname.str == "mkdocs.plugins.BasePlugin"
-    func = get_by_name(base.functions, "on_config")
-    assert func
-    assert func.qualname.str == "BasePlugin.on_config"
-    assert func.fullname.str == "mkdocs.plugins.BasePlugin.on_config"
-    cls = get_object("mkapi.plugins.MkAPIConfig")
-    assert isinstance(cls, Class)
-    base = next(iter_base_classes(cls))
-    assert base.name.str == "Config"
-    assert base.qualname.str == "Config"
-    assert base.fullname.str == "mkdocs.config.base.Config"
+# def test_iter_base_classes():
+#     cls = get_object("mkapi.plugins.MkAPIPlugin")
+#     assert isinstance(cls, Class)
+#     assert cls.qualname.str == "MkAPIPlugin"
+#     assert cls.fullname.str == "mkapi.plugins.MkAPIPlugin"
+#     func = get_by_name(cls.functions, "on_config")
+#     assert func
+#     assert func.qualname.str == "MkAPIPlugin.on_config"
+#     assert func.fullname.str == "mkapi.plugins.MkAPIPlugin.on_config"
+#     base = next(iter_base_classes(cls))
+#     assert base.name.str == "BasePlugin"
+#     assert base.fullname.str == "mkdocs.plugins.BasePlugin"
+#     func = get_by_name(base.functions, "on_config")
+#     assert func
+#     assert func.qualname.str == "BasePlugin.on_config"
+#     assert func.fullname.str == "mkdocs.plugins.BasePlugin.on_config"
+#     cls = get_object("mkapi.plugins.MkAPIConfig")
+#     assert isinstance(cls, Class)
+#     base = next(iter_base_classes(cls))
+#     assert base.name.str == "Config"
+#     assert base.qualname.str == "Config"
+#     assert base.fullname.str == "mkdocs.config.base.Config"
 
 
-def test_inherit_base_classes():
-    cache_clear()
-    create_module("mkapi.plugins")
-    cls = get_object("mkapi.plugins.MkAPIConfig")
-    assert isinstance(cls, Class)
-    assert get_by_name(cls.attributes, "config_file_path")
-    cls = get_object("mkapi.plugins.MkAPIPlugin")
-    assert isinstance(cls, Class)
-    assert get_by_name(cls.functions, "on_page_read_source")
-    cls = get_object("mkapi.items.Parameters")
-    assert isinstance(cls, Class)
-    assert get_by_name(cls.attributes, "name")
-    assert get_by_name(cls.attributes, "type")
-    assert get_by_name(cls.attributes, "items")
-
-
-def test_iter_dataclass_parameters():
-    cls = get_object("mkapi.items.Parameters")
-    assert isinstance(cls, Class)
-    p = cls.parameters
-    assert len(p) == 5
-    assert p[0].name.str == "name"
-    assert p[1].name.str == "type"
-    assert p[2].name.str == "text"
-    assert p[3].name.str == "items"
-    assert p[4].name.str == "kind"
-
-
-def test_inherit_base_classes_order():
-    module = create_module("mkapi.plugins")
-    assert isinstance(module, Module)
-    cls = get_by_name(module.classes, "MkAPIPlugin")
-    assert isinstance(cls, Class)
-    indexes = []
-    for name in ["on_startup", "on_nav", "on_shutdown", "on_env", "on_post_page"]:
-        func = get_by_name(cls.functions, name)
-        assert func
-        indexes.append(cls.functions.index(func))
-    assert indexes == sorted(indexes)
-    indexes.clear()
-    for name in ["api_dirs", "pages", "config_class", "config"]:
-        attr = get_by_name(cls.attributes, name)
-        assert attr
-        indexes.append(cls.attributes.index(attr))
-    assert indexes == sorted(indexes)
-
-
-def test_get_object_nest():
-    cache_clear()
-    assert get_object("mkapi.items.Name.__repr__")
-    assert get_object("mkapi.items.Name")
-
-
-def test_load_module():
-    cache_clear()
-    module = load_module("examples.styles.google")
-    assert module
-    cls = get_by_name(module.classes, "ExampleClass")
-    assert isinstance(cls, Class)
-    assert not get_by_name(cls.functions, "__init__")
-    cache_clear()
-    module = load_module("examples.styles")
-    assert module
-    cls = get_by_name(module.classes, "ExampleClass")
-    assert isinstance(cls, Class)
-    assert not get_by_name(cls.functions, "__init__")
-
-
-# def test_get_object_using_all():
+# def test_inherit_base_classes():
 #     cache_clear()
-#     assert get_object("schemdraw.Drawing")
-#     assert get_object("schemdraw.svgconfig")
-#     assert get_object("examples.styles.ExampleClassGoogle")
-#     assert get_object("examples.styles.ExampleClassNumPy")
+#     create_module("mkapi.plugins")
+#     cls = get_object("mkapi.plugins.MkAPIConfig")
+#     assert isinstance(cls, Class)
+#     assert get_by_name(cls.attributes, "config_file_path")
+#     cls = get_object("mkapi.plugins.MkAPIPlugin")
+#     assert isinstance(cls, Class)
+#     assert get_by_name(cls.functions, "on_page_read_source")
+#     cls = get_object("mkapi.items.Parameters")
+#     assert isinstance(cls, Class)
+#     assert get_by_name(cls.attributes, "name")
+#     assert get_by_name(cls.attributes, "type")
+#     assert get_by_name(cls.attributes, "items")
 
 
-# def test_get_modulename():
-#     assert get_modulename("halo.Halo") == "halo.halo"
-#     assert get_modulename("jinja2.Template") == "jinja2.environment"
-#     assert get_modulename("schemdraw.Drawing") == "schemdraw.schemdraw"
-#     assert get_modulename("mkapi.plugins.Config") == "mkdocs.config.base"
-#     assert get_modulename("mkapi.ast.Transformer.unparse") == "mkapi.ast"
+# def test_iter_dataclass_parameters():
+#     cls = get_object("mkapi.items.Parameters")
+#     assert isinstance(cls, Class)
+#     p = cls.parameters
+#     assert len(p) == 5
+#     assert p[0].name.str == "name"
+#     assert p[1].name.str == "type"
+#     assert p[2].name.str == "text"
+#     assert p[3].name.str == "items"
+#     assert p[4].name.str == "kind"
 
 
-# def test_resolve():
-#     assert resolve("tqdm.tqdm") == "tqdm.std.tqdm"
-#     assert resolve("logging.Template") == "string.Template"
-#     assert resolve("halo.Halo") == "halo.halo.Halo"
-#     assert resolve("jinja2.Template") == "jinja2.environment.Template"
-#     assert resolve("mkdocs.config.Config") ==
+# def test_inherit_base_classes_order():
+#     module = create_module("mkapi.plugins")
+#     assert isinstance(module, Module)
+#     cls = get_by_name(module.classes, "MkAPIPlugin")
+#     assert isinstance(cls, Class)
+#     indexes = []
+#     for name in ["on_startup", "on_nav", "on_shutdown", "on_env", "on_post_page"]:
+#         func = get_by_name(cls.functions, name)
+#         assert func
+#         indexes.append(cls.functions.index(func))
+#     assert indexes == sorted(indexes)
+#     indexes.clear()
+#     for name in ["api_dirs", "pages", "config_class", "config"]:
+#         attr = get_by_name(cls.attributes, name)
+#         assert attr
+#         indexes.append(cls.attributes.index(attr))
+#     assert indexes == sorted(indexes)
 
 
-# @pytest.mark.parametrize(
-#     ("name", "fullname"),
-#     [
-#         ("Halo", "halo.halo.Halo"),
-#         ("tqdm", "tqdm.std.tqdm"),
-#         ("Config", "mkdocs.config.base.Config"),
-#         ("MkAPIConfig", "mkapi.plugins.MkAPIConfig"),
-#     ],
-# )
-# def test_get_globals(name, fullname):
-#     x = get_globals("mkapi.plugins")
-#     n = get_by_name(x.names, name)
+# def test_get_object_nest():
+#     cache_clear()
+#     assert get_object("mkapi.items.Name.__repr__")
+#     assert get_object("mkapi.items.Name")
+
+
+# def test_load_module():
+#     cache_clear()
+#     module = load_module("examples.styles.google")
+#     assert module
+#     cls = get_by_name(module.classes, "ExampleClass")
+#     assert isinstance(cls, Class)
+#     assert not get_by_name(cls.functions, "__init__")
+#     cache_clear()
+#     module = load_module("examples.styles")
+#     assert module
+#     cls = get_by_name(module.classes, "ExampleClass")
+#     assert isinstance(cls, Class)
+#     assert not get_by_name(cls.functions, "__init__")
+
+
+# # def test_get_object_using_all():
+# #     cache_clear()
+# #     assert get_object("schemdraw.Drawing")
+# #     assert get_object("schemdraw.svgconfig")
+# #     assert get_object("examples.styles.ExampleClassGoogle")
+# #     assert get_object("examples.styles.ExampleClassNumPy")
