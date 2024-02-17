@@ -10,7 +10,7 @@ from typing import TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
-from mkapi.globals import get_fullname, resolve_with_attribute
+from mkapi.inspect import get_fullname, resolve_with_attribute
 from mkapi.items import Default, Name, Text, Type
 from mkapi.objects import Attribute, Class, Function, Module, iter_objects
 from mkapi.utils import is_identifier, iter_identifiers, iter_parent_module_names

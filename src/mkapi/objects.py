@@ -14,7 +14,7 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring, split_item_without_name
-from mkapi.globals import get_all, get_fullname
+from mkapi.inspect import get_all, get_fullname
 from mkapi.items import (
     Assign,
     Assigns,

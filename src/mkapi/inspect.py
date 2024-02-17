@@ -72,17 +72,6 @@ class Module:
         return f"{self.__class__.__name__}({self.name})"
 
 
-# class Module(Name):
-#     """Module class."""
-
-#     node: ast.Module | None
-#     module: str = field(init=False)
-#     fullname: str = field(init=False)
-
-#     def __post_init__(self):
-#         self.module = self.fullname = self.name
-
-
 def _is_assign(node: ast.AST) -> bool:
     if isinstance(node, ast.AnnAssign | ast.Assign):
         return True
@@ -150,26 +139,32 @@ def _iter_imports_from_import_from(node: ast.ImportFrom, module: str) -> Iterato
         yield alias.asname or alias.name, f"{module}.{alias.name}"
 
 
-def _iter_names_from_all(node: ast.ImportFrom, module: str) -> Iterator[Module | Object | Assign]:
+def _iter_names_from_all(node: ast.ImportFrom, module: str) -> Iterator[Module | Object | Assign | Import]:
     module = _get_module_from_import_from(node, module)
     yield from get_members(module).values()
 
 
 @cache
-def get_members(module: str) -> dict[str, Module | Object | Assign]:
+def get_members(module: str) -> dict[str, Module | Object | Assign | Import]:
     members = {}
     for member in _iter_names(module):
+        if isinstance(member, Import) and member.fullname == "xlsxwriter.Workbook":
+            print("DDDDDDDDDDDDDDDDD")
         if isinstance(member, Module | Object | Assign):
             members[member.name] = member
 
         elif resolved := _resolve(member.fullname):
+            # if isinstance(resolved, Import):
+            #     print("SSSSSSSSSS", resolved)
+            #     members[resolved.name] = resolved
+            # else:
             members[member.name] = resolved
 
     return members
 
 
 @cache
-def _resolve(fullname: str) -> Module | Object | Assign | None:
+def _resolve(fullname: str) -> Module | Object | Assign | Import | None:
     """Resolve name."""
     if node := get_module_node(fullname):
         return Module(fullname, node)
@@ -186,7 +181,7 @@ def _resolve(fullname: str) -> Module | Object | Assign | None:
         if member.fullname == fullname:
             return None
 
-        return _resolve(member.fullname)
+        return _resolve(member.fullname) or member
 
     return None
 
@@ -212,7 +207,7 @@ def resolve_with_attribute(fullname: str) -> str | None:
 
 
 @cache
-def get_member(name: str, module: str) -> Module | Object | Assign | None:
+def get_member(name: str, module: str) -> Module | Object | Assign | Import | None:
     """Return an object in the module."""
     members = get_members(module)
 

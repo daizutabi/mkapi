@@ -1,4 +1,4 @@
-from mkapi.globals import get_all_from_importlib
+from mkapi.inspect import get_all_from_importlib
 from mkapi.items import Returns
 from mkapi.link import set_markdown
 from mkapi.objects import _create_module

@@ -10,6 +10,7 @@ from mkapi.inspect import (
     get_decorator,
     get_fullname,
     get_member,
+    get_members,
     is_classmethod,
     is_dataclass,
     is_staticmethod,
@@ -135,3 +136,10 @@ def test_is_method():
     cls = module.classes[0]
     assert isinstance(cls, Class)
     assert is_staticmethod(cls.functions[0])
+
+
+def test_a():
+    x = get_members("polars.dataframe.frame")
+    for a in x:
+        print(a)
+    assert 0

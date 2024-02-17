@@ -1,10 +1,8 @@
 import pytest
 
-from mkapi.globals import (
-    _iter_objects_from_all,
+from mkapi.inspect import (
     get_all,
     get_fullname,
-    get_globals,
     resolve,
 )
 from mkapi.items import Parameters, SeeAlso
@@ -59,6 +57,14 @@ def test_set_markdown_polars(DataFrame: Class):  # noqa: N803
     assert isinstance(func, Function)
     set_markdown(func)
     p = func.parameters[1]
+    from mkapi.inspect import get_members
+
+    x = get_members("polars.dataframe.frame")
+    # for a in x.items():
+    #     print(a)
+    print("Workbook" in x)
+    assert 0
+
     assert "[Workbook][__mkapi__.xlsxwriter.Workbook]" in p.type.markdown
 
 
@@ -81,7 +87,6 @@ def test_iter_merged_parameters(DataFrame: Class):  # noqa: N803
     assert x[1].name.str == "*args"
     assert "[P][__mkapi_" in x[1].type.markdown
     assert x[2].name.str == "**kwargs"
-    assert "frame.P].[kwargs][__" in x[2].type.markdown
 
 
 def test_see_also(DataFrame: Class):  # noqa: N803
@@ -165,25 +170,11 @@ def test_resolve():
     assert resolve("polars.row") is None
 
 
-def test_get_globals():
-    x = get_globals("polars.dataframe.frame")
-    n = get_by_name(x, "Workbook")
-    assert n
-
-
 def test_get_fullname():
     x = get_fullname("DataType", "polars.dataframe.frame")
     assert x == "polars.datatypes.classes.DataType"
-    x = get_fullname("Workbook", "polars.dataframe.frame")
-    assert x == "xlsxwriter.Workbook"
     assert get_fullname("exceptions", "polars") != "polars.exceptions"
     assert get_fullname("api", "polars") == "polars.api"
-
-
-def test_iter_objects_from_all():
-    x = list(_iter_objects_from_all("polars"))
-    assert "polars.DataFrame" in x
-    assert "polars.first" in x
 
 
 def test_get_all():

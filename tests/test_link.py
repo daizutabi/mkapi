@@ -1,6 +1,6 @@
 import re
 
-from mkapi.globals import get_fullname
+from mkapi.inspect import get_fullname
 from mkapi.link import (
     LINK_PATTERN,
     get_markdown,
