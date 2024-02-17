@@ -34,8 +34,12 @@ def test_create_function(get):
     section = get_by_name(func.doc.sections, "Raises")
     assert section
     assert len(section.items) == 2
-    assert get_by_name(section.items, "ValueError")
-    assert get_by_name(section.items, "AttributeError")
+    t = section.items[0].type.expr
+    assert t
+    assert ast.unparse(t) == "'AttributeError'"
+    t = section.items[1].type.expr
+    assert t
+    assert ast.unparse(t) == "'ValueError'"
 
 
 def test_merge_items():

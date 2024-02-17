@@ -197,13 +197,6 @@ def get_all(module: str) -> dict[str, str]:
     return all_from_ast
 
 
-@dataclass(repr=False)
-class Globals:
-    """Globals class."""
-
-    names: list[Import | Global]
-
-
 def _iter_globals(module: str) -> Iterator[Global | Import]:
     n = len(module) + 1
     for name in _iter_objects(module):
@@ -217,9 +210,9 @@ def _iter_globals(module: str) -> Iterator[Global | Import]:
 
 
 @cache
-def get_globals(module: str) -> Globals:
+def get_globals(module: str) -> list[Global | Import]:
     """Return a global list of a module."""
-    return Globals(list(_iter_globals(module)))
+    return list(_iter_globals(module))
 
 
 @cache
@@ -227,7 +220,7 @@ def get_fullname(name: str, module: str) -> str | None:
     """Return the fullname of an object in the module."""
     if name.startswith(module) or module.startswith(name):
         return name
-    names = get_globals(module).names
+    names = get_globals(module)
     if global_ := get_by_name(names, name):
         return global_.fullname
     if "." not in name:

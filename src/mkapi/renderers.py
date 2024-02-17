@@ -189,20 +189,3 @@ def render(
 #     text.markdown = obj.doc.text.markdown.split("\n\n")[0]  # summary line
 #     type_ = obj.type if isinstance(obj, Attribute) else Type()
 #     return Item(obj.name, type_, text)
-
-# def _postprocess_module(module: Module, skip: list[str]) -> None:
-#     for name, fullname in get_all(module.name.str).items():
-#         obj = get_object(fullname, skip)
-
-#         asname = f"{module.name.str}.{name}"
-#         objects[asname] = obj
-
-#         # TODO: asname
-#         if isinstance(obj, Module):
-#             module.modules.append(obj)
-#         elif isinstance(obj, Class):
-#             module.classes.append(obj)
-#         elif isinstance(obj, Function):
-#             module.functions.append(obj)
-#         elif isinstance(obj, Attribute):
-#             module.attributes.append(obj)

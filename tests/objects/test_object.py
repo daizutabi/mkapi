@@ -12,6 +12,7 @@ from mkapi.objects import (
     get_source,
     iter_base_classes,
     iter_objects,
+    load_module,
 )
 from mkapi.utils import cache_clear, get_by_name, get_module_node
 
@@ -220,48 +221,33 @@ def test_inherit_base_classes_order():
     assert indexes == sorted(indexes)
 
 
-def test_get_object_using_all():
-    cache_clear()
-    assert get_object("schemdraw.Drawing")
-    assert get_object("schemdraw.svgconfig")
-    assert get_object("examples.styles.ExampleClassGoogle")
-    assert get_object("examples.styles.ExampleClassNumPy")
-
-
 def test_get_object_nest():
     cache_clear()
     assert get_object("mkapi.items.Name.__repr__")
     assert get_object("mkapi.items.Name")
 
 
-def test_get_object_inherit():
+def test_load_module():
     cache_clear()
-    module = create_module("examples.styles.google")
+    module = load_module("examples.styles.google")
     assert module
     cls = get_by_name(module.classes, "ExampleClass")
     assert isinstance(cls, Class)
     assert not get_by_name(cls.functions, "__init__")
     cache_clear()
-    module = create_module("examples.styles")
+    module = load_module("examples.styles")
     assert module
     cls = get_by_name(module.classes, "ExampleClass")
     assert isinstance(cls, Class)
     assert not get_by_name(cls.functions, "__init__")
 
 
-# def test_postprocess_module():
+# def test_get_object_using_all():
 #     cache_clear()
-#     module = create_module("examples.styles.google")
-#     assert module
-#     cls = get_by_name(module.classes, "ExampleClass")
-#     assert isinstance(cls, Class)
-#     assert not get_by_name(cls.functions, "__init__")
-#     cache_clear()
-#     module = create_module("examples.styles")
-#     assert module
-#     cls = get_by_name(module.classes, "ExampleClass")
-#     assert isinstance(cls, Class)
-#     assert not get_by_name(cls.functions, "__init__")
+#     assert get_object("schemdraw.Drawing")
+#     assert get_object("schemdraw.svgconfig")
+#     assert get_object("examples.styles.ExampleClassGoogle")
+#     assert get_object("examples.styles.ExampleClassNumPy")
 
 
 # def test_get_modulename():

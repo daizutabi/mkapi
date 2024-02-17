@@ -167,7 +167,7 @@ def test_resolve():
 
 def test_get_globals():
     x = get_globals("polars.dataframe.frame")
-    n = get_by_name(x.names, "Workbook")
+    n = get_by_name(x, "Workbook")
     assert n
 
 

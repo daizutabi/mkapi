@@ -14,7 +14,7 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring, split_item_without_name
-from mkapi.globals import get_fullname
+from mkapi.globals import get_all, get_fullname
 from mkapi.items import (
     Assign,
     Assigns,
@@ -373,17 +373,33 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
     for node in cls.node.bases:
         name = next(mkapi.ast.iter_identifiers(node))
 
-        if fullname := get_fullname(name, cls.module.name.str):
+        if base := get_by_name(cls.module.classes, name):
+            yield base
+
+        elif fullname := get_fullname(name, cls.module.name.str):
             base = _get_object(fullname)
 
             if base and isinstance(base, Class):
                 yield base
 
 
+base_classes: dict[str, list[Class]] = cache({})
+
+
+def create_base_classes(cls: Class) -> list[Class]:
+    if cls.fullname.str in base_classes:
+        return base_classes[cls.fullname.str]
+
+    bases = list(iter_base_classes(cls))
+
+    base_classes[cls.fullname.str] = bases
+    return bases
+
+
 def inherit_base_classes(cls: Class) -> None:
     """Inherit objects from base classes."""
     # TODO: fix InitVar, ClassVar for dataclasses.
-    bases = list(iter_base_classes(cls))
+    bases = create_base_classes(cls)
 
     for name in ["attributes", "functions", "classes"]:
         members = {member.name.str: member for member in getattr(cls, name)}
@@ -485,18 +501,10 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
 @cache
 def create_module(name: str) -> Module | None:
     """Return a [Module] instance by the name."""
-    if name in objects:
-        return objects[name]  # type: ignore
-
     if not (node_source := get_module_node_source(name)):
         return None
 
     return _create_module(name, *node_source)
-
-
-Member_: TypeAlias = Module | Class | Function | Attribute
-Parent: TypeAlias = Module | Class | Function | None
-Predicate: TypeAlias = Callable_[[Member_, Parent], bool] | None
 
 
 def _get_object(fullname: str) -> Module | Class | Function | Attribute | None:
@@ -513,8 +521,44 @@ def _get_object(fullname: str) -> Module | Class | Function | Attribute | None:
 
 
 @cache
+def load_module(name: str) -> Module | None:
+    if not (module := create_module(name)):
+        return None
+
+    for name, fullname in get_all(module.name.str).items():
+        obj = _get_object(fullname)
+
+        asname = f"{module.name.str}.{name}"
+        objects[asname] = obj
+
+        # TODO: asname
+        if isinstance(obj, Module):
+            module.modules.append(obj)
+        elif isinstance(obj, Class):
+            module.classes.append(obj)
+        elif isinstance(obj, Function):
+            module.functions.append(obj)
+        elif isinstance(obj, Attribute):
+            module.attributes.append(obj)
+
+    return module
+
+
+@cache
 def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
-    return _get_object(fullname)
+    if fullname in objects:
+        return objects[fullname]
+
+    for name in iter_parent_module_names(fullname):
+        if load_module(name) and fullname in objects:
+            return objects[fullname]
+
+    return None
+
+
+Member_: TypeAlias = Module | Class | Function | Attribute
+Parent: TypeAlias = Module | Class | Function | None
+Predicate: TypeAlias = Callable_[[Member_, Parent], bool] | None
 
 
 def is_member(
