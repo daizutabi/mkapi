@@ -14,7 +14,7 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.docstrings import Docstring, split_item_without_name
-from mkapi.inspect import get_all, get_fullname
+from mkapi.inspect import get_all, get_fullname, get_member
 from mkapi.items import (
     Assign,
     Assigns,
@@ -373,16 +373,20 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
     for node in cls.node.bases:
         name = next(mkapi.ast.iter_identifiers(node))
 
-        print(name, cls.module.name.str)
-
         if base := get_by_name(cls.module.classes, name):
             yield base
 
-        elif fullname := get_fullname(name, cls.module.name.str):
-            base = _get_object(fullname)
+        elif member := get_member(name, cls.module.name.str):  # noqa: SIM102
+            if isinstance(member.node, ast.ClassDef):  # noqa: SIM102
+                if module := create_module(member.module):  # type: ignore  # noqa: SIM102
+                    if base := get_by_name(module.classes, member.name):
+                        yield base
 
-            if base and isinstance(base, Class):
-                yield base
+        # elif fullname := get_fullname(name, cls.module.name.str):
+        #     base = _get_object(fullname)
+
+        #     if base and isinstance(base, Class):
+        #         yield base
 
 
 base_classes: dict[str, list[Class]] = cache({})
