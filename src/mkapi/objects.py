@@ -13,8 +13,9 @@ import mkapi.ast
 import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
+from mkapi.ast import is_function
 from mkapi.docstrings import Docstring, split_item_without_name
-from mkapi.inspect import get_all, get_fullname, get_member
+from mkapi.inspect import get_all, get_member, is_dataclass
 from mkapi.items import (
     Assign,
     Assigns,
@@ -351,7 +352,7 @@ def create_class(
             cls.classes.append(cls_)
 
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-            if mkapi.ast.is_function(child):
+            if is_function(child):
                 func = create_function(child, module, cls)
                 cls.functions.append(func)
 
@@ -360,7 +361,7 @@ def create_class(
 
     inherit_base_classes(cls)
 
-    if mkapi.inspect.is_dataclass(cls):
+    if is_dataclass(cls):
         cls.parameters = list(iter_dataclass_parameters(cls))
     else:
         merge_init(cls)
@@ -375,18 +376,13 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
 
         if base := get_by_name(cls.module.classes, name):
             yield base
+            continue
 
-        elif member := get_member(name, cls.module.name.str):  # noqa: SIM102
-            if isinstance(member.node, ast.ClassDef):  # noqa: SIM102
-                if module := create_module(member.module):  # type: ignore  # noqa: SIM102
-                    if base := get_by_name(module.classes, member.name):
-                        yield base
-
-        # elif fullname := get_fullname(name, cls.module.name.str):
-        #     base = _get_object(fullname)
-
-        #     if base and isinstance(base, Class):
-        #         yield base
+        modulename = cls.module.name.str
+        if member := get_member(name, modulename, ast.ClassDef):  # noqa: SIM102
+            if module := create_module(member.module):  # type: ignore # noqa: SIM102
+                if base := get_by_name(module.classes, member.name):
+                    yield base
 
 
 base_classes: dict[str, list[Class]] = cache({})

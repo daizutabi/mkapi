@@ -140,20 +140,24 @@ def _iter_imports_from_import_from(node: ast.ImportFrom, module: str) -> Iterato
         yield alias.asname or alias.name, f"{module}.{alias.name}"
 
 
-def _iter_names_from_all(node: ast.ImportFrom, module: str) -> Iterator[Module | Object | Assign | Import]:
-    module = _get_module_from_import_from(node, module)
-    yield from get_members(module).values()
+# def _iter_names_from_all(node: ast.ImportFrom, module: str) -> Iterator[Module | Object | Assign | Import]:
+#     module = _get_module_from_import_from(node, module)
+#     yield from get_members(module).values()
 
 
 @cache
-def get_members(module: str) -> dict[str, Module | Object | Assign | Import]:
+def get_members(
+    module: str,
+    nodetype: type[ast.AST] | None = None,
+) -> dict[str, Module | Object | Assign | Import]:
     members = {}
 
     for member in _iter_names(module):
+        name = member.name
         if isinstance(member, Import) and (resolved := _resolve(member.fullname)):
-            members[member.name] = resolved
-        else:
-            members[member.name] = member
+            member = resolved  # noqa: PLW2901
+        if not nodetype or isinstance(member.node, nodetype):
+            members[name] = member
 
     return members
 
@@ -203,9 +207,13 @@ def resolve_with_attribute(fullname: str) -> str | None:
 
 
 @cache
-def get_member(name: str, module: str) -> Module | Object | Assign | Import | None:
+def get_member(
+    name: str,
+    module: str,
+    nodetype: type[ast.AST] | None = None,
+) -> Module | Object | Assign | Import | None:
     """Return an object in the module."""
-    members = get_members(module)
+    members = get_members(module, nodetype)
 
     if name in members:
         return members[name]
@@ -216,7 +224,7 @@ def get_member(name: str, module: str) -> Module | Object | Assign | Import | No
     name, attr = name.rsplit(".", maxsplit=1)
     if name in members and isinstance(members[name], Module):
         module = members[name].name
-        return get_member(attr, module)
+        return get_member(attr, module, nodetype)
 
     return None
 

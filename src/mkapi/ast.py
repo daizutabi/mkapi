@@ -33,19 +33,19 @@ if TYPE_CHECKING:
     from inspect import _ParameterKind
 
 # type Import_ = Import | ImportFrom
-# type Def = AsyncFunctionDef | FunctionDef | ClassDef
+# type Def = FunctionDef | AsyncFunctionDef | ClassDef
 # type Assign_ = AnnAssign | Assign | TypeAlias
 # type Node = Import_ | Def | Assign_
 
 Import_: typing.TypeAlias = Import | ImportFrom
-Def: typing.TypeAlias = AsyncFunctionDef | FunctionDef | ClassDef
+Def: typing.TypeAlias = FunctionDef | AsyncFunctionDef | ClassDef
 Assign_: typing.TypeAlias = AnnAssign | Assign | TypeAlias  # type: ignore
 Node: typing.TypeAlias = Import_ | Def | Assign_
 
 
 def iter_child_nodes(node: AST) -> Iterator[Node]:
     """Yield child nodes."""
-    yield_type = Import | ImportFrom | AsyncFunctionDef | FunctionDef | ClassDef
+    yield_type = Import | ImportFrom | FunctionDef | AsyncFunctionDef | ClassDef
 
     for child in (it := ast.iter_child_nodes(node)):
         if isinstance(child, yield_type):
@@ -83,7 +83,7 @@ def _iter_assign_nodes(
         yield node
         yield from _iter_assign_nodes(next_node, it)
 
-    elif isinstance(next_node, AsyncFunctionDef | FunctionDef | ClassDef):
+    elif isinstance(next_node, FunctionDef | AsyncFunctionDef | ClassDef):
         yield node
         yield next_node
 
@@ -133,7 +133,7 @@ PARAMETER_KIND_ATTRIBUTE: dict[_ParameterKind, str] = {
 
 
 def _iter_parameters(
-    node: AsyncFunctionDef | FunctionDef,
+    node: FunctionDef | AsyncFunctionDef,
 ) -> Iterator[tuple[ast.arg, _ParameterKind]]:
     for kind, attr in PARAMETER_KIND_ATTRIBUTE.items():
         if args := getattr(node.args, attr):
@@ -141,7 +141,7 @@ def _iter_parameters(
             yield from ((arg, kind) for arg in it)
 
 
-def _iter_defaults(node: AsyncFunctionDef | FunctionDef) -> Iterator[ast.expr | None]:
+def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | None]:
     args = node.args
     num_positional = len(args.posonlyargs) + len(args.args)
     nones = [None] * num_positional
@@ -151,7 +151,7 @@ def _iter_defaults(node: AsyncFunctionDef | FunctionDef) -> Iterator[ast.expr | 
 
 
 def iter_parameters(
-    node: AsyncFunctionDef | FunctionDef,
+    node: FunctionDef | AsyncFunctionDef,
 ) -> Iterator[tuple[ast.arg, _ParameterKind, ast.expr | None]]:
     """Yield parameters from a function node."""
     it = _iter_defaults(node)
@@ -160,7 +160,7 @@ def iter_parameters(
         yield arg, kind, default
 
 
-def iter_raises(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Raise]:
+def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[Raise]:
     """Yield [Raise] instances from a function node."""
     names = []
     for child in ast.walk(node):

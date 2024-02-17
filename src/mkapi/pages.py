@@ -70,7 +70,7 @@ class Page:
 
         def predicate(name: str, content: str) -> bool:
             if self.kind is PageKind.SOURCE:
-                if self.name == name and content in ["header", "source"]:
+                if self.name == name and content in ["header", "object", "source"]:
                     return True
 
                 return False
