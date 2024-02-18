@@ -1,3 +1,4 @@
+import ast
 import re
 
 from mkapi.inspect import get_fullname
@@ -8,7 +9,7 @@ from mkapi.link import (
     get_markdown_from_type_string,
     set_markdown,
 )
-from mkapi.objects import Class, Function, create_module
+from mkapi.objects import Class, Function, create_function, create_module
 from mkapi.utils import get_by_name
 
 
@@ -171,3 +172,13 @@ def test_set_markdown_attribute():
     for attr in module.attributes:
         set_markdown(attr)
         assert "][__mkapi__.examples.styles.google.module_level_v" in attr.name.markdown
+
+
+def test_set_markdown_default():
+    src = 'def f(x:int=0,y:str="x"): pass'
+    node = ast.parse(src).body[0]
+    assert isinstance(node, ast.FunctionDef)
+    func = create_function(node)
+    set_markdown(func)
+    assert func.parameters[0].default.markdown == "0"
+    assert func.parameters[1].default.markdown == "'x'"

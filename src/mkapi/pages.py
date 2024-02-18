@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, TypeAlias
 import mkapi.markdown
 import mkapi.renderers
 from mkapi.inspect import resolve_with_attribute
-from mkapi.objects import create_module, get_object, is_empty, is_member, iter_objects_with_depth
+from mkapi.objects import get_object, is_empty, is_member, iter_objects_with_depth, load_module
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
@@ -98,7 +98,7 @@ def create_markdown(
     predicate: Predicate = None,
 ) -> tuple[str, list[str]]:
     """Create object page for an object."""
-    if not (module := create_module(name)):
+    if not (module := load_module(name)):
         return f"!!! failure\n\n    module {name!r} not found.\n", []
 
     filters_str = "|" + "|".join(filters) if filters else ""

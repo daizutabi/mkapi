@@ -1,8 +1,9 @@
 import pytest
 
 from mkapi.inspect import (
-    get_all,
     get_fullname,
+    get_members_all,
+    get_members_all_inspect,
     resolve,
 )
 from mkapi.items import Parameters, SeeAlso
@@ -169,15 +170,18 @@ def test_get_fullname():
     assert get_fullname("api", "polars") == "polars.api"
 
 
-def test_get_all():
-    x = get_all("polars")
-    assert x["api"] == "polars.api"
-    assert x["ArrowError"] == "polars.exceptions.ArrowError"
-
-
-# LazyFrame.tail
-
-
 def test_create_module():
     name = "polars"
     assert create_module(name)
+
+
+def test_get_all():
+    x = get_members_all_inspect("polars")
+    assert x["api"].name == "polars.api"  # type: ignore
+    assert x["ArrowError"].fullname == "polars.exceptions.ArrowError"  # type: ignore
+
+    x = get_members_all("polars")
+    assert "polars.api" in x
+
+
+# LazyFrame.tail

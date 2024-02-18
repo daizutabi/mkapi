@@ -313,7 +313,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     def predicate(name: str) -> bool:
         if not plugin.config.exclude:
             return True
-        return any(ex not in name for ex in plugin.config.exclude)
+        return all(ex not in name for ex in plugin.config.exclude)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

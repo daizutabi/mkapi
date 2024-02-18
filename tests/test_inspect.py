@@ -4,12 +4,12 @@ import dataclasses
 from mkapi.inspect import (
     _iter_imports_from_import,
     _iter_imports_from_import_from,
-    get_all,
-    get_all_from_ast,
-    get_all_from_importlib,
     get_decorator,
     get_fullname,
     get_member,
+    get_members_all,
+    get_members_all_ast,
+    get_members_all_inspect,
     is_classmethod,
     is_dataclass,
     is_staticmethod,
@@ -83,16 +83,6 @@ def test_get_fullname():
     assert x == "mkapi.objects.Object"
 
 
-def test_get_all():
-    module = "tqdm"
-    for f in [get_all_from_ast, get_all_from_importlib]:
-        x = f(module)
-        assert x["tqdm"] == "tqdm.std.tqdm"
-        assert x["main"] == "tqdm.cli.main"
-        assert x["TqdmTypeError"] == "tqdm.std.TqdmTypeError"
-        assert not get_all("__invalid__")
-
-
 def test_iter_decorator_names():
     src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
     node = ast.parse(src)
@@ -133,3 +123,20 @@ def test_is_method():
     cls = module.classes[0]
     assert isinstance(cls, Class)
     assert is_staticmethod(cls.functions[0])
+
+
+def test_get_members_all():
+    module = "tqdm"
+    for f in [get_members_all_ast, get_members_all_inspect]:
+        x = f(module)
+        assert x["tqdm"].fullname == "tqdm.std.tqdm"  # type:ignore
+        assert x["main"].fullname == "tqdm.cli.main"  # type:ignore
+        assert x["TqdmTypeError"].fullname == "tqdm.std.TqdmTypeError"  # type: ignore
+
+
+def test_get_all():
+    x = get_members_all("examples.styles")
+    a = x["examples.styles.google"]
+    assert a == [("ExampleClassGoogle", "examples.styles.google.ExampleClass")]
+    a = x["examples.styles.numpy"]
+    assert a == [("ExampleClassNumPy", "examples.styles.numpy.ExampleClass")]

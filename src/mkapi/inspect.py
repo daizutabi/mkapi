@@ -34,7 +34,7 @@ class Name:
     name: str
     module: str
     fullname: str
-    node: ast.AST
+    node: ast.AST | None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.fullname})"
@@ -44,14 +44,14 @@ class Name:
 class Object(Name):
     """Object class."""
 
-    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
+    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef | None
 
 
 @dataclass(repr=False)
 class Assign(Name):
     """Assign class."""
 
-    node: ast.AnnAssign | ast.Assign | TypeAlias  # type: ignore
+    node: ast.AnnAssign | ast.Assign | TypeAlias | None  # type: ignore
 
 
 @dataclass(repr=False)
@@ -250,7 +250,7 @@ def get_fullname(name: str, module: str) -> str | None:
 
 
 @cache
-def get_members_all(module: str) -> dict[str, Module | Object | Assign]:
+def get_members_all_ast(module: str) -> dict[str, Module | Object | Assign]:
     members = get_members(module)
 
     member_all = get_member("__all__", module)
@@ -269,19 +269,7 @@ def get_members_all(module: str) -> dict[str, Module | Object | Assign]:
 
 
 @cache
-def get_all_from_ast(module: str) -> dict[str, str]:
-    """Return name dictonary of __all__ using ast."""
-    names = {}
-
-    for name, member in get_members_all(module).items():
-        fullname = member.name if isinstance(member, Module) else member.fullname
-        names[name] = fullname
-
-    return names
-
-
-@cache
-def get_all_from_importlib(module: str) -> dict[str, str]:
+def get_members_all_inspect(module: str) -> dict[str, Module | Object | Assign]:
     """Return name dictonary of __all__ using importlib."""
     try:
         module_type = importlib.import_module(module)
@@ -292,28 +280,40 @@ def get_all_from_importlib(module: str) -> dict[str, str]:
     if not isinstance(members, dict) or "__all__" not in members:
         return {}
 
-    names = {}
-    for name in members["__all__"]:
-        obj = members.get(name)
+    members_all = {}
+    for asname in members["__all__"]:
+        obj = members.get(asname)
+
         if obj is None:
             continue
+
         if inspect.ismodule(obj):
-            names[name] = obj.__name__
+            members_all[asname] = Module(obj.__name__, None)
+
         elif not (modulename := getattr(obj, "__module__", None)):
             continue
-        elif qualname := getattr(obj, "__qualname__", None):
-            names[name] = f"{modulename}.{qualname}"
 
-    return names
+        elif name := getattr(obj, "__name__", None):
+            fullname = f"{modulename}.{name}"
+            members_all[asname] = Object(name, modulename, fullname, None)
+
+    return members_all
 
 
 @cache
-def get_all(module: str) -> dict[str, str]:
+def get_members_all(module: str) -> dict[str, list[tuple[str, str]]]:
     """Return name dictonary of __all__."""
-    all_from_ast = get_all_from_ast(module)
-    all_from_importlib = get_all_from_importlib(module)
-    all_from_ast.update(all_from_importlib)
-    return all_from_ast
+    members_ast = get_members_all_ast(module)
+    members_inspect = get_members_all_inspect(module)
+    members_ast.update(members_inspect)
+
+    members = {}
+    for name, member in members_ast.items():
+        module = member.name if isinstance(member, Module) else member.module
+        fullname = member.name if isinstance(member, Module) else member.fullname
+        members.setdefault(module, []).append((name, fullname))
+
+    return members
 
 
 def iter_decorator_names(obj: Class | Function) -> Iterator[str]:

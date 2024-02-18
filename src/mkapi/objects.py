@@ -15,7 +15,7 @@ import mkapi.inspect
 from mkapi import docstrings
 from mkapi.ast import is_function
 from mkapi.docstrings import Docstring, create_summary_item, split_item_without_name
-from mkapi.inspect import get_all, get_member, is_dataclass
+from mkapi.inspect import get_member, get_members_all, is_dataclass
 from mkapi.items import (
     Assign,
     Assigns,
@@ -244,9 +244,10 @@ def _add_attributes_section(doc: Docstring, attrs: list[Attribute]):
     for attr in attrs:
         if attr.doc.sections:
             item = create_summary_item(attr.name, attr.doc, attr.type)
-        else:
+            items.append(item)
+        elif attr.doc.text.str:
             item = Item(attr.name, attr.type, attr.doc.text)
-        items.append(item)
+            items.append(item)
 
     if not items:
         return
@@ -547,17 +548,17 @@ def create_module(name: str) -> Module | None:
     return _create_module(name, *node_source)
 
 
-def _get_object(fullname: str) -> Module | Class | Function | Attribute | None:
-    """Return an [Object] instance by the fullname."""
-    if fullname in objects:
-        return objects[fullname]
+# def _get_object(fullname: str) -> Module | Class | Function | Attribute | None:
+#     """Return an [Object] instance by the fullname."""
+#     if fullname in objects:
+#         return objects[fullname]
 
-    for name in iter_parent_module_names(fullname):
-        if create_module(name) and fullname in objects:
-            return objects[fullname]
+#     for name in iter_parent_module_names(fullname):
+#         if create_module(name) and fullname in objects:
+#             return objects[fullname]
 
-    objects[fullname] = None
-    return None
+#     objects[fullname] = None
+#     return None
 
 
 @cache
@@ -565,21 +566,22 @@ def load_module(name: str) -> Module | None:
     if not (module := create_module(name)):
         return None
 
-    for name, fullname in get_all(module.name.str).items():
-        obj = _get_object(fullname)
+    for modulename, members in get_members_all(module.name.str).items():
+        create_module(modulename)
+        for name, fullname in members:
+            if obj := objects.get(fullname):
+                asname = f"{module.name.str}.{name}"
+                objects[asname] = obj
 
-        asname = f"{module.name.str}.{name}"
-        objects[asname] = obj
-
-        # TODO: asname
-        if isinstance(obj, Module):
-            module.modules.append(obj)
-        elif isinstance(obj, Class):
-            module.classes.append(obj)
-        elif isinstance(obj, Function):
-            module.functions.append(obj)
-        elif isinstance(obj, Attribute):
-            module.attributes.append(obj)
+                # TODO: asname
+                if isinstance(obj, Module):
+                    module.modules.append(obj)
+                elif isinstance(obj, Class):
+                    module.classes.append(obj)
+                elif isinstance(obj, Function):
+                    module.functions.append(obj)
+                elif isinstance(obj, Attribute):
+                    module.attributes.append(obj)
 
     return module
 

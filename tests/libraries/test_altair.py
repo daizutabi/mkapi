@@ -1,12 +1,15 @@
-from mkapi.inspect import get_all_from_importlib
+from mkapi.inspect import get_members_all_inspect
 from mkapi.items import Returns
 from mkapi.link import set_markdown
 from mkapi.objects import _create_module
 from mkapi.utils import get_by_name, get_by_type, get_module_node
 
 
-def test_get_all_from_importlib():
-    assert get_all_from_importlib("altair")
+def test_get_members_all_inspect():
+    m = get_members_all_inspect("altair")
+    assert "core" in m
+    assert "layer" in m
+    assert "Url" in m
 
 
 def test_docstring_return():
