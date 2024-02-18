@@ -1,7 +1,7 @@
 import ast
 
 from mkapi.link import set_markdown
-from mkapi.objects import Function, _create_module, create_module
+from mkapi.objects import Function, _create_module
 from mkapi.signatures import get_signature, iter_signature
 
 
@@ -50,9 +50,13 @@ def test_get_signature():
 
 
 def test_get_signature_attribute():
-    module = create_module("examples.styles.google")
-    assert module
+    src = """x:int"""
+    node = ast.parse(src)
+    module = _create_module("x", node)
     attr = module.attributes[0]
     set_markdown(attr)
     s = list(get_signature(attr))
-    assert s[-1].markdown == "int"
+    assert s[0].kind == "colon"
+    assert s[0].markdown == ": "
+    assert s[1].kind == "return"
+    assert s[1].markdown == "int"

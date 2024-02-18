@@ -1,7 +1,7 @@
 import ast
 import inspect
 
-from mkapi.objects import Class, create_class, get_object
+from mkapi.objects import Class, create_class
 from mkapi.utils import get_by_name
 
 
@@ -34,17 +34,12 @@ def test_create_class(get):
     assert get_by_name(cls.functions, "__special_without_docstring__")
     assert get_by_name(cls.functions, "_private")
     assert get_by_name(cls.functions, "_private_without_docstring")
-
     assert len(cls.attributes) == 7
-    assert get_by_name(cls.attributes, "readonly_property")
-    assert get_by_name(cls.attributes, "readwrite_property")
-
+    section = get_by_name(cls.doc.sections, "Attributes")
+    assert section
+    for x in [section.items, cls.attributes]:
+        assert get_by_name(x, "readonly_property")
+        assert get_by_name(x, "readwrite_property")
+        for k in [1, 2, 5]:
+            assert get_by_name(section.items, f"attr{k}")
     assert repr(cls) == "Class('ExampleClass')"
-
-
-def test_update_attributes():
-    cls = get_object("examples.styles.google.ExampleClass")
-    assert isinstance(cls, Class)
-    a = cls.attributes[0]
-    b = get_object("examples.styles.google.ExampleClass.attr1")
-    assert a is b

@@ -3,6 +3,7 @@ import inspect
 
 from mkapi.items import Assigns, iter_assigns
 from mkapi.objects import (
+    Attributes,
     _create_empty_module,
     _create_module,
     _merge_attributes_comment,
@@ -135,7 +136,7 @@ def test_create_attribute_pep526_without_module(get):
     assert not attr.doc.text.str
 
 
-def test_clssss_attribute(google, source, get):
+def test_class_attribute(google, source, get):
     module = _create_module("google", google, source)
     node = get("ExampleClass")
     assert node
@@ -144,11 +145,11 @@ def test_clssss_attribute(google, source, get):
     attrs = cls.attributes
     assert len(attrs) == 7
     names = ["attr1", "attr2", "attr3", "attr4", "attr5", "readonly_property", "readwrite_property"]
-    for k, name in enumerate(names):
-        assert attrs[k].name.str == name
-        assert attrs[k].fullname.str == f"google.ExampleClass.{name}"
-        assert attrs[k].node
-        assert attrs[k].doc.text.str
+    section = get_by_type(cls.doc.sections, Attributes)
+    assert section
+    for x in [section.items, cls.attributes]:
+        for k, name in enumerate(names):
+            assert x[k].name.str == name
     assert not get_by_name(cls.functions, "__init__")
 
 

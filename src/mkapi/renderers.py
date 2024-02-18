@@ -99,7 +99,7 @@ def render(
     obj: Object,
     level: int,
     namespace: str,
-    filters: list[str],
+    filters: list[str],  # noqa: ARG001
     predicate: Callable[[str, str], bool] | None = None,
 ) -> str:
     """Return a rendered Markdown."""

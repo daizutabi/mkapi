@@ -10,7 +10,6 @@ from mkapi.inspect import (
     get_decorator,
     get_fullname,
     get_member,
-    get_members,
     is_classmethod,
     is_dataclass,
     is_staticmethod,
@@ -134,13 +133,3 @@ def test_is_method():
     cls = module.classes[0]
     assert isinstance(cls, Class)
     assert is_staticmethod(cls.functions[0])
-
-
-def test_():
-    x = get_members("mkapi.inspect")
-    # for a in x.items():
-    #     print(a)
-
-    # for x in get_all("_collections_abc"):
-    #     print(x)
-    # assert 0

@@ -3,7 +3,6 @@ from mkapi.objects import get_object
 from mkapi.renderers import (
     _get_source,
     load_templates,
-    render,
     render_document,
     render_header,
     render_heading,

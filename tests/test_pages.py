@@ -1,11 +1,9 @@
 from pathlib import Path
 
 import markdown
-import pytest
 
 import mkapi.renderers
 from mkapi.pages import (
-    PageKind,
     convert_html,
     convert_markdown,
     create_markdown,

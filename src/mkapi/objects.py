@@ -14,14 +14,16 @@ import mkapi.docstrings
 import mkapi.inspect
 from mkapi import docstrings
 from mkapi.ast import is_function
-from mkapi.docstrings import Docstring, split_item_without_name
+from mkapi.docstrings import Docstring, create_summary_item, split_item_without_name
 from mkapi.inspect import get_all, get_member, is_dataclass
 from mkapi.items import (
     Assign,
     Assigns,
     Default,
+    Item,
     Name,
     Parameter,
+    Section,
     Text,
     Type,
     iter_assigns,
@@ -166,24 +168,22 @@ def iter_attributes(
         yield create_attribute(child, module, parent)
 
 
-def merge_attributes(
+def _merge_attributes(
     attributes: list[Attribute],
     module: Module,
-    parent: Class | Function | None,
+    parent_doc: Module | Class | Function | None,
+    parent_create: Class | Function | None,
 ) -> None:
     """Merge attributes."""
-    sections = parent.doc.sections if parent else module.doc.sections
+    sections = parent_doc.doc.sections if parent_doc else module.doc.sections
 
     if section := get_by_type(sections, Assigns):
         for attr in attributes:
             _merge_attribute_docstring(attr, section)
 
         for item in reversed(section.items):
-            attr = create_attribute(item, module, parent)
+            attr = create_attribute(item, module, parent_create)
             attributes.insert(0, attr)
-
-        index = sections.index(section)
-        del sections[index]
 
     if module.source:
         _merge_attributes_comment(attributes, module.source)
@@ -230,7 +230,39 @@ def _add_text_from_comment(attr: Attribute, text: str) -> None:
     attr.doc.text.str = text
 
 
-def union_attributes(la: list[Attribute], lb: list[Attribute]) -> Iterator[Attribute]:
+@dataclass(repr=False)
+class Attributes(Section):
+    """Attributes section."""
+
+    items: list[Assign]  # Attribute -> Assign
+
+
+def _add_attributes_section(doc: Docstring, attrs: list[Attribute]):
+    """Add an Attributes section."""
+    items = []
+
+    for attr in attrs:
+        if attr.doc.sections:
+            items.append(create_summary_item(attr.name, attr.doc, attr.type))
+        elif not is_empty(attr):
+            item = Item(attr.name, attr.type, attr.doc.text)
+            items.append(item)
+
+    if not items:
+        return
+
+    section = Attributes(Name("Attributes"), Type(), Text(), items)
+
+    if section_assigns := get_by_type(doc.sections, Assigns):
+        index = doc.sections.index(section_assigns)
+        doc.sections[index] = section
+    else:
+        doc.sections.append(section)
+
+    return
+
+
+def _union_attributes(la: list[Attribute], lb: list[Attribute]) -> Iterator[Attribute]:
     """Yield merged [Attribute] instances."""
     for name in unique_names(la, lb):
         a, b = get_by_name(la, name), get_by_name(lb, name)
@@ -357,14 +389,16 @@ def create_class(
                 cls.functions.append(func)
 
     cls.attributes = list(iter_attributes(node, module, cls))
-    merge_attributes(cls.attributes, module, cls)
+    _merge_attributes(cls.attributes, module, cls, cls)
 
     inherit_base_classes(cls)
 
     if is_dataclass(cls):
         cls.parameters = list(iter_dataclass_parameters(cls))
     else:
-        merge_init(cls)
+        _merge_init(cls)
+
+    _add_attributes_section(cls.doc, cls.attributes)
 
     return cls
 
@@ -435,7 +469,7 @@ def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
             raise NotImplementedError
 
 
-def merge_init(cls: Class):
+def _merge_init(cls: Class):
     if not (init := get_by_name(cls.functions, "__init__")):
         return
 
@@ -446,10 +480,12 @@ def merge_init(cls: Class):
         self = init.parameters[0].name.str
 
         attrs = list(iter_attributes(init.node, cls.module, cls, self))
-        merge_attributes(attrs, cls.module, cls)
+        _merge_attributes(attrs, cls.module, init, cls)
 
-        attrs = union_attributes(cls.attributes, attrs)
+        attrs = _union_attributes(cls.attributes, attrs)
+
         cls.attributes = sorted(attrs, key=lambda attr: attr.node.lineno if attr.node else -1)
+
         update_attributes(cls.attributes)
 
     cls.doc = mkapi.docstrings.merge(cls.doc, init.doc)
@@ -494,8 +530,10 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
                 func = create_function(child, module)
                 module.functions.append(func)
 
-    module.attributes = list(iter_attributes(node, module, None))
-    merge_attributes(module.attributes, module, None)
+    attrs = list(iter_attributes(node, module, None))
+    _merge_attributes(attrs, module, module, None)
+    _add_attributes_section(doc, attrs)
+    module.attributes = attrs
 
     return module
 
