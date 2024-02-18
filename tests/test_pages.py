@@ -85,7 +85,7 @@ def test_convert_html():
     paths = {}
     paths["object"] = {"mkapi.objects.Object": Path("/root/api/x.md")}
     paths["source"] = {"mkapi.objects.Object": Path("/root/src/x.md")}
-    paths["object"]["mkapi.objects.Object.__iter__"] = Path("/root/X/x.md")
+    paths["object"]["mkapi.objects.Object.__repr__"] = Path("/root/X/x.md")
     namespaces = ("object", "source")
     anchors = {"object": "docs", "source": "source"}
     m = convert_markdown(source, path, namespaces, paths, anchors)
@@ -93,4 +93,14 @@ def test_convert_html():
     es = ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]
     h = markdown.markdown(m, extensions=es)
     h = convert_html(h, path, paths["object"], anchors["object"])
-    assert '<a href="../../../X/x/#mkapi.objects.Object.__iter__">[docs]</a>' in h
+    assert '<a href="../../../X/x/#mkapi.objects.Object.__repr__">[docs]</a>' in h
+
+
+def test_create_markdown_alias():
+    m = create_markdown("examples.styles", [])
+    assert "# ::: examples.styles\n\n" in m[0]
+    assert "## ::: examples.styles.ExampleClassGoogle\n\n" in m[0]
+    assert "## ::: examples.styles.ExampleClassNumPy\n" in m[0]
+    assert "examples.styles" in m[1]
+    assert "examples.styles.ExampleClassGoogle" in m[1]
+    assert "examples.styles.ExampleClassNumPy" in m[1]

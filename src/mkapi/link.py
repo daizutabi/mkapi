@@ -6,15 +6,17 @@ import itertools
 import re
 from collections.abc import Callable
 from functools import partial
-from typing import TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
-from mkapi.docstrings import Docstring
 from mkapi.inspect import get_fullname, resolve_with_attribute
-from mkapi.items import Default, Name, Text, Type
-from mkapi.objects import Attribute, Class, Function, Module, iter_objects
+from mkapi.items import Default, Item, Name, Section, Text, Type
+from mkapi.objects import Alias, Attribute, Class, Function, Module, iter_objects
 from mkapi.utils import is_identifier, iter_identifiers, iter_parent_module_names
+
+if TYPE_CHECKING:
+    from mkapi.docstrings import Docstring
 
 PREFIX = "__mkapi__."
 
@@ -112,16 +114,24 @@ def set_markdown_text(text: Text, replace: Replace = None) -> None:
 
 
 def set_markdown(
-    obj: Module | Class | Function | Attribute,
-    doc: Docstring | None = None,
+    obj: Module | Class | Function | Attribute | Alias,
+    doc: Docstring | Section | Item | None | Literal[False] = None,
 ) -> None:
+    # module list for alias
     module = obj if isinstance(obj, Module) else obj.module
 
     _replace_from_module = partial(get_fullname, module=module.name.str)
 
     _replace_from_object = partial(replace_from_object, obj=obj)
 
-    it = doc if doc else itertools.chain(obj, obj.doc)
+    match doc:
+        case None if not isinstance(obj, Alias):
+            it = itertools.chain(obj, obj.doc)
+        case None | False:
+            it = obj
+        case _:
+            it = doc
+
     for elem in it:
         if elem.markdown:
             continue
@@ -129,7 +139,7 @@ def set_markdown(
         if isinstance(elem, Name):
             set_markdown_name(elem, _replace_from_object)  # replace = None ?
 
-        elif isinstance(elem, Default):
+        if isinstance(elem, Default):
             set_markdown_default(elem, _replace_from_module)
 
         elif isinstance(elem, Type):
@@ -141,7 +151,7 @@ def set_markdown(
 
 def replace_from_object(
     name: str,
-    obj: Module | Class | Function | Attribute,
+    obj: Module | Class | Function | Attribute | Alias,
 ) -> str | None:
     """Return fullname from object."""
     for child in iter_objects(obj, maxdepth=1):

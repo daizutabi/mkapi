@@ -9,7 +9,7 @@ from mkapi.link import (
     get_markdown_from_type_string,
     set_markdown,
 )
-from mkapi.objects import Class, Function, create_function, create_module
+from mkapi.objects import Class, Function, create_function, create_module, load_module
 from mkapi.utils import get_by_name
 
 
@@ -168,17 +168,29 @@ def test_set_markdown_attribute():
     name = "examples.styles.google"
     module = create_module(name)
     assert module
-    assert module
     for attr in module.attributes:
         set_markdown(attr)
         assert "][__mkapi__.examples.styles.google.module_level_v" in attr.name.markdown
 
 
 def test_set_markdown_default():
-    src = 'def f(x:int=0,y:str="x"): pass'
+    src = 'def f(x:int=0,y:str="x",z:str=""): pass'
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.FunctionDef)
     func = create_function(node)
     set_markdown(func)
     assert func.parameters[0].default.markdown == "0"
     assert func.parameters[1].default.markdown == "'x'"
+    assert func.parameters[2].default.markdown == "''"
+
+
+def test_set_markdown_alias():
+    name = "examples.styles"
+    module = load_module(name)
+    assert module
+    x = module.aliases[0]
+    set_markdown(x)
+    assert "][__mkapi__.examples.styles.ExampleClassGoogle" in x.name.markdown
+    x = module.aliases[1]
+    set_markdown(x)
+    assert "][__mkapi__.examples.styles.ExampleClassNumPy" in x.name.markdown

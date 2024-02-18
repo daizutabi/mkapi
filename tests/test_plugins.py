@@ -160,11 +160,10 @@ def test_build(config: MkDocsConfig, dirty):
     pages = plugin.pages
     assert not pages["usage/object.md"].markdown
     page = pages["api/examples/styles/README.md"]
-    assert page.markdown == "# ::: examples.styles\n"
     m = page.convert_markdown("", {"object": "ABC", "source": "DEF"})
     assert '[examples](../README.md#examples "examples")' in m
     assert "[[ABC]](../../../src/examples/styles.md#examples.styles" in m
-    assert "[ExampleClassGoogle](google.md#examples.styles.google.ExampleClass" in m
+    assert "[ExampleClassGoogle](google.md#examples.styles.ExampleClassGoogle" in m
     page = pages["src/examples/styles/google.md"]
     m = page.markdown
     assert "## ::: examples.styles.google.ExampleError|__mkapi__" in m

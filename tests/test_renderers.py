@@ -1,5 +1,5 @@
 from mkapi.link import set_markdown
-from mkapi.objects import Class, Module, get_object
+from mkapi.objects import Class, Function, Module, get_object
 from mkapi.renderers import (
     _create_summary_docstring,
     _get_source,
@@ -27,7 +27,7 @@ def test_render_heading():
     obj = get_object("examples.styles.google.module_level_function")
     assert obj
     set_markdown(obj)
-    x = render_heading(obj, 2)
+    x = render_heading(obj.fullname.str, 2)
     assert '<h2 class="mkapi-heading" id="examples.styles.google.module_level_function"' in x
     assert r'markdown="1">examples.styles.google.module\_level\_function</h2>' in x
 
@@ -36,7 +36,7 @@ def test_render_header():
     obj = get_object("examples.styles.google")
     assert obj
     set_markdown(obj)
-    x = render_header(obj, "object")
+    x = render_header(obj.fullname, "object")
     assert ".styles].[google][__mkapi__.examples.styles.google]" in x
     assert ">[object][__mkapi__.__object__.examples.styles.google]" in x
 
@@ -71,6 +71,7 @@ def test_render_document():
     obj = get_object("examples.styles.google.module_level_function")
     assert obj
     set_markdown(obj)
+    assert isinstance(obj, Function)
     x = render_document(obj.doc)
     assert '<span class="mkapi-item-name">**kwargs</span>' in x
     assert '<span class="mkapi-item-type">ValueError</span>&mdash;' in x
@@ -127,12 +128,15 @@ def test_summary():
     assert '<span class="mkapi-section-name">Classes</span>' in m
     assert '<span class="mkapi-section-name">Functions</span>' in m
 
+
+def test_summary_alias():
     obj = get_object("examples.styles")
     assert isinstance(obj, Module)
+    assert obj.aliases
     doc = _create_summary_docstring(obj)
     assert doc
     set_markdown(obj, doc)
     m = render_document(doc)
-    print(m)
     assert '<span class="mkapi-section-name">Classes</span>' in m
-    assert '<span class="mkapi-section-name">Functions</span>' in m
+    assert "[ExampleClassGoogle][__mkapi__.examples.styles.ExampleClassGoogle]" in m
+    assert "[ExampleClassNumPy][__mkapi__.examples.styles.ExampleClassNumPy]" in m

@@ -2,6 +2,7 @@ import ast
 import inspect
 
 from mkapi.objects import (
+    Alias,
     Class,
     Function,
     Module,
@@ -12,6 +13,7 @@ from mkapi.objects import (
     get_source,
     iter_base_classes,
     iter_objects,
+    iter_objects_with_depth,
     load_module,
 )
 from mkapi.utils import cache_clear, get_by_name, get_module_node
@@ -237,9 +239,10 @@ def test_load_module():
     cache_clear()
     module = load_module("examples.styles")
     assert module
-    cls = get_by_name(module.classes, "ExampleClass")
-    assert isinstance(cls, Class)
-    assert not get_by_name(cls.functions, "__init__")
+    cls = get_by_name(module.aliases, "ExampleClassGoogle")
+    assert isinstance(cls, Alias)
+    cls = get_by_name(module.aliases, "ExampleClassNumPy")
+    assert isinstance(cls, Alias)
 
 
 def test_get_object_using_all():
@@ -248,3 +251,11 @@ def test_get_object_using_all():
     assert get_object("schemdraw.svgconfig")
     assert get_object("examples.styles.ExampleClassGoogle")
     assert get_object("examples.styles.ExampleClassNumPy")
+    assert get_object("examples.styles.ExampleClassGoogle.attr1")
+
+
+def test_alias():
+    alias = get_object("examples.styles.ExampleClassGoogle")
+    assert isinstance(alias, Alias)
+    for x in iter_objects_with_depth(alias):
+        assert isinstance(x[0], Alias)

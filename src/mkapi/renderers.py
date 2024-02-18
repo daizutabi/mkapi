@@ -11,11 +11,23 @@ import mkapi
 from mkapi.docstrings import Docstring, create_summary_item
 from mkapi.items import Name, Section, Text, Type
 from mkapi.link import set_markdown
-from mkapi.objects import Attribute, Class, Function, Module, get_source, is_empty, is_member, iter_objects
+from mkapi.objects import (
+    Alias,
+    Attribute,
+    Class,
+    Function,
+    Module,
+    _iter_classes,
+    _iter_functions,
+    get_source,
+    is_empty,
+    is_member,
+    iter_objects,
+)
 from mkapi.signatures import get_signature
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
 
 templates: dict[str, Template] = {}
 
@@ -30,22 +42,26 @@ def load_templates(path: Path | None = None) -> None:
         templates[Path(name).stem] = env.get_template(name)
 
 
-Object: TypeAlias = Module | Class | Function | Attribute
+Object: TypeAlias = Module | Class | Function | Attribute | Alias
 
 
-def render_heading(obj: Object, level: int, cls: str = "mkapi-heading") -> str:
-    id_ = obj.fullname.str
-    name = obj.fullname.str.replace("_", "\\_")
-    context = {"level": level, "id": id_, "class": cls, "name": name}
+def render_heading(fullname: str, level: int, cls: str = "mkapi-heading") -> str:
+    # id_ = obj.fullname.str
+    # name = obj.fullname.str.replace("_", "\\_")
+    name = fullname.replace("_", "\\_")
+    context = {"level": level, "id": fullname, "class": cls, "name": name}
     return templates["heading"].render(context)
 
 
-def render_header(obj: Object, namespace: str) -> str:
-    return templates["header"].render(obj=obj, namespace=namespace)
+def render_header(fullname: Name, namespace: str) -> str:
+    return templates["header"].render(fullname=fullname, namespace=namespace)
 
 
 def render_object(obj: Object) -> str:
     names = [x.replace("_", "\\_") for x in obj.qualname.str.split(".")]
+
+    if isinstance(obj, Alias):
+        obj = obj.obj
 
     if isinstance(obj, Module):
         qualnames = [[x, "name"] for x in names]
@@ -71,6 +87,9 @@ def render_source(obj: Object, attr: str = "") -> str:
 
 
 def _get_source(obj: Object, *, skip_self: bool = True) -> str:
+    if isinstance(obj, Alias):
+        return ""
+
     if not (source := get_source(obj)) or not obj.node:
         return ""
 
@@ -79,6 +98,9 @@ def _get_source(obj: Object, *, skip_self: bool = True) -> str:
     module = obj if isinstance(obj, Module) else obj.module
 
     for child in iter_objects(obj):
+        if isinstance(child, Alias):
+            continue
+
         if skip_self and child is obj or isinstance(obj, Attribute) or not child.node:
             continue
         if isinstance(child, Module):
@@ -108,13 +130,16 @@ def render(
     set_markdown(obj)
 
     fullname = obj.fullname.str
-    markdowns = [render_heading(obj, level) if level else ""]
+    markdowns = [render_heading(obj.fullname.str, level) if level else ""]
 
     if not predicate or predicate(fullname, "header"):
-        markdowns.append(render_header(obj, namespace))
+        markdowns.append(render_header(obj.fullname, namespace))
 
     if not predicate or predicate(fullname, "object"):
         markdowns.append(render_object(obj))
+
+    if isinstance(obj, Alias):
+        obj = obj.obj
 
     if not predicate or predicate(fullname, "document"):
         markdowns.append(render_document(obj.doc))
@@ -137,19 +162,21 @@ def _create_summary_docstring(obj: Module | Class) -> Docstring | None:
 
 def _iter_summary_sections(obj: Module | Class) -> Iterator[Section]:
     """Add sections."""
-    if section := _create_summary_section(obj.classes, "Classes"):
+    if section := _create_summary_section(_iter_classes(obj), "Classes"):
         yield section
 
     name = "Methods" if isinstance(obj, Class) else "Functions"
-    if section := _create_summary_section(obj.functions, name):
+    if section := _create_summary_section(_iter_functions(obj), name):
         yield section
 
 
-def _create_summary_section(children: list[Class] | list[Function], name: str) -> Section | None:
+def _create_summary_section(children: Iterable[Class | Function | Alias], name: str) -> Section | None:
     items = []
     for child in children:
         if not is_empty(child):
-            item = create_summary_item(child.name, child.doc)
+            doc = child.obj.doc if isinstance(child, Alias) else child.doc
+            item = create_summary_item(child.name, doc)
+            set_markdown(child, item)
             items.append(item)
 
     if items:

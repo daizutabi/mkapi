@@ -18,7 +18,7 @@ from mkapi.objects import get_object, is_empty, is_member, iter_objects_with_dep
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
-    from mkapi.objects import Attribute, Class, Function, Module
+    from mkapi.objects import Alias, Attribute, Class, Function, Module
 
 PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "MARKDOWN"])
 
@@ -118,8 +118,8 @@ def create_markdown(
 
 
 def _predicate(
-    obj: Module | Class | Function | Attribute,
-    parent: Module | Class | Function | None,
+    obj: Module | Class | Function | Attribute | Alias,
+    parent: Module | Class | Function | Alias | None,
     predicate: Callable[[str], bool] | None,
 ) -> bool:
     if not is_member(obj, parent):
