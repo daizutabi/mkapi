@@ -1,6 +1,7 @@
 from mkapi.link import set_markdown
-from mkapi.objects import get_object
+from mkapi.objects import Class, Module, get_object
 from mkapi.renderers import (
+    _create_summary_docstring,
     _get_source,
     load_templates,
     render_document,
@@ -70,7 +71,7 @@ def test_render_document():
     obj = get_object("examples.styles.google.module_level_function")
     assert obj
     set_markdown(obj)
-    x = render_document(obj)
+    x = render_document(obj.doc)
     assert '<span class="mkapi-item-name">**kwargs</span>' in x
     assert '<span class="mkapi-item-type">ValueError</span>&mdash;' in x
 
@@ -105,3 +106,33 @@ def test_get_source_module():
     x = _get_source(obj, skip_self=False)
     assert "class ExampleClass:## __mkapi__.examples.styles.google.ExampleClass" in x
     assert "self.attr1 = param1## __mkapi__.examples.styles.google.ExampleClass.attr1" in x
+
+
+def test_summary():
+    obj = get_object("examples.styles.google.ExampleClass")
+    assert isinstance(obj, Class)
+    doc = _create_summary_docstring(obj)
+    assert doc
+    set_markdown(obj, doc)
+    m = render_document(doc)
+    assert '<p class="mkapi-section"><span class="mkapi-section-name">Methods</span></p>' in m
+    assert "&mdash;\nClass methods are similar to regular functions.\n</li>" in m
+
+    obj = get_object("examples.styles.google")
+    assert isinstance(obj, Module)
+    doc = _create_summary_docstring(obj)
+    assert doc
+    set_markdown(obj, doc)
+    m = render_document(doc)
+    assert '<span class="mkapi-section-name">Classes</span>' in m
+    assert '<span class="mkapi-section-name">Functions</span>' in m
+
+    obj = get_object("examples.styles")
+    assert isinstance(obj, Module)
+    doc = _create_summary_docstring(obj)
+    assert doc
+    set_markdown(obj, doc)
+    m = render_document(doc)
+    print(m)
+    assert '<span class="mkapi-section-name">Classes</span>' in m
+    assert '<span class="mkapi-section-name">Functions</span>' in m

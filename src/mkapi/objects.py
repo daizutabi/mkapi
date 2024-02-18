@@ -243,10 +243,10 @@ def _add_attributes_section(doc: Docstring, attrs: list[Attribute]):
 
     for attr in attrs:
         if attr.doc.sections:
-            items.append(create_summary_item(attr.name, attr.doc, attr.type))
-        elif not is_empty(attr):
+            item = create_summary_item(attr.name, attr.doc, attr.type)
+        else:
             item = Item(attr.name, attr.type, attr.doc.text)
-            items.append(item)
+        items.append(item)
 
     if not items:
         return
@@ -693,11 +693,11 @@ def get_kind(obj: Object) -> str:
 
 def is_empty(obj: Object) -> bool:
     """Return True if a [Object] instance is empty."""
+    if isinstance(obj, Attribute) and not obj.doc.sections:
+        return True
+
     if not docstrings.is_empty(obj.doc):
         return False
-
-    if isinstance(obj, Attribute):
-        return True
 
     if isinstance(obj, Function) and obj.name.str.startswith("_"):
         return True

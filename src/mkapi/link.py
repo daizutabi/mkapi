@@ -10,6 +10,7 @@ from typing import TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
+from mkapi.docstrings import Docstring
 from mkapi.inspect import get_fullname, resolve_with_attribute
 from mkapi.items import Default, Name, Text, Type
 from mkapi.objects import Attribute, Class, Function, Module, iter_objects
@@ -110,16 +111,20 @@ def set_markdown_text(text: Text, replace: Replace = None) -> None:
     text.markdown = get_markdown_from_docstring_text(text.str, replace)
 
 
-def set_markdown(obj: Module | Class | Function | Attribute) -> None:
+def set_markdown(
+    obj: Module | Class | Function | Attribute,
+    doc: Docstring | None = None,
+) -> None:
     module = obj if isinstance(obj, Module) else obj.module
 
     _replace_from_module = partial(get_fullname, module=module.name.str)
 
     _replace_from_object = partial(replace_from_object, obj=obj)
 
-    for elem in itertools.chain(obj, obj.doc):
-        # if elem.markdown:
-        #     continue
+    it = doc if doc else itertools.chain(obj, obj.doc)
+    for elem in it:
+        if elem.markdown:
+            continue
 
         if isinstance(elem, Name):
             set_markdown_name(elem, _replace_from_object)  # replace = None ?

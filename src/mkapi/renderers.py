@@ -8,12 +8,14 @@ from typing import TYPE_CHECKING, TypeAlias
 from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
+from mkapi.docstrings import Docstring, create_summary_item
+from mkapi.items import Name, Section, Text, Type
 from mkapi.link import set_markdown
-from mkapi.objects import Attribute, Class, Function, Module, get_source, is_member, iter_objects
+from mkapi.objects import Attribute, Class, Function, Module, get_source, is_empty, is_member, iter_objects
 from mkapi.signatures import get_signature
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
 templates: dict[str, Template] = {}
 
@@ -56,8 +58,8 @@ def render_object(obj: Object) -> str:
     return templates["object"].render(obj=obj, qualnames=qualnames, signature=signature)
 
 
-def render_document(obj: Object) -> str:
-    return templates["document"].render(doc=obj.doc)
+def render_document(doc: Docstring) -> str:
+    return templates["document"].render(doc=doc)
 
 
 def render_source(obj: Object, attr: str = "") -> str:
@@ -115,7 +117,11 @@ def render(
         markdowns.append(render_object(obj))
 
     if not predicate or predicate(fullname, "document"):
-        markdowns.append(render_document(obj))
+        markdowns.append(render_document(obj.doc))
+
+        if isinstance(obj, Module | Class) and (doc := _create_summary_docstring(obj)):
+            set_markdown(obj, doc)
+            markdowns.append(render_document(doc))
 
     if not predicate or predicate(fullname, "source"):
         markdowns.append(render_source(obj))
@@ -123,69 +129,30 @@ def render(
     return "\n\n".join(markdowns)
 
 
-# def add_sections(module: Module) -> None:
-#     """Add sections."""
-#     for obj in iter_objects(module):
-#         if isinstance(obj, Module | Class):
-#             add_section(obj, obj.classes, "Classes")
-
-#         if isinstance(obj, Module | Class | Function):
-#             name = "Methods" if isinstance(obj, Class) else "Functions"
-#             add_section(obj, obj.functions, name)
-
-#         # if isinstance(obj, Module | Class):
-#         #     add_section_attributes(obj)
+def _create_summary_docstring(obj: Module | Class) -> Docstring | None:
+    if sections := list(_iter_summary_sections(obj)):
+        return Docstring(Name(), Type(), Text(), sections)
+    return None
 
 
-# def add_section(
-#     obj: Module | Class | Function,
-#     children: Iterable[Class | Function | Attribute],
-#     name: str,
-# ) -> None:
-#     """Add Section."""
-#     if get_by_name(obj.doc.sections, name):
-#         return
+def _iter_summary_sections(obj: Module | Class) -> Iterator[Section]:
+    """Add sections."""
+    if section := _create_summary_section(obj.classes, "Classes"):
+        yield section
 
-#     if items := [_get_item(child) for child in children if not is_empty(child)]:
-#         section = Section(Name(name), Type(), Text(), items)
-#         obj.doc.sections.append(section)
+    name = "Methods" if isinstance(obj, Class) else "Functions"
+    if section := _create_summary_section(obj.functions, name):
+        yield section
 
 
-# def add_section_attributes(obj: Module | Class) -> None:
-#     """Add an Attributes section."""
+def _create_summary_section(children: list[Class] | list[Function], name: str) -> Section | None:
+    items = []
+    for child in children:
+        if not is_empty(child):
+            item = create_summary_item(child.name, child.doc)
+            items.append(item)
 
-#     items = []
-#     attributes = []
+    if items:
+        return Section(Name(name), Type(), Text(), items)
 
-#     for attr in obj.attributes:
-#         if attr.doc.sections:
-#             items.append(_get_item(attr))
-#         elif not is_empty(attr):
-#             item = Item(attr.name, attr.type, attr.doc.text)
-#             items.append(item)
-#             continue
-
-#         attributes.append(attr)
-
-#     obj.attributes = attributes
-
-#     if not items:
-#         return
-
-#     name = "Attributes"
-#     sections = obj.doc.sections
-
-#     if section := get_by_name(sections, name):
-#         index = sections.index(section)
-#         section.items = items
-#         obj.doc.sections[index] = section
-#     else:
-#         section = Section(Name(name), Type(), Text(), items)
-#         obj.doc.sections.append(section)
-
-
-# def _get_item(obj: Module | Class | Function | Attribute) -> Item:
-#     text = Text(obj.doc.text.str)
-#     text.markdown = obj.doc.text.markdown.split("\n\n")[0]  # summary line
-#     type_ = obj.type if isinstance(obj, Attribute) else Type()
-#     return Item(obj.name, type_, text)
+    return None

@@ -388,6 +388,5 @@ def is_empty(doc: Docstring) -> bool:
 
 
 def create_summary_item(name: Name, doc: Docstring, type_: Type | None = None):
-    text = Text(doc.text.str)
-    text.markdown = doc.text.markdown.split("\n\n")[0]  # summary line
-    return Item(name, type_ or Type(), text)
+    text = doc.text.str.split("\n\n")[0]  # summary line
+    return Item(name, type_ or Type(), Text(text))

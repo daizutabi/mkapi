@@ -104,6 +104,9 @@ class Parameter(Item):
         if self.default.expr:
             yield self.default
 
+        # Delete link
+        self.name.markdown = self.name.str.replace("_", "\\_")
+
 
 def iter_parameters(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
