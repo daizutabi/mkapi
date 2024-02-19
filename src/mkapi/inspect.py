@@ -3,14 +3,12 @@ from __future__ import annotations
 
 import ast
 import importlib
-import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mkapi.ast
 from mkapi.utils import (
     cache,
-    get_by_name,
     get_module_node,
     is_package,
     iter_parent_module_names,
@@ -28,37 +26,38 @@ if TYPE_CHECKING:
 
 
 @dataclass(repr=False)
-class Name:
-    """Name class."""
+class Member:
+    """Node class."""
 
     name: str
     module: str
-    fullname: str
-    node: ast.AST | None
+    node: ast.AST
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.fullname})"
+        cls_name = self.__class__.__name__
+        return f"{cls_name}({self.module}.{self.name})"
 
 
 @dataclass(repr=False)
-class Object(Name):
+class Object(Member):
     """Object class."""
 
-    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef | None
+    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
 
 
 @dataclass(repr=False)
-class Assign(Name):
+class Assign(Member):
     """Assign class."""
 
-    node: ast.AnnAssign | ast.Assign | TypeAlias | None  # type: ignore
+    node: ast.AnnAssign | ast.Assign | TypeAlias  # type: ignore
 
 
 @dataclass(repr=False)
-class Import(Name):
+class Import(Member):
     """Import class."""
 
     node: ast.Import | ast.ImportFrom
+    fullname: str
 
 
 @dataclass(repr=False)
@@ -72,6 +71,7 @@ class Module:
         return f"{self.__class__.__name__}({self.name})"
 
 
+# For Python <= 3.11
 def _is_assign(node: ast.AST) -> bool:
     if isinstance(node, ast.AnnAssign | ast.Assign):
         return True
@@ -82,28 +82,27 @@ def _is_assign(node: ast.AST) -> bool:
     return False
 
 
-def _iter_names(module: str) -> Iterator[Module | Object | Assign | Import]:
+def _iter_members(module: str) -> Iterator[Module | Object | Assign | Import]:
     if not (node := get_module_node(module)):
         return
 
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
-            yield Object(child.name, module, f"{module}.{child.name}", child)
+            yield Object(child.name, module, child)
 
         elif _is_assign(child) and (name := mkapi.ast.get_assign_name(child)):
-            yield Assign(name, module, f"{module}.{name}", child)
+            yield Assign(name, module, child)
 
         elif isinstance(child, ast.Import):
             for name, fullname in _iter_imports_from_import(child):
-                yield Import(name, module, fullname, child)
+                yield Import(name, module, child, fullname)
 
         elif isinstance(child, ast.ImportFrom):
             if child.names[0].name == "*":
-                pass
-                # yield from _iter_names_from_all(child, module)
+                yield from _iter_members_from_star(child, module)
             else:
                 for name, fullname in _iter_imports_from_import_from(child, module):
-                    yield Import(name, module, fullname, child)
+                    yield Import(name, module, child, fullname)
 
 
 def _iter_imports_from_import(node: ast.Import) -> Iterator[tuple[str, str]]:
@@ -120,18 +119,18 @@ def _get_module_from_import_from(node: ast.ImportFrom, module: str) -> str:
     if not node.module:
         return module
 
-    if node.level:
-        names = module.split(".")
+    if not node.level:
+        return node.module
 
-        if is_package(module):  # noqa: SIM108
-            prefix = ".".join(names[: len(names) - node.level + 1])
+    names = module.split(".")
 
-        else:
-            prefix = ".".join(names[: -node.level])
+    if is_package(module):  # noqa: SIM108
+        prefix = ".".join(names[: len(names) - node.level + 1])
 
-        return f"{prefix}.{node.module}"
+    else:
+        prefix = ".".join(names[: -node.level])
 
-    return node.module
+    return f"{prefix}.{node.module}"
 
 
 def _iter_imports_from_import_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str, str]]:
@@ -140,30 +139,29 @@ def _iter_imports_from_import_from(node: ast.ImportFrom, module: str) -> Iterato
         yield alias.asname or alias.name, f"{module}.{alias.name}"
 
 
-# def _iter_names_from_all(node: ast.ImportFrom, module: str) -> Iterator[Module | Object | Assign | Import]:
-#     module = _get_module_from_import_from(node, module)
-#     yield from get_members(module).values()
+def _iter_members_from_star(node: ast.ImportFrom, module: str) -> Iterator[Module | Object | Assign]:
+    module = _get_module_from_import_from(node, module)
+    yield from get_members(module).values()
 
 
 @cache
-def get_members(
-    module: str,
-    nodetype: type[ast.AST] | None = None,
-) -> dict[str, Module | Object | Assign | Import]:
+def get_members(module: str) -> dict[str, Module | Object | Assign]:
     members = {}
 
-    for member in _iter_names(module):
+    for member in _iter_members(module):
         name = member.name
-        if isinstance(member, Import) and (resolved := _resolve(member.fullname)):
-            member = resolved  # noqa: PLW2901
-        if not nodetype or isinstance(member.node, nodetype):
+
+        if isinstance(member, Module | Object | Assign):
             members[name] = member
+
+        elif resolved := _resolve(member.fullname):
+            members[name] = resolved
 
     return members
 
 
 @cache
-def _resolve(fullname: str) -> Module | Object | Assign | Import | None:
+def _resolve(fullname: str) -> Module | Object | Assign | None:
     """Resolve name."""
 
     if node := get_module_node(fullname):
@@ -174,57 +172,74 @@ def _resolve(fullname: str) -> Module | Object | Assign | Import | None:
 
     module, name = fullname.rsplit(".", maxsplit=1)
 
-    if member := get_by_name(_iter_names(module), name):
-        if isinstance(member, Module | Object | Assign):
-            return member
+    for member in _iter_members(module):
+        if member.name == name:
+            if isinstance(member, Module | Object | Assign):
+                return member
 
-        if member.fullname == fullname:
-            return None
+            if member.fullname == fullname:
+                return None
 
-        return _resolve(member.fullname)
+            return _resolve(member.fullname)
 
     return None
 
 
+def _get_module_name(name: str) -> str:
+    return importlib.import_module(name).__name__
+
+
+@cache
 def resolve(fullname: str) -> str | None:
     if resolved := _resolve(fullname):
-        return resolved.name if isinstance(resolved, Module) else resolved.fullname
+        if isinstance(resolved, Module):
+            return _get_module_name(resolved.name)
 
-    return None
+        module = _get_module_name(resolved.module)
+        return f"{module}.{resolved.name}"
 
+    if "." not in fullname:
+        return None
 
-def resolve_with_attribute(fullname: str) -> str | None:
-    """Resolve name with attribute."""
+    fullname, attr = fullname.rsplit(".", maxsplit=1)
+
     if resolved := resolve(fullname):
-        return resolved
-
-    if "." in fullname:
-        name, attr = fullname.rsplit(".", maxsplit=1)
-        if resolved := resolve(name):
-            return f"{resolved}.{attr}"
+        return f"{resolved}.{attr}"
 
     return None
 
 
 @cache
-def get_member(
-    name: str,
-    module: str,
-    nodetype: type[ast.AST] | None = None,
-) -> Module | Object | Assign | Import | None:
-    """Return an object in the module."""
-    members = get_members(module, nodetype)
+def get_members_all(module: str) -> dict[str, Module | Object | Assign]:
+    members = importlib.import_module(module).__dict__
+    if not (names := members.get("__all__")):
+        return {}
 
-    if name in members:
-        return members[name]
+    members = get_members(module)
+    members_all = {}
+
+    for name in names:
+        if member := members.get(name):
+            members_all[name] = member
+
+    return members_all
+
+
+@cache
+def get_member(name: str, module: str) -> Module | Object | Assign | None:
+    """Return an object in the module."""
+    members = get_members(module)
+
+    if member := members.get(name):
+        return member
 
     if "." not in name:
         return None
 
-    name, attr = name.rsplit(".", maxsplit=1)
-    if name in members and isinstance(members[name], Module):
-        module = members[name].name
-        return get_member(attr, module, nodetype)
+    module, name = name.rsplit(".", maxsplit=1)
+
+    if (member := members.get(module)) and isinstance(member, Module):
+        return get_member(name, member.name)
 
     return None
 
@@ -236,84 +251,13 @@ def get_fullname(name: str, module: str) -> str | None:
         return name
 
     if member := get_member(name, module):
-        return member.name if isinstance(member, Module) else member.fullname
+        if isinstance(member, Module):
+            return _get_module_name(member.name)
 
-    if "." not in name:
-        return None
-
-    name, attr = name.rsplit(".", maxsplit=1)
-    if member := get_member(name, module):
-        fullname = member.name if isinstance(member, Module) else member.fullname
-        return f"{fullname}.{attr}"
+        module = _get_module_name(member.module)
+        return f"{module}.{member.name}"
 
     return None
-
-
-@cache
-def get_members_all_ast(module: str) -> dict[str, Module | Object | Assign]:
-    members = get_members(module)
-
-    member_all = get_member("__all__", module)
-    if not member_all:
-        return {}
-
-    members_all = {}
-    node = member_all.node
-    if isinstance(node, ast.Assign) and isinstance(node.value, ast.List | ast.Tuple):
-        for arg in node.value.elts:
-            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):  # noqa: SIM102
-                if arg.value in members:
-                    members_all[arg.value] = members[arg.value]
-
-    return members_all
-
-
-@cache
-def get_members_all_inspect(module: str) -> dict[str, Module | Object | Assign]:
-    """Return name dictonary of __all__ using importlib."""
-    try:
-        module_type = importlib.import_module(module)
-    except ModuleNotFoundError:
-        return {}
-
-    members = getattr(module_type, "__dict__", {})  # Must use __dict__.
-    if not isinstance(members, dict) or "__all__" not in members:
-        return {}
-
-    members_all = {}
-    for asname in members["__all__"]:
-        obj = members.get(asname)
-
-        if obj is None:
-            continue
-
-        if inspect.ismodule(obj):
-            members_all[asname] = Module(obj.__name__, None)
-
-        elif not (modulename := getattr(obj, "__module__", None)):
-            continue
-
-        elif name := getattr(obj, "__name__", None):
-            fullname = f"{modulename}.{name}"
-            members_all[asname] = Object(name, modulename, fullname, None)
-
-    return members_all
-
-
-@cache
-def get_members_all(module: str) -> dict[str, list[tuple[str, str]]]:
-    """Return name dictonary of __all__."""
-    members_ast = get_members_all_ast(module)
-    members_inspect = get_members_all_inspect(module)
-    members_ast.update(members_inspect)
-
-    members = {}
-    for name, member in members_ast.items():
-        module = member.name if isinstance(member, Module) else member.module
-        fullname = member.name if isinstance(member, Module) else member.fullname
-        members.setdefault(module, []).append((name, fullname))
-
-    return members
 
 
 def iter_decorator_names(obj: Class | Function) -> Iterator[str]:
@@ -366,3 +310,15 @@ def is_staticmethod(func: Function) -> bool:
 
 # def _get_decorator_args(deco: ast.expr) -> dict[str, Any]:
 #     return dict(_iter_decorator_args(deco))
+
+# def _iter_names_all_ast(module: str) -> Iterator[str]:
+#     if not (all_ := get_member("__all__", module)):
+#         return
+
+#     node = all_.node
+#     if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.List | ast.Tuple):
+#         return
+
+#     for arg in node.value.elts:
+#         if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+#             yield arg.value

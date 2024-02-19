@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.markdown
 import mkapi.renderers
-from mkapi.inspect import resolve_with_attribute
+from mkapi.inspect import resolve
 from mkapi.objects import get_object, is_empty, is_member, iter_objects_with_depth, load_module
 from mkapi.utils import split_filters
 
@@ -205,7 +205,7 @@ def _replace_link_from_paths(name: str, fullname: str, directory: Path, paths: d
     else:
         from_mkapi = False
 
-    fullname = resolve_with_attribute(fullname) or fullname
+    fullname = resolve(fullname) or fullname
 
     if path := paths.get(fullname):
         # Python 3.12

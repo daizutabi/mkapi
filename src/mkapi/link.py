@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
-from mkapi.inspect import get_fullname, resolve_with_attribute
+from mkapi.inspect import get_fullname, resolve
 from mkapi.items import Default, Item, Name, Section, Text, Type
 from mkapi.objects import Attribute, Class, Function, Module, iter_objects
 from mkapi.utils import is_identifier, iter_identifiers, iter_parent_module_names
@@ -171,4 +171,4 @@ def replace_from_object(
     if obj.name.str == parent:
         return replace_from_object(attr, obj)
 
-    return resolve_with_attribute(name)
+    return resolve(name)

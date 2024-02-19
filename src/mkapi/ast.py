@@ -9,6 +9,7 @@ from ast import (
     Assign,
     AsyncFunctionDef,
     Attribute,
+    Call,
     ClassDef,
     Constant,
     Expr,
@@ -38,17 +39,17 @@ if TYPE_CHECKING:
 # type Node = Import_ | Def | Assign_
 
 Import_: typing.TypeAlias = Import | ImportFrom
-Def: typing.TypeAlias = FunctionDef | AsyncFunctionDef | ClassDef
+Def: typing.TypeAlias = ClassDef | FunctionDef | AsyncFunctionDef
 Assign_: typing.TypeAlias = AnnAssign | Assign | TypeAlias  # type: ignore
 Node: typing.TypeAlias = Import_ | Def | Assign_
 
 
 def iter_child_nodes(node: AST) -> Iterator[Node]:
     """Yield child nodes."""
-    yield_type = Import | ImportFrom | FunctionDef | AsyncFunctionDef | ClassDef
+    it = ast.iter_child_nodes(node)
 
-    for child in (it := ast.iter_child_nodes(node)):
-        if isinstance(child, yield_type):
+    for child in it:
+        if isinstance(child, Import | ImportFrom | ClassDef | FunctionDef | AsyncFunctionDef):
             yield child
 
         elif isinstance(child, AnnAssign | Assign | TypeAlias):
@@ -164,11 +165,12 @@ def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[Raise]:
     """Yield [Raise] instances from a function node."""
     names = []
     for child in ast.walk(node):
-        if isinstance(child, ast.Raise) and (type_ := child.exc):
-            if isinstance(type_, ast.Call):
+        if isinstance(child, Raise) and (type_ := child.exc):
+            if isinstance(type_, Call):
                 type_ = type_.func
 
-            if (name := ast.unparse(type_)) not in names:
+            name = ast.unparse(type_)
+            if name not in names:
                 yield child
                 names.append(name)
 
@@ -191,12 +193,12 @@ def create_expr(name: str) -> ast.expr:
         try:
             expr = ast.parse(name).body[0]
         except SyntaxError:
-            return ast.Constant("")
+            return Constant("")
 
-        if isinstance(expr, ast.Expr):
+        if isinstance(expr, Expr):
             return expr.value
 
-    return ast.Constant(value=name)
+    return Constant(value=name)
 
 
 PREFIX = "__mkapi__."
@@ -209,7 +211,7 @@ class Transformer(NodeTransformer):
     def visit_Name(self, node: Name) -> Name:  # noqa: N802
         return self._rename(node.id)
 
-    def unparse(self, node: ast.AST) -> str:
+    def unparse(self, node: AST) -> str:
         node_ = ast.parse(ast.unparse(node))  # copy node for avoiding in-place rename.
         return ast.unparse(self.visit(node_))
 
@@ -249,7 +251,7 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
         start = stop
 
 
-def iter_identifiers(node: ast.AST) -> Iterator[str]:
+def iter_identifiers(node: AST) -> Iterator[str]:
     """Yield identifiers."""
     source = StringTransformer().unparse(node)
     for code, isidentifier in _iter_identifiers(source):
@@ -258,7 +260,7 @@ def iter_identifiers(node: ast.AST) -> Iterator[str]:
 
 
 def _unparse(
-    node: ast.AST,
+    node: AST,
     callback: Callable[[str], str],
     *,
     is_type: bool = True,
@@ -274,7 +276,7 @@ def _unparse(
 
 
 def unparse(
-    node: ast.AST,
+    node: AST,
     callback: Callable[[str], str],
     *,
     is_type: bool = True,
@@ -284,7 +286,7 @@ def unparse(
 
 
 def is_property(
-    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    node: FunctionDef | AsyncFunctionDef,
     *,
     read_only: bool = True,
 ) -> bool:
@@ -304,7 +306,7 @@ def is_property(
     return False
 
 
-def has_overload(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+def has_overload(node: FunctionDef | AsyncFunctionDef) -> bool:
     """Return True if a function has an `overload` decorator."""
     for deco in node.decorator_list:
         deco_names = next(iter_identifiers(deco)).split(".")
@@ -314,6 +316,6 @@ def has_overload(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
     return False
 
 
-def is_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+def is_function(node: FunctionDef | AsyncFunctionDef) -> bool:
     """Return True if a function is neither a property nor overloaded."""
     return not (is_property(node, read_only=False) or has_overload(node))

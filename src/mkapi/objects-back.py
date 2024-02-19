@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from mkapi.items import Base, Raise, Return
 
 
+# objects: dict[str, Module | Class | Function | Attribute | Alias | None] = cache({})
 objects: dict[str, Module | Class | Function | Attribute | None] = cache({})
 
 
@@ -414,7 +415,7 @@ def iter_base_classes(cls: Class) -> Iterator[Class]:
             continue
 
         modulename = cls.module.name.str
-        if member := get_member(name, modulename):  # noqa: SIM102
+        if member := get_member(name, modulename, ast.ClassDef):  # noqa: SIM102
             if module := create_module(member.module):  # type: ignore # noqa: SIM102
                 if base := get_by_name(module.classes, member.name):
                     yield base

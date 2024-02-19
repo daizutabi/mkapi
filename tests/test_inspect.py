@@ -8,8 +8,6 @@ from mkapi.inspect import (
     get_fullname,
     get_member,
     get_members_all,
-    get_members_all_ast,
-    get_members_all_inspect,
     is_classmethod,
     is_dataclass,
     is_staticmethod,
@@ -51,6 +49,10 @@ def test_resolve():
     assert resolve("halo.Halo") == "halo.halo.Halo"
     assert resolve("jinja2.Template") == "jinja2.environment.Template"
     assert resolve("mkdocs.config.Config") == "mkdocs.config.base.Config"
+    x = resolve("examples.styles.ExampleClassGoogle")
+    assert x == "examples.styles.google.ExampleClass"
+    x = resolve("mkapi.inspect.Iterator")
+    assert x == "collections.abc.Iterator"
 
 
 def test_get_member():
@@ -81,6 +83,8 @@ def test_get_fullname():
     assert x == "mkapi.objects"
     x = get_fullname("mkapi.objects.Object", "mkapi.objects")
     assert x == "mkapi.objects.Object"
+    x = get_fullname("Iterator", "mkapi.inspect")
+    assert x == "collections.abc.Iterator"
 
 
 def test_iter_decorator_names():
@@ -126,17 +130,13 @@ def test_is_method():
 
 
 def test_get_members_all():
-    module = "tqdm"
-    for f in [get_members_all_ast, get_members_all_inspect]:
-        x = f(module)
-        assert x["tqdm"].fullname == "tqdm.std.tqdm"  # type:ignore
-        assert x["main"].fullname == "tqdm.cli.main"  # type:ignore
-        assert x["TqdmTypeError"].fullname == "tqdm.std.TqdmTypeError"  # type: ignore
+    x = get_members_all("tqdm")
+    assert x["tqdm"].module == "tqdm.std"  # type:ignore
+    assert x["main"].module == "tqdm.cli"  # type:ignore
+    assert x["TqdmTypeError"].module == "tqdm.std"  # type: ignore
 
 
 def test_get_all():
     x = get_members_all("examples.styles")
-    a = x["examples.styles.google"]
-    assert a == [("ExampleClassGoogle", "examples.styles.google.ExampleClass")]
-    a = x["examples.styles.numpy"]
-    assert a == [("ExampleClassNumPy", "examples.styles.numpy.ExampleClass")]
+    assert "ExampleClassGoogle" in x
+    assert "ExampleClassNumPy" in x
