@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import ast
 import functools
+import importlib
+import inspect
 import re
 from importlib.util import find_spec
 from pathlib import Path
@@ -131,12 +133,21 @@ def is_module_cache_dirty(name: str) -> bool:
 @cache
 def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
     """Return a tuple of ([ast.Module], source) from a module name."""
-    if not (path := get_module_path(name)):
+    try:
+        module = importlib.import_module(name)
+    except ModuleNotFoundError:
         return None
-    with path.open("r", encoding="utf-8") as f:
-        source = f.read()
+
+    try:
+        source = inspect.getsource(module)
+    except (OSError, TypeError):
+        return None
+
+    path = get_module_path(name)
+    mtime = path.stat().st_mtime if path else 0
+
     node = ast.parse(source)
-    module_cache[name] = path.stat().st_mtime
+    module_cache[name] = mtime
     return node, source
 
 

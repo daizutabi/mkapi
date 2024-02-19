@@ -4,9 +4,11 @@ import dataclasses
 from mkapi.inspect import (
     _iter_imports_from_import,
     _iter_imports_from_import_from,
+    _iter_members,
     get_decorator,
     get_fullname,
     get_member,
+    get_members,
     get_members_all,
     is_classmethod,
     is_dataclass,
