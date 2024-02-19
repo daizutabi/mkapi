@@ -1,4 +1,4 @@
-from mkapi.objects import Class, Function, Module, _create_module, _iter_classes, get_object
+from mkapi.objects import Class, Function, Module, _create_module, get_object
 from mkapi.utils import get_by_name
 
 
@@ -17,8 +17,8 @@ def test_create_module(google):
     assert len(module.attributes) == 2
 
 
-def test_iter_classes():
+def test_classes_from_all():
     module = get_object("examples.styles")
     assert isinstance(module, Module)
-    x = list(_iter_classes(module))
+    x = list(module.classes)
     assert len(x) == 2

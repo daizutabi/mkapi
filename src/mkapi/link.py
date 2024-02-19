@@ -12,7 +12,7 @@ import mkapi.ast
 import mkapi.markdown
 from mkapi.inspect import get_fullname, resolve_with_attribute
 from mkapi.items import Default, Item, Name, Section, Text, Type
-from mkapi.objects import Alias, Attribute, Class, Function, Module, iter_objects
+from mkapi.objects import Attribute, Class, Function, Module, iter_objects
 from mkapi.utils import is_identifier, iter_identifiers, iter_parent_module_names
 
 if TYPE_CHECKING:
@@ -114,7 +114,7 @@ def set_markdown_text(text: Text, replace: Replace = None) -> None:
 
 
 def set_markdown(
-    obj: Module | Class | Function | Attribute | Alias,
+    obj: Module | Class | Function | Attribute,
     doc: Docstring | Section | Item | None | Literal[False] = None,
 ) -> None:
     # module list for alias
@@ -125,9 +125,9 @@ def set_markdown(
     _replace_from_object = partial(replace_from_object, obj=obj)
 
     match doc:
-        case None if not isinstance(obj, Alias):
+        case None:
             it = itertools.chain(obj, obj.doc)
-        case None | False:
+        case False:
             it = obj
         case _:
             it = doc
@@ -151,7 +151,7 @@ def set_markdown(
 
 def replace_from_object(
     name: str,
-    obj: Module | Class | Function | Attribute | Alias,
+    obj: Module | Class | Function | Attribute,
 ) -> str | None:
     """Return fullname from object."""
     for child in iter_objects(obj, maxdepth=1):

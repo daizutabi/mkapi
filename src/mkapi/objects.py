@@ -50,7 +50,8 @@ if TYPE_CHECKING:
     from mkapi.items import Base, Raise, Return
 
 
-objects: dict[str, Module | Class | Function | Attribute | Alias | None] = cache({})
+# objects: dict[str, Module | Class | Function | Attribute | Alias | None] = cache({})
+objects: dict[str, Module | Class | Function | Attribute | None] = cache({})
 
 
 @dataclass
@@ -498,7 +499,7 @@ class Module(Object):
     """Module class."""
 
     node: ast.Module
-    aliases: list[Alias] = field(default_factory=list, init=False)
+    modules: list[Module] = field(default_factory=list, init=False)
     classes: list[Class] = field(default_factory=list, init=False)
     functions: list[Function] = field(default_factory=list, init=False)
     attributes: list[Attribute] = field(default_factory=list, init=False)
@@ -548,48 +549,48 @@ def create_module(name: str) -> Module | None:
     return _create_module(name, *node_source)
 
 
-@dataclass(repr=False)
-class Alias(Named):
-    """Alias class."""
+# @dataclass(repr=False)
+# class Alias(Named):
+#     """Alias class."""
 
-    obj: Module | Class | Function | Attribute
-    module: Module
-    parent: Alias | None
-    classes: list[Alias] = field(default_factory=list, init=False)
-    functions: list[Alias] = field(default_factory=list, init=False)
-    attributes: list[Alias] = field(default_factory=list, init=False)
+#     obj: Module | Class | Function | Attribute
+#     module: Module
+#     parent: Alias | None
+#     classes: list[Alias] = field(default_factory=list, init=False)
+#     functions: list[Alias] = field(default_factory=list, init=False)
+#     attributes: list[Alias] = field(default_factory=list, init=False)
 
-    def __post_init__(self) -> None:
-        if self.parent:
-            self.qualname = self.parent.qualname.join(self.name)
-        else:
-            self.qualname = Name(self.name.str)
+#     def __post_init__(self) -> None:
+#         if self.parent:
+#             self.qualname = self.parent.qualname.join(self.name)
+#         else:
+#             self.qualname = Name(self.name.str)
 
-        self.fullname = self.module.name.join(self.qualname)
-        objects[self.fullname.str] = self
+#         self.fullname = self.module.name.join(self.qualname)
+#         objects[self.fullname.str] = self
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name.str!r})"
+#     def __repr__(self) -> str:
+#         return f"{self.__class__.__name__}({self.name.str!r})"
 
 
-def create_alias(
-    name: Name,
-    obj: Module | Class | Function | Attribute,
-    module: Module,
-    parent: Alias | None = None,
-) -> Alias:
-    alias = Alias(name, obj, module, parent)
+# def create_alias(
+#     name: Name,
+#     obj: Module | Class | Function | Attribute,
+#     module: Module,
+#     parent: Alias | None = None,
+# ) -> Alias:
+#     alias = Alias(name, obj, module, parent)
 
-    if isinstance(obj, Module | Class):
-        alias.classes = [create_alias(cls.name, cls, module, alias) for cls in obj.classes]
+#     if isinstance(obj, Module | Class):
+#         alias.classes = [create_alias(cls.name, cls, module, alias) for cls in obj.classes]
 
-    if isinstance(obj, Class | Function):
-        alias.functions = [create_alias(func.name, func, module, alias) for func in obj.functions]
+#     if isinstance(obj, Class | Function):
+#         alias.functions = [create_alias(func.name, func, module, alias) for func in obj.functions]
 
-    if isinstance(obj, Module | Class):
-        alias.attributes = [create_alias(attr.name, attr, module, alias) for attr in obj.attributes]
+#     if isinstance(obj, Module | Class):
+#         alias.attributes = [create_alias(attr.name, attr, module, alias) for attr in obj.attributes]
 
-    return alias
+#     return alias
 
 
 @cache
@@ -597,21 +598,35 @@ def load_module(name: str) -> Module | None:
     if not (module := create_module(name)):
         return None
 
-    aliases = []
+    # aliases = []
     for modulename, members in get_members_all(module.name.str).items():
         if create_module(modulename):
             for name, fullname in members:
                 if obj := objects.get(fullname):
-                    if isinstance(obj, Alias):
-                        obj = obj.obj
-                    alias = create_alias(Name(name), obj, module, None)
-                    aliases.append(alias)
-    module.aliases = aliases
+                    objects[f"{module.name.str}.{name}"] = obj
+
+                    if isinstance(obj, Module):
+                        module.modules.append(obj)
+
+                    elif isinstance(obj, Class):
+                        module.classes.append(obj)
+
+                    elif isinstance(obj, Function):
+                        module.functions.append(obj)
+
+                    elif isinstance(obj, Attribute):
+                        module.attributes.append(obj)
+
     return module
+    #                 if isinstance(obj, Alias):
+    #                     obj = obj.obj
+    #                 alias = create_alias(Name(name), obj, module, None)
+    #                 aliases.append(alias)
+    # module.aliases = aliases
 
 
 @cache
-def get_object(fullname: str) -> Module | Class | Function | Attribute | Alias | None:
+def get_object(fullname: str) -> Module | Class | Function | Attribute | None:
     if fullname in objects:
         return objects[fullname]
 
@@ -622,19 +637,16 @@ def get_object(fullname: str) -> Module | Class | Function | Attribute | Alias |
     return None
 
 
-Member_: TypeAlias = Module | Class | Function | Attribute | Alias
-Parent: TypeAlias = Module | Class | Function | Alias | None
+Member_: TypeAlias = Module | Class | Function | Attribute
+Parent: TypeAlias = Module | Class | Function | None
 Predicate: TypeAlias = Callable_[[Member_, Parent], bool] | None
 
 
 def is_member(
-    obj: Module | Class | Function | Attribute | Alias,
-    parent: Module | Class | Function | Alias | None,
+    obj: Module | Class | Function | Attribute,
+    parent: Module | Class | Function | None,
 ) -> bool:
     """Return True if obj is a member of parent."""
-    if isinstance(obj, Alias):
-        obj = obj.obj
-
     if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
         return True
 
@@ -645,11 +657,11 @@ def is_member(
 
 
 def iter_objects_with_depth(
-    obj: Module | Class | Function | Attribute | Alias,
+    obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
     predicate: Predicate = None,
     depth: int = 0,
-) -> Iterator[tuple[Module | Class | Function | Attribute | Alias, int]]:
+) -> Iterator[tuple[Module | Class | Function | Attribute, int]]:
     """Yield [Object] instances and depth."""
     if not predicate or predicate(obj, None):
         yield obj, depth
@@ -657,48 +669,48 @@ def iter_objects_with_depth(
     if depth == maxdepth or isinstance(obj, Attribute):
         return
 
-    for child in itertools.chain(_iter_classes(obj), _iter_functions(obj)):
+    for child in itertools.chain(obj.classes, obj.functions):
         if not predicate or predicate(child, obj):
             yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
 
-    if isinstance(obj, Module | Class | Alias):
-        for attr in _iter_attributes(obj):
+    if isinstance(obj, Module | Class):
+        for attr in obj.attributes:
             if not predicate or predicate(attr, obj):
                 yield attr, depth + 1
 
 
 def iter_objects(
-    obj: Module | Class | Function | Attribute | Alias,
+    obj: Module | Class | Function | Attribute,
     maxdepth: int = -1,
     predicate: Predicate = None,
-) -> Iterator[Module | Class | Function | Attribute | Alias]:
+) -> Iterator[Module | Class | Function | Attribute]:
     """Yield [Object] instances."""
     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
         yield child
 
 
-def _iter_classes(obj: Module | Class | Function | Alias) -> Iterator[Class | Alias]:
-    yield from obj.classes
-    if isinstance(obj, Module):
-        for alias in obj.aliases:
-            if isinstance(alias.obj, Class):
-                yield alias
+# def _iter_classes(obj: Module | Class | Function | Alias) -> Iterator[Class | Alias]:
+#     yield from obj.classes
+#     if isinstance(obj, Module):
+#         for alias in obj.aliases:
+#             if isinstance(alias.obj, Class):
+#                 yield alias
 
 
-def _iter_functions(obj: Module | Class | Function | Alias) -> Iterator[Function | Alias]:
-    yield from obj.functions
-    if isinstance(obj, Module):
-        for alias in obj.aliases:
-            if isinstance(alias.obj, Function):
-                yield alias
+# def _iter_functions(obj: Module | Class | Function | Alias) -> Iterator[Function | Alias]:
+#     yield from obj.functions
+#     if isinstance(obj, Module):
+#         for alias in obj.aliases:
+#             if isinstance(alias.obj, Function):
+#                 yield alias
 
 
-def _iter_attributes(obj: Module | Class | Alias) -> Iterator[Attribute | Alias]:
-    yield from obj.attributes
-    if isinstance(obj, Module):
-        for alias in obj.aliases:
-            if isinstance(alias.obj, Attribute):
-                yield alias
+# def _iter_attributes(obj: Module | Class | Alias) -> Iterator[Attribute | Alias]:
+#     yield from obj.attributes
+#     if isinstance(obj, Module):
+#         for alias in obj.aliases:
+#             if isinstance(alias.obj, Attribute):
+#                 yield alias
 
 
 def get_source(obj: Module | Class | Function | Attribute) -> str | None:
@@ -744,11 +756,8 @@ def get_kind(obj: Object) -> str:
     raise NotImplementedError
 
 
-def is_empty(obj: Object | Alias) -> bool:
+def is_empty(obj: Object) -> bool:
     """Return True if a [Object] instance is empty."""
-    if isinstance(obj, Alias):
-        obj = obj.obj
-
     if isinstance(obj, Attribute) and not obj.doc.sections:
         return True
 
