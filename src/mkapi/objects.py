@@ -453,7 +453,7 @@ def _add_doc_comment(assigns: Iterable[Assign], source: str) -> None:
 
 #         doc = docstrings.parse(text)
 
-#         if doc.text.str and (lines := doc.text.str.splitlines()):  # noqa: SIM102
+#         if doc.text.str and (lines := doc.text.str.splitlines()):
 #             if ":" in lines[0]:
 #                 type_, lines[0] = (x.lstrip(" ").rstrip() for x in lines[0].split(":", maxsplit=1))
 #                 doc.text.str = "\n".join(lines).strip()
@@ -572,8 +572,8 @@ def _add_doc_comment(assigns: Iterable[Assign], source: str) -> None:
 #             continue
 
 #         modulename = cls.module.name.str
-#         if member := get_member(name, modulename):  # noqa: SIM102
-#             if module := create_module(member.module):  # type: ignore # noqa: SIM102
+#         if member := get_member(name, modulename):
+#             if module := create_module(member.module):
 #                 if base := get_by_name(module.classes, member.name):
 #                     yield base
 

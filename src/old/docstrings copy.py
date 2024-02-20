@@ -100,13 +100,6 @@ def split_item_without_name(text: str, style: str) -> tuple[str, str]:
     return "", text
 
 
-@dataclass
-class Item:
-    name: str
-    type: str
-    text: str
-
-
 TYPE_STRING_PATTERN = re.compile(r"\[__mkapi__.(\S+?)\]\[\]")
 
 
@@ -116,7 +109,8 @@ def iter_items(text: str, style: Style) -> Iterator[Item]:
         name, type_, text = split_item(item, style)
 
         type_ = TYPE_STRING_PATTERN.sub(r"\1", type_)
-        yield Item(name, type_, text)
+        type_ = ast.Constant(type_) if type_ else None
+        yield Item(Name(name), Type(type_), Text(text))
 
 
 def iter_items_without_name(text: str, style: Style) -> Iterator[Item]:
@@ -126,7 +120,8 @@ def iter_items_without_name(text: str, style: Style) -> Iterator[Item]:
     if ":" in type_:
         name, type_ = (x.strip() for x in type_.split(":", maxsplit=1))
 
-    yield Item(name, type_, text)
+    type_ = ast.Constant(type_) if type_ else None
+    yield Item(Name(name), Type(type_), Text(text))
 
 
 SPLIT_SECTION_PATTERNS: dict[Style, re.Pattern[str]] = {
@@ -249,43 +244,38 @@ def _iter_sections(text: str, style: Style) -> Iterator[tuple[str, str]]:
         yield "", prev_text
 
 
-@dataclass(repr=False)
-class Section(Item):
-    """Section class of docstring."""
+def _create_section_with_items(name: str, text: str, style: Style) -> Section:
+    if name == "Parameters":
+        return create_parameters(iter_items(text, style))
 
-    items: list[Item]
+    if name == "Assigns":
+        return create_assigns(iter_items(text, style))
+
+    if name == "Raises":
+        return create_raises(iter_items(text, style))
+
+    if name in ["Returns", "Yields"]:
+        it = iter_items_without_name(text, style)
+        return create_returns(it, name)
+
+    raise NotImplementedError
 
 
-def _create_admonition(name: str, text: str) -> Section:
-    if name.startswith("Note"):
-        kind = "note"
-    elif name.startswith("Warning"):
-        kind = "warning"
-    elif name.startswith("See Also"):
-        kind = "info"
-        text = mkapi.markdown.get_see_also(text)
-    else:
-        raise NotImplementedError
-    text = mkapi.markdown.get_admonition(kind, name, text)
-    return Section("", "", text, [])
+def _create_section(name: str, text: str) -> Section:
+    if name in ["Note", "Notes", "Warning", "Warnings", "See Also"]:
+        return create_admonition(name, text)
+
+    return Section(Name(name), Type(), Text(text), [])
 
 
 def iter_sections(text: str, style: Style) -> Iterator[Section]:
     """Yield [Section] instances by splitting a docstring."""
     for name, text_ in _iter_sections(text, style):
-        if name in ["Parameters", "Assigns", "Raises"]:
-            items = list(iter_items(text_, style))
-            yield Section(name, "", "", items)
-
-        elif name in ["Returns", "Yields"]:
-            items = list(iter_items_without_name(text_, style))
-            yield Section(name, "", "", items)
-
-        elif name in ["Note", "Notes", "Warning", "Warnings", "See Also"]:
-            yield _create_admonition(name, text_)
+        if name in ["Parameters", "Assigns", "Raises", "Returns", "Yields"]:
+            yield _create_section_with_items(name, text_, style)
 
         else:
-            yield Section(name, "", text_, [])
+            yield _create_section(name, text_)
 
 
 @dataclass
@@ -297,11 +287,18 @@ class Docstring(Item):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
 
+    def __iter__(self) -> Iterator[Name | Type | Text]:
+        """Yield [Type] or [Text] instances."""
+        yield from super().__iter__()
+
+        for section in self.sections:
+            yield from section
+
 
 def parse(text: str | None, style: Style | None = None) -> Docstring:
     """Return a [Docstring] instance."""
     if not text:
-        return Docstring("Docstring", "", "", [])
+        return Docstring(Name("Docstring"), Type(), Text(), [])
 
     style = style or get_style(text)
 
@@ -309,41 +306,24 @@ def parse(text: str | None, style: Style | None = None) -> Docstring:
     text = mkapi.markdown.replace(text, ["<", ">"], ["&lt;", "&gt;"])
 
     sections = list(iter_sections(text, style))
-
-    if sections and not sections[0].name:
+    if sections and not sections[0].name.str:
         type_ = sections[0].type
         text_ = sections[0].text
         del sections[0]
 
     else:
-        type_ = ""
-        text_ = ""
+        type_ = Type()
+        text_ = Text()
 
-    return Docstring("Docstring", type_, text_, sections)
-
-
-def iter_merged_items(la: list[Item], lb: list[Item]) -> Iterator[Item]:
-    """Yield merged [Item] instances."""
-    for name in unique_names(la, lb):
-        a, b = get_by_name(la, name), get_by_name(lb, name)
-        if a and not b:
-            yield a
-        elif not a and b:
-            yield b
-        elif isinstance(a, Item) and isinstance(b, Item):
-            a.name = a.name or b.name
-            a.type = a.type or b.type
-            a.text = a.text or b.text
-            yield a
+    return Docstring(Name("Docstring"), type_, text_, sections)
 
 
 def merge_sections(a: Section, b: Section) -> Section:
     """Merge two [Section] instances into one [Section] instance."""
     if a.name != b.name:
         raise ValueError
-
-    type_ = a.type if a.type else b.type
-    text = f"{a.text}\n\n{b.text}".strip()
+    type_ = a.type if a.type.expr else b.type
+    text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
     return Section(a.name, type_, text, list(iter_merged_items(a.items, b.items)))
 
 
@@ -376,26 +356,23 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
             sections.append(section)
     sections.extend(s for s in b.sections if not s.name)
     type_ = a.type  # if a.type.expr else b.type
-    text = f"{a.text}\n\n{b.text}".strip()
-    return Docstring("Docstring", type_, text, sections)
+    text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
+    return Docstring(Name("Docstring"), type_, text, sections)
 
 
 def is_empty(doc: Docstring) -> bool:
     """Return True if a [Docstring] instance is empty."""
-    if doc.text:
+    if doc.text.str:
         return False
-
     for section in doc.sections:
-        if section.text:
+        if section.text.str:
             return False
-
         for item in section.items:
-            if item.text:
+            if item.text.str:
                 return False
-
     return True
 
 
-def create_summary_item(name: str, doc: Docstring, type_: str = ""):
-    text = doc.text.split("\n\n")[0]  # summary line
-    return Item(name, type_, text)
+def create_summary_item(name: Name, doc: Docstring, type_: Type | None = None):
+    text = doc.text.str.split("\n\n")[0]  # summary line
+    return Item(name, type_ or Type(), Text(text))

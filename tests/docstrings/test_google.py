@@ -98,36 +98,35 @@ def test_iter_items_class(google, get, get_node):
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
     x = list(iter_items(section, "google"))
-    assert x[0].name.str == "attr1"
-    assert x[0].type.expr.value == "str"  # type: ignore
-    assert x[0].text.str == "Description of `attr1`."
-    assert x[1].name.str == "attr2"
-    assert x[1].type.expr.value == ":obj:`int`, optional"  # type: ignore
-    assert x[1].text.str == "Description of `attr2`."
+    assert x[0].name == "attr1"
+    assert x[0].type == "str"
+    assert x[0].text == "Description of `attr1`."
+    assert x[1].name == "attr2"
+    assert x[1].type == ":obj:`int`, optional"
+    assert x[1].text == "Description of `attr2`."
     doc = get(get_node(google, "ExampleClass"), "__init__")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[2][1]
     x = list(iter_items(section, "google"))
-    assert x[0].name.str == "param1"
-    assert x[0].type.expr.value == "str"  # type: ignore
-    assert x[0].text.str == "Description of `param1`."
-    assert x[1].text.str == "Description of `param2`. Multiple\nlines are supported."
+    assert x[0].name == "param1"
+    assert x[0].type == "str"
+    assert x[0].text == "Description of `param1`."
+    assert x[1].text == "Description of `param2`. Multiple\nlines are supported."
 
 
 def test_parse(google):
     doc = parse(ast.get_docstring(google), "google")  # type: ignore
-    assert doc.text.str
-    assert doc.text.str.startswith("Example Google style docstrings.")
-    assert doc.sections[0].name.str == "Example"
+    assert doc.text.startswith("Example Google style docstrings.")
+    assert doc.sections[0].name == "Example"
 
 
 def test_merge(google, get, get_node):
     a = parse(get(google, "ExampleClass"))
     b = parse(get(get_node(google, "ExampleClass"), "__init__"))
     doc = merge(a, b)
-    assert doc.text.str
-    assert doc.text.str.startswith("The summary line")
-    assert doc.text.str.endswith("with it.")
+    assert doc.text
+    assert doc.text.startswith("The summary line")
+    assert doc.text.endswith("with it.")
     assert len(doc.sections) == 3
 
 
