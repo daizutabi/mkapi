@@ -1,6 +1,36 @@
 import ast
+from inspect import _ParameterKind
 
-from mkapi.ast import StringTransformer, _iter_identifiers, iter_raises, unparse
+from mkapi.ast import StringTransformer, _iter_identifiers, iter_child_nodes, iter_parameters, iter_raises, unparse
+
+
+def test_iter_child_nodes():
+    src = "a:int\nb=1\n'''b'''\nc='c'"
+    node = ast.parse(src)
+    x = list(iter_child_nodes(node))
+    assert len(x) == 3
+    assert x[0].__doc__ is None
+    assert x[1].__doc__ == "b"
+    assert x[2].__doc__ is None
+
+
+def test_iter_parameters():
+    src = "def f(): pass"
+    node = ast.parse(src).body[0]
+    assert isinstance(node, ast.FunctionDef)
+    assert list(iter_parameters(node)) == []
+    src = "def f(a,/,b=1,*,c,d=1): pass"
+    node = ast.parse(src).body[0]
+    assert isinstance(node, ast.FunctionDef)
+    x = list(iter_parameters(node))
+    assert x[0][-1] is _ParameterKind.POSITIONAL_ONLY
+    assert x[1][-1] is _ParameterKind.POSITIONAL_OR_KEYWORD
+    assert x[2][-1] is _ParameterKind.KEYWORD_ONLY
+    assert x[3][-1] is _ParameterKind.KEYWORD_ONLY
+    assert x[0][2] is None
+    assert x[1][2] is not None
+    assert x[2][2] is None
+    assert x[3][2] is not None
 
 
 def test_iter_raises():
@@ -9,7 +39,6 @@ def test_iter_raises():
     assert isinstance(node, ast.FunctionDef)
     raises = list(iter_raises(node))
     assert len(raises) == 1
-    assert isinstance(raises[0].exc, ast.Call)
 
 
 def _expr(src: str) -> ast.expr:

@@ -1,8 +1,14 @@
 def test_a():
+    class B:
+        pass
+
     class A:
         a: int = 1
-        b, c = 1, 2
 
-    print(A.a)
-    print(A.b)
+        def f(self):
+            pass
+
+    import collections.abc
+
+    print(collections.abc.__file__)
     assert 0

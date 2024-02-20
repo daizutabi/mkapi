@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import ast
 import re
-import typing
 from ast import (
     AnnAssign,
     Assign,
@@ -33,18 +32,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from inspect import _ParameterKind
 
-# type Import_ = Import | ImportFrom
-# type Def = FunctionDef | AsyncFunctionDef | ClassDef
-# type Assign_ = AnnAssign | Assign | TypeAlias
-# type Node = Import_ | Def | Assign_
 
-Import_: typing.TypeAlias = Import | ImportFrom
-Def: typing.TypeAlias = ClassDef | FunctionDef | AsyncFunctionDef
-Assign_: typing.TypeAlias = AnnAssign | Assign | TypeAlias  # type: ignore
-Node: typing.TypeAlias = Import_ | Def | Assign_
-
-
-def iter_child_nodes(node: AST) -> Iterator[Node]:
+def iter_child_nodes(node: AST) -> Iterator[AST]:
     """Yield child nodes."""
     it = ast.iter_child_nodes(node)
 
@@ -70,7 +59,7 @@ def _get_pseudo_docstring(node: AST) -> str | None:
 def _iter_assign_nodes(
     node: AnnAssign | Assign | TypeAlias,  # type: ignore
     it: Iterator[AST],
-) -> Iterator[Node]:
+) -> Iterator[AST]:
     """Yield assign nodes."""
     node.__doc__ = None
 
@@ -124,22 +113,20 @@ def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:  #
     return None
 
 
-PARAMETER_KIND_ATTRIBUTE: dict[_ParameterKind, str] = {
-    Parameter.POSITIONAL_ONLY: "posonlyargs",
-    Parameter.POSITIONAL_OR_KEYWORD: "args",
-    Parameter.VAR_POSITIONAL: "vararg",
-    Parameter.KEYWORD_ONLY: "kwonlyargs",
-    Parameter.VAR_KEYWORD: "kwarg",
-}
-
-
 def _iter_parameters(
     node: FunctionDef | AsyncFunctionDef,
-) -> Iterator[tuple[ast.arg, _ParameterKind]]:
-    for kind, attr in PARAMETER_KIND_ATTRIBUTE.items():
-        if args := getattr(node.args, attr):
-            it = args if isinstance(args, list) else [args]
-            yield from ((arg, kind) for arg in it)
+) -> Iterator[tuple[str, ast.expr | None, _ParameterKind]]:
+    args = node.args
+    for arg in args.posonlyargs:
+        yield arg.arg, arg.annotation, Parameter.POSITIONAL_ONLY
+    for arg in args.args:
+        yield arg.arg, arg.annotation, Parameter.POSITIONAL_OR_KEYWORD
+    if arg := args.vararg:
+        yield arg.arg, arg.annotation, Parameter.VAR_POSITIONAL
+    for arg in args.kwonlyargs:
+        yield arg.arg, arg.annotation, Parameter.KEYWORD_ONLY
+    if arg := args.kwarg:
+        yield arg.arg, arg.annotation, Parameter.VAR_KEYWORD
 
 
 def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | None]:
@@ -153,16 +140,16 @@ def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | 
 
 def iter_parameters(
     node: FunctionDef | AsyncFunctionDef,
-) -> Iterator[tuple[ast.arg, _ParameterKind, ast.expr | None]]:
+) -> Iterator[tuple[str, ast.expr | None, ast.expr | None, _ParameterKind]]:
     """Yield parameters from a function node."""
     it = _iter_defaults(node)
-    for arg, kind in _iter_parameters(node):
+    for name, type_, kind in _iter_parameters(node):
         default = None if kind in [Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD] else next(it)
-        yield arg, kind, default
+        yield name, type_, default, kind
 
 
-def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[Raise]:
-    """Yield [Raise] instances from a function node."""
+def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr]:
+    """Yield unique raises from a function node."""
     names = []
     for child in ast.walk(node):
         if isinstance(child, Raise) and (type_ := child.exc):
@@ -171,7 +158,7 @@ def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[Raise]:
 
             name = ast.unparse(type_)
             if name not in names:
-                yield child
+                yield type_
                 names.append(name)
 
 

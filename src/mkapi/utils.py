@@ -133,20 +133,24 @@ def is_module_cache_dirty(name: str) -> bool:
 @cache
 def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
     """Return a tuple of ([ast.Module], source) from a module name."""
-    try:
-        module = importlib.import_module(name)
-    except ModuleNotFoundError:
-        return None
 
-    try:
-        source = inspect.getsource(module)
-    except (OSError, TypeError):
-        return None
+    if path := get_module_path(name):
+        with path.open("r", encoding="utf-8") as f:
+            source = f.read()
 
-    path = get_module_path(name)
-    mtime = path.stat().st_mtime if path else 0
+    else:
+        try:
+            module = importlib.import_module(name)
+        except ModuleNotFoundError:
+            return None
+
+        try:
+            source = inspect.getsource(module)
+        except (OSError, TypeError):
+            return None
 
     node = ast.parse(source)
+    mtime = path.stat().st_mtime if path else 0
     module_cache[name] = mtime
     return node, source
 

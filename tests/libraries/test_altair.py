@@ -1,4 +1,4 @@
-from mkapi.inspect import get_members_all_inspect
+from mkapi.inspect import get_members_all
 from mkapi.items import Returns
 from mkapi.link import set_markdown
 from mkapi.objects import _create_module
@@ -6,7 +6,7 @@ from mkapi.utils import get_by_name, get_by_type, get_module_node
 
 
 def test_get_members_all_inspect():
-    m = get_members_all_inspect("altair")
+    m = get_members_all("altair")
     assert "core" in m
     assert "layer" in m
     assert "Url" in m

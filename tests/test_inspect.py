@@ -55,6 +55,8 @@ def test_resolve():
     assert x == "examples.styles.google.ExampleClass"
     x = resolve("mkapi.inspect.Iterator")
     assert x == "collections.abc.Iterator"
+    x = resolve("schemdraw.Drawing")
+    assert x == "schemdraw.schemdraw.Drawing"
 
 
 def test_get_member():
