@@ -1,8 +1,7 @@
 import ast
 import inspect
 
-from mkapi.objects import Class, create_class
-from mkapi.utils import get_by_name
+from mkapi.objects import Class, Function, Property, create_class
 
 
 def test_create_class_nested():
@@ -14,32 +13,23 @@ def test_create_class_nested():
     """
     node = ast.parse(inspect.cleandoc(src)).body[0]
     assert isinstance(node, ast.ClassDef)
-    cls = create_class(node)
-    assert len(cls.classes) == 1
-    assert len(cls.classes[0].classes) == 1
+    cls = create_class(node, "", None)
+    assert len(cls.dict) == 1
+    cls = cls.dict["B"]
+    assert isinstance(cls, Class)
+    assert len(cls.dict) == 1
+    cls = cls.dict["C"]
+    assert isinstance(cls, Class)
 
 
 def test_create_class(get):
     node = get("ExampleClass")
     assert isinstance(node, ast.ClassDef)
-    cls = create_class(node)
+    cls = create_class(node, "", None)
     assert isinstance(cls, Class)
-    assert cls.name.str == "ExampleClass"
-    assert len(cls.parameters) == 4
+    assert cls.name == "ExampleClass"
     assert len(cls.raises) == 0
-    assert len(cls.functions) == 5
-    assert not get_by_name(cls.functions, "__init__")
-    assert get_by_name(cls.functions, "example_method")
-    assert get_by_name(cls.functions, "__special__")
-    assert get_by_name(cls.functions, "__special_without_docstring__")
-    assert get_by_name(cls.functions, "_private")
-    assert get_by_name(cls.functions, "_private_without_docstring")
-    assert len(cls.attributes) == 7
-    section = get_by_name(cls.doc.sections, "Attributes")
-    assert section
-    for x in [section.items, cls.attributes]:
-        assert get_by_name(x, "readonly_property")
-        assert get_by_name(x, "readwrite_property")
-        for k in [1, 2, 5]:
-            assert get_by_name(section.items, f"attr{k}")
-    assert repr(cls) == "Class('ExampleClass')"
+    for x in ["_private"]:
+        assert isinstance(cls.get(x), Function)
+    for x in ["readonly_property", "readwrite_property"]:
+        assert isinstance(cls.get(x), Property)

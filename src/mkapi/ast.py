@@ -246,12 +246,7 @@ def iter_identifiers(node: AST) -> Iterator[str]:
             yield code
 
 
-def _unparse(
-    node: AST,
-    callback: Callable[[str], str],
-    *,
-    is_type: bool = True,
-) -> Iterator[str]:
+def _unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) -> Iterator[str]:
     trans = StringTransformer() if is_type else Transformer()
     source = trans.unparse(node)
     for code, isidentifier in _iter_identifiers(source):
@@ -262,47 +257,44 @@ def _unparse(
             yield code
 
 
-def unparse(
-    node: AST,
-    callback: Callable[[str], str],
-    *,
-    is_type: bool = True,
-) -> str:
+def unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) -> str:
     """Unparse the AST node with a callback function."""
     return "".join(_unparse(node, callback, is_type=is_type))
 
 
-def is_property(
-    node: FunctionDef | AsyncFunctionDef,
-    *,
-    read_only: bool = True,
-) -> bool:
-    """Return True if a function is a property."""
+def has_property(node: FunctionDef | AsyncFunctionDef, name: str, index: int = 0) -> bool:
     for deco in node.decorator_list:
         deco_names = next(iter_identifiers(deco)).split(".")
 
-        if len(deco_names) == 1 and deco_names[0] == "property":
-            return True
-
-        if read_only:
-            continue
-
-        if len(deco_names) == 2 and deco_names[1] == "setter":  # noqa: PLR2004
+        if len(deco_names) == index + 1 and deco_names[index] == name:
             return True
 
     return False
+
+
+def is_property(node: FunctionDef | AsyncFunctionDef) -> bool:
+    """Return True if a function is a property."""
+    return has_property(node, "property")
+
+
+def is_setter(node: FunctionDef | AsyncFunctionDef) -> bool:
+    """Return True if a function is a property."""
+    return has_property(node, "setter", 1)
 
 
 def has_overload(node: FunctionDef | AsyncFunctionDef) -> bool:
     """Return True if a function has an `overload` decorator."""
-    for deco in node.decorator_list:
-        deco_names = next(iter_identifiers(deco)).split(".")
-        if len(deco_names) == 1 and deco_names[0] == "overload":
-            return True
-
-    return False
+    return has_property(node, "overload")
 
 
 def is_function(node: FunctionDef | AsyncFunctionDef) -> bool:
     """Return True if a function is neither a property nor overloaded."""
-    return not (is_property(node, read_only=False) or has_overload(node))
+    return not (is_property(node) or is_setter(node) or has_overload(node))
+
+
+def is_classmethod(node: FunctionDef | AsyncFunctionDef) -> bool:
+    return has_property(node, "classmethod")
+
+
+def is_staticmethod(node: FunctionDef | AsyncFunctionDef) -> bool:
+    return has_property(node, "classmethod")

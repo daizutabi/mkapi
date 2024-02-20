@@ -3,14 +3,15 @@ from __future__ import annotations
 
 import ast
 import importlib
-from dataclasses import dataclass, field
-from inspect import _ParameterKind
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mkapi.ast
+from mkapi.ast import is_classmethod, is_function, is_property, is_staticmethod
 from mkapi.utils import (
     cache,
     get_module_node,
+    get_module_node_source,
     is_package,
     iter_parent_module_names,
 )
@@ -19,10 +20,13 @@ try:
     from ast import TypeAlias
 except ImportError:
     TypeAlias = None
+
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
+    from inspect import _ParameterKind
 
 
+@dataclass
 class Parameter:
     name: str
     type: ast.expr | None
@@ -33,7 +37,7 @@ class Parameter:
 @dataclass
 class Node:
     name: str
-    node: ast.AST
+    node: ast.AST | None
 
     def __repr__(self) -> str:
         kind = get_kind(self)
@@ -51,7 +55,7 @@ class Import(Node):
 class Object(Node):
     qualname: str
     module: str
-    doc: str
+    doc: str | None
 
 
 @dataclass(repr=False)
@@ -62,10 +66,19 @@ class Assign(Object):
 
 
 @dataclass(repr=False)
+class Property(Object):
+    node: ast.FunctionDef | ast.AsyncFunctionDef
+    type: ast.expr | None
+
+
+@dataclass(repr=False)
 class Callable(Object):
     parameters: list[Parameter]
     raises: list[ast.expr]
-    dict: dict[str, Node] = field(default_factory=dict, init=False)
+    dict: dict[str, Node]
+
+    def get(self, name) -> Node | None:
+        return self.dict.get(name)
 
 
 @dataclass(repr=False)
@@ -80,45 +93,40 @@ class Function(Callable):
 
 @dataclass(repr=False)
 class Module(Node):
-    node: ast.Module
-    doc: str
-    dict: dict[str, Node] = field(default_factory=dict, init=False)
+    node: ast.Module | None
+    doc: str | None
+    dict: dict[str, Node]
     source: str
 
-
-# For Python <= 3.11
-def _is_assign(node: ast.AST) -> bool:
-    if isinstance(node, ast.AnnAssign | ast.Assign):
-        return True
-
-    if TypeAlias and isinstance(node, TypeAlias):
-        return True
-
-    return False
+    def get(self, name) -> Node | None:
+        return self.dict.get(name)
 
 
-def _iter_nodes(node: ast.AST, module: str, parent: str) -> Iterator[Node]:
+def _iter_nodes(node: ast.AST, module: str, parent: str | None = None) -> Iterator[Node]:
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             yield create_class(child, module, parent)
 
         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-            yield create_function(child, module, parent)
+            if is_function(child):
+                yield create_function(child, module, parent)
+            elif is_property(child):
+                yield create_property(child, module, parent)
 
         elif isinstance(child, ast.AnnAssign | ast.Assign | TypeAlias):
             if name := mkapi.ast.get_assign_name(child):
-                yield create_assign(child, module, parent)
+                yield create_assign(name, child, module, parent)
 
         elif isinstance(child, ast.Import):
             for name, fullname in _iter_imports_from_import(child):
-                yield Import(name, module, child, fullname)
+                yield Import(name, child, module, fullname)
 
         elif isinstance(child, ast.ImportFrom):
             if child.names[0].name == "*":
-                yield from _iter_members_from_star(child, module)
+                yield from _iter_members_from_star(child, module, parent)
             else:
                 for name, fullname in _iter_imports_from_import_from(child, module):
-                    yield Import(name, module, child, fullname)
+                    yield Import(name, child, module, fullname)
 
 
 def _iter_imports_from_import(node: ast.Import) -> Iterator[tuple[str, str]]:
@@ -155,42 +163,111 @@ def _iter_imports_from_import_from(node: ast.ImportFrom, module: str) -> Iterato
         yield alias.asname or alias.name, f"{module}.{alias.name}"
 
 
-def _iter_members_from_star(node: ast.ImportFrom, module: str) -> Iterator[Module | Object | Assign]:
+def _iter_members_from_star(node: ast.ImportFrom, module: str, parent: str | None) -> Iterator[Node]:
     module = _get_module_from_import_from(node, module)
-    yield from get_members(module).values()
+    if node_ := get_module_node(module):
+        yield from _iter_nodes(node_, module, parent)
+
+
+def create_class(node: ast.ClassDef, module: str, parent: str | None) -> Class:
+    name = node.name
+    qualname = f"{parent}.{name}" if parent else name
+    doc = ast.get_docstring(node)
+
+    dict_ = _get_members(node, module, qualname)
+
+    return Class(node.name, node, qualname, module, doc, [], [], dict_)
+
+
+def create_function(node: ast.FunctionDef | ast.AsyncFunctionDef, module: str, parent: str | None) -> Function:
+    name = node.name
+    qualname = f"{parent}.{name}" if parent else name
+    doc = ast.get_docstring(node)
+
+    params = [Parameter(*args) for args in mkapi.ast.iter_parameters(node)]
+    raises = list(mkapi.ast.iter_raises(node))
+
+    dict_ = _get_members(node, module, qualname)
+
+    return Function(node.name, node, qualname, module, doc, params, raises, dict_)
+
+
+def create_property(node: ast.FunctionDef | ast.AsyncFunctionDef, module: str, parent: str | None) -> Property:
+    name = node.name
+    qualname = f"{parent}.{name}" if parent else name
+    doc = ast.get_docstring(node)
+
+    return Property(node.name, node, qualname, module, doc, node.returns)
+
+
+def create_assign(
+    name: str,
+    node: ast.AnnAssign | ast.Assign | TypeAlias,  # type: ignore
+    module: str,
+    parent: str | None,
+) -> Assign:
+    qualname = f"{parent}.{name}" if parent else name
+    doc = node.__doc__
+
+    type_ = mkapi.ast.get_assign_type(node)
+    default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
+
+    return Assign(name, node, qualname, module, doc, type_, default)
+
+
+def _create_module(name: str, node: ast.Module, source: str, *, resolve: bool) -> Module:
+    doc = ast.get_docstring(node)
+    dict_ = _get_members(node, name, None, resolve=resolve)
+
+    module = Module(name, node, doc, dict_, source)
+
+    it = (child for child in walk(module) if isinstance(child, Assign))
+    _add_doc_comment(it, source)
+
+    return module
 
 
 @cache
-def get_members(module: str) -> dict[str, Module | Object | Assign]:
-    members = {}
+def create_module(name: str, *, resolve: bool = True) -> Module | None:
+    if not (node_source := get_module_node_source(name)):
+        return None
 
-    for member in _iter_nodes(module):
+    return _create_module(name, *node_source, resolve=resolve)
+
+
+def _get_members(node: ast.AST, module: str, parent: str | None, *, resolve: bool = True) -> dict[str, Node]:
+    members: dict[str, Node] = {}
+
+    for member in _iter_nodes(node, module, parent):
         name = member.name
 
-        if isinstance(member, Module | Object | Assign):
-            members[name] = member
+        if resolve and isinstance(node, ast.Module) and isinstance(member, Import):
+            resolved = _resolve(member.fullname, parent)
+            members[name] = resolved or member
 
-        elif resolved := _resolve(member.fullname):
-            members[name] = resolved
+        else:
+            members[name] = member
 
     return members
 
 
 @cache
-def _resolve(fullname: str) -> Module | Object | Assign | None:
+def _resolve(fullname: str, parent: str | None = None) -> Node | None:
     """Resolve name."""
-
-    if node := get_module_node(fullname):
-        return Module(fullname, node)
+    if module := create_module(fullname, resolve=False):
+        return module
 
     if "." not in fullname:
-        return Module(fullname, None)
+        return None
 
     module, name = fullname.rsplit(".", maxsplit=1)
 
-    for member in _iter_nodes(module):
+    if not (node := get_module_node(module)):
+        return None
+
+    for member in _iter_nodes(node, module, parent):
         if member.name == name:
-            if isinstance(member, Module | Object | Assign):
+            if not isinstance(member, Import):
                 return member
 
             if member.fullname == fullname:
@@ -201,28 +278,12 @@ def _resolve(fullname: str) -> Module | Object | Assign | None:
     return None
 
 
-def _get_module_name(name: str) -> str:
-    return importlib.import_module(name).__name__
-
-
 @cache
-def resolve(fullname: str) -> str | None:
-    if resolved := _resolve(fullname):
-        if isinstance(resolved, Module):
-            return _get_module_name(resolved.name)
+def get_members(module: str) -> dict[str, Node]:
+    if node := get_module_node(module):
+        return _get_members(node, module, None)
 
-        module = _get_module_name(resolved.module)
-        return f"{module}.{resolved.name}"
-
-    if "." not in fullname:
-        return None
-
-    fullname, attr = fullname.rsplit(".", maxsplit=1)
-
-    if resolved := resolve(fullname):
-        return f"{resolved}.{attr}"
-
-    return None
+    return {}
 
 
 @cache
@@ -241,91 +302,127 @@ def get_members_all(module: str) -> dict[str, Module | Object | Assign]:
     return members_all
 
 
-@cache
-def get_member(name: str, module: str) -> Module | Object | Assign | None:
-    """Return an object in the module."""
-    members = get_members(module)
-
-    if member := members.get(name):
-        return member
-
-    if "." not in name:
-        return None
-
-    module, name = name.rsplit(".", maxsplit=1)
-
-    if (member := members.get(module)) and isinstance(member, Module):
-        return get_member(name, member.name)
-
-    return None
+def walk(obj: Module | Class | Function) -> Iterator[Node]:
+    for child in obj.dict.values():
+        yield child
+        if isinstance(child, Module | Class | Function):
+            yield from walk(child)
 
 
-@cache
-def get_fullname(name: str, module: str) -> str | None:
-    """Return the fullname of an object in the module."""
-    if name.startswith(module) or module.startswith(name):
-        return name
+def _add_doc_comment(assigns: Iterable[Assign], source: str) -> None:
+    lines = source.splitlines()
 
-    if member := get_member(name, module):
-        if isinstance(member, Module):
-            return _get_module_name(member.name)
+    for assign in assigns:
+        if assign.doc:
+            continue
 
-        module = _get_module_name(member.module)
-        return f"{module}.{member.name}"
+        node = assign.node
 
-    return None
+        line = lines[node.lineno - 1][node.end_col_offset :].strip()
 
+        if line.startswith("#:"):
+            assign.doc = line[2:].strip()
 
-def iter_decorator_names(obj: Class | Function) -> Iterator[str]:
-    """Yield decorator_names."""
-    for deco in obj.node.decorator_list:
-        deco_name = next(mkapi.ast.iter_identifiers(deco))
-
-        if name := get_fullname(deco_name, obj.module.name.str):
-            yield name
-
-        else:
-            yield deco_name
+        elif node.lineno > 1:
+            line = lines[node.lineno - 2][node.col_offset :]
+            if line.startswith("#:"):
+                assign.doc = line[2:].strip()
 
 
-def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
-    """Return a decorator expr by name."""
-    for deco in obj.node.decorator_list:
-        deco_name = next(mkapi.ast.iter_identifiers(deco))
+# @cache
+# def resolve(fullname: str) -> str | None:
+#     if resolved := _resolve(fullname):
+#         if not isinstance(resolved, Module):
+#             return f"{resolved.module}.{resolved.name}"
+#         else:
+#             return resolved.name
 
-        if get_fullname(deco_name, obj.module.name.str) == name:
-            return deco
+#     if "." not in fullname:
+#         return None
 
-        if deco_name == name:
-            return deco
+#     fullname, attr = fullname.rsplit(".", maxsplit=1)
 
-    return None
+#     if resolved := resolve(fullname):
+#         return f"{resolved}.{attr}"
 
-
-def is_dataclass(cls: Class) -> bool:
-    """Return True if the [Class] instance is a dataclass."""
-    return get_decorator(cls, "dataclasses.dataclass") is not None
-
-
-def is_classmethod(func: Function) -> bool:
-    """Return True if the [Function] instance is a classmethod."""
-    return get_decorator(func, "classmethod") is not None
+#     return None
 
 
-def is_staticmethod(func: Function) -> bool:
-    """Return True if the [Function] instance is a staticmethod."""
-    return get_decorator(func, "staticmethod") is not None
+# @cache
+# def get_member(name: str, module: str) -> Module | Object | Assign | None:
+#     """Return an object in the module."""
+#     members = _get_members(module)
+
+#     if member := members.get(name):
+#         return member
+
+#     if "." not in name:
+#         return None
+
+#     module, name = name.rsplit(".", maxsplit=1)
+
+#     if (member := members.get(module)) and isinstance(member, Module):
+#         return get_member(name, member.name)
+
+#     return None
 
 
-# def _iter_decorator_args(deco: ast.expr) -> Iterator[tuple[str, Any]]:
-#     for child in ast.iter_child_nodes(deco):
-#         if isinstance(child, ast.keyword):
-#             if child.arg and isinstance(child.value, ast.Constant):
-#                 yield child.arg, child.value.value
+# @cache
+# def get_fullname(name: str, module: str) -> str | None:
+#     """Return the fullname of an object in the module."""
+#     if name.startswith(module) or module.startswith(name):
+#         return name
+
+#     if member := get_member(name, module):
+#         if isinstance(member, Module):
+#             return _get_module_name(member.name)
+
+#         module = _get_module_name(member.module)
+#         return f"{module}.{member.name}"
+
+#     return None
 
 
-# def _get_decorator_args(deco: ast.expr) -> dict[str, Any]:
-#     return dict(_iter_decorator_args(deco))
+# def iter_decorator_names(obj: Class | Function) -> Iterator[str]:
+#     """Yield decorator_names."""
+#     for deco in obj.node.decorator_list:
+#         deco_name = next(mkapi.ast.iter_identifiers(deco))
+
+#         if name := get_fullname(deco_name, obj.module.name.str):
+#             yield name
+
+#         else:
+#             yield deco_name
+
+
+# def get_decorator(obj: Class | Function, name: str) -> ast.expr | None:
+#     """Return a decorator expr by name."""
+#     for deco in obj.node.decorator_list:
+#         deco_name = next(mkapi.ast.iter_identifiers(deco))
+
+#         if get_fullname(deco_name, obj.module.name.str) == name:
+#             return deco
+
+#         if deco_name == name:
+#             return deco
+
+#     return None
+
+
+# def is_dataclass(cls: Class) -> bool:
+#     """Return True if the [Class] instance is a dataclass."""
+#     return get_decorator(cls, "dataclasses.dataclass") is not None
+
+
+# def is_classmethod(func: Function) -> bool:
+#     """Return True if the [Function] instance is a classmethod."""
+#     return get_decorator(func, "classmethod") is not None
+
+
+# def is_staticmethod(func: Function) -> bool:
+#     """Return True if the [Function] instance is a staticmethod."""
+#     return get_decorator(func, "staticmethod") is not None
+
 
 # def _iter_names_all_ast(module: str) -> Iterator[str]:
 #     if not (all_ := get_member("__all__", module)):
@@ -338,62 +435,6 @@ def is_staticmethod(func: Function) -> bool:
 #     for arg in node.value.elts:
 #         if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
 #             yield arg.value
-
-# @dataclass
-# class Object(Named):
-#     """Object class."""
-
-#     node: ast.AST | None
-#     doc: Docstring
-#     kind: str = field(init=False)
-
-#     def __post_init__(self) -> None:
-#         self.kind = get_kind(self)
-#         objects[self.fullname.str] = self  # type:ignore
-
-#     def __repr__(self) -> str:
-#         return f"{self.kind.title()}({self.name.str!r})"
-
-
-# @dataclass(repr=False)
-# class Member(Object):
-#     """Member class."""
-
-#     module: Module
-#     parent: Class | Function | None
-
-#     def __post_init__(self) -> None:
-#         if self.parent:
-#             self.qualname = self.parent.qualname.join(self.name)
-#         else:
-#             self.qualname = Name(self.name.str)
-
-#         self.fullname = self.module.name.join(self.qualname)
-#         super().__post_init__()
-
-
-# @dataclass(repr=False)
-# class Attribute(Member):
-#     """Attribute class."""
-
-#     node: ast.AnnAssign | ast.Assign | ast.TypeAlias | ast.FunctionDef | None
-#     type: Type  # noqa: A003, RUF100
-#     default: Default
-
-#     def __iter__(self) -> Iterator[Name | Type | Text]:
-#         yield from super().__iter__()
-
-#         if self.type.expr:
-#             yield self.type
-
-#         if self.default.expr:
-#             yield self.default
-
-
-# def update_attributes(attrs: list[Attribute]) -> None:
-#     for attr in attrs:
-#         objects[attr.fullname.str] = attr
-
 
 # def create_attribute(
 #     assign: Assign,
@@ -470,35 +511,6 @@ def is_staticmethod(func: Function) -> bool:
 #         del section.items[index]
 
 
-# def _merge_attributes_comment(attrs: list[Attribute], source: str) -> None:
-#     lines = source.splitlines()
-
-#     for attr in attrs:
-#         if attr.doc.text.str or not (node := attr.node):
-#             continue
-
-#         line = lines[node.lineno - 1][node.end_col_offset :].strip()
-
-#         if line.startswith("#:"):
-#             _add_text_from_comment(attr, line[2:].strip())
-
-#         elif node.lineno > 1:
-#             line = lines[node.lineno - 2][node.col_offset :]
-#             if line.startswith("#:"):
-#                 _add_text_from_comment(attr, line[2:].strip())
-
-
-# def _add_text_from_comment(attr: Attribute, text: str) -> None:
-#     if not text:
-#         return
-
-#     type_, text = split_item_without_name(text, "google")
-#     if not attr.type.expr:
-#         attr.type.expr = ast.Constant(type_)
-
-#     attr.doc.text.str = text
-
-
 # @dataclass(repr=False)
 # class Attributes(Section):
 #     """Attributes section."""
@@ -548,129 +560,6 @@ def is_staticmethod(func: Function) -> bool:
 #             a.type = a.type if a.type.expr else b.type
 #             a.doc = mkapi.docstrings.merge(a.doc, b.doc)
 #             yield a
-
-
-# @dataclass(repr=False)
-# class Callable(Member):
-#     """Callable class for class or function."""
-
-#     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
-#     classes: list[Class] = field(default_factory=list, init=False)
-#     functions: list[Function] = field(default_factory=list, init=False)
-
-
-# @dataclass(repr=False)
-# class Function(Callable):
-#     """Function class."""
-
-#     node: ast.FunctionDef | ast.AsyncFunctionDef
-#     parameters: list[Parameter]
-#     returns: list[Return]
-#     raises: list[Raise]
-
-#     def __iter__(self) -> Iterator[Name | Type | Text]:
-#         """Yield [Type] or [Text] instances."""
-#         yield from super().__iter__()
-
-#         for item in itertools.chain(self.parameters, self.returns, self.raises):
-#             yield from item
-
-
-# def create_function(
-#     node: ast.FunctionDef | ast.AsyncFunctionDef,
-#     module: Module | None = None,
-#     parent: Class | Function | None = None,
-# ) -> Function:
-#     """Return a [Function] instance."""
-#     name = Name(node.name)
-
-#     text = ast.get_docstring(node)
-#     doc = docstrings.parse(text)
-
-#     module = module or _create_empty_module()
-
-#     params = list(iter_parameters(node))
-#     merge_parameters(doc.sections, params)
-
-#     returns = list(iter_returns(node))
-#     merge_returns(doc.sections, returns)
-
-#     # raises = list(iter_raises(node))
-#     # merge_raises(doc.sections, raises)
-#     raises = []
-
-#     func = Function(name, node, doc, module, parent, params, returns, raises)
-
-#     for child in mkapi.ast.iter_child_nodes(node):
-#         if isinstance(child, ast.ClassDef):
-#             cls = create_class(child, module, func)
-#             func.classes.append(cls)
-
-#         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-#             func_ = create_function(child, module, func)
-#             func.functions.append(func_)
-
-#     return func
-
-
-# @dataclass(repr=False)
-# class Class(Callable):
-#     """Class class."""
-
-#     node: ast.ClassDef
-#     bases: list[Base]
-#     attributes: list[Attribute] = field(default_factory=list, init=False)
-#     parameters: list[Parameter] = field(default_factory=list, init=False)
-#     raises: list[Raise] = field(default_factory=list, init=False)
-
-#     def __iter__(self) -> Iterator[Name | Type | Text]:
-#         """Yield [Type] or [Text] instances."""
-#         yield from super().__iter__()
-
-#         for item in itertools.chain(self.bases, self.parameters, self.raises):
-#             yield from item
-
-
-# def create_class(
-#     node: ast.ClassDef,
-#     module: Module | None = None,
-#     parent: Class | Function | None = None,
-# ) -> Class:
-#     """Return a [Class] instance."""
-#     name = Name(node.name)
-
-#     text = ast.get_docstring(node)
-#     doc = docstrings.parse(text)
-
-#     module = module or _create_empty_module()
-
-#     bases = list(iter_bases(node))
-
-#     cls = Class(name, node, doc, module, parent, bases)
-
-#     for child in mkapi.ast.iter_child_nodes(node):
-#         if isinstance(child, ast.ClassDef):
-#             cls_ = create_class(child, module, cls)
-#             cls.classes.append(cls_)
-
-#         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-#             if is_function(child):
-#                 func = create_function(child, module, cls)
-#                 cls.functions.append(func)
-
-#     cls.attributes = list(iter_attributes(node, module, cls))
-#     _merge_attributes(cls.attributes, module, cls, cls)
-
-#     inherit_base_classes(cls)
-
-#     if is_dataclass(cls):
-#         cls.parameters = list(iter_dataclass_parameters(cls))
-#     else:
-#         _merge_init(cls)
-
-#     _add_attributes_section(cls.doc, cls.attributes)
-
-#     return cls
 
 
 # def iter_base_classes(cls: Class) -> Iterator[Class]:
@@ -760,137 +649,6 @@ def is_staticmethod(func: Function) -> bool:
 
 #     cls.doc = mkapi.docstrings.merge(cls.doc, init.doc)
 #     del_by_name(cls.functions, "__init__")
-
-
-# @dataclass(repr=False)
-# class Module(Object):
-#     """Module class."""
-
-#     node: ast.Module
-#     modules: list[Module] = field(default_factory=list, init=False)
-#     classes: list[Class] = field(default_factory=list, init=False)
-#     functions: list[Function] = field(default_factory=list, init=False)
-#     attributes: list[Attribute] = field(default_factory=list, init=False)
-#     source: str | None = None
-
-#     def __post_init__(self) -> None:
-#         self.fullname = self.qualname = self.name
-#         super().__post_init__()
-
-
-# def _create_empty_module() -> Module:
-#     doc = Docstring(Name("Docstring"), Type(), Text(), [])
-#     return Module(Name("__mkapi__"), ast.Module(), doc, None)
-
-
-# def _create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
-#     """Return a [Module] instance from an [ast.Module] node."""
-#     text = ast.get_docstring(node)
-#     doc = docstrings.parse(text)
-
-#     module = Module(Name(name), node, doc, source)
-
-#     for child in mkapi.ast.iter_child_nodes(node):
-#         if isinstance(child, ast.ClassDef):
-#             cls = create_class(child, module)
-#             module.classes.append(cls)
-
-#         elif isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
-#             if mkapi.ast.is_function(child):
-#                 func = create_function(child, module)
-#                 module.functions.append(func)
-
-#     attrs = list(iter_attributes(node, module, None))
-#     _merge_attributes(attrs, module, module, None)
-#     _add_attributes_section(doc, attrs)
-#     module.attributes = attrs
-
-#     return module
-
-
-# @cache
-# def create_module(name: str) -> Module | None:
-#     """Return a [Module] instance by the name."""
-#     if not (node_source := get_module_node_source(name)):
-#         return None
-
-#     return _create_module(name, *node_source)
-
-
-# # @dataclass(repr=False)
-# # class Alias(Named):
-# #     """Alias class."""
-
-# #     obj: Module | Class | Function | Attribute
-# #     module: Module
-# #     parent: Alias | None
-# #     classes: list[Alias] = field(default_factory=list, init=False)
-# #     functions: list[Alias] = field(default_factory=list, init=False)
-# #     attributes: list[Alias] = field(default_factory=list, init=False)
-
-# #     def __post_init__(self) -> None:
-# #         if self.parent:
-# #             self.qualname = self.parent.qualname.join(self.name)
-# #         else:
-# #             self.qualname = Name(self.name.str)
-
-# #         self.fullname = self.module.name.join(self.qualname)
-# #         objects[self.fullname.str] = self
-
-# #     def __repr__(self) -> str:
-# #         return f"{self.__class__.__name__}({self.name.str!r})"
-
-
-# # def create_alias(
-# #     name: Name,
-# #     obj: Module | Class | Function | Attribute,
-# #     module: Module,
-# #     parent: Alias | None = None,
-# # ) -> Alias:
-# #     alias = Alias(name, obj, module, parent)
-
-# #     if isinstance(obj, Module | Class):
-# #         alias.classes = [create_alias(cls.name, cls, module, alias) for cls in obj.classes]
-
-# #     if isinstance(obj, Class | Function):
-# #         alias.functions = [create_alias(func.name, func, module, alias) for func in obj.functions]
-
-# #     if isinstance(obj, Module | Class):
-# #         alias.attributes = [create_alias(attr.name, attr, module, alias) for attr in obj.attributes]
-
-# #     return alias
-
-
-# @cache
-# def load_module(name: str) -> Module | None:
-#     if not (module := create_module(name)):
-#         return None
-
-#     # aliases = []
-#     for modulename, members in get_members_all(module.name.str).items():
-#         if create_module(modulename):
-#             for name, fullname in members:
-#                 if obj := objects.get(fullname):
-#                     objects[f"{module.name.str}.{name}"] = obj
-
-#                     if isinstance(obj, Module):
-#                         module.modules.append(obj)
-
-#                     elif isinstance(obj, Class):
-#                         module.classes.append(obj)
-
-#                     elif isinstance(obj, Function):
-#                         module.functions.append(obj)
-
-#                     elif isinstance(obj, Attribute):
-#                         module.attributes.append(obj)
-
-#     return module
-#     #                 if isinstance(obj, Alias):
-#     #                     obj = obj.obj
-#     #                 alias = create_alias(Name(name), obj, module, None)
-#     #                 aliases.append(alias)
-#     # module.aliases = aliases
 
 
 # @cache
@@ -997,26 +755,30 @@ def is_staticmethod(func: Function) -> bool:
 #     return None
 
 
-# def _get_kind_function(func: Function) -> str:
-#     if mkapi.inspect.is_classmethod(func):
-#         return "classmethod"
+def is_method(func: Function) -> bool:
+    return "." in func.qualname
 
-#     if mkapi.inspect.is_staticmethod(func):
-#         return "staticmethod"
 
-#     return "method" if isinstance(func.parent, Class) else "function"
+def _get_kind_function(func: Function) -> str:
+    if is_classmethod(func.node):
+        return "classmethod"
+
+    if is_staticmethod(func.node):
+        return "staticmethod"
+
+    return "method" if is_method(func) else "function"
 
 
 def get_kind(obj: Node) -> str:
     """Return kind."""
-    # if isinstance(obj, Module):
-    #     return "package" if is_package(obj.name.str) else "module"
+    if isinstance(obj, Module):
+        return "package" if is_package(obj.name) else "module"
 
     # if isinstance(obj, Class):
     #     return "dataclass" if mkapi.inspect.is_dataclass(obj) else "class"
 
-    # if isinstance(obj, Function):
-    #     return _get_kind_function(obj)
+    if isinstance(obj, Function):
+        return _get_kind_function(obj)
 
     # if isinstance(obj, Attribute):
     #     return "property" if isinstance(obj.node, ast.FunctionDef) else "attribute"
