@@ -1,7 +1,7 @@
 import ast
 import inspect
 
-from mkapi.objects import Assign, Class, Function, _create_module, create_class, create_module, walk
+from mkapi.objects import Assign, Class, Function, _add_doc_comment, _create_module, create_class, create_module, walk
 
 
 def test_merge_attributes_comment():
@@ -28,9 +28,11 @@ def test_merge_attributes_comment():
     '''
     source = inspect.cleandoc(src)
     node = ast.parse(source)
-    module = _create_module("a", node, source, resolve=False)
+    module = _create_module("a", node, source)
+    assert len(list(walk(module))) == 11
     it = [child for child in walk(module) if isinstance(child, Assign)]
     assert len(it) == 8
+    _add_doc_comment(it, module.source)
     for a in it:
         if a.name == "self.attr5":
             assert not a.doc

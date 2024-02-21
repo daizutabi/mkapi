@@ -1,7 +1,7 @@
 import ast
 import inspect
 
-from mkapi.objects import Class, Function, Property, create_class
+from mkapi.objects import Class, Function, Property, create_class, create_module
 
 
 def test_create_class_nested():
@@ -33,3 +33,13 @@ def test_create_class(get):
         assert isinstance(cls.get(x), Function)
     for x in ["readonly_property", "readwrite_property"]:
         assert isinstance(cls.get(x), Property)
+
+
+def test_inherit():
+    module = create_module("mkapi.objects")
+    assert module
+    cls = module.get("Class")
+    assert isinstance(cls, Class)
+    func = cls.get("__repr__")
+    assert isinstance(func, Function)
+    assert func.qualname == "Node.__repr__"

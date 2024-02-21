@@ -297,4 +297,4 @@ def is_classmethod(node: FunctionDef | AsyncFunctionDef) -> bool:
 
 
 def is_staticmethod(node: FunctionDef | AsyncFunctionDef) -> bool:
-    return has_property(node, "classmethod")
+    return has_property(node, "staticmethod")

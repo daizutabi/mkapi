@@ -4,7 +4,6 @@ import time
 from collections import namedtuple
 from pathlib import Path
 
-from mkapi.items import Name
 from mkapi.utils import (
     _is_module,
     cache,
@@ -137,13 +136,6 @@ def test_get_by_name():
     assert a
     assert a.value == 1
     assert not get_by_name(x, "d")
-    x = [A(Name("a"), 1), A(Name("a"), 2), A(Name("b"), 3), A(Name("c"), 4)]
-    a = get_by_name(x, Name("a"))
-    assert a
-    assert a.value == 1
-    assert not get_by_name(x, Name("d"))
-    assert get_by_name(x, "b")
-    assert not get_by_name(x, "e")
 
 
 def test_get_by_kind():
@@ -176,14 +168,6 @@ def test_del_by_name():
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
     del_by_name(x, "c")
     assert x == [A("a", 1), A("a", 2), A("b", 3)]
-    x = [A(Name("a"), 1), A(Name("a"), 2), A(Name("b"), 3), A(Name("c"), 4)]
-    assert get_by_name(x, Name("c"))
-    del_by_name(x, Name("c"))
-    assert not get_by_name(x, Name("c"))
-    x = [A(Name("a"), 1), A(Name("a"), 2), A(Name("b"), 3), A(Name("c"), 4)]
-    assert get_by_name(x, "c")
-    del_by_name(x, "c")
-    assert not get_by_name(x, "c")
 
 
 def test_unique_names():
