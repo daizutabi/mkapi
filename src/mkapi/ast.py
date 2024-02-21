@@ -262,7 +262,10 @@ def unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) 
     return "".join(_unparse(node, callback, is_type=is_type))
 
 
-def has_property(node: FunctionDef | AsyncFunctionDef, name: str, index: int = 0) -> bool:
+def has_property(node: AST, name: str, index: int = 0) -> bool:
+    if not isinstance(node, FunctionDef | AsyncFunctionDef):
+        return False
+
     for deco in node.decorator_list:
         deco_names = next(iter_identifiers(deco)).split(".")
 
@@ -272,29 +275,29 @@ def has_property(node: FunctionDef | AsyncFunctionDef, name: str, index: int = 0
     return False
 
 
-def is_property(node: FunctionDef | AsyncFunctionDef) -> bool:
+def is_property(node: AST) -> bool:
     """Return True if a function is a property."""
     return has_property(node, "property")
 
 
-def is_setter(node: FunctionDef | AsyncFunctionDef) -> bool:
+def is_setter(node: AST) -> bool:
     """Return True if a function is a property."""
     return has_property(node, "setter", 1)
 
 
-def has_overload(node: FunctionDef | AsyncFunctionDef) -> bool:
+def has_overload(node: AST) -> bool:
     """Return True if a function has an `overload` decorator."""
     return has_property(node, "overload")
 
 
-def is_function(node: FunctionDef | AsyncFunctionDef) -> bool:
+def is_function(node: AST) -> bool:
     """Return True if a function is neither a property nor overloaded."""
     return not (is_property(node) or is_setter(node) or has_overload(node))
 
 
-def is_classmethod(node: FunctionDef | AsyncFunctionDef) -> bool:
+def is_classmethod(node: AST) -> bool:
     return has_property(node, "classmethod")
 
 
-def is_staticmethod(node: FunctionDef | AsyncFunctionDef) -> bool:
+def is_staticmethod(node: AST) -> bool:
     return has_property(node, "staticmethod")

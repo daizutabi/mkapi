@@ -1,4 +1,4 @@
-from mkapi.objects import get_fullname, get_members_all, resolve
+from mkapi.nodes import resolve
 
 
 def test_resolve():
@@ -7,16 +7,7 @@ def test_resolve():
     assert resolve("polars.col") == "polars.functions.col"
     assert resolve("polars.row") == "polars.row"
     assert resolve("polars.api") == "polars.api"
-
-
-def test_get_fullname():
-    x = get_fullname("DataType", "polars.dataframe.frame")
+    x = resolve("DataType", "polars.dataframe.frame")
     assert x == "polars.datatypes.classes.DataType"
-    assert get_fullname("exceptions", "polars") == "polars.exceptions"
-    assert get_fullname("api", "polars") == "polars.api"
-
-
-def test_get_all():
-    x = get_members_all("polars")
-    assert x["api"].name == "polars.api"  # type: ignore
-    assert x["ArrowError"].module == "polars.exceptions"  # type: ignore
+    assert resolve("exceptions", "polars") == "polars.exceptions"
+    assert resolve("api", "polars") == "polars.api"

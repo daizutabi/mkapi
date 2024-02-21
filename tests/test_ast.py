@@ -2,7 +2,6 @@ import ast
 from inspect import _ParameterKind
 
 from mkapi.ast import StringTransformer, _iter_identifiers, iter_child_nodes, iter_parameters, iter_raises, unparse
-from mkapi.utils import get_module_node
 
 
 def test_iter_child_nodes():

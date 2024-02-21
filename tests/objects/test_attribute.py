@@ -1,7 +1,16 @@
 import ast
 import inspect
 
-from mkapi.objects import Assign, Class, Function, _add_doc_comment, _create_module, create_class, create_module, walk
+from mkapi.objects import (
+    Attribute,
+    Class,
+    Function,
+    _add_doc_comment,
+    _create_module,
+    create_class,
+    create_module,
+    walk,
+)
 
 
 def test_merge_attributes_comment():
@@ -30,7 +39,7 @@ def test_merge_attributes_comment():
     node = ast.parse(source)
     module = _create_module("a", node, source)
     assert len(list(walk(module))) == 11
-    it = [child for child in walk(module) if isinstance(child, Assign)]
+    it = [child for child in walk(module) if isinstance(child, Attribute)]
     assert len(it) == 8
     _add_doc_comment(it, module.source)
     for a in it:
@@ -44,10 +53,10 @@ def test_create_assign_module():
     module = create_module("examples.styles.google")
     assert module
     a = module.get("module_level_variable1")
-    assert isinstance(a, Assign)
+    assert isinstance(a, Attribute)
     assert not a.doc
     a = module.get("module_level_variable2")
-    assert isinstance(a, Assign)
+    assert isinstance(a, Attribute)
     assert a.doc
 
 
@@ -59,7 +68,7 @@ def test_create_assign_class(get):
     func = cls.get("__init__")
     assert isinstance(func, Function)
     a = func.get("self.attr1")
-    assert isinstance(a, Assign)
+    assert isinstance(a, Attribute)
 
 
 # def test_create_attribute_without_module(google):

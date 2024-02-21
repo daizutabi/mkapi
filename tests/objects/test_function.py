@@ -17,7 +17,6 @@ def test_create_function(get):
     assert get_by_name(func.parameters, "args")
     assert get_by_name(func.parameters, "kwargs")
     assert len(func.raises) == 1
-    assert repr(func) == "Function('module_level_function')"
 
 
 # def test_merge_items():

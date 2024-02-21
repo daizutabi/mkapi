@@ -42,4 +42,4 @@ def test_inherit():
     assert isinstance(cls, Class)
     func = cls.get("__repr__")
     assert isinstance(func, Function)
-    assert func.qualname == "Node.__repr__"
+    assert func.qualname == "Object.__repr__"
