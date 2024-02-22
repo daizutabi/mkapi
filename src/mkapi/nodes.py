@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mkapi.ast
-from mkapi.utils import get_module_node, is_package, iter_parent_module_names
+from mkapi.utils import cache, get_module_node, is_package, iter_parent_module_names
 
 try:
     from ast import TypeAlias
@@ -163,6 +163,7 @@ def _parse(node: ast.Module, module: str) -> list[tuple[str, Module | Object | I
     return members
 
 
+@cache
 def parse(module: str) -> list[tuple[str, Module | Object | Import]]:
     if node := get_module_node(module):
         return _parse(node, module)
@@ -180,23 +181,22 @@ def get_all_names(module: str) -> list[str]:
     return []
 
 
+def _get_fullname(obj: Module | Object | Import) -> str:
+    if isinstance(obj, Module):
+        return f"{obj.name}"
+
+    if isinstance(obj, Object):
+        return f"{obj.module}.{obj.name}"
+
+    return obj.fullname  # import
+
+
 def resolve(name: str, module: str | None = None) -> str | None:
     if module:
-        if name.startswith(module) or module.startswith(name):
-            return name
-
-        name = f"{module}.{name}"
+        return resolve_from_module(name, module)
 
     if resolved := list(_resolve(name)):
-        resolved = resolved[0]
-
-        if isinstance(resolved, Module):
-            return f"{resolved.name}"
-
-        if isinstance(resolved, Object):
-            return f"{resolved.module}.{resolved.name}"
-
-        return resolved.fullname  # import
+        return _get_fullname(resolved[0])
 
     if "." not in name:
         return None
@@ -205,6 +205,29 @@ def resolve(name: str, module: str | None = None) -> str | None:
 
     if resolved := resolve(name):
         return f"{resolved}.{attr}"
+
+    return None
+
+
+def resolve_from_module(name: str, module: str) -> str | None:
+    if name.startswith(module) or module.startswith(name):
+        return name
+
+    for name_, obj in parse(module):
+        if name_ == name:
+            return _get_fullname(obj)
+
+    if "." not in name:
+        return None
+
+    name, attr = name.rsplit(".", maxsplit=1)
+
+    for name_, obj in parse(module):
+        if name_ == name:
+            if isinstance(obj, Module):
+                return resolve(f"{obj.name}.{attr}")
+
+            return f"{_get_fullname(obj)}.{attr}"
 
     return None
 

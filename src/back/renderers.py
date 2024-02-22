@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader, Template
 import mkapi
 from mkapi.docstrings import Docstring, create_summary_item
 from mkapi.items import Name, Section, Text, Type
-from mkapi.link import set_markdown
+from mkapi.linkers import set_markdown
 from mkapi.objects import (
     Attribute,
     Class,

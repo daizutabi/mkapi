@@ -7,8 +7,8 @@ from mkapi.nodes import (
     has_decorator,
     iter_decorator_names,
     resolve,
+    resolve_from_module,
 )
-from mkapi.utils import get_module_node
 
 
 def test_iter_import_asname():
@@ -54,13 +54,6 @@ def test_resolve():
     assert resolve("mkapi.objects.ast") == "ast"
     assert resolve("mkapi.objects.ast.ClassDef") == "ast.ClassDef"
 
-    x = resolve("Class", "mkapi.objects")
-    assert x == "mkapi.objects.Class"
-    x = resolve("mkapi.objects", "mkapi.objects")
-    assert x == "mkapi.objects"
-    x = resolve("mkapi.objects.Class", "mkapi.objects")
-    assert x == "mkapi.objects.Class"
-
 
 def test_iter_decorator_names():
     src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
@@ -75,3 +68,25 @@ def test_get_decorator():
     assert isinstance(node, ast.FunctionDef)
     assert has_decorator(node, "d", "")
     assert not has_decorator(node, "x", "")
+
+
+def test_resolve_from_module():
+    x = resolve_from_module("Class", "mkapi.objects")
+    assert x == "mkapi.objects.Class"
+    x = resolve_from_module("mkapi.objects", "mkapi.objects")
+    assert x == "mkapi.objects"
+    x = resolve_from_module("mkapi.objects.Class", "mkapi.objects")
+    assert x == "mkapi.objects.Class"
+
+    assert resolve_from_module("ast", "mkapi.objects") == "ast"
+    x = resolve_from_module("ast.ClassDef", "mkapi.objects")
+    assert x == "ast.ClassDef"
+
+    x = resolve_from_module("jinja2.Template", "mkdocs.plugins")
+    assert x == "jinja2.environment.Template"
+    x = resolve_from_module("jinja2.XXX", "mkdocs.plugins")
+    assert x == "jinja2.XXX"
+
+    for x in ["mkapi", "mkapi.ast", "mkapi.ast.XXX"]:
+        y = resolve_from_module(x, "mkapi.nodes")
+        assert x == y

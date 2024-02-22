@@ -22,9 +22,11 @@ from tqdm.std import tqdm
 
 import mkapi
 import mkapi.nav
-from mkapi import renderers
+
+# from mkapi import renderers
 from mkapi.nav import split_name_depth
-from mkapi.pages import Page, PageKind
+
+# from mkapi.pages import Page, PageKind
 from mkapi.utils import (
     cache_clear,
     get_module_path,

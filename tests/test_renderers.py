@@ -1,4 +1,4 @@
-from mkapi.link import set_markdown
+from mkapi.linkers import set_markdown
 from mkapi.objects import Class, Function, Module, get_object
 from mkapi.renderers import (
     _create_summary_docstring,
