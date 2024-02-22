@@ -1,16 +1,15 @@
 import ast
 import re
 
-from mkapi.linkers import (
-    LINK_PATTERN,
-    get_markdown,
-    get_markdown_from_type_string,
-)
-
-# get_markdown_from_docstring_text,
 # set_markdown,
 from mkapi.nodes import resolve
 from mkapi.objects import Class, Function, create_function, create_module
+from mkapi.parsers import (
+    LINK_PATTERN,
+    get_markdown,
+    get_markdown_from_docstring_text,
+    get_markdown_from_type_string,
+)
 from mkapi.utils import get_by_name
 
 
@@ -72,45 +71,45 @@ def test_get_markdown_from_fullname_replace():
     assert get_markdown("_abc", replace) == "\\_abc"
 
 
-# def test_get_markdown_from_type_string():
-#     def replace(name: str) -> str | None:
-#         return get_fullname(name, "mkapi.objects")
+def test_get_markdown_from_type_string():
+    def replace(name: str) -> str | None:
+        return resolve(name, "mkapi.objects")
 
-#     type_string = "1 Object or Class."
-#     x = get_markdown_from_type_string(type_string, replace)
-#     assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
-#     assert "or [Class][__mkapi__.mkapi.objects.Class]." in x
+    type_string = "1 Object or Class."
+    x = get_markdown_from_type_string(type_string, replace)
+    assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
+    assert "or [Class][__mkapi__.mkapi.objects.Class]." in x
 
 
-# def test_get_markdown_from_docstring_text():
-#     def replace(name: str) -> str | None:  # type: ignore
-#         return get_fullname(name, "mkapi.objects")
+def test_get_markdown_from_docstring_text():
+    def replace(name: str) -> str | None:  # type: ignore
+        return resolve(name, "mkapi.objects")
 
-#     x = get_markdown_from_docstring_text("Class", replace)
-#     assert x == "Class"
-#     x = get_markdown_from_docstring_text("a [Class] b", replace)
-#     assert x == "a [Class][__mkapi__.mkapi.objects.Class] b"
-#     x = get_markdown_from_docstring_text("a [Class][] b", replace)
-#     assert x == "a [Class][__mkapi__.mkapi.objects.Class] b"
-#     x = get_markdown_from_docstring_text("a [Class][a] b", replace)
-#     assert x == "a [Class][a] b"
-#     m = "a \n```\n[Class][a]\n```\n b"
-#     assert get_markdown_from_docstring_text(m, replace) == m
+    x = get_markdown_from_docstring_text("Class", replace)
+    assert x == "Class"
+    x = get_markdown_from_docstring_text("a [Class] b", replace)
+    assert x == "a [Class][__mkapi__.mkapi.objects.Class] b"
+    x = get_markdown_from_docstring_text("a [Class][] b", replace)
+    assert x == "a [Class][__mkapi__.mkapi.objects.Class] b"
+    x = get_markdown_from_docstring_text("a [Class][a] b", replace)
+    assert x == "a [Class][a] b"
+    m = "a \n```\n[Class][a]\n```\n b"
+    assert get_markdown_from_docstring_text(m, replace) == m
 
-#     def replace(name: str) -> str | None:
-#         return get_fullname(name, "mkapi.plugins")
+    def replace(name: str) -> str | None:
+        return resolve(name, "mkapi.plugins")
 
-#     x = get_markdown_from_docstring_text("a [MkAPIPlugin][] b", replace)
-#     assert x == "a [MkAPIPlugin][__mkapi__.mkapi.plugins.MkAPIPlugin] b"
-#     x = get_markdown_from_docstring_text("a [BasePlugin][] b", replace)
-#     assert x == "a [BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin] b"
-#     x = get_markdown_from_docstring_text("a [MkDocsConfig][] b", replace)
-#     assert x == "a [MkDocsConfig][__mkapi__.mkdocs.config.defaults.MkDocsConfig] b"
+    x = get_markdown_from_docstring_text("a [MkAPIPlugin][] b", replace)
+    assert x == "a [MkAPIPlugin][__mkapi__.mkapi.plugins.MkAPIPlugin] b"
+    x = get_markdown_from_docstring_text("a [BasePlugin][] b", replace)
+    assert x == "a [BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin] b"
+    x = get_markdown_from_docstring_text("a [MkDocsConfig][] b", replace)
+    assert x == "a [MkDocsConfig][__mkapi__.mkdocs.config.defaults.MkDocsConfig] b"
 
-#     x = get_markdown_from_docstring_text("a [__mkapi__.b] c", replace)
-#     assert x == "a b c"
-#     x = get_markdown_from_docstring_text("a [b] c", replace)
-#     assert x == "a [b] c"
+    x = get_markdown_from_docstring_text("a [__mkapi__.b] c", replace)
+    assert x == "a b c"
+    x = get_markdown_from_docstring_text("a [b] c", replace)
+    assert x == "a [b] c"
 
 
 # def test_set_markdown_module():

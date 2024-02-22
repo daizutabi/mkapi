@@ -1,4 +1,4 @@
-from mkapi.nodes import resolve
+from mkapi.nodes import resolve, resolve_from_module
 
 
 def test_resolve():
@@ -7,7 +7,10 @@ def test_resolve():
     assert resolve("polars.col") == "polars.functions.col"
     assert resolve("polars.row") == "polars.row"
     assert resolve("polars.api") == "polars.api"
-    x = resolve("DataType", "polars.dataframe.frame")
+
+
+def test_resolve_from_module():
+    x = resolve_from_module("DataType", "polars.dataframe.frame")
     assert x == "polars.datatypes.classes.DataType"
-    assert resolve("exceptions", "polars") == "polars.exceptions"
-    assert resolve("api", "polars") == "polars.api"
+    assert resolve_from_module("api", "polars") == "polars.api"
+    assert resolve_from_module("exceptions", "polars") == "polars.exceptions"

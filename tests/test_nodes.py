@@ -55,21 +55,6 @@ def test_resolve():
     assert resolve("mkapi.objects.ast.ClassDef") == "ast.ClassDef"
 
 
-def test_iter_decorator_names():
-    src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
-    node = ast.parse(src).body[0]
-    assert isinstance(node, ast.FunctionDef)
-    assert list(iter_decorator_names(node, "")) == ["a", "b.c", "d"]
-
-
-def test_get_decorator():
-    src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
-    node = ast.parse(src).body[0]
-    assert isinstance(node, ast.FunctionDef)
-    assert has_decorator(node, "d", "")
-    assert not has_decorator(node, "x", "")
-
-
 def test_resolve_from_module():
     x = resolve_from_module("Class", "mkapi.objects")
     assert x == "mkapi.objects.Class"
@@ -90,3 +75,18 @@ def test_resolve_from_module():
     for x in ["mkapi", "mkapi.ast", "mkapi.ast.XXX"]:
         y = resolve_from_module(x, "mkapi.nodes")
         assert x == y
+
+
+def test_iter_decorator_names():
+    src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
+    node = ast.parse(src).body[0]
+    assert isinstance(node, ast.FunctionDef)
+    assert list(iter_decorator_names(node, "")) == ["a", "b.c", "d"]
+
+
+def test_get_decorator():
+    src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
+    node = ast.parse(src).body[0]
+    assert isinstance(node, ast.FunctionDef)
+    assert has_decorator(node, "d", "")
+    assert not has_decorator(node, "x", "")

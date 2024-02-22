@@ -1,7 +1,7 @@
 import ast
 
-from mkapi.linkers import set_markdown
 from mkapi.objects import Function, _create_module
+from mkapi.parsers import set_markdown
 from mkapi.signatures import get_signature, iter_signature
 
 

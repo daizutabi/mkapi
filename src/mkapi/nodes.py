@@ -191,10 +191,7 @@ def _get_fullname(obj: Module | Object | Import) -> str:
     return obj.fullname  # import
 
 
-def resolve(name: str, module: str | None = None) -> str | None:
-    if module:
-        return resolve_from_module(name, module)
-
+def resolve(name: str) -> str | None:
     if resolved := list(_resolve(name)):
         return _get_fullname(resolved[0])
 
@@ -216,6 +213,9 @@ def resolve_from_module(name: str, module: str) -> str | None:
     for name_, obj in parse(module):
         if name_ == name:
             return _get_fullname(obj)
+
+    if name in get_all_names(module):
+        return f"{module}.{name}"
 
     if "." not in name:
         return None
@@ -240,7 +240,7 @@ def iter_decorator_names(node: ast.AST, module: str) -> Iterator[str]:
     for deco in node.decorator_list:
         deco_name = next(mkapi.ast.iter_identifiers(deco))
 
-        if name := resolve(deco_name, module):
+        if name := resolve_from_module(deco_name, module):
             yield name
 
         else:

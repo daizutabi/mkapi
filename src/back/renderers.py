@@ -10,7 +10,6 @@ from jinja2 import Environment, FileSystemLoader, Template
 import mkapi
 from mkapi.docstrings import Docstring, create_summary_item
 from mkapi.items import Name, Section, Text, Type
-from mkapi.linkers import set_markdown
 from mkapi.objects import (
     Attribute,
     Class,
@@ -21,6 +20,7 @@ from mkapi.objects import (
     is_member,
     iter_objects,
 )
+from mkapi.parsers import set_markdown
 from mkapi.signatures import get_signature
 
 if TYPE_CHECKING:

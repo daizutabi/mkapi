@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import mkapi.ast
 import mkapi.nodes
 from mkapi.ast import is_classmethod, is_function, is_property, is_staticmethod
-from mkapi.nodes import Import, _parse, is_dataclass
+from mkapi.nodes import Import, _parse, is_dataclass, resolve, resolve_from_module
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -52,8 +52,9 @@ class Object:
     kind: str = field(init=False)
 
     def __post_init__(self):
-        self.kind = get_kind(self)
-        objects[self.name] = self
+        self.kind = _get_kind(self)
+        fullname = _get_fullname(self)
+        objects[fullname] = self
 
     def __repr__(self) -> str:
         fullname = f"{self.module}.{self.qualname}"
@@ -103,7 +104,7 @@ class Module:
     kind: str = field(init=False)
 
     def __post_init__(self):
-        self.kind = get_kind(self)
+        self.kind = _get_kind(self)
         objects[self.name] = self
 
     def __repr__(self) -> str:
@@ -120,7 +121,7 @@ class _Module:
     kind: str = field(init=False)
 
     def __post_init__(self):
-        self.kind = get_kind(self)
+        self.kind = _get_kind(self)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
@@ -131,8 +132,6 @@ def _create_object(node: ast.AST, module: str, parent: str | None) -> Object | N
         return create_class(node, module, parent)
 
     if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-        if node.name == "from_pandas":
-            print(node.name)
         if is_function(node):
             return create_function(node, module, parent)
 
@@ -357,6 +356,43 @@ def get_source(obj: Module | Object) -> str | None:
     return None
 
 
+def resolve_from_object(
+    name: str,
+    obj: Module | Object,
+) -> str | None:
+    """Return fullname from object."""
+    if isinstance(obj, Module | Class | Function):
+        for name_, child in obj.dict.items():
+            if name_ == name:
+                return _get_fullname(child)
+
+    if isinstance(obj, Module):
+        return resolve_from_module(name, obj.name)
+
+    if "." not in name:
+        return resolve_from_module(name, obj.module)
+
+    parent, attr = name.rsplit(".", maxsplit=1)
+
+    if parent_obj := objects.get(parent):
+        return resolve_from_object(name, parent_obj)
+
+    if obj.name == parent:
+        return resolve_from_object(attr, obj)
+
+    return resolve(name)
+
+
+def _get_fullname(obj: Module | Object | Import) -> str:
+    if isinstance(obj, Module):
+        return f"{obj.name}"
+
+    if isinstance(obj, Object):
+        return f"{obj.module}.{obj.name}"
+
+    return obj.fullname  # import
+
+
 def _get_kind_function(func: Function) -> str:
     if is_classmethod(func.node):
         return "classmethod"
@@ -367,7 +403,7 @@ def _get_kind_function(func: Function) -> str:
     return "method" if "." in func.qualname else "function"
 
 
-def get_kind(obj: Object | Module | _Module) -> str:
+def _get_kind(obj: Object | Module | _Module) -> str:
     """Return kind."""
     if isinstance(obj, Module | _Module):
         return "package" if is_package(obj.name) else "module"

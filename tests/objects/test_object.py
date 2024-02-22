@@ -5,8 +5,8 @@ from mkapi.objects import (
     Class,
     Function,
     Module,
+    _get_kind,
     create_module,
-    get_kind,
     get_source,
     walk,
 )
