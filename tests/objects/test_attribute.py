@@ -42,7 +42,7 @@ def test_merge_attributes_comment():
     assert len(list(walk(module))) == 11
     it = [child for child in walk(module) if isinstance(child, Attribute)]
     assert len(it) == 8
-    _add_doc_comment(it, module.source)
+    _add_doc_comment(it, source)
     for a in it:
         if a.name == "attr5":
             assert not a.doc
@@ -66,7 +66,9 @@ def test_iter_init_attributes(get):
     assert isinstance(node, ast.ClassDef)
     cls = create_class(node, "", None)
     assert isinstance(cls, Class)
-    x = list(iter_init_attributes(cls))
+    func = cls.get("__init__")
+    assert isinstance(func, Function)
+    x = list(iter_init_attributes(func, cls.qualname))
     for k, (name, attr) in enumerate(x, 1):
         assert name == f"attr{k}"
         assert attr.name == f"attr{k}"

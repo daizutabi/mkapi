@@ -1,4 +1,5 @@
 import datetime
+import importlib
 import sys
 import time
 from collections import namedtuple
@@ -14,6 +15,7 @@ from mkapi.utils import (
     get_by_kind,
     get_by_name,
     get_by_type,
+    get_module_name,
     get_module_node,
     get_module_node_source,
     get_module_path,
@@ -207,3 +209,10 @@ def test_iter_identifiers():
     assert ("Sequence", True) in x
     assert ("'Series'", False) in x
     assert ("pandas.DataFrame", True) in x
+
+
+def test_get_module_name():
+    name = "_collections_abc"
+    abc = importlib.import_module(name)
+    assert abc.__name__ == "collections.abc"
+    assert get_module_name(name) == "collections.abc"

@@ -1,8 +1,11 @@
 import ast
 
 from mkapi.nodes import (
+    Object,
+    _get_fullname,
     _iter_imports_from_import,
     _iter_imports_from_import_from,
+    _parse,
     get_all_names,
     has_decorator,
     iter_decorator_names,
@@ -90,3 +93,13 @@ def test_get_decorator():
     assert isinstance(node, ast.FunctionDef)
     assert has_decorator(node, "d", "")
     assert not has_decorator(node, "x", "")
+
+
+def test_get_fullname():
+    src = "from collections.abc import Iterator"
+    node = ast.parse(src)
+    name, obj = _parse(node, "")[0]
+    assert name == "Iterator"
+    assert isinstance(obj, Object)
+    assert obj.module == "_collections_abc"
+    assert _get_fullname(obj) == "collections.abc.Iterator"

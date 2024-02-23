@@ -159,6 +159,7 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
     node = ast.parse(source)
     mtime = path.stat().st_mtime if path else 0
     module_cache[name] = mtime
+
     return node, source
 
 
@@ -166,6 +167,15 @@ def get_module_node(name: str) -> ast.Module | None:
     """Return an [ast.Module] instance from a module name."""
     if node_source := get_module_node_source(name):
         return node_source[0]
+
+    return None
+
+
+def get_module_source(name: str) -> str | None:
+    """Return an [ast.Module] instance from a module name."""
+    if node_source := get_module_node_source(name):
+        return node_source[1]
+
     return None
 
 
