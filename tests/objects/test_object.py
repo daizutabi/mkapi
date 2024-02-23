@@ -87,6 +87,15 @@ def test_kind():
     assert assign.kind == "attribute"
 
 
+def test_get_members():
+    module = create_module("mkapi.objects")
+    module = create_module("schemdraw")
+    assert module
+    # for a in module.objects(Class):
+    #     print(a)
+    # assert 0
+
+
 # def test_iter_objects():
 #     """'''test module.'''
 #     m: str

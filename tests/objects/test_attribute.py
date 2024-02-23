@@ -5,12 +5,11 @@ from mkapi.objects import (
     Attribute,
     Class,
     Function,
-    _add_doc_comment,
     _create_module,
+    _get_doc_comment,
     create_class,
     create_module,
     iter_init_attributes,
-    walk,
 )
 
 
@@ -32,18 +31,14 @@ def test_merge_attributes_comment():
         """attr2"""
         def __init__(self):
             self.attr3 = [1]  #: attr3
-            self.attr4: str
+            self.attr4: str  #: xxx
             """attr4"""
             self.attr5: float
     '''
     source = inspect.cleandoc(src)
     node = ast.parse(source)
     module = _create_module("a", node, source)
-    assert len(list(walk(module))) == 11
-    it = [child for child in walk(module) if isinstance(child, Attribute)]
-    assert len(it) == 8
-    _add_doc_comment(it, source)
-    for a in it:
+    for a in module.iter_objects(Attribute):
         if a.name == "attr5":
             assert not a.doc
         else:

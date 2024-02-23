@@ -5,7 +5,7 @@ import ast
 import importlib
 import inspect
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, TypeGuard
+from typing import TYPE_CHECKING, TypeGuard, TypeVar
 
 import mkapi.ast
 import mkapi.nodes
@@ -91,6 +91,9 @@ class Property(Member):
     type: ast.expr | None
 
 
+T = TypeVar("T")
+
+
 @dataclass(repr=False)
 class Dict(Object):
     dict: dict[str, Object]
@@ -104,6 +107,17 @@ class Dict(Object):
 
     def get(self, name) -> Object | None:
         return self.dict.get(name)
+
+    def objects(self, type_: type[T]) -> list[tuple[str, T]]:
+        it = self.dict.items()
+        return [(name, obj) for (name, obj) in it if isinstance(obj, type_)]
+
+    def iter_objects(self, type_: type[T] = type[Object]) -> Iterator[T]:
+        for obj in self.dict.values():
+            if isinstance(obj, type_):
+                yield obj
+            if isinstance(obj, Dict):
+                yield from obj.iter_objects(type_)
 
 
 @dataclass(repr=False)
@@ -281,14 +295,29 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
 
     module = Module(name, node, doc, dict_)
 
-    def predicate(obj: Object) -> TypeGuard[Attribute]:
-        return isinstance(obj, Attribute) and obj.module == name
-
     if source:
-        it = (child for child in walk(module) if predicate(child))
-        _add_doc_comment(it, source)
+        lines = source.splitlines()
+        for attr in module.iter_objects(Attribute):
+            if attr.doc or attr.module != name:
+                continue
+            if doc := _get_doc_comment(attr.node, lines):
+                attr.doc = doc
 
     return module
+
+
+def _get_doc_comment(node: ast.AST, lines: list[str]) -> str | None:
+    line = lines[node.lineno - 1][node.end_col_offset :].strip()
+
+    if line.startswith("#:"):
+        return line[2:].strip()
+
+    if node.lineno > 1:
+        line = lines[node.lineno - 2][node.col_offset :]
+        if line.startswith("#:"):
+            return line[2:].strip()
+
+    return None
 
 
 @cache
@@ -297,36 +326,6 @@ def create_module(name: str) -> Module | None:
         return None
 
     return _create_module(name, *node_source)
-
-
-def walk(obj: Dict) -> Iterator[Object]:
-    yield obj
-
-    for member in obj.dict.values():
-        if isinstance(member, Dict):
-            yield from walk(member)
-        else:
-            yield member
-
-
-def _add_doc_comment(assigns: Iterable[Attribute], source: str) -> None:
-    lines = source.splitlines()
-
-    for assign in assigns:
-        if assign.doc:
-            continue
-
-        node = assign.node
-
-        line = lines[node.lineno - 1][node.end_col_offset :].strip()
-
-        if line.startswith("#:"):
-            assign.doc = line[2:].strip()
-
-        elif node.lineno > 1:
-            line = lines[node.lineno - 2][node.col_offset :]
-            if line.startswith("#:"):
-                assign.doc = line[2:].strip()
 
 
 @cache
