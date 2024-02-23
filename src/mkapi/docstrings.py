@@ -106,6 +106,9 @@ class Item:
     type: str
     text: str
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r})"
+
 
 TYPE_STRING_PATTERN = re.compile(r"\[__mkapi__.(\S+?)\]\[\]")
 
@@ -167,7 +170,7 @@ def _subsplit(text: str, style: Style) -> list[str]:
 SECTION_NAMES: list[tuple[str, ...]] = [
     ("Parameters", "Parameter", "Params", "Param"),
     ("Parameters", "Arguments", "Argument", "Args", "Arg"),
-    ("Assigns", "Assign", "Attributes", "Attribute", "Attrs", "Attr"),
+    ("Attributes", "Attribute", "Attrs", "Attr"),
     ("Returns", "Return"),
     ("Raises", "Raise"),
     ("Yields", "Yield"),

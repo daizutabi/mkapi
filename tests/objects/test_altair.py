@@ -1,4 +1,4 @@
-from mkapi.objects import _get_fullname, get_object
+from mkapi.objects import get_fullname, get_object
 
 
 def test_get_object():
@@ -7,4 +7,4 @@ def test_get_object():
     assert get_object("altair.pd")
     obj = get_object("altair.Type")
     assert obj
-    assert _get_fullname(obj) == "altair.vegalite.v5.schema.core.Type"
+    assert get_fullname(obj) == "altair.vegalite.v5.schema.core.Type"
