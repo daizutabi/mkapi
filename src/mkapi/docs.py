@@ -262,13 +262,17 @@ class Section(Item):
 def _create_admonition(name: str, text: str) -> Section:
     if name.startswith("Note"):
         kind = "note"
+
     elif name.startswith("Warning"):
         kind = "warning"
+
     elif name.startswith("See Also"):
         kind = "info"
         text = mkapi.markdown.get_see_also(text)
+
     else:
         raise NotImplementedError
+
     text = mkapi.markdown.get_admonition(kind, name, text)
     return Section("", "", text, [])
 
@@ -293,7 +297,7 @@ def iter_sections(text: str, style: Style) -> Iterator[Section]:
 
 @dataclass
 class Doc(Item):
-    """Docstring class."""
+    """Doc class."""
 
     sections: list[Section]
 
@@ -301,10 +305,10 @@ class Doc(Item):
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
 
 
-def parse(text: str | None, style: Style | None = None) -> Doc:
-    """Return a [Docstring] instance."""
+def create_doc(text: str | None, style: Style | None = None) -> Doc:
+    """Return a [Doc] instance."""
     if not text:
-        return Doc("Docstring", "", "", [])
+        return Doc("Doc", "", "", [])
 
     style = style or get_style(text)
 
@@ -322,69 +326,94 @@ def parse(text: str | None, style: Style | None = None) -> Doc:
         type_ = ""
         text_ = ""
 
-    return Doc("Docstring", type_, text_, sections)
+    return Doc("Doc", type_, text_, sections)
 
 
-def iter_merged_items(la: list[Item], lb: list[Item]) -> Iterator[Item]:
+def create_doc_comment(text: str) -> Doc:
+    type_, text = split_item_without_name(text, "google")
+    return Doc("Doc", type_, text, [])
+
+
+def split_type(doc: Doc) -> None:
+    if not doc.type and doc.text:
+        doc.type, doc.text = split_item_without_name(doc.text, "google")
+
+
+def create_summary_item(name: str, doc: Doc, type_: str = ""):
+    text = doc.text.split("\n\n")[0]  # summary line
+    return Item(name, type_, text)
+
+
+def merge_items(a: Item, b: Item) -> Item:
+    type_ = a.type or b.type
+    text = f"{a.text}\n\n{b.text}".strip()
+    return Item(a.name, type_, text)
+
+
+def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
     """Yield merged [Item] instances."""
-    for name in unique_names(la, lb):
-        a, b = get_by_name(la, name), get_by_name(lb, name)
-        if a and not b:
-            yield a
-        elif not a and b:
-            yield b
-        elif isinstance(a, Item) and isinstance(b, Item):
-            a.name = a.name or b.name
-            a.type = a.type or b.type
-            a.text = a.text or b.text
-            yield a
+    for name in unique_names(a, b):
+        ai, bi = get_by_name(a, name), get_by_name(b, name)
+
+        if ai and not bi:
+            yield ai
+
+        elif not ai and bi:
+            yield bi
+
+        elif ai and bi:
+            yield merge_items(ai, bi)
 
 
 def merge_sections(a: Section, b: Section) -> Section:
     """Merge two [Section] instances into one [Section] instance."""
-    if a.name != b.name:
-        raise ValueError
-
-    type_ = a.type if a.type else b.type
+    type_ = a.type or b.type
     text = f"{a.text}\n\n{b.text}".strip()
-    return Section(a.name, type_, text, list(iter_merged_items(a.items, b.items)))
+    items = iter_merged_items(a.items, b.items)
+    return Section(a.name, type_, text, list(items))
 
 
-def iter_merge_sections(a: list[Section], b: list[Section]) -> Iterator[Section]:
+def iter_merged_sections(a: list[Section], b: list[Section]) -> Iterator[Section]:
     """Yield merged [Section] instances from two lists of [Section]."""
+    index = 0
+    for ai in a:
+        index += 1
+        if ai.name:
+            break
+
+        yield ai
+
     for name in unique_names(a, b):
         if name:
             ai, bi = get_by_name(a, name), get_by_name(b, name)
             if ai and not bi:
                 yield ai
+
             elif not ai and bi:
                 yield bi
+
             elif ai and bi:
                 yield merge_sections(ai, bi)
+
+    for ai in a[index + 1 :]:
+        if not ai.name:
+            yield ai
+
+    for bi in b:
+        if not bi.name:
+            yield bi
 
 
 def merge(a: Doc, b: Doc) -> Doc:
     """Merge two [Docstring] instances into one [Docstring] instance."""
-    sections: list[Section] = []
-    for ai in a.sections:
-        if ai.name:
-            break
-        sections.append(ai)
-    sections.extend(iter_merge_sections(a.sections, b.sections))
-    is_named_section = False
-    for section in a.sections:
-        if section.name:  # already collected, so skip.
-            is_named_section = True
-        elif is_named_section:
-            sections.append(section)
-    sections.extend(s for s in b.sections if not s.name)
-    type_ = a.type  # if a.type.expr else b.type
+    type_ = a.type or b.type
     text = f"{a.text}\n\n{b.text}".strip()
-    return Doc("Docstring", type_, text, sections)
+    sections = iter_merged_sections(a.sections, b.sections)
+    return Doc("Doc", type_, text, list(sections))
 
 
 def is_empty(doc: Doc) -> bool:
-    """Return True if a [Docstring] instance is empty."""
+    """Return True if a [Doc] instance is empty."""
     if doc.text:
         return False
 
@@ -397,8 +426,3 @@ def is_empty(doc: Doc) -> bool:
                 return False
 
     return True
-
-
-def create_summary_item(name: str, doc: Doc, type_: str = ""):
-    text = doc.text.split("\n\n")[0]  # summary line
-    return Item(name, type_, text)

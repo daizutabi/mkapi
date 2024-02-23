@@ -10,6 +10,7 @@ import mkapi.ast
 import mkapi.nodes
 import mkapi.utils
 from mkapi.ast import is_classmethod, is_function, is_property, is_staticmethod
+from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
 from mkapi.nodes import _parse, is_dataclass, resolve, resolve_from_module
 from mkapi.utils import (
     cache,
@@ -30,6 +31,8 @@ except ImportError:
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from inspect import _ParameterKind
+
+    from mkapi.docs import Doc
 
 
 @dataclass
@@ -61,12 +64,19 @@ def _register_object(obj: Object, name: str | None = None):
 class Object:
     name: str
     node: ast.AST
-    doc: str | None
+    doc: Doc = field(init=False)
     kind: str = field(init=False)
 
     def __post_init__(self):
         self.kind = get_kind(self)
         _register_object(self)
+
+        if isinstance(self.node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module):
+            text = ast.get_docstring(self.node)
+        else:
+            text = self.node.__doc__
+
+        self.doc = create_doc(text)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
@@ -79,16 +89,23 @@ class Member(Object):
 
 
 @dataclass(repr=False)
-class Attribute(Member):
-    node: ast.AnnAssign | ast.Assign | TypeAlias  # type: ignore
+class Type(Member):
     type: ast.expr | None
+
+    def __post_init__(self):
+        super().__post_init__()
+        split_type(self.doc)
+
+
+@dataclass(repr=False)
+class Attribute(Type):
+    node: ast.AnnAssign | ast.Assign | TypeAlias  # type: ignore
     default: ast.expr | None
 
 
 @dataclass(repr=False)
-class Property(Member):
+class Property(Type):
     node: ast.FunctionDef | ast.AsyncFunctionDef
-    type: ast.expr | None
 
 
 T = TypeVar("T")
@@ -167,7 +184,6 @@ def _iter_objects(node: ast.AST, module: str, parent: str) -> Iterator[Object]:
 
 
 def create_class(node: ast.ClassDef, module: str, parent: str | None) -> Class:
-    doc = ast.get_docstring(node)
     qualname = f"{parent}.{node.name}" if parent else node.name
     dict_ = {obj.name: obj for obj in _iter_objects(node, module, qualname)}
 
@@ -179,7 +195,7 @@ def create_class(node: ast.ClassDef, module: str, parent: str | None) -> Class:
         for name, obj in base.dict.items():
             dict_.setdefault(name, obj)
 
-    cls = Class(node.name, node, doc, dict_, qualname, module, [], [])
+    cls = Class(node.name, node, dict_, qualname, module, [], [])
 
     if is_dataclass(node, module):
         params = iter_dataclass_parameters(cls)
@@ -249,14 +265,13 @@ def create_function(
     module: str,
     parent: str | None,
 ) -> Function:
-    doc = ast.get_docstring(node)
     qualname = f"{parent}.{node.name}" if parent else node.name
     dict_ = {obj.name: obj for obj in _iter_objects(node, module, qualname)}
 
     params = [Parameter(*args) for args in mkapi.ast.iter_parameters(node)]
     raises = list(mkapi.ast.iter_raises(node))
 
-    return Function(node.name, node, doc, dict_, qualname, module, params, raises)
+    return Function(node.name, node, dict_, qualname, module, params, raises)
 
 
 def create_property(
@@ -264,10 +279,9 @@ def create_property(
     module: str,
     parent: str | None,
 ) -> Property:
-    doc = ast.get_docstring(node)
     qualname = f"{parent}.{node.name}" if parent else node.name
 
-    return Property(node.name, node, doc, qualname, module, node.returns)
+    return Property(node.name, node, qualname, module, node.returns)
 
 
 def create_attribute(
@@ -276,13 +290,12 @@ def create_attribute(
     module: str,
     parent: str | None,
 ) -> Attribute:
-    doc = node.__doc__
     qualname = f"{parent}.{name}" if parent else name
 
     type_ = mkapi.ast.get_assign_type(node)
     default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
 
-    return Attribute(name, node, doc, qualname, module, type_, default)
+    return Attribute(name, node, qualname, module, type_, default)
 
 
 def _create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
@@ -291,34 +304,34 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
     dict_ = {}
     for name_, child in _parse(node, name):
         if isinstance(child, mkapi.nodes.Module):
-            dict_[name_] = Module(child.name, child.node, None, {})
+            dict_[name_] = Module(child.name, child.node, {})
 
         elif obj := _create_object(child.node, child.module, None):
             dict_[name_] = obj
 
-    module = Module(name, node, doc, dict_)
+    module = Module(name, node, dict_)
 
     if source:
         lines = source.splitlines()
         for attr in module.iter_objects(Attribute):
-            if attr.doc or attr.module != name:
+            if not is_empty(attr.doc) or attr.module != name:
                 continue
-            if doc := _get_doc_comment(attr.node, lines):
+            if doc := _get_doc_from_comment(attr.node, lines):
                 attr.doc = doc
 
     return module
 
 
-def _get_doc_comment(node: ast.AST, lines: list[str]) -> str | None:
+def _get_doc_from_comment(node: ast.AST, lines: list[str]) -> Doc | None:
     line = lines[node.lineno - 1][node.end_col_offset :].strip()
 
     if line.startswith("#:"):
-        return line[2:].strip()
+        return create_doc_comment(line[2:].strip())
 
     if node.lineno > 1:
         line = lines[node.lineno - 2][node.col_offset :]
         if line.startswith("#:"):
-            return line[2:].strip()
+            return create_doc_comment(line[2:].strip())
 
     return None
 

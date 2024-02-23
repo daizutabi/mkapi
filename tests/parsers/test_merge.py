@@ -1,17 +1,18 @@
 import ast
 import inspect
 
-from mkapi.docs import parse
-from mkapi.objects import create_module
+from mkapi.docs import create_doc
+from mkapi.objects import Attribute, create_module
 from mkapi.utils import get_by_name, get_by_type
 
 
 def test_module_attribute():
     module = create_module("examples.styles.google")
     assert module
-    doc = parse(module.doc)
-    for section in doc.sections:
+    for section in module.doc.sections:
         print(section)
+    for name, x in module.objects(Attribute):
+        print(x, x.doc.text)
     # for attr in module.
     #     print(section)
     assert 0

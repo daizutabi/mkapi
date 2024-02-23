@@ -3,9 +3,9 @@ import ast
 from mkapi.docs import (
     _iter_items,
     _iter_sections,
+    create_doc,
     iter_items,
     merge,
-    parse,
     split_item,
     split_section,
 )
@@ -115,14 +115,14 @@ def test_iter_items_class(google, get, get_node):
 
 
 def test_parse(google):
-    doc = parse(ast.get_docstring(google), "google")  # type: ignore
+    doc = create_doc(ast.get_docstring(google), "google")  # type: ignore
     assert doc.text.startswith("Example Google style docstrings.")
     assert doc.sections[0].name == "Example"
 
 
 def test_merge(google, get, get_node):
-    a = parse(get(google, "ExampleClass"))
-    b = parse(get(get_node(google, "ExampleClass"), "__init__"))
+    a = create_doc(get(google, "ExampleClass"))
+    b = create_doc(get(get_node(google, "ExampleClass"), "__init__"))
     doc = merge(a, b)
     assert doc.text
     assert doc.text.startswith("The summary line")
@@ -131,5 +131,5 @@ def test_merge(google, get, get_node):
 
 
 def test_repr(google):
-    r = repr(parse(ast.get_docstring(google), "google"))  # type: ignore
+    r = repr(create_doc(ast.get_docstring(google), "google"))  # type: ignore
     assert r == "Doc(sections=5)"
