@@ -3,7 +3,7 @@ import inspect
 
 import pytest
 
-from mkapi.docstrings import is_empty, iter_merge_sections, iter_merged_items, merge_sections, parse
+from mkapi.docs import is_empty, iter_merge_sections, iter_merged_items, merge_sections, parse
 from mkapi.objects import Function, _create_module
 from mkapi.utils import get_by_name
 

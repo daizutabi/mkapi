@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import ast
-import importlib
 import inspect
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, TypeGuard, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import mkapi.ast
 import mkapi.nodes
+import mkapi.utils
 from mkapi.ast import is_classmethod, is_function, is_property, is_staticmethod
 from mkapi.nodes import _parse, is_dataclass, resolve, resolve_from_module
 from mkapi.utils import (
@@ -28,7 +28,7 @@ except ImportError:
     TypeAlias = None
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterator
     from inspect import _ParameterKind
 
 
@@ -116,6 +116,7 @@ class Dict(Object):
         for obj in self.dict.values():
             if isinstance(obj, type_):
                 yield obj
+
             if isinstance(obj, Dict):
                 yield from obj.iter_objects(type_)
 
@@ -138,7 +139,7 @@ class Function(Callable):
 
 @dataclass(repr=False)
 class Module(Dict):
-    node: ast.Module | None
+    node: ast.Module
 
 
 def _create_object(node: ast.AST, module: str, parent: str | None) -> Object | None:
@@ -226,7 +227,9 @@ def iter_init_attributes(func: Function, parent: str) -> Iterator[tuple[str, Att
 
 
 def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
-    if (obj := _get_object(cls.name, cls.module)) and inspect.isclass(obj):
+    obj = mkapi.utils.get_object(cls.name, cls.module)
+
+    if inspect.isclass(obj):
         for param in inspect.signature(obj).parameters.values():
             if (assign := cls.get(param.name)) and isinstance(assign, Attribute):
                 args = (assign.name, assign.type, assign.default)
@@ -328,22 +331,12 @@ def create_module(name: str) -> Module | None:
     return _create_module(name, *node_source)
 
 
-@cache
-def _get_object(name: str, module: str) -> object | None:
-    try:
-        obj = importlib.import_module(module)
-    except ModuleNotFoundError:
-        return
-
-    members = dict(inspect.getmembers(obj))
-    return members.get(name)
-
-
 def _iter_base_classes(name: str, module: str) -> Iterator[tuple[str, str]]:
     if not module:
         return
 
-    if (obj := _get_object(name, module)) and inspect.isclass(obj):
+    obj = mkapi.utils.get_object(name, module)
+    if inspect.isclass(obj):
         for base in obj.__bases__:
             if base.__module__ != "builtins":
                 basename = next(iter_identifiers(base.__name__))[0]
@@ -389,20 +382,10 @@ def get_fullname(obj: Object) -> str:
         return get_module_name(obj.name)
 
     if isinstance(obj, Member):
-        module = get_module_name(obj.module) if obj.module else "__mkapi__"
+        module = get_module_name(obj.module)
         return f"{module}.{obj.qualname}"
 
     return obj.name
-
-
-def _get_kind_function(func: Function) -> str:
-    if is_classmethod(func.node):
-        return "classmethod"
-
-    if is_staticmethod(func.node):
-        return "staticmethod"
-
-    return "method" if "." in func.qualname else "function"
 
 
 def get_kind(obj: Object | Module) -> str:
@@ -414,7 +397,13 @@ def get_kind(obj: Object | Module) -> str:
         return "dataclass" if is_dataclass(obj.node, obj.module) else "class"
 
     if isinstance(obj, Function):
-        return _get_kind_function(obj)
+        if is_classmethod(obj.node):
+            return "classmethod"
+
+        if is_staticmethod(obj.node):
+            return "staticmethod"
+
+        return "method" if "." in obj.qualname else "function"
 
     return obj.__class__.__name__.lower()
 
@@ -428,15 +417,3 @@ def get_source(obj: Module | Member) -> str | None:
         return ast.get_source_segment(source, obj.node)
 
     return None
-
-
-# def is_empty(obj: Object) -> bool:
-#     """Return True if a [Object] instance is empty."""
-#     if isinstance(obj, Attribute) and not obj.doc.sections:
-#         return True
-
-#     if not docstrings.is_empty(obj.doc):
-#         return False
-
-#     if isinstance(obj, Function) and obj.name.str.startswith("_"):
-#         return True

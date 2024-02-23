@@ -1,6 +1,6 @@
 import ast
 
-from mkapi.docstrings import (
+from mkapi.docs import (
     _iter_items,
     _iter_sections,
     iter_items,
@@ -45,7 +45,7 @@ def test_iter_sections(google):
     assert sections[1][1].endswith("google.py")
     assert sections[2][1].startswith("Section breaks")
     assert sections[2][1].endswith("section starts.")
-    assert sections[3][0] == "Assigns"
+    assert sections[3][0] == "Attributes"
     assert sections[3][1].startswith("module_level_")
     assert sections[3][1].endswith("with it.")
     assert sections[4][0] == "Todo"
@@ -132,4 +132,4 @@ def test_merge(google, get, get_node):
 
 def test_repr(google):
     r = repr(parse(ast.get_docstring(google), "google"))  # type: ignore
-    assert r == "Docstring(sections=5)"
+    assert r == "Doc(sections=5)"

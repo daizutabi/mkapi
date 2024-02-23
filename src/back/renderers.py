@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, TypeAlias
 from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
-from mkapi.docstrings import Docstring, create_summary_item
+from mkapi.docs import Doc, create_summary_item
 from mkapi.items import Name, Section, Text, Type
 from mkapi.objects import (
     Attribute,
@@ -68,7 +68,7 @@ def render_object(obj: Object) -> str:
     return templates["object"].render(obj=obj, qualnames=qualnames, signature=signature)
 
 
-def render_document(doc: Docstring) -> str:
+def render_document(doc: Doc) -> str:
     return templates["document"].render(doc=doc)
 
 
@@ -139,9 +139,9 @@ def render(
     return "\n\n".join(markdowns)
 
 
-def _create_summary_docstring(obj: Module | Class) -> Docstring | None:
+def _create_summary_docstring(obj: Module | Class) -> Doc | None:
     if sections := list(_iter_summary_sections(obj)):
-        return Docstring(Name(), Type(), Text(), sections)
+        return Doc(Name(), Type(), Text(), sections)
     return None
 
 

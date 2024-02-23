@@ -6,7 +6,6 @@ from mkapi.objects import (
     Class,
     Function,
     _create_module,
-    _get_doc_comment,
     create_class,
     create_module,
     iter_init_attributes,

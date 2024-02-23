@@ -70,6 +70,9 @@ def get_module_path(name: str) -> Path | None:
 
 @cache
 def get_module_name(module: str) -> str:
+    if not module:
+        return ""
+
     try:
         return importlib.import_module(module).__name__
     except ModuleNotFoundError:
@@ -192,6 +195,17 @@ def iter_parent_module_names(fullname: str, *, reverse: bool = False) -> Iterato
     it = range(len(names), 0, -1) if reverse else range(1, len(names) + 1)
     for k in it:
         yield ".".join(names[:k])
+
+
+@cache
+def get_object(name: str, module: str) -> object | None:
+    try:
+        obj = importlib.import_module(module)
+    except ModuleNotFoundError:
+        return
+
+    members = dict(inspect.getmembers(obj))
+    return members.get(name)
 
 
 T = TypeVar("T")

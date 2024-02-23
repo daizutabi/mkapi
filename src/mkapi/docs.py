@@ -276,7 +276,7 @@ def _create_admonition(name: str, text: str) -> Section:
 def iter_sections(text: str, style: Style) -> Iterator[Section]:
     """Yield [Section] instances by splitting a docstring."""
     for name, text_ in _iter_sections(text, style):
-        if name in ["Parameters", "Assigns", "Raises"]:
+        if name in ["Parameters", "Attributes", "Raises"]:
             items = list(iter_items(text_, style))
             yield Section(name, "", "", items)
 
@@ -292,7 +292,7 @@ def iter_sections(text: str, style: Style) -> Iterator[Section]:
 
 
 @dataclass
-class Docstring(Item):
+class Doc(Item):
     """Docstring class."""
 
     sections: list[Section]
@@ -301,10 +301,10 @@ class Docstring(Item):
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
 
 
-def parse(text: str | None, style: Style | None = None) -> Docstring:
+def parse(text: str | None, style: Style | None = None) -> Doc:
     """Return a [Docstring] instance."""
     if not text:
-        return Docstring("Docstring", "", "", [])
+        return Doc("Docstring", "", "", [])
 
     style = style or get_style(text)
 
@@ -322,7 +322,7 @@ def parse(text: str | None, style: Style | None = None) -> Docstring:
         type_ = ""
         text_ = ""
 
-    return Docstring("Docstring", type_, text_, sections)
+    return Doc("Docstring", type_, text_, sections)
 
 
 def iter_merged_items(la: list[Item], lb: list[Item]) -> Iterator[Item]:
@@ -363,7 +363,7 @@ def iter_merge_sections(a: list[Section], b: list[Section]) -> Iterator[Section]
                 yield merge_sections(ai, bi)
 
 
-def merge(a: Docstring, b: Docstring) -> Docstring:
+def merge(a: Doc, b: Doc) -> Doc:
     """Merge two [Docstring] instances into one [Docstring] instance."""
     sections: list[Section] = []
     for ai in a.sections:
@@ -380,10 +380,10 @@ def merge(a: Docstring, b: Docstring) -> Docstring:
     sections.extend(s for s in b.sections if not s.name)
     type_ = a.type  # if a.type.expr else b.type
     text = f"{a.text}\n\n{b.text}".strip()
-    return Docstring("Docstring", type_, text, sections)
+    return Doc("Docstring", type_, text, sections)
 
 
-def is_empty(doc: Docstring) -> bool:
+def is_empty(doc: Doc) -> bool:
     """Return True if a [Docstring] instance is empty."""
     if doc.text:
         return False
@@ -399,6 +399,6 @@ def is_empty(doc: Docstring) -> bool:
     return True
 
 
-def create_summary_item(name: str, doc: Docstring, type_: str = ""):
+def create_summary_item(name: str, doc: Doc, type_: str = ""):
     text = doc.text.split("\n\n")[0]  # summary line
     return Item(name, type_, text)

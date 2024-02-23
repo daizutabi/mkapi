@@ -1,6 +1,6 @@
 import ast
 
-from mkapi.docstrings import (
+from mkapi.docs import (
     _iter_items,
     _iter_sections,
     iter_items,
@@ -45,7 +45,7 @@ def test_iter_sections(numpy):
     assert sections[3][1].endswith("surrounding text.")
     assert sections[4][1].startswith("If a section")
     assert sections[4][1].endswith("unindented text.")
-    assert sections[5][0] == "Assigns"
+    assert sections[5][0] == "Attributes"
     assert sections[5][1].startswith("module_level")
     assert sections[5][1].endswith("with it.")
     assert sections[6][1].startswith("..")
