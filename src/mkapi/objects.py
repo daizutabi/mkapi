@@ -5,7 +5,7 @@ import ast
 import importlib
 import inspect
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeGuard
 
 import mkapi.ast
 import mkapi.nodes
@@ -13,9 +13,12 @@ from mkapi.ast import is_classmethod, is_function, is_property, is_staticmethod
 from mkapi.nodes import Import, _parse, is_dataclass, resolve, resolve_from_module
 from mkapi.utils import (
     cache,
+    get_module_name,
     get_module_node,
     get_module_node_source,
     is_package,
+    iter_identifiers,
+    iter_parent_module_names,
 )
 
 try:
@@ -39,7 +42,7 @@ class Parameter:
         return f"{self.__class__.__name__}({self.name!r})"
 
 
-objects: dict[str, Module | Object] = cache({})
+objects: dict[str, Module | Class | Function | Attribute | Property] = cache({})
 
 
 @dataclass(repr=False)
@@ -54,7 +57,7 @@ class Object:
     def __post_init__(self):
         self.kind = _get_kind(self)
         fullname = _get_fullname(self)
-        objects[fullname] = self
+        objects[fullname] = self  # type: ignore
 
     def __repr__(self) -> str:
         fullname = f"{self.module}.{self.qualname}"
@@ -164,12 +167,16 @@ def create_class(node: ast.ClassDef, module: str, parent: str | None) -> Class:
 
     cls = Class(node.name, node, qualname, module, doc, [], [], dict_)
 
-    if is_dataclass(node, module):  # noqa: SIM108
+    if is_dataclass(node, module):
         params = iter_dataclass_parameters(cls)
+        cls.parameters.extend(params)
+
     else:
         params = iter_init_parameters(cls)
+        cls.parameters.extend(params)
 
-    cls.parameters = list(params)
+        for name, attr in iter_init_attributes(cls):
+            cls.dict.setdefault(name, attr)
 
     return cls
 
@@ -197,11 +204,6 @@ def _create_base_class(name: str, module: str) -> Class | None:
     return None
 
 
-def iter_init_parameters(cls: Class) -> Iterator[Parameter]:
-    if (func := cls.get("__init__")) and isinstance(func, Function):
-        yield from func.parameters[1:]
-
-
 def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
     if (obj := _get_object(cls.name, cls.module)) and inspect.isclass(obj):
         for param in inspect.signature(obj).parameters.values():
@@ -211,6 +213,23 @@ def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
 
             else:
                 raise NotImplementedError
+
+
+def iter_init_parameters(cls: Class) -> Iterator[Parameter]:
+    if (func := cls.get("__init__")) and isinstance(func, Function):
+        yield from func.parameters[1:]
+
+
+def iter_init_attributes(cls: Class) -> Iterator[tuple[str, Attribute]]:
+    if (func := cls.get("__init__")) and isinstance(func, Function):
+        self = func.parameters[0].name
+
+        for name, attr in list(func.dict.items()):
+            if name.startswith(f"{self}."):
+                name_ = name[len(self) + 1 :]
+                attr_ = create_attribute(name_, attr.node, attr.module, cls.name)
+                yield name_, attr_
+                del func.dict[name]
 
 
 def create_function(
@@ -270,7 +289,10 @@ def _create_module(name: str, node: ast.Module, source: str) -> Module:
 
     module = Module(name, node, doc, dict_, source)
 
-    it = (child for child in walk(module) if isinstance(child, Attribute) and child.module == name)
+    def predicate(obj: Module | Object | Import) -> TypeGuard[Attribute]:
+        return isinstance(obj, Attribute) and obj.module == name
+
+    it = (child for child in walk(module) if predicate(child))
     _add_doc_comment(it, module.source)
 
     return module
@@ -316,14 +338,6 @@ def _add_doc_comment(assigns: Iterable[Attribute], source: str) -> None:
                 assign.doc = line[2:].strip()
 
 
-# @cache
-# def _get_module_name(module: str) -> str | None:
-#     try:
-#         return importlib.import_module(module).__name__
-#     except ModuleNotFoundError:
-#         return
-
-
 @cache
 def _get_object(name: str, module: str) -> object | None:
     try:
@@ -342,16 +356,33 @@ def _iter_base_classes(name: str, module: str) -> Iterator[tuple[str, str]]:
     if (obj := _get_object(name, module)) and inspect.isclass(obj):
         for base in obj.__bases__:
             if base.__module__ != "builtins":
-                yield base.__name__, base.__module__
+                basename = next(iter_identifiers(base.__name__))[0]
+                yield basename, base.__module__
 
 
-def get_source(obj: Module | Object) -> str | None:
-    """Return the source code of an object."""
-    if isinstance(obj, Module):
-        return obj.source
+@cache
+def get_object(fullname: str) -> Module | Class | Function | Attribute | Property | None:
+    if fullname in objects:
+        return objects[fullname]
 
-    if module := create_module(obj.module):
-        return ast.get_source_segment(module.source, obj.node)
+    if "." not in fullname:
+        return None
+
+    module, name = fullname.rsplit(".", maxsplit=1)
+
+    if module_obj := create_module(module):
+        obj = module_obj.get(name)
+        if isinstance(obj, Class | Function | Attribute | Property):
+            return obj
+
+    for submodule in iter_parent_module_names(fullname):
+        if create_module(submodule) and fullname in objects:
+            return objects[fullname]
+
+    if (obj := get_object(module)) and not isinstance(obj, Attribute | Property):
+        attr = obj.get(name)
+        if isinstance(attr, Class | Function | Attribute | Property):
+            return attr
 
     return None
 
@@ -385,10 +416,11 @@ def resolve_from_object(
 
 def _get_fullname(obj: Module | Object | Import) -> str:
     if isinstance(obj, Module):
-        return f"{obj.name}"
+        return get_module_name(obj.name)
 
     if isinstance(obj, Object):
-        return f"{obj.module}.{obj.name}"
+        module = get_module_name(obj.module) if obj.module else "__mkapi__"
+        return f"{module}.{obj.qualname}"
 
     return obj.fullname  # import
 
@@ -415,6 +447,17 @@ def _get_kind(obj: Object | Module | _Module) -> str:
         return _get_kind_function(obj)
 
     return obj.__class__.__name__.lower()
+
+
+def get_source(obj: Module | Object) -> str | None:
+    """Return the source code of an object."""
+    if isinstance(obj, Module):
+        return obj.source
+
+    if module := create_module(obj.module):
+        return ast.get_source_segment(module.source, obj.node)
+
+    return None
 
 
 # def is_empty(obj: Object) -> bool:

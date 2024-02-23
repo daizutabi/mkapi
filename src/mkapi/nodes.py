@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mkapi.ast
-from mkapi.utils import cache, get_module_node, is_package, iter_parent_module_names
+from mkapi.utils import cache, get_module_name, get_module_node, is_package, iter_parent_module_names
 
 try:
     from ast import TypeAlias
@@ -183,10 +183,11 @@ def get_all_names(module: str) -> list[str]:
 
 def _get_fullname(obj: Module | Object | Import) -> str:
     if isinstance(obj, Module):
-        return f"{obj.name}"
+        return get_module_name(obj.name)
 
     if isinstance(obj, Object):
-        return f"{obj.module}.{obj.name}"
+        module = get_module_name(obj.module)
+        return f"{module}.{obj.name}"
 
     return obj.fullname  # import
 

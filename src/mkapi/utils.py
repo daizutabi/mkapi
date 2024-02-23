@@ -68,6 +68,14 @@ def get_module_path(name: str) -> Path | None:
     return path
 
 
+@cache
+def get_module_name(module: str) -> str:
+    try:
+        return importlib.import_module(module).__name__
+    except ModuleNotFoundError:
+        return module
+
+
 def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
     path_str = path.as_posix()
     for pattern in exclude_patterns:

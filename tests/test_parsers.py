@@ -194,3 +194,133 @@ def test_get_markdown_from_docstring_text():
 #     x = module.aliases[1]
 #     set_markdown(x)
 #     assert "][__mkapi__.examples.styles.ExampleClassNumPy" in x.name.markdown
+
+
+# def test_create_attribute_without_module(google):
+#     module = _create_empty_module()
+#     assigns = list(iter_assigns(google))
+#     assert len(assigns) == 2
+#     assign = get_by_name(assigns, "module_level_variable1")
+#     assert assign
+#     attr = create_attribute(assign, module, None)
+#     assert attr.name.str == "module_level_variable1"
+#     assert not attr.type.expr
+#     assert not attr.doc.text.str
+#     assign = get_by_name(assigns, "module_level_variable2")
+#     assert assign
+#     attr = create_attribute(assign, module, None)
+#     assert attr.name.str == "module_level_variable2"
+#     assert attr.type.expr
+#     assert ast.unparse(attr.type.expr) == "'int'"
+#     assert attr.doc.text.str.startswith("Module level")
+#     assert attr.doc.text.str.endswith("a colon.")
+
+
+# def test_create_property_without_module(get):
+#     node = get("ExampleClass")
+#     assert node
+#     assigns = list(iter_assigns(node))
+#     assign = get_by_name(assigns, "readonly_property")
+#     assert assign
+
+#     module = _create_empty_module()
+#     attr = create_attribute(assign, module, None)
+#     assert attr.name.str == "readonly_property"
+#     assert attr.type.expr
+#     assert ast.unparse(attr.type.expr) == "'str'"
+#     assert attr.doc.text.str.startswith("Properties should")
+#     assert attr.doc.text.str.endswith("getter method.")
+#     assign = get_by_name(assigns, "readwrite_property")
+#     assert assign
+
+#     attr = create_attribute(assign, module, None)
+#     assert attr.name.str == "readwrite_property"
+#     assert attr.type.expr
+#     assert ast.unparse(attr.type.expr) == "'list(str)'"
+#     assert attr.doc.text.str.startswith("Properties with")
+#     assert attr.doc.text.str.endswith("here.")
+
+
+# def test_create_attribute_pep526_without_module(get):
+#     node = get("ExamplePEP526Class")
+#     assert node
+#     assigns = list(iter_assigns(node))
+#     assign = get_by_name(assigns, "attr1")
+#     assert assign
+
+#     module = _create_empty_module()
+#     attr = create_attribute(assign, module, None)
+#     assert attr.name.str == "attr1"
+#     assert attr.type.expr
+#     assert ast.unparse(attr.type.expr) == "str"
+#     assert not attr.doc.text.str
+#     assign = get_by_name(assigns, "attr2")
+#     assert assign
+
+#     attr = create_attribute(assign, module, None)
+#     assert attr.name.str == "attr2"
+#     assert attr.type.expr
+#     assert ast.unparse(attr.type.expr) == "int"
+#     assert not attr.doc.text.str
+
+
+# def test_class_attribute(google, source, get):
+#     module = _create_module("google", google, source)
+#     node = get("ExampleClass")
+#     assert node
+#     cls = create_class(node, module, None)
+#     assert not get_by_type(cls.doc.sections, Assigns)
+#     attrs = cls.attributes
+#     assert len(attrs) == 7
+#     names = ["attr1", "attr2", "attr3", "attr4", "attr5", "readonly_property", "readwrite_property"]
+#     section = get_by_type(cls.doc.sections, Attributes)
+#     assert section
+#     for x in [section.items, cls.attributes]:
+#         for k, name in enumerate(names):
+#             assert x[k].name.str == name
+#     assert not get_by_name(cls.functions, "__init__")
+
+
+# def test_create_module_attribute_with_module(google, source):
+#     module = _create_module("google", google, source)
+#     attrs = module.attributes
+#     assert len(attrs) == 2
+#     attr = attrs[0]
+#     assert attr.name.str == "module_level_variable1"
+#     assert attr.type.expr
+#     assert ast.unparse(attr.type.expr) == "'int'"
+#     assert attr.doc.text.str
+#     assert attr.doc.text.str.startswith("Module level")
+#     assert attr.doc.text.str.endswith("with it.")
+#     assert not get_by_type(module.doc.sections, Assigns)
+
+
+# def test_merge_items():
+#     """'''test'''
+#     def f(x: int = 0, y: str = 's') -> bool:
+#         '''function.
+
+#         Args:
+#             x: parameter x.
+#             z: parameter z.
+
+#         Returns:
+#             Return True.'''
+#     """
+#     src = inspect.getdoc(test_merge_items)
+#     assert src
+#     node = ast.parse(src).body[1]
+#     assert isinstance(node, ast.FunctionDef)
+#     func = create_function(node)
+#     assert get_by_name(func.parameters, "x")
+#     assert get_by_name(func.parameters, "y")
+#     assert not get_by_name(func.parameters, "z")
+#     items = get_by_name(func.doc.sections, "Parameters").items  # type: ignore
+#     assert get_by_name(items, "x")
+#     assert not get_by_name(items, "y")
+#     assert get_by_name(items, "z")
+#     assert [item.name.str for item in items] == ["x", "z"]
+#     assert func.returns[0].type
+#     items = get_by_name(func.doc.sections, "Returns").items  # type: ignore
+#     assert items[0].text.str == "Return True."
+#     assert items[0].type.expr.id == "bool"  # type: ignore
