@@ -22,11 +22,9 @@ from tqdm.std import tqdm
 
 import mkapi
 import mkapi.nav
-
-# from mkapi import renderers
+from mkapi import renderers
 from mkapi.nav import split_name_depth
-
-# from mkapi.pages import Page, PageKind
+from mkapi.pages import create_documentation_page, create_object_page, create_source_page
 from mkapi.utils import (
     cache_clear,
     get_module_path,
@@ -42,6 +40,8 @@ if TYPE_CHECKING:
     from mkdocs.structure.files import Files
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
+
+    from mkapi.pages import Page
     # from mkdocs.structure.nav import Navigation
     # from mkdocs.utils.templates import TemplateContext
 
@@ -110,12 +110,12 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         """Collect plugin CSS and append them to `files`."""
         for file in files:
             if page := self.pages.get(file.src_uri):
-                if page.kind is PageKind.SOURCE:
+                if page.is_source_page():
                     file.inclusion = InclusionLevel.NOT_IN_NAV
 
             elif file.is_documentation_page():
                 path = Path(file.abs_src_path)
-                self.pages[file.src_uri] = Page("", path, PageKind.MARKDOWN, [])
+                self.pages[file.src_uri] = create_documentation_page(path)
 
         for file in _collect_stylesheets(config, self):
             files.append(file)
@@ -159,7 +159,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         uri = page.file.src_uri
         page_ = self.pages[uri]
 
-        if page_.kind in [PageKind.OBJECT, PageKind.SOURCE]:
+        if page_.is_api_page():
             _replace_toc(page.toc, self.toc_title)
 
         anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
@@ -268,6 +268,7 @@ def _mkdir(path: Path, paths: list[Path]) -> None:
 def _split_path(path: str, plugin: MkAPIPlugin) -> list[str]:
     if ":" in path:
         return path.split(":", maxsplit=1)
+
     return [path, plugin.config.src_dir]
 
 
@@ -300,13 +301,13 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         abs_path = Path(config.docs_dir) / object_uri
 
         if object_uri not in plugin.pages:
-            plugin.pages[object_uri] = Page(name, abs_path, PageKind.OBJECT, filters)
+            plugin.pages[object_uri] = create_object_page(name, abs_path, filters)
 
         source_uri = f"{source_path}/{uri}.md"
         abs_path = Path(config.docs_dir) / source_uri
 
         if source_uri not in plugin.pages:
-            plugin.pages[source_uri] = Page(name, abs_path, PageKind.SOURCE, filters)
+            plugin.pages[source_uri] = create_source_page(name, abs_path, filters)
 
         spinner.text = f"Collecting modules [{len(plugin.pages):>3}]: {name}"
 
@@ -359,6 +360,7 @@ def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File
         if path.endswith("mkapi-common.css"):
             files.insert(0, file)
             css.insert(0, path)
+
         elif path.endswith(f"mkapi-{theme_name}.css"):
             files.append(file)
             css.append(path)

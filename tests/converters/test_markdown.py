@@ -1,12 +1,12 @@
 import re
 
-from mkapi.nodes import resolve_from_module
-from mkapi.parsers import (
+from mkapi.converters import (
     LINK_PATTERN,
     get_markdown_name,
     get_markdown_str,
     get_markdown_text,
 )
+from mkapi.nodes import resolve_from_module
 
 
 def test_link_pattern():

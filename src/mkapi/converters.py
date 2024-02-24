@@ -4,17 +4,45 @@ from __future__ import annotations
 import ast
 import re
 from collections.abc import Callable
-from functools import partial
-from typing import TYPE_CHECKING, Literal, TypeAlias
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
-from mkapi.nodes import resolve
-from mkapi.objects import Attribute, Class, Function, Module
-from mkapi.utils import is_identifier, iter_identifiers, iter_parent_module_names
+from mkapi.docs import Item, Section, create_summary_item
+from mkapi.nodes import resolve_from_module
+from mkapi.objects import Attribute, Class, Function, Member, Module, Object, get_object, resolve_from_object
+from mkapi.utils import get_by_name, is_identifier, iter_attribute_names, iter_identifiers
+
+if TYPE_CHECKING:
+    from mkapi.objects import Parameter
+
+
+@dataclass(repr=False)
+class Converter:
+    name: str
+    module: str = ""
+    fullname: str = field(init=False)
+
+    def __post_init__(self):
+        # if not self.module:
+        #     re
+        if fullname := resolve_from_module(self.name, self.module):
+            self.fullname = fullname
+        else:
+            raise ValueError
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
+
+    def replace_from_module(self, name: str) -> str | None:
+        return resolve_from_module(name, self.module)
+
+    def replace_from_object(self, name: str) -> str | None:
+        return resolve_from_object(name, self.fullname)
+
 
 PREFIX = "__mkapi__."
-
 LINK_PATTERN = re.compile(r"(?<!\])\[(?P<name>[^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
 
 
@@ -29,7 +57,7 @@ Replace: TypeAlias = Callable[[str], str | None] | None
 def get_markdown_name(fullname: str, replace: Replace = None) -> str:
     """Return markdown links"""
     names = fullname.split(".")
-    refs = iter_parent_module_names(fullname)
+    refs = iter_attribute_names(fullname)
 
     if replace:
         refs = [replace(ref) for ref in refs]
@@ -85,6 +113,87 @@ def get_markdown_text(text: str, replace: Replace) -> str:
         return match.group()
 
     return mkapi.markdown.sub(LINK_PATTERN, _replace, text)
+
+
+def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:
+    """Merge parameters."""
+    if not (section := get_by_name(sections, "Parameters")):
+        return
+
+    for item in section.items:
+        if item.type:
+            continue
+
+        name = item.name.replace("*", "")
+        if param := get_by_name(params, name):
+            item.type = param.type
+
+
+def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
+    """Merge raises."""
+    section = get_by_name(sections, "Raises")
+
+    if not section:
+        if not raises:
+            return
+
+        section = Section("Raises", "", "", [])
+        sections.append(section)
+
+    for raise_ in raises:
+        if get_by_name(section.items, ast.unparse(raise_), attr="type"):
+            continue
+
+        section.items.append(Item("", raise_, ""))
+
+
+def merge_returns(sections: list[Section], returns: ast.expr | None) -> None:
+    """Merge returns."""
+    if not (section := get_by_name(sections, ("Returns", "Yields"))):
+        return
+
+    if len(section.items) == 1:
+        item = section.items[0]
+
+        if not item.type and returns:
+            item.type = returns
+
+
+def merge_attributes(sections: list[Section], attrs: list[Attribute]) -> None:
+    """Merge returns."""
+    if section := get_by_name(sections, "Attributes"):
+        items = section.items
+        created = False
+    else:
+        if not attrs:
+            return
+
+        items = []
+        section = Section("Attributes", "", "", items)
+        created = True
+
+    for item in items:
+        if item.type:
+            continue
+
+        param = get_by_name(attrs, item.name)
+        if param and param.type:
+            item.type = param.type
+
+    for attr in attrs:
+        if get_by_name(items, attr.name):
+            continue
+
+        if attr.doc.sections:
+            item = create_summary_item(attr.name, attr.doc, attr.type)
+            items.append(item)
+
+        elif attr.doc.text:
+            item = Item(attr.name, attr.type, attr.doc.text)
+            items.append(item)
+
+    if items and created:
+        sections.append(section)
 
 
 # def _merge_attributes(
@@ -209,137 +318,3 @@ def get_markdown_text(text: str, replace: Replace) -> str:
 #     """Yield [Object] instances."""
 #     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
 #         yield child
-
-# def is_empty(obj: Object) -> bool:
-#     """Return True if a [Object] instance is empty."""
-#     if isinstance(obj, Attribute) and not obj.doc.sections:
-#         return True
-
-#     if not docstrings.is_empty(obj.doc):
-#         return False
-
-#     if isinstance(obj, Function) and obj.name.str.startswith("_"):
-#         return True
-
-#     return False
-
-# def merge_sections(a: Section, b: Section) -> Section:
-#     """Merge two [Section] instances into one [Section] instance."""
-#     if a.name != b.name:
-#         raise ValueError
-#     type_ = a.type if a.type.expr else b.type
-#     text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
-#     return Section(a.name, type_, text, list(iter_merged_items(a.items, b.items)))
-
-
-# def iter_merge_sections(a: list[Section], b: list[Section]) -> Iterator[Section]:
-#     """Yield merged [Section] instances from two lists of [Section]."""
-#     for name in unique_names(a, b):
-#         if name:
-#             ai, bi = get_by_name(a, name), get_by_name(b, name)
-#             if ai and not bi:
-#                 yield ai
-#             elif not ai and bi:
-#                 yield bi
-#             elif ai and bi:
-#                 yield merge_sections(ai, bi)
-
-
-# def merge(a: Docstring, b: Docstring) -> Docstring:
-#     """Merge two [Docstring] instances into one [Docstring] instance."""
-#     sections: list[Section] = []
-#     for ai in a.sections:
-#         if ai.name:
-#             break
-#         sections.append(ai)
-#     sections.extend(iter_merge_sections(a.sections, b.sections))
-#     is_named_section = False
-#     for section in a.sections:
-#         if section.name:  # already collected, so skip.
-#             is_named_section = True
-#         elif is_named_section:
-#             sections.append(section)
-#     sections.extend(s for s in b.sections if not s.name)
-#     type_ = a.type  # if a.type.expr else b.type
-#     text = Text(f"{a.text.str or ''}\n\n{b.text.str or ''}".strip())
-#     return Docstring(Name("Docstring"), type_, text, sections)
-
-
-# def is_empty(doc: Docstring) -> bool:
-#     """Return True if a [Docstring] instance is empty."""
-#     if doc.text.str:
-#         return False
-#     for section in doc.sections:
-#         if section.text.str:
-#             return False
-#         for item in section.items:
-#             if item.text.str:
-#                 return False
-#     return True
-
-
-# def create_summary_item(name: Name, doc: Docstring, type_: Type | None = None):
-#     text = doc.text.str.split("\n\n")[0]  # summary line
-#     return Item(name, type_ or Type(), Text(text))
-
-
-# def merge_parameters(sections: list[Section], parameters: list[Parameter]) -> None:
-#     """Merge parameters."""
-#     if not (section := get_by_type(sections, Parameters)):
-#         return
-
-#     for item in section.items:
-#         name = item.name.str.replace("*", "")
-
-#         if param := get_by_name(parameters, name):
-#             if not item.type.expr:
-#                 item.type = param.type
-
-#             if not item.default.expr:
-#                 item.default = param.default
-
-#             item.kind = param.kind
-
-
-# def merge_returns(sections: list[Section], returns: list[Return]) -> None:
-#     """Merge returns."""
-#     if not (section := get_by_type(sections, Returns)):
-#         return
-
-#     if len(returns) == 1 and len(section.items) == 1:
-#         item = section.items[0]
-
-#         if not item.type.expr:
-#             item.type = returns[0].type
-
-
-# def merge_raises(sections: list[Section], raises: list[Raise]) -> None:
-#     """Merge raises."""
-#     section = get_by_type(sections, Raises)
-
-#     if not section:
-#         if not raises:
-#             return
-
-#         section = create_raises([])
-#         sections.append(section)
-
-#     section.items = list(iter_merged_items(section.items, raises))
-
-
-# T = TypeVar("T")
-
-
-# def iter_merged_items(la: Sequence[T], lb: Sequence[T]) -> Iterator[T]:
-#     """Yield merged [Item] instances."""
-#     for name in unique_names(la, lb):
-#         a, b = get_by_name(la, name), get_by_name(lb, name)
-#         if a and not b:
-#             yield a
-#         elif not a and b:
-#             yield b
-#         elif isinstance(a, Item) and isinstance(b, Item):
-#             a.name = a.name if a.name.str else b.name
-#             a.type = a.type if a.type.expr else b.type
-#             a.text = a.text if a.text.str else b.text
-#             yield a

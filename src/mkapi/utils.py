@@ -182,7 +182,7 @@ def get_module_source(name: str) -> str | None:
     return None
 
 
-def iter_parent_module_names(fullname: str, *, reverse: bool = False) -> Iterator[str]:
+def iter_attribute_names(fullname: str, *, reverse: bool = False) -> Iterator[str]:
     """Yield parent module names.
 
     Examples:
@@ -222,8 +222,15 @@ def iter_by_name(items: Iterable[T], name: str, attr: str = "name") -> Iterator[
             yield item
 
 
-def get_by_name(items: Iterable[T], name: str, attr: str = "name") -> T | None:
+def get_by_name(items: Iterable[T], name: str | Iterable[str], attr: str = "name") -> T | None:
     """Get the first item with a name from an item list."""
+    if not isinstance(name, str):
+        for name_ in name:
+            if item := get_by_name(items, name_):
+                return item
+
+        return None
+
     for item in iter_by_name(items, name, attr):
         return item
     return None

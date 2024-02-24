@@ -10,6 +10,7 @@ import mkapi.markdown
 from mkapi.utils import get_by_name, unique_names
 
 if TYPE_CHECKING:
+    import ast
     from collections.abc import Iterator
     from typing import TypeAlias
 
@@ -103,7 +104,7 @@ def split_item_without_name(text: str, style: str) -> tuple[str, str]:
 @dataclass
 class Item:
     name: str
-    type: str
+    type: str | ast.expr | None
     text: str
 
     def __repr__(self) -> str:
@@ -117,7 +118,6 @@ def iter_items(text: str, style: Style) -> Iterator[Item]:
     """Yield [Item] instances."""
     for item in _iter_items(text):
         name, type_, text = split_item(item, style)
-
         type_ = TYPE_STRING_PATTERN.sub(r"\1", type_)
         yield Item(name, type_, text)
 
@@ -339,7 +339,7 @@ def split_type(doc: Doc) -> None:
         doc.type, doc.text = split_item_without_name(doc.text, "google")
 
 
-def create_summary_item(name: str, doc: Doc, type_: str = ""):
+def create_summary_item(name: str, doc: Doc, type_: str | ast.expr | None = None):
     text = doc.text.split("\n\n")[0]  # summary line
     return Item(name, type_, text)
 

@@ -3,13 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from mkapi.ast import PARAMETER_KIND_ATTRIBUTE
-from mkapi.objects import Attribute, Class, Function
+from mkapi.objects import Attribute, Class, Function, Module
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.items import Parameter
+    from mkapi.objects import Parameter
 
 
 @dataclass
@@ -47,7 +46,7 @@ def _iter_sep(kind: str | None, prev_kind: str | None) -> Iterator[tuple[str, st
 
 
 def _iter_param(param: Parameter) -> Iterator[tuple[str, str]]:
-    if param.type.expr:
+    if param.type:
         yield ": ", "colon"
         yield param.type.markdown, "ann"
 

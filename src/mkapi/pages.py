@@ -13,12 +13,12 @@ from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.markdown
 import mkapi.renderers
-from mkapi.inspect import resolve
-from mkapi.objects import get_object, is_empty, is_member, iter_objects_with_depth, load_module
+from mkapi.nodes import resolve
+from mkapi.objects import create_module, get_object, is_empty, is_member, iter_objects_with_depth
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
-    from mkapi.objects import Attribute, Class, Function, Module
+    from mkapi.objects import Object
 
 PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "MARKDOWN"])
 
@@ -45,15 +45,27 @@ class Page:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.path!r})"
 
+    def is_source_page(self) -> bool:
+        return self.kind is PageKind.SOURCE
+
+    def is_object_page(self) -> bool:
+        return self.kind is PageKind.SOURCE
+
+    def is_api_page(self) -> bool:
+        return self.is_object_page() or self.is_source_page()
+
+    def is_documentation_page(self) -> bool:
+        return not self.is_api_page()
+
     def create_markdown(self) -> None:
         """Create markdown source."""
-        if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
+        if self.is_api_page():
             with self.path.open("w") as file:
                 file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
 
             self.markdown, names = create_markdown(self.name, self.filters)
 
-            namespace = "source" if self.kind is PageKind.SOURCE else "object"
+            namespace = "source" if self.is_source_page() else "object"
 
             if namespace not in object_paths:
                 object_paths[namespace] = {}
@@ -63,13 +75,13 @@ class Page:
 
     def convert_markdown(self, markdown: str, anchors: dict[str, str]) -> str:
         """Return converted markdown."""
-        if self.kind in [PageKind.OBJECT, PageKind.SOURCE]:
+        if self.is_api_page():
             markdown = self.markdown
 
-        namespaces = ("source", "object") if self.kind is PageKind.SOURCE else ("object", "source")
+        namespaces = ("source", "object") if self.is_source_page() else ("object", "source")
 
         def predicate(name: str, content: str) -> bool:
-            if self.kind is PageKind.SOURCE:
+            if self.is_source_page():
                 if self.name == name and content in ["header", "object", "source"]:
                     return True
 
@@ -82,11 +94,23 @@ class Page:
     def convert_html(self, html: str, anchors: dict[str, str]) -> str:
         """Return converted html."""
 
-        namespace = "object" if self.kind is PageKind.SOURCE else "source"
+        namespace = "object" if self.is_source_page() else "source"
         paths = object_paths[namespace]
         anchor = anchors[namespace]
 
         return convert_html(html, self.path, paths, anchor)
+
+
+def create_object_page(name: str, path: Path, filters: list[str]):
+    return Page(name, path, PageKind.OBJECT, filters)
+
+
+def create_source_page(name: str, path: Path, filters: list[str]):
+    return Page(name, path, PageKind.SOURCE, filters)
+
+
+def create_documentation_page(path: Path) -> Page:
+    return Page("", path, PageKind.MARKDOWN, [])
 
 
 Predicate: TypeAlias = Callable[[str], bool] | None
@@ -98,7 +122,7 @@ def create_markdown(
     predicate: Predicate = None,
 ) -> tuple[str, list[str]]:
     """Create object page for an object."""
-    if not (module := load_module(name)):
+    if not (module := create_module(name)):
         return f"!!! failure\n\n    module {name!r} not found.\n", []
 
     filters_str = "|" + "|".join(filters) if filters else ""
@@ -118,7 +142,7 @@ def create_markdown(
 
 
 def _predicate(
-    obj: Module | Class | Function | Attribute,
+    obj: Object,
     parent: Module | Class | Function | None,
     predicate: Callable[[str], bool] | None,
 ) -> bool:

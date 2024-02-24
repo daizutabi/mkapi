@@ -6,11 +6,13 @@ from mkapi.nodes import (
     _iter_imports_from_import,
     _iter_imports_from_import_from,
     _parse,
+    _resolve,
     get_all_names,
     has_decorator,
     iter_decorator_names,
     resolve,
     resolve_from_module,
+    resolve_module_name,
 )
 
 
@@ -48,6 +50,28 @@ def test_get_all_names():
     assert "ExampleClassNumPy" in x
 
 
+def test_get_fullname():
+    src = "from collections.abc import Iterator"
+    node = ast.parse(src)
+    name, obj = _parse(node, "")[0]
+    assert name == "Iterator"
+    assert isinstance(obj, Object)
+    assert obj.module == "_collections_abc"
+    assert _get_fullname(obj) == "collections.abc.Iterator"
+
+
+def test_resolve_module_name():
+    name = "examples.styles.google"
+    x = resolve_module_name(name)
+    assert x == ("examples.styles.google", None)
+    name = "examples.styles.google.ExampleClass"
+    x = resolve_module_name(name)
+    assert x == ("examples.styles.google", "ExampleClass")
+    name = "examples.styles.ExampleClassGoogle"
+    x = resolve_module_name(name)
+    assert x == ("examples.styles.google", "ExampleClass")
+
+
 def test_resolve():
     assert resolve("tqdm.tqdm") == "tqdm.std.tqdm"
     assert resolve("jinja2.Template") == "jinja2.environment.Template"
@@ -80,6 +104,26 @@ def test_resolve_from_module():
         assert x == y
 
 
+def test_resolve_from_module_qualname():
+    module = "examples.styles.google"
+    name = "ExampleClass"
+    assert resolve_from_module(name, module) == f"{module}.{name}"
+    name = "ExampleClass.attr1"
+    assert resolve_from_module(name, module) == f"{module}.{name}"
+    name = "ExampleClass.readonly_property"
+    assert resolve_from_module(name, module) == f"{module}.{name}"
+    name = "ExampleClass._private"
+    assert resolve_from_module(name, module) == f"{module}.{name}"
+
+    module = "examples.styles"
+    name = "ExampleClassGoogle"
+    x = resolve_from_module(name, module)
+    assert x == "examples.styles.google.ExampleClass"
+    name = "ExampleClassGoogle.readwrite_property"
+    x = resolve_from_module(name, module)
+    assert x == "examples.styles.google.ExampleClass.readwrite_property"
+
+
 def test_iter_decorator_names():
     src = "@a(x)\n@b.c(y)\n@d\ndef f():\n pass"
     node = ast.parse(src).body[0]
@@ -93,13 +137,3 @@ def test_get_decorator():
     assert isinstance(node, ast.FunctionDef)
     assert has_decorator(node, "d", "")
     assert not has_decorator(node, "x", "")
-
-
-def test_get_fullname():
-    src = "from collections.abc import Iterator"
-    node = ast.parse(src)
-    name, obj = _parse(node, "")[0]
-    assert name == "Iterator"
-    assert isinstance(obj, Object)
-    assert obj.module == "_collections_abc"
-    assert _get_fullname(obj) == "collections.abc.Iterator"

@@ -19,8 +19,8 @@ from mkapi.utils import (
     get_module_node_source,
     get_module_source,
     is_package,
+    iter_attribute_names,
     iter_identifiers,
-    iter_parent_module_names,
 )
 
 try:
@@ -46,12 +46,17 @@ class Parameter:
         return f"{self.__class__.__name__}({self.name!r})"
 
 
+def iter_parameters(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Parameter]:
+    for name, type_, default, kind in mkapi.ast.iter_parameters(node):
+        yield Parameter(name, type_, default, kind)
+
+
 objects: dict[str, Object] = cache({})
 aliases: dict[str, list[str]] = cache({})
 
 
 def _register_object(obj: Object, name: str | None = None):
-    fullname = get_fullname(obj)
+    fullname = obj.fullname
     objects[name or fullname] = obj
 
     aliases.setdefault(fullname, [])
@@ -80,6 +85,10 @@ class Object:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
+
+    @property
+    def fullname(self) -> str:
+        return get_fullname(self)
 
 
 @dataclass(repr=False)
@@ -268,7 +277,7 @@ def create_function(
     qualname = f"{parent}.{node.name}" if parent else node.name
     dict_ = {obj.name: obj for obj in _iter_objects(node, module, qualname)}
 
-    params = [Parameter(*args) for args in mkapi.ast.iter_parameters(node)]
+    params = list(iter_parameters(node))
     raises = list(mkapi.ast.iter_raises(node))
 
     return Function(node.name, node, dict_, qualname, module, params, raises)
@@ -361,14 +370,14 @@ def get_object(fullname: str) -> Object | None:
     if fullname in objects:
         return objects[fullname]
 
-    for module in iter_parent_module_names(fullname):
+    for module in iter_attribute_names(fullname):
         if create_module(module) and fullname in objects:
             return objects[fullname]
 
     return None
 
 
-def resolve_from_object(name: str, obj: Object) -> str | None:
+def _resolve_from_object(name: str, obj: Object) -> str | None:
     """Return fullname from object."""
     if isinstance(obj, Dict) and (child := obj.get(name)):
         return get_fullname(child)
@@ -382,12 +391,21 @@ def resolve_from_object(name: str, obj: Object) -> str | None:
     parent, name_ = name.rsplit(".", maxsplit=1)
 
     if obj_ := objects.get(parent):
-        return resolve_from_object(name, obj_)
+        return _resolve_from_object(name, obj_)
 
     if obj.name == parent:
-        return resolve_from_object(name_, obj)
+        return _resolve_from_object(name_, obj)
 
     return resolve(name)
+
+
+@cache
+def resolve_from_object(name: str, fullname: str) -> str | None:
+    """Return fullname from object."""
+    if obj := get_object(fullname):
+        return _resolve_from_object(name, obj)
+
+    return None
 
 
 def get_fullname(obj: Object) -> str:

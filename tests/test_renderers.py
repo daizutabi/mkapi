@@ -1,5 +1,5 @@
+from mkapi.converters import set_markdown
 from mkapi.objects import Class, Function, Module, get_object
-from mkapi.parsers import set_markdown
 from mkapi.renderers import (
     _create_summary_docstring,
     _get_source,

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mkapi.ast
-from mkapi.utils import cache, get_module_name, get_module_node, is_package, iter_parent_module_names
+from mkapi.utils import cache, get_module_name, get_module_node, is_package, iter_attribute_names
 
 try:
     from ast import TypeAlias
@@ -80,7 +80,7 @@ def _iter_imports_from_import(node: ast.Import) -> Iterator[tuple[str, str]]:
             yield alias.asname, alias.name
 
         else:
-            for module_name in iter_parent_module_names(alias.name):
+            for module_name in iter_attribute_names(alias.name):
                 yield module_name, module_name
 
 
@@ -181,28 +181,49 @@ def get_all_names(module: str) -> list[str]:
     return []
 
 
-def _get_fullname(obj: Module | Object | Import) -> str:
+def _split_fullname(obj: Module | Object | Import) -> tuple[str, str | None]:
     if isinstance(obj, Module):
-        return get_module_name(obj.name)
+        return get_module_name(obj.name), None
 
     if isinstance(obj, Object):
         module = get_module_name(obj.module)
-        return f"{module}.{obj.name}"
+        return module, obj.name
 
-    return obj.fullname  # import
+    return obj.fullname, None  # import
 
 
-def resolve(name: str) -> str | None:
+def _get_fullname(obj: Module | Object | Import) -> str:
+    module, name = _split_fullname(obj)
+    if name is None:
+        return module
+
+    return f"{module}.{name}"
+
+
+def resolve_module_name(name: str) -> tuple[str, str | None] | None:
     if resolved := list(_resolve(name)):
-        return _get_fullname(resolved[0])
+        return _split_fullname(resolved[0])
 
     if "." not in name:
         return None
 
     name, attr = name.rsplit(".", maxsplit=1)
 
-    if resolved := resolve(name):
-        return f"{resolved}.{attr}"
+    if resolved := resolve_module_name(name):
+        module, name_ = resolved
+        name = f"{name_}.{attr}" if name_ else attr
+        return module, name
+
+    return None
+
+
+def resolve(name: str) -> str | None:
+    if module_name := resolve_module_name(name):
+        module, name_ = module_name
+        if name_ is None:
+            return module
+
+        return f"{module}.{name_}"
 
     return None
 

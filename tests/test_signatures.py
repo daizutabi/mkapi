@@ -1,12 +1,14 @@
 import ast
 
-from mkapi.objects import Function, _create_module
-from mkapi.parsers import set_markdown
+from mkapi.converters import set_markdown
+from mkapi.objects import Function, create_function
 from mkapi.signatures import get_signature, iter_signature
 
 
 def get(src: str) -> Function:
-    node = ast.parse(src)
+    node = ast.parse(src).body[0]
+    assert isinstance(node, ast.FunctionDef)
+    func = create_function(node, "", None)
     module = _create_module("x", node)
     return module.functions[0]
 
