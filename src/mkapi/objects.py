@@ -29,6 +29,7 @@ except ImportError:
     TypeAlias = None
 
 if TYPE_CHECKING:
+    from collections.abc import Callable as Callable_
     from collections.abc import Iterator
     from inspect import _ParameterKind
 
@@ -448,3 +449,42 @@ def get_source(obj: Module | Member) -> str | None:
         return ast.get_source_segment(source, obj.node)
 
     return None
+
+
+def is_member(obj: Object, parent: Object | None) -> bool:
+    """Return True if obj is a member of parent."""
+    if parent is None:
+        return True
+
+    if isinstance(obj, Module) or isinstance(parent, Module):
+        return True
+
+    return obj.fullname.startswith(parent.fullname)
+
+
+def iter_objects_with_depth(
+    obj: Object,
+    maxdepth: int = -1,
+    predicate: Callable_[[Object, Object | None], bool] | None = None,
+    depth: int = 0,
+) -> Iterator[tuple[Object, int]]:
+    """Yield [Object] instances and depth."""
+    if not predicate or predicate(obj, None):
+        yield obj, depth
+
+    if depth == maxdepth or not isinstance(obj, Dict):
+        return
+
+    for name, child in obj.dict.items():
+        if not predicate or predicate(child, obj):
+            yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
+
+
+def iter_objects(
+    obj: Object,
+    maxdepth: int = -1,
+    predicate: Callable_[[Object, Object | None], bool] | None = None,
+) -> Iterator[Object]:
+    """Yield [Object] instances."""
+    for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
+        yield child

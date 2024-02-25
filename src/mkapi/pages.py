@@ -133,9 +133,9 @@ def create_markdown(
     names = []
 
     for obj, depth in iter_objects_with_depth(module, 2, predicate_):
-        names.append(obj.fullname.str)
+        names.append(obj.fullname)
         heading = "#" * (depth + 1)
-        markdown = f"{heading} ::: {obj.fullname.str}{filters_str}\n"
+        markdown = f"{heading} ::: {obj.fullname}{filters_str}\n"
         markdowns.append(markdown)
 
     return "\n".join(markdowns), names
@@ -143,14 +143,15 @@ def create_markdown(
 
 def _predicate(
     obj: Object,
-    parent: Module | Class | Function | None,
+    parent: Object | None,
     predicate: Callable[[str], bool] | None,
 ) -> bool:
     if not is_member(obj, parent):
         return False
-    if is_empty(obj):
+    # if is_empty(obj):
+    if is_empty(obj.doc):
         return False
-    if predicate and not predicate(obj.fullname.str):
+    if predicate and not predicate(obj.fullname):
         return False
     return True
 

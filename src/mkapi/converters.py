@@ -5,32 +5,28 @@ import ast
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from inspect import _ParameterKind as P
 from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
 from mkapi.docs import Item, Section, create_summary_item
-from mkapi.nodes import resolve_from_module
+from mkapi.nodes import resolve, resolve_from_module, resolve_module_name
 from mkapi.objects import Attribute, Class, Function, Member, Module, Object, get_object, resolve_from_object
 from mkapi.utils import get_by_name, is_identifier, iter_attribute_names, iter_identifiers
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from typing import Any
+
     from mkapi.objects import Parameter
 
 
 @dataclass(repr=False)
 class Converter:
-    name: str
-    module: str = ""
-    fullname: str = field(init=False)
-
-    def __post_init__(self):
-        # if not self.module:
-        #     re
-        if fullname := resolve_from_module(self.name, self.module):
-            self.fullname = fullname
-        else:
-            raise ValueError
+    name: str | None
+    module: str
+    fullname: str
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
@@ -40,6 +36,26 @@ class Converter:
 
     def replace_from_object(self, name: str) -> str | None:
         return resolve_from_object(name, self.fullname)
+
+    def convert_name(self) -> dict[str, Any]:
+        fullname = self.fullname.replace("_", "\\_")
+        name = self.name or self.module
+        names = [x.replace("_", "\\_") for x in name.split(".")]
+
+        return {"id": self.fullname, "fullname": fullname, "names": names}
+
+
+def create_converter(name: str, module: str | None = None) -> Converter:
+    if not module:
+        if module_name := resolve_module_name(name):
+            module, name_ = module_name
+            fullname = f"{module}.{name_}" if name_ else module
+            return Converter(name_, module, fullname)
+
+    elif fullname := resolve_from_module(name, module):
+        return Converter(name, module, fullname)
+
+    raise ValueError
 
 
 PREFIX = "__mkapi__."
@@ -113,6 +129,76 @@ def get_markdown_text(text: str, replace: Replace) -> str:
         return match.group()
 
     return mkapi.markdown.sub(LINK_PATTERN, _replace, text)
+
+
+def get_signature(obj: Class | Function | Attribute) -> list[tuple[ast.expr | str, str]]:
+    """Return signature."""
+    if isinstance(obj, Class | Function):
+        return list(_iter_signature(obj))
+
+    if obj.type:
+        return [(": ", "colon"), (obj.type, "return")]
+
+    return []
+
+
+def _iter_signature(obj: Class | Function) -> Iterator[tuple[ast.expr | str, str]]:
+    yield "(", "paren"
+    n = len(obj.parameters)
+    prev_kind = None
+
+    for k, param in enumerate(obj.parameters):
+        if k == 0 and obj.kind in ["class", "method", "classmethod"]:
+            continue
+
+        yield from _iter_sep(param.kind, prev_kind)
+
+        yield param.name.replace("_", "\\_"), "arg"
+        yield from _iter_param(param)
+
+        if k < n - 1:
+            yield ", ", "comma"
+
+        prev_kind = param.kind
+
+    if prev_kind is P.POSITIONAL_ONLY:
+        yield ", ", "comma"
+        yield "/", "slash"
+
+    yield ")", "paren"
+
+    if isinstance(obj, Class) or not obj.node.returns:
+        return
+
+    yield " → ", "arrow"
+    yield obj.node.returns, "return"
+
+
+def _iter_sep(kind: P | None, prev_kind: P | None) -> Iterator[tuple[str, str]]:
+    if prev_kind is P.POSITIONAL_ONLY and kind != prev_kind:
+        yield "/", "slash"
+        yield ", ", "comma"
+
+    if kind is P.KEYWORD_ONLY and prev_kind not in [kind, P.VAR_POSITIONAL]:
+        yield r"\*", "star"
+        yield ", ", "comma"
+
+    if kind is P.VAR_POSITIONAL:
+        yield r"\*", "star"
+
+    if kind is P.VAR_KEYWORD:
+        yield r"\*\*", "star"
+
+
+def _iter_param(param: Parameter) -> Iterator[tuple[ast.expr | str, str]]:
+    if param.type:
+        yield ": ", "colon"
+        yield param.type, "ann"
+
+    if param.default:
+        eq = " = " if param.type else "="
+        yield eq, "equal"
+        yield param.default, "default"
 
 
 def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:
@@ -271,50 +357,3 @@ def merge_attributes(sections: list[Section], attrs: list[Attribute]) -> None:
 #             a.type = a.type if a.type.expr else b.type
 #             a.doc = mkapi.docstrings.merge(a.doc, b.doc)
 #             yield a
-
-
-# def is_member(
-#     obj: Module | Class | Function | Attribute,
-#     parent: Module | Class | Function | None,
-# ) -> bool:
-#     """Return True if obj is a member of parent."""
-#     if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
-#         return True
-
-#     if obj.parent is not parent:
-#         return False
-
-#     return obj.module is parent.module
-
-
-# def iter_objects_with_depth(
-#     obj: Module | Class | Function | Attribute,
-#     maxdepth: int = -1,
-#     predicate: Predicate = None,
-#     depth: int = 0,
-# ) -> Iterator[tuple[Module | Class | Function | Attribute, int]]:
-#     """Yield [Object] instances and depth."""
-#     if not predicate or predicate(obj, None):
-#         yield obj, depth
-
-#     if depth == maxdepth or isinstance(obj, Attribute):
-#         return
-
-#     for child in itertools.chain(obj.classes, obj.functions):
-#         if not predicate or predicate(child, obj):
-#             yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
-
-#     if isinstance(obj, Module | Class):
-#         for attr in obj.attributes:
-#             if not predicate or predicate(attr, obj):
-#                 yield attr, depth + 1
-
-
-# def iter_objects(
-#     obj: Module | Class | Function | Attribute,
-#     maxdepth: int = -1,
-#     predicate: Predicate = None,
-# ) -> Iterator[Module | Class | Function | Attribute]:
-#     """Yield [Object] instances."""
-#     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
-#         yield child
