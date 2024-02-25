@@ -6,10 +6,10 @@ from mkapi.nodes import (
     _iter_imports_from_import,
     _iter_imports_from_import_from,
     _parse,
-    _resolve,
     get_all_names,
     has_decorator,
     iter_decorator_names,
+    parse,
     resolve,
     resolve_from_module,
     resolve_module_name,
@@ -122,6 +122,13 @@ def test_resolve_from_module_qualname():
     name = "ExampleClassGoogle.readwrite_property"
     x = resolve_from_module(name, module)
     assert x == "examples.styles.google.ExampleClass.readwrite_property"
+
+
+# def test_split_module_name():
+#     name = "examples.styles.ExampleClassGoogle"
+#     for x in parse(name):
+#         print(x)
+#     assert 0
 
 
 def test_iter_decorator_names():

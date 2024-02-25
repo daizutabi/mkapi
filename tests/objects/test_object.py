@@ -1,11 +1,18 @@
+import ast
+import inspect
+
 from mkapi.objects import (
     Attribute,
     Class,
     Function,
+    _create_module,
     create_module,
     get_object,
     get_source,
+    is_member,
+    iter_objects,
 )
+from mkapi.utils import get_by_name
 
 
 def test_get_object():
@@ -87,75 +94,80 @@ def test_kind():
     assert assign.kind == "attribute"
 
 
-def test_get_members():
-    module = create_module("mkapi.objects")
-    module = create_module("schemdraw")
+def test_is_member():
+    cls = get_object("mkapi.plugins.MkAPIPlugin")
+    assert isinstance(cls, Class)
+    for name, obj in cls.dict.items():
+        for x in ["api_dirs", "on_config", "on_serve", "dirty"]:
+            if name == x:
+                assert is_member(obj, cls)
+        for x in ["config_class", "config", "on_post_build", "_is_protocol"]:
+            if name == x:
+                assert not is_member(obj, cls)
+
+
+def test_iter_objects():
+    """'''test module.'''
+    m: str
+    n = 1
+    '''int: attribute n.'''
+    class A(D):
+        '''class.
+
+        Attributes:
+            a: attribute a.
+        '''
+        a: int
+        def f(x: int, y: str) -> list[str]:
+            '''function.'''
+            class B(E,F.G):
+                c: list
+            raise ValueError
+    """
+    src = inspect.getdoc(test_iter_objects)
+    assert src
+    node = ast.parse(src)
+    module = _create_module("x", node)
     assert module
-    # for a in module.objects(Class):
-    #     print(a)
-    # assert 0
+    cls = module.get("A")
+    assert isinstance(cls, Class)
+    func = cls.get("f")
+    assert isinstance(func, Function)
+    cls = func.get("B")
+    assert isinstance(cls, Class)
+    assert cls.fullname == "x.A.f.B"
+    objs = iter_objects(module)
+    assert next(objs).name == "x"
+    assert next(objs).name == "m"
+    assert next(objs).name == "n"
+    assert next(objs).name == "A"
+    assert next(objs).name == "a"
+    assert next(objs).name == "f"
+    assert next(objs).name == "B"
+    assert next(objs).name == "c"
 
 
-# def test_iter_objects():
-#     """'''test module.'''
-#     m: str
-#     n = 1
-#     '''int: attribute n.'''
-#     class A(D):
-#         '''class.
+def test_iter_objects_predicate():
+    module = create_module("mkapi.plugins")
+    assert module
+    cls = module.get("MkAPIPlugin")
+    assert isinstance(cls, Class)
+    x = list(iter_objects(cls))
+    members = ["MkAPIPlugin", "on_nav", "pages"]
+    others = ["load_config", "config"]
+    for name in members:
+        assert get_by_name(x, name)
+    for name in others:
+        assert get_by_name(x, name)
 
-#         Attributes:
-#             a: attribute a.
-#         '''
-#         a: int
-#         def f(x: int, y: str) -> list[str]:
-#             '''function.'''
-#             class B(E,F.G):
-#                 c: list
-#             raise ValueError
-#     """
-#     src = inspect.getdoc(test_iter_objects)
-#     assert src
-#     node = ast.parse(src)
-#     module = _create_module("x", node)
-#     cls = get_by_name(module.classes, "A")
-#     assert cls
-#     func = get_by_name(cls.functions, "f")
-#     assert func
-#     cls = get_by_name(func.classes, "B")
-#     assert cls
-#     assert cls.fullname.str == "x.A.f.B"
-#     objs = iter_objects(module)
-#     assert next(objs).name.str == "x"
-#     assert next(objs).name.str == "A"
-#     assert next(objs).name.str == "f"
-#     assert next(objs).name.str == "B"
-#     assert next(objs).name.str == "c"
-#     assert next(objs).name.str == "a"
-#     assert next(objs).name.str == "m"
-#     assert next(objs).name.str == "n"
+    def predicate(obj, parent):
+        if parent is None:
+            return True
 
+        return obj.module is parent.module
 
-# def test_iter_objects_predicate():
-#     module = create_module("mkapi.plugins")
-#     assert isinstance(module, Module)
-#     cls = get_by_name(module.classes, "MkAPIPlugin")
-#     assert isinstance(cls, Class)
-#     x = list(iter_objects(cls))
-#     members = ["MkAPIPlugin", "on_nav", "pages"]
-#     others = ["load_config", "config"]
-#     for name in members:
-#         assert get_by_name(x, name)
-#     for name in others:
-#         assert get_by_name(x, name)
-
-#     def predicate(obj, parent):
-#         if parent is None:
-#             return True
-#         return obj.module is parent.module
-
-#     x = list(iter_objects(cls, predicate=predicate))
-#     for name in members:
-#         assert get_by_name(x, name)
-#     for name in others:
-#         assert not get_by_name(x, name)
+    x = list(iter_objects(cls, predicate=predicate))
+    for name in members:
+        assert get_by_name(x, name)
+    for name in others:
+        assert not get_by_name(x, name)

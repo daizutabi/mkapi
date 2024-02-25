@@ -85,6 +85,7 @@ deploy = "mkdocs gh-deploy --force"
 config-path = "ruff_defaults.toml"
 
 [tool.ruff]
+line-length = 88
 target-version = "py311"
 extend = "ruff_defaults.toml"
 exclude = ["google.py", 'numpy.py']

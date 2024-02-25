@@ -7,7 +7,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import mkapi.ast
-from mkapi.utils import cache, get_module_name, get_module_node, is_package, iter_attribute_names
+from mkapi.utils import (
+    cache,
+    get_module_name,
+    get_module_node,
+    is_package,
+    iter_attribute_names,
+)
 
 try:
     from ast import TypeAlias
@@ -93,7 +99,7 @@ def _get_module_from_import_from(node: ast.ImportFrom, module: str) -> str:
 
     names = module.split(".")
 
-    if is_package(module):  # noqa: SIM108
+    if is_package(module):
         prefix = ".".join(names[: len(names) - node.level + 1])
 
     else:
@@ -252,6 +258,19 @@ def resolve_from_module(name: str, module: str) -> str | None:
             return f"{_get_fullname(obj)}.{attr}"
 
     return None
+
+
+# def split_module_name(name: str) -> tuple[str, str | None] | None:
+#     for module in iter_attribute_names(name):
+#         if not get_module_node(module):
+#             continue
+
+#         if module == name:
+#             return name, None
+
+#         name_ = name[len(module)+1:]
+
+#         if
 
 
 def iter_decorator_names(node: ast.AST, module: str) -> Iterator[str]:

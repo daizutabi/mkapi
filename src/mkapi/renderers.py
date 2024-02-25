@@ -21,7 +21,6 @@ from mkapi.objects import (
 # is_empty,
 # is_member,
 # iter_objects,
-from mkapi.signatures import get_signature
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator

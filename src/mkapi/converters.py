@@ -38,11 +38,12 @@ class Converter:
         return resolve_from_object(name, self.fullname)
 
     def convert_name(self) -> dict[str, Any]:
+        id_ = self.fullname
         fullname = self.fullname.replace("_", "\\_")
         name = self.name or self.module
         names = [x.replace("_", "\\_") for x in name.split(".")]
 
-        return {"id": self.fullname, "fullname": fullname, "names": names}
+        return {"id": id_, "fullname": fullname, "names": names}
 
 
 def create_converter(name: str, module: str | None = None) -> Converter:

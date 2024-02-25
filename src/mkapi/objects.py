@@ -9,7 +9,12 @@ from typing import TYPE_CHECKING, TypeVar
 import mkapi.ast
 import mkapi.nodes
 import mkapi.utils
-from mkapi.ast import is_classmethod, is_function, is_property, is_staticmethod
+from mkapi.ast import (
+    is_classmethod,
+    is_function,
+    is_property,
+    is_staticmethod,
+)
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
 from mkapi.nodes import _parse, is_dataclass, resolve, resolve_from_module
 from mkapi.utils import (
@@ -47,7 +52,9 @@ class Parameter:
         return f"{self.__class__.__name__}({self.name!r})"
 
 
-def iter_parameters(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Iterator[Parameter]:
+def iter_parameters(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> Iterator[Parameter]:
     for name, type_, default, kind in mkapi.ast.iter_parameters(node):
         yield Parameter(name, type_, default, kind)
 
@@ -66,6 +73,17 @@ def _register_object(obj: Object, name: str | None = None):
         aliases[fullname].append(name)
 
 
+def _create_doc(node: ast.AST) -> Doc:
+    if isinstance(
+        node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module
+    ):
+        text = ast.get_docstring(node)
+    else:
+        text = node.__doc__
+
+    return create_doc(text)
+
+
 @dataclass
 class Object:
     name: str
@@ -74,15 +92,9 @@ class Object:
     kind: str = field(init=False)
 
     def __post_init__(self):
+        self.doc = _create_doc(self.node)
         self.kind = get_kind(self)
         _register_object(self)
-
-        if isinstance(self.node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module):
-            text = ast.get_docstring(self.node)
-        else:
-            text = self.node.__doc__
-
-        self.doc = create_doc(text)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
@@ -241,7 +253,10 @@ def _create_base_class(name: str, module: str) -> Class | None:
     return None
 
 
-def iter_init_attributes(func: Function, parent: str) -> Iterator[tuple[str, Attribute]]:
+def iter_init_attributes(
+    func: Function,
+    parent: str,
+) -> Iterator[tuple[str, Attribute]]:
     self = func.parameters[0].name
 
     for name, obj in list(func.dict.items()):
@@ -326,6 +341,7 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
         for attr in module.iter_objects(Attribute):
             if not is_empty(attr.doc) or attr.module != name:
                 continue
+
             if doc := _get_doc_from_comment(attr.node, lines):
                 attr.doc = doc
 
