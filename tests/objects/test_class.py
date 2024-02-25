@@ -24,11 +24,11 @@ def test_create_class_nested():
     node = ast.parse(inspect.cleandoc(src)).body[0]
     assert isinstance(node, ast.ClassDef)
     cls = create_class(node, "", None)
-    assert len(cls.dict) == 1
-    cls = cls.dict["B"]
+    assert len(cls.children) == 1
+    cls = cls.children["B"]
     assert isinstance(cls, Class)
-    assert len(cls.dict) == 1
-    cls = cls.dict["C"]
+    assert len(cls.children) == 1
+    cls = cls.children["C"]
     assert isinstance(cls, Class)
 
 
@@ -66,7 +66,9 @@ def test_class_parameters():
     cls = module.get("Class")
     assert isinstance(cls, Class)
     assert get_by_name(cls.parameters, "name")
-    assert get_by_name(cls.parameters, "dict")
+    assert get_by_name(cls.parameters, "node")
+    assert get_by_name(cls.parameters, "module")
+    assert get_by_name(cls.parameters, "parent")
 
 
 def test_base_classes():

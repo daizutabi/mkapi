@@ -12,8 +12,21 @@ import mkapi.ast
 import mkapi.markdown
 from mkapi.docs import Item, Section, create_summary_item
 from mkapi.nodes import resolve, resolve_from_module, resolve_module_name
-from mkapi.objects import Attribute, Class, Function, Member, Module, Object, get_object, resolve_from_object
-from mkapi.utils import get_by_name, is_identifier, iter_attribute_names, iter_identifiers
+from mkapi.objects import (
+    Attribute,
+    Class,
+    Function,
+    Module,
+    Object,
+    get_object,
+    resolve_from_object,
+)
+from mkapi.utils import (
+    get_by_name,
+    is_identifier,
+    iter_attribute_names,
+    iter_identifiers,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -132,7 +145,9 @@ def get_markdown_text(text: str, replace: Replace) -> str:
     return mkapi.markdown.sub(LINK_PATTERN, _replace, text)
 
 
-def get_signature(obj: Class | Function | Attribute) -> list[tuple[ast.expr | str, str]]:
+def get_signature(
+    obj: Class | Function | Attribute,
+) -> list[tuple[ast.expr | str, str]]:
     """Return signature."""
     if isinstance(obj, Class | Function):
         return list(_iter_signature(obj))

@@ -34,6 +34,7 @@ except ImportError:
     TypeAlias = None
 
 if TYPE_CHECKING:
+    from ast import AST
     from collections.abc import Callable as Callable_
     from collections.abc import Iterator
     from inspect import _ParameterKind
@@ -63,17 +64,16 @@ objects: dict[str, Object] = cache({})
 aliases: dict[str, list[str]] = cache({})
 
 
-def _register_object(obj: Object, name: str | None = None):
-    fullname = obj.fullname
-    objects[name or fullname] = obj
+def _register_object(fullname: str, obj: Object):
+    objects[fullname] = obj
 
-    aliases.setdefault(fullname, [])
+    aliases.setdefault(obj.fullname, [])
 
-    if name and name not in aliases[fullname]:
-        aliases[fullname].append(name)
+    if fullname not in aliases[obj.fullname]:
+        aliases[obj.fullname].append(fullname)
 
 
-def _create_doc(node: ast.AST) -> Doc:
+def _create_doc(node: AST) -> Doc:
     if isinstance(
         node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module
     ):
@@ -87,31 +87,55 @@ def _create_doc(node: ast.AST) -> Doc:
 @dataclass
 class Object:
     name: str
-    node: ast.AST
+    node: AST
+    module: str
+    parent: Parent | None
     doc: Doc = field(init=False)
     kind: str = field(init=False)
 
     def __post_init__(self):
         self.doc = _create_doc(self.node)
         self.kind = get_kind(self)
-        _register_object(self)
+        _register_object(self.fullname, self)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
+
+    @property
+    def qualname(self) -> str:
+        return f"{self.parent.qualname}.{self.name}" if self.parent else self.name
 
     @property
     def fullname(self) -> str:
         return get_fullname(self)
 
 
-@dataclass(repr=False)
-class Member(Object):
-    qualname: str
-    module: str
+def _create_object(node: AST, module: str, parent: Parent | None) -> Object | None:
+    if isinstance(node, ast.ClassDef):
+        return create_class(node, module, parent)
+
+    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+        if is_function(node):
+            return create_function(node, module, parent)
+
+        if is_property(node):
+            return create_property(node, module, parent)
+
+    if isinstance(node, ast.AnnAssign | ast.Assign | TypeAlias):  # noqa: SIM102
+        if name := mkapi.ast.get_assign_name(node):
+            return create_attribute(name, node, module, parent)
+
+    return None
+
+
+def _iter_child_objects(node: AST, module: str, parent: Parent) -> Iterator[Object]:
+    for child in mkapi.ast.iter_child_nodes(node):
+        if obj := _create_object(child, module, parent):
+            yield obj
 
 
 @dataclass(repr=False)
-class Type(Member):
+class Type(Object):
     type: ast.expr | None
 
     def __post_init__(self):
@@ -134,34 +158,36 @@ T = TypeVar("T")
 
 
 @dataclass(repr=False)
-class Dict(Object):
-    dict: dict[str, Object]
+class Parent(Object):
+    children: dict[str, Object] = field(default_factory=dict, init=False)
 
-    def __post_init__(self):
-        super().__post_init__()
+    def set_children(self, children: dict[str, Object]):
+        self.children = children
 
-        fullname = get_fullname(self)
-        for name, child in self.dict.items():
-            _register_object(child, f"{fullname}.{name}")
+        for name, child in self.objects():
+            _register_object(f"{self.fullname}.{name}", child)
 
-    def get(self, name) -> Object | None:
-        return self.dict.get(name)
+    def get(self, name: str, type_: type[T] = Object) -> T | None:
+        child = self.children.get(name)
 
-    def objects(self, type_: type[T]) -> list[tuple[str, T]]:
-        it = self.dict.items()
+        return child if isinstance(child, type_) else None
+
+    def objects(self, type_: type[T] = Object) -> list[tuple[str, T]]:
+        it = self.children.items()
+
         return [(name, obj) for (name, obj) in it if isinstance(obj, type_)]
 
-    def iter_objects(self, type_: type[T] = type[Object]) -> Iterator[T]:
-        for obj in self.dict.values():
+    def iter_objects(self, type_: type[T] = Object) -> Iterator[T]:
+        for obj in self.children.values():
             if isinstance(obj, type_):
                 yield obj
 
-            if isinstance(obj, Dict):
+            if isinstance(obj, Parent):
                 yield from obj.iter_objects(type_)
 
 
 @dataclass(repr=False)
-class Callable(Member, Dict):
+class Callable(Parent):
     parameters: list[Parameter]
     raises: list[ast.expr]
 
@@ -177,47 +203,24 @@ class Function(Callable):
 
 
 @dataclass(repr=False)
-class Module(Dict):
+class Module(Parent):
     node: ast.Module
 
 
-def _create_object(node: ast.AST, module: str, parent: str | None) -> Object | None:
-    if isinstance(node, ast.ClassDef):
-        return create_class(node, module, parent)
+def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Class:
+    cls = Class(node.name, node, module, parent, [], [])
 
-    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-        if is_function(node):
-            return create_function(node, module, parent)
+    children = {obj.name: obj for obj in _iter_child_objects(node, module, cls)}
 
-        if is_property(node):
-            return create_property(node, module, parent)
-
-    if isinstance(node, ast.AnnAssign | ast.Assign | TypeAlias):  # noqa: SIM102
-        if name := mkapi.ast.get_assign_name(node):
-            return create_attribute(name, node, module, parent)
-
-    return None
-
-
-def _iter_objects(node: ast.AST, module: str, parent: str) -> Iterator[Object]:
-    for child in mkapi.ast.iter_child_nodes(node):
-        if obj := _create_object(child, module, parent):
-            yield obj
-
-
-def create_class(node: ast.ClassDef, module: str, parent: str | None) -> Class:
-    qualname = f"{parent}.{node.name}" if parent else node.name
-    dict_ = {obj.name: obj for obj in _iter_objects(node, module, qualname)}
-
-    if (func := dict_.get("__init__")) and isinstance(func, Function):
-        for name, obj in iter_init_attributes(func, qualname):
-            dict_.setdefault(name, obj)
+    if (func := children.get("__init__")) and isinstance(func, Function):
+        for name, obj in iter_attributes_from_function(func, cls):
+            children.setdefault(name, obj)
 
     for base in get_base_classes(node.name, module):
-        for name, obj in base.dict.items():
-            dict_.setdefault(name, obj)
+        for name, obj in base.objects():
+            children.setdefault(name, obj)
 
-    cls = Class(node.name, node, dict_, qualname, module, [], [])
+    cls.set_children(children)
 
     if is_dataclass(node, module):
         params = iter_dataclass_parameters(cls)
@@ -253,18 +256,18 @@ def _create_base_class(name: str, module: str) -> Class | None:
     return None
 
 
-def iter_init_attributes(
+def iter_attributes_from_function(
     func: Function,
-    parent: str,
+    parent: Parent,
 ) -> Iterator[tuple[str, Attribute]]:
     self = func.parameters[0].name
 
-    for name, obj in list(func.dict.items()):
-        if isinstance(obj, Attribute) and name.startswith(f"{self}."):
+    for name, obj in func.objects(Attribute):
+        if name.startswith(f"{self}."):
             name_ = name[len(self) + 1 :]
             attr = create_attribute(name_, obj.node, obj.module, parent)
             yield name_, attr
-            del func.dict[name]
+            del func.children[name]
 
 
 def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
@@ -288,53 +291,52 @@ def iter_init_parameters(cls: Class) -> Iterator[Parameter]:
 def create_function(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
     module: str,
-    parent: str | None,
+    parent: Parent | None,
 ) -> Function:
-    qualname = f"{parent}.{node.name}" if parent else node.name
-    dict_ = {obj.name: obj for obj in _iter_objects(node, module, qualname)}
-
     params = list(iter_parameters(node))
     raises = list(mkapi.ast.iter_raises(node))
 
-    return Function(node.name, node, dict_, qualname, module, params, raises)
+    func = Function(node.name, node, module, parent, params, raises)
+
+    children = {obj.name: obj for obj in _iter_child_objects(node, module, func)}
+    func.set_children(children)
+
+    return func
 
 
 def create_property(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
     module: str,
-    parent: str | None,
+    parent: Parent | None,
 ) -> Property:
-    qualname = f"{parent}.{node.name}" if parent else node.name
-
-    return Property(node.name, node, qualname, module, node.returns)
+    return Property(node.name, node, module, parent, node.returns)
 
 
 def create_attribute(
     name: str,
     node: ast.AnnAssign | ast.Assign | TypeAlias,  # type: ignore
     module: str,
-    parent: str | None,
+    parent: Parent | None,
 ) -> Attribute:
-    qualname = f"{parent}.{name}" if parent else name
-
     type_ = mkapi.ast.get_assign_type(node)
     default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
 
-    return Attribute(name, node, qualname, module, type_, default)
+    return Attribute(name, node, module, parent, type_, default)
 
 
 def _create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
-    doc = ast.get_docstring(node)
+    module = Module(name, node, name, None)
 
-    dict_ = {}
+    children: dict[str, Object] = {}
+
     for name_, child in _parse(node, name):
         if isinstance(child, mkapi.nodes.Module):
-            dict_[name_] = Module(child.name, child.node, {})
+            children[name_] = Module(child.name, child.node, child.name, None)
 
         elif obj := _create_object(child.node, child.module, None):
-            dict_[name_] = obj
+            children[name_] = obj
 
-    module = Module(name, node, dict_)
+    module.set_children(children)
 
     if source:
         lines = source.splitlines()
@@ -396,13 +398,14 @@ def get_object(fullname: str) -> Object | None:
 
 def _resolve_from_object(name: str, obj: Object) -> str | None:
     """Return fullname from object."""
-    if isinstance(obj, Dict) and (child := obj.get(name)):
-        return get_fullname(child)
+    if isinstance(obj, Parent):  # noqa: SIM102
+        if child := obj.get(name):
+            return get_fullname(child)
 
     if isinstance(obj, Module):
         return resolve_from_module(name, obj.name)
 
-    if "." not in name and isinstance(obj, Member):
+    if "." not in name:
         return resolve_from_module(name, obj.module)
 
     parent, name_ = name.rsplit(".", maxsplit=1)
@@ -429,11 +432,8 @@ def get_fullname(obj: Object) -> str:
     if isinstance(obj, Module):
         return get_module_name(obj.name)
 
-    if isinstance(obj, Member):
-        module = get_module_name(obj.module)
-        return f"{module}.{obj.qualname}"
-
-    return obj.name
+    module = get_module_name(obj.module)
+    return f"{module}.{obj.qualname}"
 
 
 def get_kind(obj: Object | Module) -> str:
@@ -456,7 +456,7 @@ def get_kind(obj: Object | Module) -> str:
     return obj.__class__.__name__.lower()
 
 
-def get_source(obj: Module | Member) -> str | None:
+def get_source(obj: Object) -> str | None:
     """Return the source code of an object."""
     if isinstance(obj, Module):
         return get_module_source(obj.name)
@@ -488,10 +488,10 @@ def iter_objects_with_depth(
     if not predicate or predicate(obj, None):
         yield obj, depth
 
-    if depth == maxdepth or not isinstance(obj, Dict):
+    if depth == maxdepth or not isinstance(obj, Parent):
         return
 
-    for name, child in obj.dict.items():
+    for name, child in obj.children.items():
         if not predicate or predicate(child, obj):
             yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
 

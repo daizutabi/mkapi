@@ -8,7 +8,7 @@ from mkapi.objects import (
     _create_module,
     create_class,
     create_module,
-    iter_init_attributes,
+    iter_attributes_from_function,
 )
 
 
@@ -62,7 +62,7 @@ def test_iter_init_attributes(get):
     assert isinstance(cls, Class)
     func = cls.get("__init__")
     assert isinstance(func, Function)
-    x = list(iter_init_attributes(func, cls.qualname))
+    x = list(iter_attributes_from_function(func, cls.qualname))
     for k, (name, attr) in enumerate(x, 1):
         assert name == f"attr{k}"
         assert attr.name == f"attr{k}"

@@ -97,7 +97,7 @@ def test_kind():
 def test_is_member():
     cls = get_object("mkapi.plugins.MkAPIPlugin")
     assert isinstance(cls, Class)
-    for name, obj in cls.dict.items():
+    for name, obj in cls.children.items():
         for x in ["api_dirs", "on_config", "on_serve", "dirty"]:
             if name == x:
                 assert is_member(obj, cls)
