@@ -19,7 +19,9 @@ from ast import (
     NodeTransformer,
     Raise,
 )
-from inspect import Parameter, cleandoc
+from dataclasses import dataclass
+from inspect import Parameter as P  # noqa: N817
+from inspect import cleandoc
 from typing import TYPE_CHECKING
 
 try:
@@ -118,15 +120,15 @@ def _iter_parameters(
 ) -> Iterator[tuple[str, ast.expr | None, _ParameterKind]]:
     args = node.args
     for arg in args.posonlyargs:
-        yield arg.arg, arg.annotation, Parameter.POSITIONAL_ONLY
+        yield arg.arg, arg.annotation, P.POSITIONAL_ONLY
     for arg in args.args:
-        yield arg.arg, arg.annotation, Parameter.POSITIONAL_OR_KEYWORD
+        yield arg.arg, arg.annotation, P.POSITIONAL_OR_KEYWORD
     if arg := args.vararg:
-        yield arg.arg, arg.annotation, Parameter.VAR_POSITIONAL
+        yield arg.arg, arg.annotation, P.VAR_POSITIONAL
     for arg in args.kwonlyargs:
-        yield arg.arg, arg.annotation, Parameter.KEYWORD_ONLY
+        yield arg.arg, arg.annotation, P.KEYWORD_ONLY
     if arg := args.kwarg:
-        yield arg.arg, arg.annotation, Parameter.VAR_KEYWORD
+        yield arg.arg, arg.annotation, P.VAR_KEYWORD
 
 
 def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | None]:
@@ -138,14 +140,23 @@ def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | 
     yield from args.kw_defaults
 
 
-def iter_parameters(
-    node: FunctionDef | AsyncFunctionDef,
-) -> Iterator[tuple[str, ast.expr | None, ast.expr | None, _ParameterKind]]:
+@dataclass
+class Parameter:
+    name: str
+    type: ast.expr | None
+    default: ast.expr | None
+    kind: _ParameterKind
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r})"
+
+
+def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]:
     """Yield parameters from a function node."""
     it = _iter_defaults(node)
     for name, type_, kind in _iter_parameters(node):
-        default = None if kind in [Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD] else next(it)
-        yield name, type_, default, kind
+        default = None if kind in [P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)
+        yield Parameter(name, type_, default, kind)
 
 
 def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr]:

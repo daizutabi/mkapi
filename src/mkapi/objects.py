@@ -10,22 +10,25 @@ import mkapi.ast
 import mkapi.nodes
 import mkapi.utils
 from mkapi.ast import (
+    Parameter,
     is_classmethod,
     is_function,
     is_property,
     is_staticmethod,
+    iter_parameters,
+    iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.nodes import _parse, is_dataclass, resolve, resolve_from_module
+from mkapi.nodes import parse, resolve
 from mkapi.utils import (
     cache,
     get_module_name,
     get_module_node,
     get_module_node_source,
     get_module_source,
+    is_dataclass,
     is_package,
     iter_attribute_names,
-    iter_identifiers,
 )
 
 try:
@@ -37,51 +40,12 @@ if TYPE_CHECKING:
     from ast import AST
     from collections.abc import Callable as Callable_
     from collections.abc import Iterator
-    from inspect import _ParameterKind
 
     from mkapi.docs import Doc
 
 
-@dataclass
-class Parameter:
-    name: str
-    type: ast.expr | None
-    default: ast.expr | None
-    kind: _ParameterKind
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r})"
-
-
-def iter_parameters(
-    node: ast.FunctionDef | ast.AsyncFunctionDef,
-) -> Iterator[Parameter]:
-    for name, type_, default, kind in mkapi.ast.iter_parameters(node):
-        yield Parameter(name, type_, default, kind)
-
-
 objects: dict[str, Object] = cache({})
 aliases: dict[str, list[str]] = cache({})
-
-
-def _register_object(fullname: str, obj: Object):
-    objects[fullname] = obj
-
-    aliases.setdefault(obj.fullname, [])
-
-    if fullname not in aliases[obj.fullname]:
-        aliases[obj.fullname].append(fullname)
-
-
-def _create_doc(node: AST) -> Doc:
-    if isinstance(
-        node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module
-    ):
-        text = ast.get_docstring(node)
-    else:
-        text = node.__doc__
-
-    return create_doc(text)
 
 
 @dataclass
@@ -108,6 +72,24 @@ class Object:
     @property
     def fullname(self) -> str:
         return get_fullname(self)
+
+
+def _create_doc(node: AST) -> Doc:
+    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module):
+        text = ast.get_docstring(node)
+    else:
+        text = node.__doc__
+
+    return create_doc(text)
+
+
+def _register_object(fullname: str, obj: Object):
+    objects[fullname] = obj
+
+    aliases.setdefault(obj.fullname, [])
+
+    if fullname not in aliases[obj.fullname]:
+        aliases[obj.fullname].append(fullname)
 
 
 def _create_object(node: AST, module: str, parent: Parent | None) -> Object | None:
@@ -222,7 +204,7 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
 
     cls.set_children(children)
 
-    if is_dataclass(node, module):
+    if is_dataclass(node.name, module):
         params = iter_dataclass_parameters(cls)
         cls.parameters.extend(params)
 
@@ -235,30 +217,30 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
 
 @cache
 def get_base_classes(name: str, module: str) -> list[Class]:
-    return list(iter_base_classes(name, module))
+    bases = []
 
-
-def iter_base_classes(name: str, module: str) -> Iterator[Class]:
-    for basename, basemodule in _iter_base_classes(name, module):
+    for basename, basemodule in mkapi.utils.get_base_classes(name, module):
         if cls := objects.get(f"{basemodule}.{basename}"):
             if isinstance(cls, Class):
-                yield cls
+                bases.append(cls)
 
-        elif cls := _create_base_class(basename, basemodule):
-            yield cls
+        elif cls := _create_class_from_name(basename, basemodule):
+            bases.append(cls)
+
+    return bases
 
 
-def _create_base_class(name: str, module: str) -> Class | None:
+def _create_class_from_name(name: str, module: str) -> Class | None:
     if node := get_module_node(module):
         for child in ast.iter_child_nodes(node):
             if isinstance(child, ast.ClassDef) and child.name == name:
                 return create_class(child, module, None)
+
     return None
 
 
 def iter_attributes_from_function(
-    func: Function,
-    parent: Parent,
+    func: Function, parent: Parent
 ) -> Iterator[tuple[str, Attribute]]:
     self = func.parameters[0].name
 
@@ -294,7 +276,7 @@ def create_function(
     parent: Parent | None,
 ) -> Function:
     params = list(iter_parameters(node))
-    raises = list(mkapi.ast.iter_raises(node))
+    raises = list(iter_raises(node))
 
     func = Function(node.name, node, module, parent, params, raises)
 
@@ -329,7 +311,7 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
 
     children: dict[str, Object] = {}
 
-    for name_, child in _parse(node, name):
+    for name_, child in parse(node, name):
         if isinstance(child, mkapi.nodes.Module):
             children[name_] = Module(child.name, child.node, child.name, None)
 
@@ -350,7 +332,7 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
     return module
 
 
-def _get_doc_from_comment(node: ast.AST, lines: list[str]) -> Doc | None:
+def _get_doc_from_comment(node: AST, lines: list[str]) -> Doc | None:
     line = lines[node.lineno - 1][node.end_col_offset :].strip()
 
     if line.startswith("#:"):
@@ -372,26 +354,53 @@ def create_module(name: str) -> Module | None:
     return _create_module(name, *node_source)
 
 
-def _iter_base_classes(name: str, module: str) -> Iterator[tuple[str, str]]:
-    if not module:
-        return
-
-    obj = mkapi.utils.get_object(name, module)
-    if inspect.isclass(obj):
-        for base in obj.__bases__:
-            if base.__module__ != "builtins":
-                basename = next(iter_identifiers(base.__name__))[0]
-                yield basename, base.__module__
-
-
 @cache
 def get_object(fullname: str) -> Object | None:
-    if fullname in objects:
-        return objects[fullname]
+    if obj := objects.get(fullname):
+        return obj
 
     for module in iter_attribute_names(fullname):
-        if create_module(module) and fullname in objects:
-            return objects[fullname]
+        if create_module(module) and (obj := objects.get(fullname)):
+            return obj
+
+    return None
+
+
+def get_fullname(obj: Object) -> str:
+    if isinstance(obj, Module):
+        return get_module_name(obj.name)
+
+    module = get_module_name(obj.module)
+    return f"{module}.{obj.qualname}"
+
+
+def get_kind(obj: Object | Module) -> str:
+    """Return kind."""
+    if isinstance(obj, Module):
+        return "package" if is_package(obj.name) else "module"
+
+    if isinstance(obj, Class):
+        return "dataclass" if is_dataclass(obj.name, obj.module) else "class"
+
+    if isinstance(obj, Function):
+        if is_classmethod(obj.node):
+            return "classmethod"
+
+        if is_staticmethod(obj.node):
+            return "staticmethod"
+
+        return "method" if "." in obj.qualname else "function"
+
+    return obj.__class__.__name__.lower()
+
+
+def get_source(obj: Object) -> str | None:
+    """Return the source code of an object."""
+    if isinstance(obj, Module):
+        return get_module_source(obj.name)
+
+    if source := get_module_source(obj.module):
+        return ast.get_source_segment(source, obj.node)
 
     return None
 
@@ -428,45 +437,6 @@ def resolve_from_object(name: str, fullname: str) -> str | None:
     return None
 
 
-def get_fullname(obj: Object) -> str:
-    if isinstance(obj, Module):
-        return get_module_name(obj.name)
-
-    module = get_module_name(obj.module)
-    return f"{module}.{obj.qualname}"
-
-
-def get_kind(obj: Object | Module) -> str:
-    """Return kind."""
-    if isinstance(obj, Module):
-        return "package" if is_package(obj.name) else "module"
-
-    if isinstance(obj, Class):
-        return "dataclass" if is_dataclass(obj.node, obj.module) else "class"
-
-    if isinstance(obj, Function):
-        if is_classmethod(obj.node):
-            return "classmethod"
-
-        if is_staticmethod(obj.node):
-            return "staticmethod"
-
-        return "method" if "." in obj.qualname else "function"
-
-    return obj.__class__.__name__.lower()
-
-
-def get_source(obj: Object) -> str | None:
-    """Return the source code of an object."""
-    if isinstance(obj, Module):
-        return get_module_source(obj.name)
-
-    if source := get_module_source(obj.module):
-        return ast.get_source_segment(source, obj.node)
-
-    return None
-
-
 def is_member(obj: Object, parent: Object | None) -> bool:
     """Return True if obj is a member of parent."""
     if parent is None:
@@ -475,7 +445,7 @@ def is_member(obj: Object, parent: Object | None) -> bool:
     if isinstance(obj, Module) or isinstance(parent, Module):
         return True
 
-    return obj.fullname.startswith(parent.fullname)
+    return obj.parent is parent
 
 
 def iter_objects_with_depth(
@@ -504,3 +474,115 @@ def iter_objects(
     """Yield [Object] instances."""
     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
         yield child
+
+
+# def _split_fullname(obj: Module | Object | Import) -> tuple[str, str | None]:
+#     if isinstance(obj, Module):
+#         return get_module_name(obj.name), None
+
+#     if isinstance(obj, Object):
+#         module = get_module_name(obj.module)
+#         return module, obj.name
+
+#     return obj.fullname, None  # import
+
+
+# def _get_fullname(obj: Module | Object | Import) -> str:
+#     module, name = _split_fullname(obj)
+#     if name is None:
+#         return module
+
+#     return f"{module}.{name}"
+
+
+# def resolve_module_name(name: str) -> tuple[str, str | None] | None:
+#     if resolved := list(_resolve(name)):
+#         return _split_fullname(resolved[0])
+
+#     if "." not in name:
+#         return None
+
+#     name, attr = name.rsplit(".", maxsplit=1)
+
+#     if resolved := resolve_module_name(name):
+#         module, name_ = resolved
+#         name = f"{name_}.{attr}" if name_ else attr
+#         return module, name
+
+#     return None
+
+
+# def resolve(name: str) -> str | None:
+#     if module_name := resolve_module_name(name):
+#         module, name_ = module_name
+#         if name_ is None:
+#             return module
+
+#         return f"{module}.{name_}"
+
+#     return None
+
+
+# def resolve_from_module(name: str, module: str) -> str | None:
+#     if name.startswith(module) or module.startswith(name):
+#         return name
+
+#     for name_, obj in parse(module):
+#         if name_ == name:
+#             return _get_fullname(obj)
+
+#     if name in get_all_names(module):
+#         return f"{module}.{name}"
+
+#     if "." not in name:
+#         return None
+
+#     name, attr = name.rsplit(".", maxsplit=1)
+
+#     for name_, obj in parse(module):
+#         if name_ == name:
+#             if isinstance(obj, Module):
+#                 return resolve(f"{obj.name}.{attr}")
+
+#             return f"{_get_fullname(obj)}.{attr}"
+
+#     return None
+
+
+# def split_module_name(name: str) -> tuple[str, str | None] | None:
+#     for module in iter_attribute_names(name):
+#         if not get_module_node(module):
+#             continue
+
+#         if module == name:
+#             return name, None
+
+#         name_ = name[len(module)+1:]
+
+#         if
+
+
+# def iter_decorator_names(node: ast.AST, module: str) -> Iterator[str]:
+#     """Yield decorator_names."""
+#     if not isinstance(node, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+#         return
+
+#     for deco in node.decorator_list:
+#         deco_name = next(mkapi.ast.iter_identifiers(deco))
+
+#         if name := resolve_from_module(deco_name, module):
+#             yield name
+
+#         else:
+#             yield deco_name
+
+
+# def has_decorator(node: ast.AST, name: str, module: str) -> bool:
+#     """Return a decorator expr by name."""
+#     it = iter_decorator_names(node, module)
+#     return any(deco_name == name for deco_name in it)
+
+
+# def is_dataclass(node: ast.AST, module: str) -> bool:
+#     """Return True if the [Class] instance is a dataclass."""
+#     return has_decorator(node, "dataclasses.dataclass", module)

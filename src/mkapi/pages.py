@@ -14,7 +14,13 @@ from typing import TYPE_CHECKING, TypeAlias
 import mkapi.markdown
 import mkapi.renderers
 from mkapi.nodes import resolve
-from mkapi.objects import create_module, get_object, is_empty, is_member, iter_objects_with_depth
+from mkapi.objects import (
+    create_module,
+    get_object,
+    is_empty,
+    is_member,
+    iter_objects_with_depth,
+)
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
@@ -59,19 +65,21 @@ class Page:
 
     def create_markdown(self) -> None:
         """Create markdown source."""
-        if self.is_api_page():
-            with self.path.open("w") as file:
-                file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
+        if not self.is_api_page():
+            return
 
-            self.markdown, names = create_markdown(self.name, self.filters)
+        with self.path.open("w") as file:
+            file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
 
-            namespace = "source" if self.is_source_page() else "object"
+        self.markdown, names = create_markdown(self.name, self.filters)
 
-            if namespace not in object_paths:
-                object_paths[namespace] = {}
+        namespace = "source" if self.is_source_page() else "object"
 
-            for name in names:
-                object_paths[namespace][name] = self.path
+        if namespace not in object_paths:
+            object_paths[namespace] = {}
+
+        for name in names:
+            object_paths[namespace][name] = self.path
 
     def convert_markdown(self, markdown: str, anchors: dict[str, str]) -> str:
         """Return converted markdown."""
@@ -178,7 +186,9 @@ def convert_markdown(
     return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
 
 
-def _render(match: re.Match, namespace: str, predicate: Callable[[str, str], bool] | None = None) -> str:
+def _render(
+    match: re.Match, namespace: str, predicate: Callable[[str, str], bool] | None = None
+) -> str:
     heading, name = match.groups()
     level = len(heading)
     name, filters = split_filters(name)
@@ -223,7 +233,9 @@ def _replace_link(
     return _replace_link_from_paths(name, fullname, directory, paths_) or asname
 
 
-def _replace_link_from_paths(name: str, fullname: str, directory: Path, paths: dict[str, Path]) -> str | None:
+def _replace_link_from_paths(
+    name: str, fullname: str, directory: Path, paths: dict[str, Path]
+) -> str | None:
     if fullname.startswith("__mkapi__."):
         from_mkapi = True
         fullname = fullname[10:]

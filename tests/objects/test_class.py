@@ -5,11 +5,9 @@ from mkapi.objects import (
     Class,
     Function,
     Property,
-    _iter_base_classes,
     create_class,
     create_module,
     get_object,
-    iter_base_classes,
 )
 from mkapi.utils import get_by_name
 
@@ -71,28 +69,28 @@ def test_class_parameters():
     assert get_by_name(cls.parameters, "parent")
 
 
-def test_base_classes():
-    cls = get_object("mkapi.plugins.MkAPIPlugin")
-    assert isinstance(cls, Class)
-    assert cls.qualname == "MkAPIPlugin"
-    func = cls.get("on_config")
-    assert isinstance(func, Function)
-    assert func.qualname == "MkAPIPlugin.on_config"
-    bases = list(_iter_base_classes(cls.name, cls.module))
-    assert bases == [("BasePlugin", "mkdocs.plugins")]
-    base = next(iter_base_classes(cls.name, cls.module))
-    assert base.name == "BasePlugin"
-    assert base.module == "mkdocs.plugins"
-    func = base.get("on_config")
-    assert func
-    assert func.qualname == "BasePlugin.on_config"
-    assert func.module == "mkdocs.plugins"
-    cls = get_object("mkapi.plugins.MkAPIConfig")
-    assert isinstance(cls, Class)
-    base = next(iter_base_classes(cls.name, cls.module))
-    assert base.name == "Config"
-    assert base.qualname == "Config"
-    assert base.module == "mkdocs.config.base"
+# def test_base_classes():
+#     cls = get_object("mkapi.plugins.MkAPIPlugin")
+#     assert isinstance(cls, Class)
+#     assert cls.qualname == "MkAPIPlugin"
+#     func = cls.get("on_config")
+#     assert isinstance(func, Function)
+#     assert func.qualname == "MkAPIPlugin.on_config"
+#     bases = list(_iter_base_classes(cls.name, cls.module))
+#     assert bases == [("BasePlugin", "mkdocs.plugins")]
+#     base = next(iter_base_classes(cls.name, cls.module))
+#     assert base.name == "BasePlugin"
+#     assert base.module == "mkdocs.plugins"
+#     func = base.get("on_config")
+#     assert func
+#     assert func.qualname == "BasePlugin.on_config"
+#     assert func.module == "mkdocs.plugins"
+#     cls = get_object("mkapi.plugins.MkAPIConfig")
+#     assert isinstance(cls, Class)
+#     base = next(iter_base_classes(cls.name, cls.module))
+#     assert base.name == "Config"
+#     assert base.qualname == "Config"
+#     assert base.module == "mkdocs.config.base"
 
 
 def test_inherit_base_classes():

@@ -313,9 +313,13 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
         return object_uri
 
+    section_title = plugin.section_title
+    page_title = plugin.page_title
+
     def predicate(name: str) -> bool:
         if not plugin.config.exclude:
             return True
+
         return all(ex not in name for ex in plugin.config.exclude)
 
     with warnings.catch_warnings():
@@ -325,20 +329,15 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         spinner.start()
 
         try:
-            mkapi.nav.update(
-                config.nav,
-                _create_page,
-                plugin.section_title,
-                plugin.page_title,
-                predicate,
-            )
+            mkapi.nav.update(config.nav, _create_page, section_title, page_title, predicate)
+
         except Exception as e:
             if plugin.config.debug:
                 raise
 
-            spinner.stop()
             logger.exception(e)  # noqa: TRY401
-        else:
+
+        finally:
             spinner.stop()
 
 

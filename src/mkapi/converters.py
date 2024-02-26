@@ -37,9 +37,9 @@ if TYPE_CHECKING:
 
 @dataclass(repr=False)
 class Converter:
-    name: str | None
+    name: str
     module: str
-    fullname: str
+    object: Object
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
@@ -59,7 +59,7 @@ class Converter:
         return {"id": id_, "fullname": fullname, "names": names}
 
 
-def create_converter(name: str, module: str | None = None) -> Converter:
+def create_converter(name: str, module: str) -> Converter:
     if not module:
         if module_name := resolve_module_name(name):
             module, name_ = module_name

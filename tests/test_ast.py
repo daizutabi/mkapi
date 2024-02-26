@@ -1,7 +1,14 @@
 import ast
 from inspect import _ParameterKind
 
-from mkapi.ast import StringTransformer, _iter_identifiers, iter_child_nodes, iter_parameters, iter_raises, unparse
+from mkapi.ast import (
+    StringTransformer,
+    _iter_identifiers,
+    iter_child_nodes,
+    iter_parameters,
+    iter_raises,
+    unparse,
+)
 
 
 def test_iter_child_nodes():
@@ -23,14 +30,18 @@ def test_iter_parameters():
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.FunctionDef)
     x = list(iter_parameters(node))
-    assert x[0][-1] is _ParameterKind.POSITIONAL_ONLY
-    assert x[1][-1] is _ParameterKind.POSITIONAL_OR_KEYWORD
-    assert x[2][-1] is _ParameterKind.KEYWORD_ONLY
-    assert x[3][-1] is _ParameterKind.KEYWORD_ONLY
-    assert x[0][2] is None
-    assert x[1][2] is not None
-    assert x[2][2] is None
-    assert x[3][2] is not None
+    assert x[0].name == "a"
+    assert x[1].name == "b"
+    assert x[2].name == "c"
+    assert x[3].name == "d"
+    assert x[0].default is None
+    assert x[1].default is not None
+    assert x[2].default is None
+    assert x[3].default is not None
+    assert x[0].kind is _ParameterKind.POSITIONAL_ONLY
+    assert x[1].kind is _ParameterKind.POSITIONAL_OR_KEYWORD
+    assert x[2].kind is _ParameterKind.KEYWORD_ONLY
+    assert x[3].kind is _ParameterKind.KEYWORD_ONLY
 
 
 def test_iter_raises():

@@ -12,9 +12,11 @@ from mkapi.utils import (
     cached_objects,
     del_by_name,
     find_submodule_names,
+    get_base_classes,
     get_by_kind,
     get_by_name,
     get_by_type,
+    get_export_names,
     get_module_name,
     get_module_node,
     get_module_node_source,
@@ -216,3 +218,14 @@ def test_get_module_name():
     abc = importlib.import_module(name)
     assert abc.__name__ == "collections.abc"
     assert get_module_name(name) == "collections.abc"
+
+
+def test_get_export_names():
+    x = get_export_names("tqdm")
+    assert "tqdm" in x
+    assert "trange" in x
+
+
+def test_get_base_classes():
+    x = get_base_classes("Class", "mkapi.objects")
+    assert x == [("Callable", "mkapi.objects")]

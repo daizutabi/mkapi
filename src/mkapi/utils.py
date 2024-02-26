@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import dataclasses
 import functools
 import importlib
 import inspect
@@ -197,17 +198,6 @@ def iter_attribute_names(fullname: str, *, reverse: bool = False) -> Iterator[st
         yield ".".join(names[:k])
 
 
-@cache
-def get_object(name: str, module: str) -> object | None:
-    try:
-        obj = importlib.import_module(module)
-    except ModuleNotFoundError:
-        return
-
-    members = dict(inspect.getmembers(obj))
-    return members.get(name)
-
-
 T = TypeVar("T")
 
 
@@ -349,3 +339,50 @@ def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
         else:
             yield c, False
             start += 1
+
+
+@cache
+def get_object(name: str, module: str) -> object | None:
+    try:
+        obj = importlib.import_module(module)
+    except ModuleNotFoundError:
+        return None
+
+    members = dict(inspect.getmembers(obj))
+    return members.get(name)
+
+
+@cache
+def is_dataclass(name: str, module: str) -> bool:
+    obj = get_object(name, module)
+    return dataclasses.is_dataclass(obj)
+
+
+@cache
+def get_export_names(module: str) -> list[str]:
+    try:
+        members = importlib.import_module(module).__dict__
+    except ModuleNotFoundError:
+        return []
+
+    names = members.get("__all__")
+    if isinstance(names, list | tuple):
+        return list(names)
+
+    return []
+    # return [name for name in names if name not in members]
+
+
+@cache
+def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
+    obj = get_object(name, module)
+
+    bases = []
+
+    if inspect.isclass(obj):
+        for base in obj.__bases__:
+            if base.__module__ != "builtins":
+                basename = next(iter_identifiers(base.__name__))[0]
+                bases.append((basename, base.__module__))
+
+    return bases
