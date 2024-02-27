@@ -11,6 +11,9 @@ import mkapi.nodes
 import mkapi.utils
 from mkapi.ast import (
     Parameter,
+    get_assign_name,
+    get_assign_type,
+    is_assign,
     is_classmethod,
     is_function,
     is_property,
@@ -19,7 +22,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.nodes import parse, resolve
+from mkapi.nodes import Import, parse, resolve
 from mkapi.utils import (
     cache,
     get_module_name,
@@ -58,9 +61,9 @@ class Object:
     kind: str = field(init=False)
 
     def __post_init__(self):
+        _register_object(self.fullname, self)
         self.doc = _create_doc(self.node)
         self.kind = get_kind(self)
-        _register_object(self.fullname, self)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
@@ -96,16 +99,14 @@ def _create_object(node: AST, module: str, parent: Parent | None) -> Object | No
     if isinstance(node, ast.ClassDef):
         return create_class(node, module, parent)
 
-    if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-        if is_function(node):
-            return create_function(node, module, parent)
+    if is_function(node):
+        return create_function(node, module, parent)
 
-        if is_property(node):
-            return create_property(node, module, parent)
+    if is_property(node):
+        return create_property(node, module, parent)
 
-    if isinstance(node, ast.AnnAssign | ast.Assign | TypeAlias):  # noqa: SIM102
-        if name := mkapi.ast.get_assign_name(node):
-            return create_attribute(name, node, module, parent)
+    if is_assign(node) and (name := get_assign_name(node)):
+        return create_attribute(name, node, module, parent)
 
     return None
 
@@ -146,7 +147,7 @@ class Parent(Object):
     def set_children(self, children: dict[str, Object]):
         self.children = children
 
-        for name, child in self.objects():
+        for name, child in children.items():
             _register_object(f"{self.fullname}.{name}", child)
 
     def get(self, name: str, type_: type[T] = Object) -> T | None:
@@ -187,6 +188,7 @@ class Function(Callable):
 @dataclass(repr=False)
 class Module(Parent):
     node: ast.Module
+    imports: dict[str, Import]
 
 
 def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Class:
@@ -194,8 +196,10 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
 
     children = {obj.name: obj for obj in _iter_child_objects(node, module, cls)}
 
-    if (func := children.get("__init__")) and isinstance(func, Function):
-        for name, obj in iter_attributes_from_function(func, cls):
+    init = children.get("__init__")
+
+    if isinstance(init, Function):
+        for name, obj in iter_attributes_from_method(init, cls):
             children.setdefault(name, obj)
 
     for base in get_base_classes(node.name, module):
@@ -208,8 +212,8 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
         params = iter_dataclass_parameters(cls)
         cls.parameters.extend(params)
 
-    else:
-        params = iter_init_parameters(cls)
+    elif isinstance(init, Function):
+        params = init.parameters[1:]
         cls.parameters.extend(params)
 
     return cls
@@ -239,9 +243,7 @@ def _create_class_from_name(name: str, module: str) -> Class | None:
     return None
 
 
-def iter_attributes_from_function(
-    func: Function, parent: Parent
-) -> Iterator[tuple[str, Attribute]]:
+def iter_attributes_from_method(func: Function, parent: Parent) -> Iterator[tuple[str, Attribute]]:
     self = func.parameters[0].name
 
     for name, obj in func.objects(Attribute):
@@ -263,11 +265,6 @@ def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
 
             else:
                 raise NotImplementedError
-
-
-def iter_init_parameters(cls: Class) -> Iterator[Parameter]:
-    if (func := cls.get("__init__")) and isinstance(func, Function):
-        yield from func.parameters[1:]
 
 
 def create_function(
@@ -300,20 +297,23 @@ def create_attribute(
     module: str,
     parent: Parent | None,
 ) -> Attribute:
-    type_ = mkapi.ast.get_assign_type(node)
+    type_ = get_assign_type(node)
     default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
 
     return Attribute(name, node, module, parent, type_, default)
 
 
 def _create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
-    module = Module(name, node, name, None)
+    module = Module(name, node, name, None, {})
 
     children: dict[str, Object] = {}
 
     for name_, child in parse(node, name):
-        if isinstance(child, mkapi.nodes.Module):
-            children[name_] = Module(child.name, child.node, child.name, None)
+        if isinstance(child, Import):
+            module.imports[name_] = child
+
+        elif isinstance(child, mkapi.nodes.Module):
+            children[name_] = Module(child.name, child.node, child.name, None, {})
 
         elif obj := _create_object(child.node, child.module, None):
             children[name_] = obj

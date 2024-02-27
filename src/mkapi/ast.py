@@ -22,7 +22,7 @@ from ast import (
 from dataclasses import dataclass
 from inspect import Parameter as P  # noqa: N817
 from inspect import cleandoc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeGuard
 
 try:
     from ast import TypeAlias
@@ -87,19 +87,19 @@ def _iter_assign_nodes(
 def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type: ignore
     """Return the name of the assign node."""
     if isinstance(node, Assign):
-        target = node.targets[0]
+        name = node.targets[0]
 
     elif isinstance(node, AnnAssign):
-        target = node.target
+        name = node.target
 
     elif TypeAlias and isinstance(node, TypeAlias):
-        target = node.name
+        name = node.name
 
     else:
         return None
 
-    if isinstance(target, Name | Attribute):
-        return ast.unparse(target)
+    if isinstance(name, Name | Attribute):
+        return ast.unparse(name)
 
     return None
 
@@ -286,29 +286,33 @@ def has_property(node: AST, name: str, index: int = 0) -> bool:
     return False
 
 
-def is_property(node: AST) -> bool:
+def is_property(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Return True if a function is a property."""
     return has_property(node, "property")
 
 
-def is_setter(node: AST) -> bool:
+def is_setter(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Return True if a function is a property."""
     return has_property(node, "setter", 1)
 
 
-def has_overload(node: AST) -> bool:
+def has_overload(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Return True if a function has an `overload` decorator."""
     return has_property(node, "overload")
 
 
-def is_function(node: AST) -> bool:
+def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Return True if a function is neither a property nor overloaded."""
     return not (is_property(node) or is_setter(node) or has_overload(node))
 
 
-def is_classmethod(node: AST) -> bool:
+def is_classmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     return has_property(node, "classmethod")
 
 
-def is_staticmethod(node: AST) -> bool:
+def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     return has_property(node, "staticmethod")
+
+
+def is_assign(node: AST) -> TypeGuard[ast.AnnAssign | ast.Assign | TypeAlias]:  # type: ignore
+    return isinstance(node, ast.AnnAssign | ast.Assign | TypeAlias)

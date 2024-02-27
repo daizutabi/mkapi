@@ -1,13 +1,13 @@
 import ast
 
 from mkapi.nodes import (
-    Object,
+    Import,
     _iter_imports,
     _iter_imports_from,
+    get_child_nodes,
     parse,
-    resolve,
 )
-from mkapi.utils import get_module_node
+from mkapi.utils import get_module_node, iter_by_name
 
 
 def test_iter_import_asname():
@@ -35,12 +35,60 @@ def test_iter_import_asname():
     assert x[0][1] == "matplotlib.pyplot"
 
 
-def test_a():
+def test_parse_import():
+    src = "import a.b.c"
+    node = ast.parse(src)
+    x = list(parse(node, "m"))
+    for k, n in enumerate(["a", "a.b", "a.b.c"]):
+        i = x[k][1]
+        assert isinstance(i, Import)
+        assert i.fullname == n
+        assert x[k][0] == n
+
+
+def test_parse_import_as():
+    src = "import a.b.c as d"
+    node = ast.parse(src)
+    x = parse(node, "m")[0]
+    assert x[0] == "d"
+    assert isinstance(x[1], Import)
+    assert x[1].fullname == "a.b.c"
+
+
+def test_parse_import_from():
+    src = "from x import a, b, c as C"
+    node = ast.parse(src)
+    x = list(parse(node, "m"))
+    for k, n in enumerate("abc"):
+        i = x[k][1]
+        assert isinstance(i, Import)
+        assert i.fullname == f"x.{n}"
+        if k == 2:
+            assert x[k][0] == "C"
+        else:
+            assert x[k][0] == n
+
+
+def test_parse_polars():
     name = "polars"
-    # name = "mkdocs.plugins"
     node = get_module_node(name)
     assert node
-    x = parse(node, name)
-    for a in x:
-        print(a)
-    assert 0
+    objs = [x[1] for x in parse(node, name)]
+    f = list(iter_by_name(objs, "read_excel"))
+    assert len(f) > 1
+
+
+def test_get_child_nodes():
+    name = "altair.vegalite"
+    node = get_module_node(name)
+    assert node
+    x = get_child_nodes(node, name)
+    assert len(list(iter_by_name(x, "expr"))) == 1
+
+
+def test_parse_altair():
+    name = "altair"
+    node = get_module_node(name)
+    assert node
+    x = [x for _, x in parse(node, name)]
+    assert len(list(iter_by_name(x, "expr"))) == 1
