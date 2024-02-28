@@ -1,4 +1,4 @@
-"""Link module."""
+"""Converter module."""
 from __future__ import annotations
 
 import ast
@@ -11,18 +11,15 @@ from typing import TYPE_CHECKING, TypeAlias
 import mkapi.ast
 import mkapi.markdown
 from mkapi.docs import Item, Section, create_summary_item
-
-# from mkapi.nodes import resolve, resolve_from_module, resolve_module_name
+from mkapi.nodes import resolve_from_module
 from mkapi.objects import (
     Attribute,
     Class,
     Function,
-    # Module,
     Object,
-    get_object,
+    resolve,
+    resolve_from_object,
 )
-
-# resolve_from_object,
 from mkapi.utils import (
     get_by_name,
     is_identifier,
@@ -37,41 +34,38 @@ if TYPE_CHECKING:
     from mkapi.objects import Parameter
 
 
-@dataclass(repr=False)
+@dataclass
 class Converter:
     name: str
-    module: str
-    object: Object
+    module: str | None
+    obj: Object
+    fullname: str = field(init=False)
+
+    def __post_init__(self):
+        self.fullname = f"{self.module}.{self.name}" if self.module else self.name
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
 
     def replace_from_module(self, name: str) -> str | None:
-        return resolve_from_module(name, self.module)
+        return resolve_from_module(name, self.module or self.name)
 
     def replace_from_object(self, name: str) -> str | None:
-        return resolve_from_object(name, self.fullname)
+        return resolve_from_object(name, self.obj)
 
     def convert_name(self) -> dict[str, Any]:
         id_ = self.fullname
-        fullname = self.fullname.replace("_", "\\_")
-        name = self.name or self.module
-        names = [x.replace("_", "\\_") for x in name.split(".")]
+        names = [x.replace("_", "\\_") for x in self.name.split(".")]
+        fullname = get_markdown_name(self.fullname)
 
         return {"id": id_, "fullname": fullname, "names": names}
 
 
-def create_converter(name: str, module: str) -> Converter:
-    if not module:
-        if module_name := resolve_module_name(name):
-            module, name_ = module_name
-            fullname = f"{module}.{name_}" if name_ else module
-            return Converter(name_, module, fullname)
+def create_converter(name: str) -> Converter | None:
+    if resolved := resolve(name):
+        return Converter(*resolved)
 
-    elif fullname := resolve_from_module(name, module):
-        return Converter(name, module, fullname)
-
-    raise ValueError
+    return None
 
 
 PREFIX = "__mkapi__."
