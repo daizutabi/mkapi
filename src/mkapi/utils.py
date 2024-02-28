@@ -342,14 +342,20 @@ def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
 
 
 @cache
-def get_object(name: str, module: str) -> object | None:
+def get_object(name: str, module: str | None) -> object | None:
     try:
-        obj = importlib.import_module(module)
+        obj = importlib.import_module(module or name)
     except ModuleNotFoundError:
         return None
 
-    members = dict(inspect.getmembers(obj))
-    return members.get(name)
+    if not module:
+        return obj
+
+    for name_ in name.split("."):
+        if not (obj := dict(inspect.getmembers(obj)).get(name_)):
+            return None
+
+    return obj
 
 
 @cache

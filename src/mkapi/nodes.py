@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import ast
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import chain
 from typing import TYPE_CHECKING
 
@@ -11,31 +11,32 @@ from mkapi.ast import TypeAlias, get_assign_name, is_assign
 from mkapi.utils import cache, get_export_names, get_module_node, is_package, iter_attribute_names
 
 if TYPE_CHECKING:
+    from ast import AST
     from collections.abc import Iterator
 
 
 @dataclass
 class Node:
     name: str
-    node: ast.AST
+    node: AST
+    fullname: str
 
 
 @dataclass
 class Import(Node):
     node: ast.Import | ast.ImportFrom
-    fullname: str
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.fullname!r})"
 
 
-@dataclass
+@dataclass(repr=False)
 class Object(Node):
+    fullname: str = field(init=False)
     module: str
 
-    def __repr__(self) -> str:
-        fullname = f"{self.module}.{self.name}"
-        return f"{self.__class__.__name__}({fullname!r})"
+    def __post_init__(self):
+        self.fullname = f"{self.module}.{self.name}"
 
 
 @dataclass(repr=False)
@@ -48,15 +49,16 @@ class Assign(Object):
     node: ast.AnnAssign | ast.Assign | TypeAlias
 
 
-@dataclass
+@dataclass(repr=False)
 class Module(Node):
     node: ast.Module
+    fullname: str = field(init=False)
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r})"
+    def __post_init__(self):
+        self.fullname = self.name
 
 
-def iter_child_nodes(node: ast.AST, module: str) -> Iterator[Object | Import]:
+def iter_child_nodes(node: AST, module: str) -> Iterator[Object | Import]:
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.Import):
             for name, fullname in _iter_imports(child):
@@ -180,3 +182,28 @@ def parse(node: ast.Module, module: str) -> list[tuple[str, Module | Object | Im
             members.append((name, member))
 
     return members
+
+
+def resolve_from_module(name: str, module: str) -> str | None:
+    if not (node := get_module_node(module)):
+        return None
+
+    for name_, obj in parse(node, module):
+        if name_ == name:
+            return obj.fullname
+
+    if "." not in name:
+        return None
+
+    name, attr = name.rsplit(".", maxsplit=1)
+
+    for name_, obj in parse(node, module):
+        if name_ == name:
+            if isinstance(obj, Module):
+                resolved = list(resolve(f"{obj.name}.{attr}"))
+                if resolved:
+                    return resolved[0].fullname
+
+            return f"{obj.fullname}.{attr}"
+
+    return None

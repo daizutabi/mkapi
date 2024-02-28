@@ -2,11 +2,11 @@ import ast
 
 from mkapi.nodes import (
     Import,
-    Object,
     _iter_imports,
     _iter_imports_from,
     get_child_nodes,
     parse,
+    resolve_from_module,
 )
 from mkapi.utils import get_module_node, iter_by_name
 
@@ -93,3 +93,39 @@ def test_parse_altair():
     assert node
     x = [x for _, x in parse(node, name)]
     assert len(list(iter_by_name(x, "expr"))) == 1
+
+
+def test_resolve_from_module():
+    x = resolve_from_module("Class", "mkapi.objects")
+    assert x == "mkapi.objects.Class"
+    assert resolve_from_module("ast", "mkapi.objects") == "ast"
+    x = resolve_from_module("ast.ClassDef", "mkapi.objects")
+    assert x == "ast.ClassDef"
+
+    x = resolve_from_module("jinja2.Template", "mkdocs.plugins")
+    assert x == "jinja2.environment.Template"
+    x = resolve_from_module("jinja2.XXX", "mkdocs.plugins")
+    assert x == "jinja2.XXX"
+
+    for x in ["mkapi", "mkapi.ast", "mkapi.ast.XXX"]:
+        y = resolve_from_module(x, "mkapi.nodes")
+        assert x == y
+
+
+def test_resolve_from_module_qualname():
+    module = "examples.styles.google"
+    name = "ExampleClass"
+    assert resolve_from_module(name, module) == f"{module}.{name}"
+    name = "ExampleClass.attr1"
+    assert resolve_from_module(name, module) == f"{module}.{name}"
+    name = "ExampleClass.readonly_property"
+    assert resolve_from_module(name, module) == f"{module}.{name}"
+    name = "ExampleClass._private"
+    assert resolve_from_module(name, module) == f"{module}.{name}"
+    module = "examples.styles"
+    name = "ExampleClassGoogle"
+    x = resolve_from_module(name, module)
+    assert x == "examples.styles.google.ExampleClass"
+    name = "ExampleClassGoogle.readwrite_property"
+    x = resolve_from_module(name, module)
+    assert x == "examples.styles.google.ExampleClass.readwrite_property"

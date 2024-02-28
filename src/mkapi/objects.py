@@ -470,21 +470,21 @@ def resolve(fullname: str) -> tuple[str, str | None, Object] | None:
     return None
 
 
-def _resolve_from_export(name: str, module: str) -> str | None:
-    names = get_export_names(module)
+# def _resolve_from_export(name: str, module: str) -> str | None:
+#     names = get_export_names(module)
 
-    if name in names:
-        return f"{module}.{name}"
+#     if name in names:
+#         return f"{module}.{name}"
 
-    if "." not in name:
-        return None
+#     if "." not in name:
+#         return None
 
-    name_, _ = name.rsplit(".", maxsplit=1)
+#     name_, _ = name.rsplit(".", maxsplit=1)
 
-    if name_ in names:
-        return f"{module}.{name}"
+#     if name_ in names:
+#         return f"{module}.{name}"
 
-    return None
+#     return None
 
 
 @cache
@@ -493,8 +493,8 @@ def resolve_from_module(name: str, module: str) -> str | None:
     if name.startswith(module) or module.startswith(name):
         return name
 
-    if fullname := _resolve_from_export(name, module):
-        return fullname
+    # if fullname := _resolve_from_export(name, module):
+    #     return fullname
 
     if (obj := create_module(module)) and (child := obj.get(name)):
         return get_fullname(child.name, child.module)
