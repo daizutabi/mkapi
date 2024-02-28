@@ -184,6 +184,7 @@ def parse(node: ast.Module, module: str) -> list[tuple[str, Module | Object | Im
     return members
 
 
+@cache
 def resolve_from_module(name: str, module: str) -> str | None:
     if not (node := get_module_node(module)):
         return None

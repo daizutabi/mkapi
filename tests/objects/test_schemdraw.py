@@ -1,13 +1,12 @@
-from mkapi.objects import aliases, get_fullname, get_object
+from mkapi.objects import aliases, get_object
 
 
 def test_get_object():
     assert get_object("schemdraw")
+    assert "schemdraw.Drawing" in aliases["schemdraw.schemdraw.Drawing"]
     x = get_object("schemdraw.svgconfig")
     assert x
-    assert get_fullname(x.qualname, x.module) == "schemdraw.backends.svg.config"
+    assert x.fullname == "schemdraw.backends.svg.config"
     x = get_object("schemdraw.Drawing")
     assert x
-    assert get_fullname(x.qualname, x.module) == "schemdraw.schemdraw.Drawing"
-
-    assert aliases["schemdraw.schemdraw.Drawing"]
+    assert x.fullname == "schemdraw.schemdraw.Drawing"

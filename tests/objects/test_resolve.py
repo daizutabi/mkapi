@@ -1,10 +1,4 @@
-from mkapi.objects import (
-    Class,
-    Function,
-    create_module,
-    resolve,
-    resolve_from_module,
-)
+from mkapi.objects import get_object, resolve, resolve_from_object
 
 
 def test_resolve_examples():
@@ -65,3 +59,22 @@ def test_resolve_mkapi():
     assert x[2].fullname == "ast"
 
     assert not resolve("mkapi.objects.ast.ClassDef")
+
+
+def test_resolve_from_object():
+    x = get_object("mkapi.objects")
+    assert x
+    r = resolve_from_object("Object", x)
+    assert r == "mkapi.objects.Object"
+    x = get_object(r)
+    assert x
+    r = resolve_from_object("__repr__", x)
+    assert r
+    x = get_object(r)
+    assert x
+    r = resolve_from_object("__post_init__", x)
+    assert r
+    x = get_object(r)
+    assert x
+    r = resolve_from_object("Object", x)
+    assert r

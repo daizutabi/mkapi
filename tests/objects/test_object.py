@@ -7,21 +7,12 @@ from mkapi.objects import (
     Function,
     _create_module,
     create_module,
-    get_fullname,
     get_object,
     get_source,
     is_member,
     iter_objects,
 )
 from mkapi.utils import get_by_name
-
-
-def test_get_fullname():
-    src = "from collections.abc import Iterator"
-    node = ast.parse(src)
-    module = _create_module("x", node)
-    name, obj = module.objects()[0]
-    assert get_fullname(obj.qualname, obj.module) == "collections.abc.Iterator"
 
 
 def test_create_module():

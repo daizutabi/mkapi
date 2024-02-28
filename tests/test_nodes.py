@@ -129,3 +129,8 @@ def test_resolve_from_module_qualname():
     name = "ExampleClassGoogle.readwrite_property"
     x = resolve_from_module(name, module)
     assert x == "examples.styles.google.ExampleClass.readwrite_property"
+
+
+def test_resolve_from_schemdraw():
+    x = resolve_from_module("Drawing", "schemdraw")
+    assert x == "schemdraw.schemdraw.Drawing"

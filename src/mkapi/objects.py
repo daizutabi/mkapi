@@ -22,11 +22,9 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.nodes import Import, parse
+from mkapi.nodes import Import, parse, resolve_from_module
 from mkapi.utils import (
     cache,
-    get_export_names,
-    get_module_name,
     get_module_node,
     get_module_node_source,
     get_module_source,
@@ -56,22 +54,18 @@ class Object:
     parent: Parent | None
     doc: Doc = field(init=False)
     kind: str = field(init=False)
+    qualname: str = field(init=False)
+    fullname: str = field(init=False)
 
     def __post_init__(self):
-        _register_object(self.fullname, self)
+        self.qualname = f"{self.parent.qualname}.{self.name}" if self.parent else self.name
+        self.fullname = f"{self.module}.{self.qualname}" if self.module else self.name
         self.doc = _create_doc(self.node)
         self.kind = get_kind(self)
+        _register_object(self.fullname, self)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
-
-    @property
-    def qualname(self) -> str:
-        return f"{self.parent.qualname}.{self.name}" if self.parent else self.name
-
-    @property
-    def fullname(self) -> str:
-        return get_fullname(self.qualname, self.module)
 
 
 def _create_doc(node: AST) -> Doc:
@@ -94,14 +88,6 @@ def _register_object(fullname: str, obj: Object):
 
     if fullname not in aliases[obj.fullname]:
         aliases[obj.fullname].append(fullname)
-
-
-def get_fullname(name: str, module: str | None) -> str:
-    if not module:
-        return get_module_name(name)
-
-    module = get_module_name(module)
-    return f"{module}.{name}"
 
 
 def _create_object(node: AST, module: str, parent: Parent | None) -> Object | None:
@@ -470,57 +456,19 @@ def resolve(fullname: str) -> tuple[str, str | None, Object] | None:
     return None
 
 
-# def _resolve_from_export(name: str, module: str) -> str | None:
-#     names = get_export_names(module)
-
-#     if name in names:
-#         return f"{module}.{name}"
-
-#     if "." not in name:
-#         return None
-
-#     name_, _ = name.rsplit(".", maxsplit=1)
-
-#     if name_ in names:
-#         return f"{module}.{name}"
-
-#     return None
-
-
-@cache
-def resolve_from_module(name: str, module: str) -> str | None:
-    """Return fullname from module."""
-    if name.startswith(module) or module.startswith(name):
-        return name
-
-    # if fullname := _resolve_from_export(name, module):
-    #     return fullname
-
-    if (obj := create_module(module)) and (child := obj.get(name)):
-        return get_fullname(child.name, child.module)
-
-    if not obj or "." not in name:
-        return None
-
-    name_, _ = name.rsplit(".", maxsplit=1)
-
-    if child := obj.get(name_):
-        return get_fullname(name, child.module)
-
-    return None
-
-
-@cache
 def resolve_from_object(name: str, obj: Object) -> str | None:
     """Return fullname from object."""
-    if isinstance(obj, Parent):  # noqa: SIM102
-        if child := obj.get(name):
-            return get_fullname(child.qualname, child.module)
-
     if isinstance(obj, Module):
         return resolve_from_module(name, obj.name)
 
+    if isinstance(obj, Parent):  # noqa: SIM102
+        if child := obj.get(name):
+            return child.fullname
+
     if "." not in name:
+        if obj.parent:
+            return resolve_from_object(name, obj.parent)
+
         return resolve_from_module(name, obj.module)
 
     parent, name_ = name.rsplit(".", maxsplit=1)
