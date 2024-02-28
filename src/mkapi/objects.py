@@ -22,9 +22,10 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.nodes import Import, parse, resolve
+from mkapi.nodes import Import, parse
 from mkapi.utils import (
     cache,
+    get_export_names,
     get_module_name,
     get_module_node,
     get_module_node_source,
@@ -45,10 +46,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from mkapi.docs import Doc
-
-
-objects: dict[str, Object] = cache({})
-aliases: dict[str, list[str]] = cache({})
 
 
 @dataclass
@@ -74,7 +71,7 @@ class Object:
 
     @property
     def fullname(self) -> str:
-        return get_fullname(self)
+        return get_fullname(self.qualname, self.module)
 
 
 def _create_doc(node: AST) -> Doc:
@@ -86,6 +83,10 @@ def _create_doc(node: AST) -> Doc:
     return create_doc(text)
 
 
+objects: dict[str, Object] = cache({})
+aliases: dict[str, list[str]] = cache({})
+
+
 def _register_object(fullname: str, obj: Object):
     objects[fullname] = obj
 
@@ -93,6 +94,14 @@ def _register_object(fullname: str, obj: Object):
 
     if fullname not in aliases[obj.fullname]:
         aliases[obj.fullname].append(fullname)
+
+
+def get_fullname(name: str, module: str | None) -> str:
+    if not module:
+        return get_module_name(name)
+
+    module = get_module_name(module)
+    return f"{module}.{name}"
 
 
 def _create_object(node: AST, module: str, parent: Parent | None) -> Object | None:
@@ -188,6 +197,8 @@ class Function(Callable):
 @dataclass(repr=False)
 class Module(Parent):
     node: ast.Module
+    module: None = field(default=None, init=False)
+    parent: None = field(default=None, init=False)
     imports: dict[str, Import]
 
 
@@ -304,7 +315,7 @@ def create_attribute(
 
 
 def _create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
-    module = Module(name, node, name, None, {})
+    module = Module(name, node, {})
 
     children: dict[str, Object] = {}
 
@@ -313,7 +324,7 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
             module.imports[name_] = child
 
         elif isinstance(child, mkapi.nodes.Module):
-            children[name_] = Module(child.name, child.node, child.name, None, {})
+            children[name_] = Module(child.name, child.node, {})
 
         elif obj := _create_object(child.node, child.module, None):
             children[name_] = obj
@@ -354,26 +365,6 @@ def create_module(name: str) -> Module | None:
     return _create_module(name, *node_source)
 
 
-@cache
-def get_object(fullname: str) -> Object | None:
-    if obj := objects.get(fullname):
-        return obj
-
-    for module in iter_attribute_names(fullname):
-        if create_module(module) and (obj := objects.get(fullname)):
-            return obj
-
-    return None
-
-
-def get_fullname(obj: Object) -> str:
-    if isinstance(obj, Module):
-        return get_module_name(obj.name)
-
-    module = get_module_name(obj.module)
-    return f"{module}.{obj.qualname}"
-
-
 def get_kind(obj: Object | Module) -> str:
     """Return kind."""
     if isinstance(obj, Module):
@@ -405,44 +396,9 @@ def get_source(obj: Object) -> str | None:
     return None
 
 
-def _resolve_from_object(name: str, obj: Object) -> str | None:
-    """Return fullname from object."""
-    if isinstance(obj, Parent):  # noqa: SIM102
-        if child := obj.get(name):
-            return get_fullname(child)
-
-    if isinstance(obj, Module):
-        return resolve_from_module(name, obj.name)
-
-    if "." not in name:
-        return resolve_from_module(name, obj.module)
-
-    parent, name_ = name.rsplit(".", maxsplit=1)
-
-    if obj_ := objects.get(parent):
-        return _resolve_from_object(name, obj_)
-
-    if obj.name == parent:
-        return _resolve_from_object(name_, obj)
-
-    return resolve(name)
-
-
-@cache
-def resolve_from_object(name: str, fullname: str) -> str | None:
-    """Return fullname from object."""
-    if obj := get_object(fullname):
-        return _resolve_from_object(name, obj)
-
-    return None
-
-
 def is_member(obj: Object, parent: Object | None) -> bool:
     """Return True if obj is a member of parent."""
-    if parent is None:
-        return True
-
-    if isinstance(obj, Module) or isinstance(parent, Module):
+    if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
         return True
 
     return obj.parent is parent
@@ -476,113 +432,106 @@ def iter_objects(
         yield child
 
 
-# def _split_fullname(obj: Module | Object | Import) -> tuple[str, str | None]:
-#     if isinstance(obj, Module):
-#         return get_module_name(obj.name), None
+@cache
+def get_object(fullname: str) -> Object | None:
+    if obj := objects.get(fullname):
+        return obj
 
-#     if isinstance(obj, Object):
-#         module = get_module_name(obj.module)
-#         return module, obj.name
+    for module in iter_attribute_names(fullname):
+        if create_module(module) and (obj := objects.get(fullname)):
+            return obj
 
-#     return obj.fullname, None  # import
-
-
-# def _get_fullname(obj: Module | Object | Import) -> str:
-#     module, name = _split_fullname(obj)
-#     if name is None:
-#         return module
-
-#     return f"{module}.{name}"
+    return None
 
 
-# def resolve_module_name(name: str) -> tuple[str, str | None] | None:
-#     if resolved := list(_resolve(name)):
-#         return _split_fullname(resolved[0])
+@cache
+def resolve(fullname: str) -> tuple[str, str | None, Object] | None:
+    if obj := create_module(fullname):
+        return fullname, None, obj
 
-#     if "." not in name:
-#         return None
+    if "." not in fullname:
+        return None
 
-#     name, attr = name.rsplit(".", maxsplit=1)
+    module, name = fullname.rsplit(".", maxsplit=1)
 
-#     if resolved := resolve_module_name(name):
-#         module, name_ = resolved
-#         name = f"{name_}.{attr}" if name_ else attr
-#         return module, name
+    if (obj := create_module(module)) and (child := obj.get(name)):
+        return name, module, child
 
-#     return None
+    if "." not in module:
+        return None
 
+    module, name, attr = fullname.rsplit(".", maxsplit=2)
 
-# def resolve(name: str) -> str | None:
-#     if module_name := resolve_module_name(name):
-#         module, name_ = module_name
-#         if name_ is None:
-#             return module
+    if obj := create_module(module):  # noqa: SIM102
+        if (child := obj.get(name)) and isinstance(child, Parent):  # noqa: SIM102
+            if child := child.get(attr):
+                return f"{name}.{attr}", module, child
 
-#         return f"{module}.{name_}"
-
-#     return None
+    return None
 
 
-# def resolve_from_module(name: str, module: str) -> str | None:
-#     if name.startswith(module) or module.startswith(name):
-#         return name
+def _resolve_from_export(name: str, module: str) -> str | None:
+    names = get_export_names(module)
 
-#     for name_, obj in parse(module):
-#         if name_ == name:
-#             return _get_fullname(obj)
+    if name in names:
+        return f"{module}.{name}"
 
-#     if name in get_all_names(module):
-#         return f"{module}.{name}"
+    if "." not in name:
+        return None
 
-#     if "." not in name:
-#         return None
+    name_, _ = name.rsplit(".", maxsplit=1)
 
-#     name, attr = name.rsplit(".", maxsplit=1)
+    if name_ in names:
+        return f"{module}.{name}"
 
-#     for name_, obj in parse(module):
-#         if name_ == name:
-#             if isinstance(obj, Module):
-#                 return resolve(f"{obj.name}.{attr}")
-
-#             return f"{_get_fullname(obj)}.{attr}"
-
-#     return None
+    return None
 
 
-# def split_module_name(name: str) -> tuple[str, str | None] | None:
-#     for module in iter_attribute_names(name):
-#         if not get_module_node(module):
-#             continue
+@cache
+def resolve_from_module(name: str, module: str) -> str | None:
+    """Return fullname from module."""
+    if name.startswith(module) or module.startswith(name):
+        return name
 
-#         if module == name:
-#             return name, None
+    if fullname := _resolve_from_export(name, module):
+        return fullname
 
-#         name_ = name[len(module)+1:]
+    if (obj := create_module(module)) and (child := obj.get(name)):
+        return get_fullname(child.name, child.module)
 
-#         if
+    if not obj or "." not in name:
+        return None
 
+    name_, _ = name.rsplit(".", maxsplit=1)
 
-# def iter_decorator_names(node: ast.AST, module: str) -> Iterator[str]:
-#     """Yield decorator_names."""
-#     if not isinstance(node, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
-#         return
+    if child := obj.get(name_):
+        return get_fullname(name, child.module)
 
-#     for deco in node.decorator_list:
-#         deco_name = next(mkapi.ast.iter_identifiers(deco))
-
-#         if name := resolve_from_module(deco_name, module):
-#             yield name
-
-#         else:
-#             yield deco_name
+    return None
 
 
-# def has_decorator(node: ast.AST, name: str, module: str) -> bool:
-#     """Return a decorator expr by name."""
-#     it = iter_decorator_names(node, module)
-#     return any(deco_name == name for deco_name in it)
+@cache
+def resolve_from_object(name: str, obj: Object) -> str | None:
+    """Return fullname from object."""
+    if isinstance(obj, Parent):  # noqa: SIM102
+        if child := obj.get(name):
+            return get_fullname(child.qualname, child.module)
 
+    if isinstance(obj, Module):
+        return resolve_from_module(name, obj.name)
 
-# def is_dataclass(node: ast.AST, module: str) -> bool:
-#     """Return True if the [Class] instance is a dataclass."""
-#     return has_decorator(node, "dataclasses.dataclass", module)
+    if "." not in name:
+        return resolve_from_module(name, obj.module)
+
+    parent, name_ = name.rsplit(".", maxsplit=1)
+
+    if obj_ := objects.get(parent):
+        return resolve_from_object(name, obj_)
+
+    if obj.name == parent:
+        return resolve_from_object(name_, obj)
+
+    if resolved := resolve(name):
+        return resolved[2].fullname
+
+    return None

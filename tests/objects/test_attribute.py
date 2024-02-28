@@ -58,11 +58,11 @@ def test_create_attribute_module():
 def test_iter_init_attributes(get):
     node = get("ExampleClass")
     assert isinstance(node, ast.ClassDef)
-    cls = create_class(node, "", None)
+    cls = create_class(node, "x", None)
     assert isinstance(cls, Class)
     func = cls.get("__init__")
     assert isinstance(func, Function)
-    x = list(iter_attributes_from_method(func, cls.qualname))
+    x = list(iter_attributes_from_method(func, cls))
     for k, (name, attr) in enumerate(x, 1):
         assert name == f"attr{k}"
         assert attr.name == f"attr{k}"

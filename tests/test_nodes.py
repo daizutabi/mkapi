@@ -2,6 +2,7 @@ import ast
 
 from mkapi.nodes import (
     Import,
+    Object,
     _iter_imports,
     _iter_imports_from,
     get_child_nodes,

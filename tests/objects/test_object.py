@@ -7,6 +7,7 @@ from mkapi.objects import (
     Function,
     _create_module,
     create_module,
+    get_fullname,
     get_object,
     get_source,
     is_member,
@@ -15,24 +16,12 @@ from mkapi.objects import (
 from mkapi.utils import get_by_name
 
 
-def test_get_object():
-    module = create_module("mkapi.objects")
-    a = get_object("mkapi.objects")
-    assert module is a
-    c = get_object("mkapi.objects.Object")
-    f = get_object("mkapi.objects.Module.__post_init__")
-    assert isinstance(c, Class)
-    assert c.module == "mkapi.objects"
-    assert isinstance(f, Function)
-    assert f.module == "mkapi.objects"
-    c2 = get_object("mkapi.objects.Object")
-    f2 = get_object("mkapi.objects.Module.__post_init__")
-    assert c is c2
-    assert f is f2
-    m1 = create_module("mkdocs.structure.files")
-    m2 = create_module("mkdocs.structure.files")
-    assert m1 is m2
-    assert get_object("examples.styles.ExampleClassGoogle")
+def test_get_fullname():
+    src = "from collections.abc import Iterator"
+    node = ast.parse(src)
+    module = _create_module("x", node)
+    name, obj = module.objects()[0]
+    assert get_fullname(obj.qualname, obj.module) == "collections.abc.Iterator"
 
 
 def test_create_module():
@@ -171,3 +160,23 @@ def test_iter_objects_predicate():
         assert get_by_name(x, name)
     for name in others:
         assert not get_by_name(x, name)
+
+
+def test_get_object():
+    module = create_module("mkapi.objects")
+    a = get_object("mkapi.objects")
+    assert module is a
+    c = get_object("mkapi.objects.Object")
+    f = get_object("mkapi.objects.Module.__post_init__")
+    assert isinstance(c, Class)
+    assert c.module == "mkapi.objects"
+    assert isinstance(f, Function)
+    assert f.module == "mkapi.objects"
+    c2 = get_object("mkapi.objects.Object")
+    f2 = get_object("mkapi.objects.Module.__post_init__")
+    assert c is c2
+    assert f is f2
+    m1 = create_module("mkdocs.structure.files")
+    m2 = create_module("mkdocs.structure.files")
+    assert m1 is m2
+    assert get_object("examples.styles.ExampleClassGoogle")

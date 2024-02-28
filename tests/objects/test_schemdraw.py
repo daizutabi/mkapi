@@ -5,9 +5,9 @@ def test_get_object():
     assert get_object("schemdraw")
     x = get_object("schemdraw.svgconfig")
     assert x
-    assert get_fullname(x) == "schemdraw.backends.svg.config"
+    assert get_fullname(x.qualname, x.module) == "schemdraw.backends.svg.config"
     x = get_object("schemdraw.Drawing")
     assert x
-    assert get_fullname(x) == "schemdraw.schemdraw.Drawing"
+    assert get_fullname(x.qualname, x.module) == "schemdraw.schemdraw.Drawing"
 
     assert aliases["schemdraw.schemdraw.Drawing"]

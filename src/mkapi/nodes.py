@@ -105,6 +105,7 @@ def _get_module(node: ast.ImportFrom, module: str) -> str:
 
 def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str, str]]:
     module = _get_module(node, module)
+
     for alias in node.names:
         yield alias.asname or alias.name, f"{module}.{alias.name}"
 
@@ -112,14 +113,17 @@ def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str,
 def _iter_imports_from_star(node: ast.ImportFrom, module: str) -> Iterator[Object | Import]:
     module = _get_module(node, module)
 
-    if node_ := get_module_node(module):
-        names = get_export_names(module)
-        for child in iter_child_nodes(node_, module):
-            if child.name.startswith("_"):
-                continue
+    if not (node_ := get_module_node(module)):
+        return
 
-            if not names or child.name in names:
-                yield child
+    names = get_export_names(module)
+
+    for child in iter_child_nodes(node_, module):
+        if child.name.startswith("_"):
+            continue
+
+        if not names or child.name in names:
+            yield child
 
 
 @cache

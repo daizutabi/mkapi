@@ -273,8 +273,8 @@ def unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) 
     return "".join(_unparse(node, callback, is_type=is_type))
 
 
-def has_property(node: AST, name: str, index: int = 0) -> bool:
-    if not isinstance(node, FunctionDef | AsyncFunctionDef):
+def has_decorator(node: AST, name: str, index: int = 0) -> bool:
+    if not isinstance(node, ClassDef | FunctionDef | AsyncFunctionDef):
         return False
 
     for deco in node.decorator_list:
@@ -286,32 +286,39 @@ def has_property(node: AST, name: str, index: int = 0) -> bool:
     return False
 
 
+def is_function_def(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
+    return isinstance(node, FunctionDef | AsyncFunctionDef)
+
+
 def is_property(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Return True if a function is a property."""
-    return has_property(node, "property")
+    return is_function_def(node) and has_decorator(node, "property")
 
 
 def is_setter(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Return True if a function is a property."""
-    return has_property(node, "setter", 1)
+    return is_function_def(node) and has_decorator(node, "setter", 1)
 
 
 def has_overload(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Return True if a function has an `overload` decorator."""
-    return has_property(node, "overload")
+    return is_function_def(node) and has_decorator(node, "overload")
 
 
 def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Return True if a function is neither a property nor overloaded."""
+    if not is_function_def(node):
+        return False
+
     return not (is_property(node) or is_setter(node) or has_overload(node))
 
 
 def is_classmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
-    return has_property(node, "classmethod")
+    return is_function_def(node) and has_decorator(node, "classmethod")
 
 
 def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
-    return has_property(node, "staticmethod")
+    return is_function_def(node) and has_decorator(node, "staticmethod")
 
 
 def is_assign(node: AST) -> TypeGuard[ast.AnnAssign | ast.Assign | TypeAlias]:  # type: ignore

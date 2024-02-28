@@ -21,7 +21,7 @@ def test_create_class_nested():
     """
     node = ast.parse(inspect.cleandoc(src)).body[0]
     assert isinstance(node, ast.ClassDef)
-    cls = create_class(node, "", None)
+    cls = create_class(node, "x", None)
     assert len(cls.children) == 1
     cls = cls.children["B"]
     assert isinstance(cls, Class)
@@ -33,7 +33,7 @@ def test_create_class_nested():
 def test_create_class(get):
     node = get("ExampleClass")
     assert isinstance(node, ast.ClassDef)
-    cls = create_class(node, "", None)
+    cls = create_class(node, "x", None)
     assert isinstance(cls, Class)
     assert cls.name == "ExampleClass"
     assert len(cls.raises) == 0
@@ -69,30 +69,6 @@ def test_class_parameters():
     assert get_by_name(cls.parameters, "parent")
 
 
-# def test_base_classes():
-#     cls = get_object("mkapi.plugins.MkAPIPlugin")
-#     assert isinstance(cls, Class)
-#     assert cls.qualname == "MkAPIPlugin"
-#     func = cls.get("on_config")
-#     assert isinstance(func, Function)
-#     assert func.qualname == "MkAPIPlugin.on_config"
-#     bases = list(_iter_base_classes(cls.name, cls.module))
-#     assert bases == [("BasePlugin", "mkdocs.plugins")]
-#     base = next(iter_base_classes(cls.name, cls.module))
-#     assert base.name == "BasePlugin"
-#     assert base.module == "mkdocs.plugins"
-#     func = base.get("on_config")
-#     assert func
-#     assert func.qualname == "BasePlugin.on_config"
-#     assert func.module == "mkdocs.plugins"
-#     cls = get_object("mkapi.plugins.MkAPIConfig")
-#     assert isinstance(cls, Class)
-#     base = next(iter_base_classes(cls.name, cls.module))
-#     assert base.name == "Config"
-#     assert base.qualname == "Config"
-#     assert base.module == "mkdocs.config.base"
-
-
 def test_inherit_base_classes():
     create_module("mkapi.plugins")
     cls = get_object("mkapi.plugins.MkAPIConfig")
@@ -116,22 +92,3 @@ def test_iter_dataclass_parameters():
     assert p[1].name == "type"
     assert p[2].name == "default"
     assert p[3].name == "kind"
-
-
-# def test_inherit_base_classes_order():
-#     module = create_module("mkapi.plugins")
-#     assert isinstance(module, Module)
-#     cls = module.get( "MkAPIPlugin")
-#     assert isinstance(cls, Class)
-#     indexes = []
-#     for name in ["on_startup", "on_nav", "on_shutdown", "on_env", "on_post_page"]:
-#         func = cls.get(name)
-#         assert func
-#         indexes.append(cls.functions.index(func))
-#     assert indexes == sorted(indexes)
-#     indexes.clear()
-#     for name in ["api_dirs", "pages", "config_class", "config"]:
-#         attr = get_by_name(cls.attributes, name)
-#         assert attr
-#         indexes.append(cls.attributes.index(attr))
-#     assert indexes == sorted(indexes)
