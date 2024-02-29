@@ -1,4 +1,5 @@
 """Node module."""
+
 from __future__ import annotations
 
 import ast
@@ -21,13 +22,13 @@ class Node:
     node: AST
     fullname: str
 
-
-@dataclass
-class Import(Node):
-    node: ast.Import | ast.ImportFrom
-
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.fullname!r})"
+
+
+@dataclass(repr=False)
+class Import(Node):
+    node: ast.Import | ast.ImportFrom
 
 
 @dataclass(repr=False)

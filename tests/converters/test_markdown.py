@@ -1,15 +1,9 @@
 import re
 
-from mkapi.converters import (
-    LINK_PATTERN,
-    get_markdown_name,
-    get_markdown_str,
-    get_markdown_text,
-)
-from mkapi.nodes import resolve_from_module
-
 
 def test_link_pattern():
+    from mkapi.converters import LINK_PATTERN
+
     def f(m: re.Match) -> str:
         name = m.group(1)
         if name == "abc":
@@ -32,6 +26,8 @@ def test_link_pattern():
 
 
 def test_get_markdown_name_noreplace():
+    from mkapi.converters import get_markdown_name
+
     x = get_markdown_name("abc")
     assert x == "[abc][__mkapi__.abc]"
     x = get_markdown_name("a_._b.c")
@@ -41,6 +37,9 @@ def test_get_markdown_name_noreplace():
 
 
 def test_get_markdown_name():
+    from mkapi.converters import get_markdown_name
+    from mkapi.nodes import resolve_from_module
+
     def replace(name: str) -> str | None:  # type: ignore
         return resolve_from_module(name, "mkapi.objects")
 
@@ -68,6 +67,9 @@ def test_get_markdown_name():
 
 
 def test_get_markdown_str():
+    from mkapi.converters import get_markdown_str
+    from mkapi.nodes import resolve_from_module
+
     def replace(name: str) -> str | None:
         return resolve_from_module(name, "mkapi.objects")
 
@@ -78,6 +80,9 @@ def test_get_markdown_str():
 
 
 def test_get_markdown_text():
+    from mkapi.converters import get_markdown_text
+    from mkapi.nodes import resolve_from_module
+
     def replace(name: str) -> str | None:  # type: ignore
         return resolve_from_module(name, "mkapi.objects")
 

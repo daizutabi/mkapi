@@ -187,4 +187,3 @@ def test_resolve_from_polars():
     x = resolve_from_module("DataType", "polars.dataframe.frame")
     assert x == "polars.datatypes.classes.DataType"
     assert resolve_from_module("api", "polars") == "polars.api"
-    # assert resolve_from_module("exceptions", "polars") == "polars.exceptions"

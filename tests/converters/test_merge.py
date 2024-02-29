@@ -1,13 +1,9 @@
 import ast
-import inspect
-
-from mkapi.converters import merge_attributes, merge_parameters, merge_raises, merge_returns
-from mkapi.docs import Section, create_doc
-from mkapi.objects import Attribute, Function, create_module
-from mkapi.utils import get_by_name
 
 
 def _get_func_type_annotations():
+    from mkapi.objects import Function, create_module
+
     module = create_module("examples.styles.google")
     assert module
     func = module.get("function_with_pep484_type_annotations")
@@ -16,6 +12,9 @@ def _get_func_type_annotations():
 
 
 def test_merge_parameters_type_annotations():
+    from mkapi.converters import merge_parameters
+    from mkapi.utils import get_by_name
+
     func = _get_func_type_annotations()
     merge_parameters(func.doc.sections, func.parameters)
     section = get_by_name(func.doc.sections, "Parameters")
@@ -29,6 +28,9 @@ def test_merge_parameters_type_annotations():
 
 
 def test_merge_returns_type_annotations():
+    from mkapi.converters import merge_returns
+    from mkapi.utils import get_by_name
+
     func = _get_func_type_annotations()
     merge_returns(func.doc.sections, func.node.returns)
     section = get_by_name(func.doc.sections, "Returns")
@@ -39,6 +41,10 @@ def test_merge_returns_type_annotations():
 
 
 def test_merge_raises():
+    from mkapi.converters import merge_raises
+    from mkapi.docs import Section
+    from mkapi.utils import get_by_name
+
     sections = []
     expr = ast.parse("ValueError").body[0]
     assert isinstance(expr, ast.Expr)
@@ -51,6 +57,11 @@ def test_merge_raises():
 
 
 def test_merge_attribute_module():
+    from mkapi.converters import merge_attributes
+    from mkapi.docs import Section
+    from mkapi.objects import Attribute, create_module
+    from mkapi.utils import get_by_name
+
     module = create_module("examples.styles.google")
     assert module
     attrs = [x for _, x in module.get_children(Attribute)]
