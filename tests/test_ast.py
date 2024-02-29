@@ -1,17 +1,10 @@
 import ast
 from inspect import _ParameterKind
 
-from mkapi.ast import (
-    StringTransformer,
-    _iter_identifiers,
-    iter_child_nodes,
-    iter_parameters,
-    iter_raises,
-    unparse,
-)
-
 
 def test_iter_child_nodes():
+    from mkapi.ast import iter_child_nodes
+
     src = "a:int\nb=1\n'''b'''\nc='c'"
     node = ast.parse(src)
     x = list(iter_child_nodes(node))
@@ -22,6 +15,8 @@ def test_iter_child_nodes():
 
 
 def test_iter_parameters():
+    from mkapi.ast import iter_parameters
+
     src = "def f(): pass"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.FunctionDef)
@@ -45,6 +40,8 @@ def test_iter_parameters():
 
 
 def test_iter_raises():
+    from mkapi.ast import iter_raises
+
     src = "def f():\n raise ValueError('a')\n raise ValueError\n"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.FunctionDef)
@@ -59,6 +56,8 @@ def _expr(src: str) -> ast.expr:
 
 
 def _unparse(src: str) -> str:
+    from mkapi.ast import StringTransformer
+
     return StringTransformer().unparse(_expr(src))
 
 
@@ -82,6 +81,8 @@ def test_expr_str():
 
 
 def test_iter_identifiers():
+    from mkapi.ast import _iter_identifiers
+
     x = list(_iter_identifiers("x, __mkapi__.a.b0[__mkapi__.c], y"))
     assert len(x) == 5
     assert x[0] == ("x, ", False)
@@ -104,6 +105,8 @@ def test_iter_identifiers():
 
 
 def test_unparse():
+    from mkapi.ast import unparse
+
     def callback(s: str) -> str:
         return f"<{s}>"
 

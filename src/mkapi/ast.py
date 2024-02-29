@@ -152,7 +152,7 @@ class Parameter:
 
 
 def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]:
-    """Yield parameters from a function node."""
+    """Yield [Parameter] instances from a function node."""
     it = _iter_defaults(node)
     for name, type_, kind in _iter_parameters(node):
         default = None if kind in [P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)

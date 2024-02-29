@@ -1,17 +1,9 @@
 import yaml
 
-from mkapi.nav import (
-    API_URI_PATTERN,
-    create,
-    create_apinav,
-    gen_apinav,
-    get_apinav,
-    update,
-)
-from mkapi.utils import is_package
-
 
 def test_pattern():
+    from mkapi.nav import API_URI_PATTERN
+
     m = API_URI_PATTERN.match("<a/b/c>/d.e.f")
     assert m
     assert m.groups() == ("<a/b/c>", "d.e.f")
@@ -31,6 +23,8 @@ def test_pattern():
 
 
 def test_get_apinav():
+    from mkapi.nav import get_apinav
+
     assert get_apinav("mkdocs") == ["mkdocs"]
     assert get_apinav("invalid name") == []
     nav = get_apinav("mkdocs.*")
@@ -54,14 +48,19 @@ def test_get_apinav():
     assert nav[0]["mkdocs"][1]["mkdocs.commands"][0] == "mkdocs.commands"
 
 
-def test_get_nav():
+def test_gen_apinav():
+    from mkapi.nav import gen_apinav, get_apinav
+
     nav = get_apinav("mkdocs.**")
     n = len(nav)
     nav = get_apinav("mkdocs.***")
     assert len([x for x in gen_apinav(nav) if not x[1]]) == n  # type: ignore
 
 
-def test_update_apinav():
+def test_create_apinav():
+    from mkapi.nav import create_apinav, get_apinav
+    from mkapi.utils import is_package
+
     def section(name: str, depth: int) -> str:
         return name.replace(".", "-" * depth)
 
@@ -95,6 +94,8 @@ src = """
 
 
 def test_nav_empty():
+    from mkapi.nav import create
+
     def create_apinav(*_):
         return []
 
@@ -104,6 +105,8 @@ def test_nav_empty():
 
 
 def test_nav_single():
+    from mkapi.nav import create
+
     def create_apinav(*_):
         return ["a.md"]
 
@@ -116,6 +119,8 @@ def test_nav_single():
 
 
 def test_nav_dict():
+    from mkapi.nav import create
+
     def create_apinav(*_):
         return ["m.md", {"X": "x.md"}, "n.md"]
 
@@ -125,6 +130,8 @@ def test_nav_dict():
 
 
 def test_update_nav():
+    from mkapi.nav import update
+
     def create_page(name: str, path: str, filters: list[str]) -> str:
         return f"{path}/{name}.{filters[0]}.md"
 

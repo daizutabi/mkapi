@@ -1,17 +1,9 @@
 import ast
 
-from mkapi.docs import (
-    _iter_items,
-    _iter_sections,
-    create_doc,
-    iter_items,
-    merge,
-    split_item,
-    split_section,
-)
-
 
 def test_split_section():
+    from mkapi.docs import split_section
+
     f = split_section
     for style in ["google", "numpy"]:
         assert f("A", style) == ("", "A")  # type: ignore
@@ -23,6 +15,8 @@ def test_split_section():
 
 
 def test_iter_sections_short():
+    from mkapi.docs import _iter_sections
+
     sections = list(_iter_sections("", "google"))
     assert sections == []
     sections = list(_iter_sections("x", "google"))
@@ -34,6 +28,8 @@ def test_iter_sections_short():
 
 
 def test_iter_sections(google):
+    from mkapi.docs import _iter_sections
+
     doc = ast.get_docstring(google)
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "google"))
@@ -56,6 +52,8 @@ def test_iter_sections(google):
 
 
 def test_iter_items(google, get):
+    from mkapi.docs import _iter_items, _iter_sections
+
     doc = ast.get_docstring(google)
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[3][1]
@@ -74,6 +72,8 @@ def test_iter_items(google, get):
 
 
 def test_split_item(google, get):
+    from mkapi.docs import _iter_items, _iter_sections, split_item
+
     doc = get(google, "module_level_function")
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "google"))
@@ -94,6 +94,8 @@ def test_split_item(google, get):
 
 
 def test_iter_items_class(google, get, get_node):
+    from mkapi.docs import _iter_sections, iter_items
+
     doc = get(google, "ExampleClass")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "google"))[1][1]
@@ -115,12 +117,16 @@ def test_iter_items_class(google, get, get_node):
 
 
 def test_parse(google):
+    from mkapi.docs import create_doc
+
     doc = create_doc(ast.get_docstring(google), "google")  # type: ignore
     assert doc.text.startswith("Example Google style docstrings.")
     assert doc.sections[0].name == "Example"
 
 
 def test_merge(google, get, get_node):
+    from mkapi.docs import create_doc, merge
+
     a = create_doc(get(google, "ExampleClass"))
     b = create_doc(get(get_node(google, "ExampleClass"), "__init__"))
     doc = merge(a, b)
@@ -131,5 +137,7 @@ def test_merge(google, get, get_node):
 
 
 def test_repr(google):
+    from mkapi.docs import create_doc
+
     r = repr(create_doc(ast.get_docstring(google), "google"))  # type: ignore
     assert r == "Doc(sections=5)"

@@ -1,17 +1,9 @@
 import ast
 
-from mkapi.nodes import (
-    Import,
-    _iter_imports,
-    _iter_imports_from,
-    get_child_nodes,
-    parse,
-    resolve_from_module,
-)
-from mkapi.utils import get_module_node, iter_by_name
 
+def test_iter_imports():
+    from mkapi.nodes import _iter_imports
 
-def test_iter_import_asname():
     src = "import matplotlib.pyplot"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.Import)
@@ -27,6 +19,11 @@ def test_iter_import_asname():
     assert len(x) == 1
     assert x[0][0] == "plt"
     assert x[0][1] == "matplotlib.pyplot"
+
+
+def test_iter_imports_from():
+    from mkapi.nodes import _iter_imports_from
+
     src = "from matplotlib import pyplot as plt"
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.ImportFrom)
@@ -37,6 +34,8 @@ def test_iter_import_asname():
 
 
 def test_parse_import():
+    from mkapi.nodes import Import, parse
+
     src = "import a.b.c"
     node = ast.parse(src)
     x = list(parse(node, "m"))
@@ -48,6 +47,8 @@ def test_parse_import():
 
 
 def test_parse_import_as():
+    from mkapi.nodes import Import, parse
+
     src = "import a.b.c as d"
     node = ast.parse(src)
     x = parse(node, "m")[0]
@@ -57,6 +58,8 @@ def test_parse_import_as():
 
 
 def test_parse_import_from():
+    from mkapi.nodes import Import, parse
+
     src = "from x import a, b, c as C"
     node = ast.parse(src)
     x = list(parse(node, "m"))
@@ -71,6 +74,9 @@ def test_parse_import_from():
 
 
 def test_parse_polars():
+    from mkapi.nodes import parse
+    from mkapi.utils import get_module_node, iter_by_name
+
     name = "polars"
     node = get_module_node(name)
     assert node
@@ -80,6 +86,9 @@ def test_parse_polars():
 
 
 def test_get_child_nodes():
+    from mkapi.nodes import get_child_nodes
+    from mkapi.utils import get_module_node, iter_by_name
+
     name = "altair.vegalite"
     node = get_module_node(name)
     assert node
@@ -88,6 +97,9 @@ def test_get_child_nodes():
 
 
 def test_parse_altair():
+    from mkapi.nodes import parse
+    from mkapi.utils import get_module_node, iter_by_name
+
     name = "altair"
     node = get_module_node(name)
     assert node
@@ -96,6 +108,8 @@ def test_parse_altair():
 
 
 def test_resolve_from_module():
+    from mkapi.nodes import resolve_from_module
+
     x = resolve_from_module("Class", "mkapi.objects")
     assert x == "mkapi.objects.Class"
     assert resolve_from_module("ast", "mkapi.objects") == "ast"
@@ -113,6 +127,8 @@ def test_resolve_from_module():
 
 
 def test_resolve_from_module_qualname():
+    from mkapi.nodes import resolve_from_module
+
     module = "examples.styles.google"
     name = "ExampleClass"
     assert resolve_from_module(name, module) == f"{module}.{name}"
@@ -132,11 +148,15 @@ def test_resolve_from_module_qualname():
 
 
 def test_resolve_from_schemdraw():
+    from mkapi.nodes import resolve_from_module
+
     x = resolve_from_module("Drawing", "schemdraw")
     assert x == "schemdraw.schemdraw.Drawing"
 
 
 def test_resolve_from_mkapi_plugins():
+    from mkapi.nodes import resolve_from_module
+
     name = "mkapi.plugins"
     x = resolve_from_module("MkAPIPlugin", name)
     assert x == "mkapi.plugins.MkAPIPlugin"
@@ -150,3 +170,21 @@ def test_resolve_from_mkapi_plugins():
     assert x == "mkdocs.config.config_options.Type"
     x = resolve_from_module("get_plugin_logger", name)
     assert x == "mkdocs.plugins.get_plugin_logger"
+
+
+def test_resolve_polars():
+    from mkapi.nodes import resolve
+
+    assert next(resolve("polars.DataFrame")).fullname == "polars.dataframe.frame.DataFrame"
+    assert next(resolve("polars.DataType")).fullname == "polars.datatypes.classes.DataType"
+    assert next(resolve("polars.col")).fullname == "polars.functions.col"
+    assert next(resolve("polars.api")).fullname == "polars.api"
+
+
+def test_resolve_from_polars():
+    from mkapi.nodes import resolve_from_module
+
+    x = resolve_from_module("DataType", "polars.dataframe.frame")
+    assert x == "polars.datatypes.classes.DataType"
+    assert resolve_from_module("api", "polars") == "polars.api"
+    # assert resolve_from_module("exceptions", "polars") == "polars.exceptions"

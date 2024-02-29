@@ -1,15 +1,9 @@
 import ast
 
-from mkapi.docs import (
-    _iter_items,
-    _iter_sections,
-    iter_items,
-    split_item,
-    split_section,
-)
-
 
 def test_split_section():
+    from mkapi.docs import split_section
+
     f = split_section
     assert f("A", "numpy") == ("", "A")  # type: ignore
     assert f("A\n---\na\nb", "numpy") == ("A", "a\nb")
@@ -18,6 +12,8 @@ def test_split_section():
 
 
 def test_iter_sections_short():
+    from mkapi.docs import _iter_sections
+
     sections = list(_iter_sections("", "numpy"))
     assert sections == []
     sections = list(_iter_sections("x", "numpy"))
@@ -29,6 +25,8 @@ def test_iter_sections_short():
 
 
 def test_iter_sections(numpy):
+    from mkapi.docs import _iter_sections
+
     doc = ast.get_docstring(numpy)
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "numpy"))
@@ -53,6 +51,8 @@ def test_iter_sections(numpy):
 
 
 def test_iter_items(numpy, get):
+    from mkapi.docs import _iter_items, _iter_sections
+
     doc = ast.get_docstring(numpy)
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[5][1]
@@ -71,6 +71,8 @@ def test_iter_items(numpy, get):
 
 
 def test_split_item(numpy, get):
+    from mkapi.docs import _iter_items, _iter_sections, split_item
+
     doc = get(numpy, "module_level_function")
     assert isinstance(doc, str)
     sections = list(_iter_sections(doc, "numpy"))
@@ -89,6 +91,8 @@ def test_split_item(numpy, get):
 
 
 def test_iter_items_class(numpy, get, get_node):
+    from mkapi.docs import _iter_sections, iter_items
+
     doc = get(numpy, "ExampleClass")
     assert isinstance(doc, str)
     section = list(_iter_sections(doc, "numpy"))[1][1]

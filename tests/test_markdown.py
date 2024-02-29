@@ -4,22 +4,6 @@ import re
 
 import markdown
 
-from mkapi.markdown import (
-    _convert_code_block,
-    _convert_examples,
-    _iter,
-    _iter_example_lists,
-    _iter_examples,
-    _iter_fenced_codes,
-    _iter_literal_block,
-    _replace,
-    _split_block,
-    convert,
-    finditer,
-    get_see_also,
-    sub,
-)
-
 
 def test_id():
     name = "m.__a__".replace("_", "\\_")
@@ -95,6 +79,8 @@ def test_splitlines():
 
 
 def test_iter():
+    from mkapi.markdown import _iter
+
     pattern = re.compile("X")
     text = "abcXdef"
     x = list(_iter(pattern, text))
@@ -114,6 +100,8 @@ def test_iter():
 
 
 def test_iter_fenced_codes():
+    from mkapi.markdown import _iter_fenced_codes
+
     text = "abc\n~~~~x\n```\nx\n```\n~~~~\ndef\n"
     x = list(_iter_fenced_codes(text))
     assert len(x) == 3
@@ -130,6 +118,8 @@ def test_iter_fenced_codes():
 
 
 def test_iter_examples():
+    from mkapi.markdown import _iter_example_lists, _iter_examples
+
     text = """
     X
       >>> a = 1
@@ -179,11 +169,15 @@ def test_iter_examples():
 
 
 def test_iter_examples_empty():
+    from mkapi.markdown import _iter_examples
+
     for t in ["a", "a\n", "abc\ndef\n", "abc\ndef", ">>> abc"]:
         assert list(_iter_examples(t)) == [t]
 
 
 def test_convert_examples():
+    from mkapi.markdown import _convert_examples, _iter_example_lists
+
     src = """
     >>>  1 # input
     1
@@ -209,6 +203,8 @@ def test_convert_examples():
 
 
 def test_split_block():
+    from mkapi.markdown import _split_block
+
     src = "\n a\n b\n\n c\nd\n"
     x, y = _split_block(src, 0)
     assert x == "\n a\n b\n\n c\n"
@@ -222,12 +218,16 @@ def test_split_block():
 
 
 def test_iter_literal_block():
+    from mkapi.markdown import _iter_literal_block
+
     src = " x\n a\n\n\n     b\n\n     c\n\nd\n"
     x = "".join(list(_iter_literal_block(src)))
     assert x == " x\n a\n\n\n ```\n b\n\n c\n ```\n\nd\n"
 
 
 def test_convert_code_block():
+    from mkapi.markdown import _convert_code_block
+
     src = """
     ```
     ab
@@ -252,6 +252,8 @@ def test_convert_code_block():
 
 
 def test_convert_literal_block_with_directive():
+    from mkapi.markdown import _convert_code_block
+
     src = """
     a
       .. code-block:: python
@@ -273,6 +275,8 @@ def test_convert_literal_block_with_directive():
 
 
 def test_convert():
+    from mkapi.markdown import convert
+
     src = """
     ```
     .. note::
@@ -296,6 +300,8 @@ def test_convert():
 
 
 def test_convert_example_new_line():
+    from mkapi.markdown import convert
+
     src1 = """
     a
       >>> 1
@@ -317,6 +323,8 @@ def test_convert_example_new_line():
 
 
 def test_finditer():
+    from mkapi.markdown import convert, finditer
+
     pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.M)
     src = """
     ```
@@ -340,6 +348,8 @@ def test_finditer():
 
 
 def test_sub():
+    from mkapi.markdown import convert, sub
+
     pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.M)
     src = """
     ```
@@ -366,6 +376,8 @@ def test_sub():
 
 
 def test_replace():
+    from mkapi.markdown import _replace
+
     src = """
     `abc <def>`_
     :func:`ghi <jkl>`
@@ -389,6 +401,8 @@ def test_replace():
 
 
 def test_get_see_also():
+    from mkapi.markdown import get_see_also
+
     src = """
     abc, def
     ghi: jkl
@@ -401,6 +415,8 @@ def test_get_see_also():
 
 
 def test_get_see_also_items():
+    from mkapi.markdown import get_see_also
+
     src = """
     abc: def
     ghi: jkl

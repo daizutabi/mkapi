@@ -1,7 +1,6 @@
-from mkapi.objects import get_object, resolve, resolve_from_object
-
-
 def test_resolve_examples():
+    from mkapi.objects import resolve
+
     name = "examples.styles.google"
     x = resolve(name)
     assert x
@@ -28,6 +27,8 @@ def test_resolve_examples():
 
 
 def test_resolve_tqdm():
+    from mkapi.objects import resolve
+
     x = resolve("tqdm.tqdm")
     assert x
     assert x[0] == "tqdm"
@@ -36,6 +37,8 @@ def test_resolve_tqdm():
 
 
 def test_resolve_jinja2():
+    from mkapi.objects import resolve
+
     x = resolve("jinja2.Template")
     assert x
     assert x[0] == "Template"
@@ -44,6 +47,8 @@ def test_resolve_jinja2():
 
 
 def test_resolve_mkdocs():
+    from mkapi.objects import resolve
+
     x = resolve("mkdocs.config.Config")
     assert x
     assert x[0] == "Config"
@@ -52,6 +57,8 @@ def test_resolve_mkdocs():
 
 
 def test_resolve_mkapi():
+    from mkapi.objects import resolve
+
     x = resolve("mkapi.objects.ast")
     assert x
     assert x[0] == "ast"
@@ -62,6 +69,8 @@ def test_resolve_mkapi():
 
 
 def test_resolve_from_object():
+    from mkapi.objects import get_object, resolve_from_object
+
     x = get_object("mkapi.objects")
     assert x
     r = resolve_from_object("Object", x)

@@ -1,18 +1,10 @@
 import ast
 import inspect
 
-from mkapi.objects import (
-    Class,
-    Function,
-    Property,
-    create_class,
-    create_module,
-    get_object,
-)
-from mkapi.utils import get_by_name
-
 
 def test_create_class_nested():
+    from mkapi.objects import Class, create_class
+
     src = """
     class A:
         class B:
@@ -31,6 +23,8 @@ def test_create_class_nested():
 
 
 def test_create_class(get):
+    from mkapi.objects import Class, Function, Property, create_class
+
     node = get("ExampleClass")
     assert isinstance(node, ast.ClassDef)
     cls = create_class(node, "x", None)
@@ -44,6 +38,8 @@ def test_create_class(get):
 
 
 def test_inherit():
+    from mkapi.objects import Class, Function, create_module
+
     module = create_module("mkapi.objects")
     assert module
     cls = module.get("Class")
@@ -54,6 +50,9 @@ def test_inherit():
 
 
 def test_class_parameters():
+    from mkapi.objects import Class, create_module
+    from mkapi.utils import get_by_name
+
     module = create_module("examples.styles.google")
     assert module
     cls = module.get("ExampleClass")
@@ -70,6 +69,8 @@ def test_class_parameters():
 
 
 def test_inherit_base_classes():
+    from mkapi.objects import Class, create_module, get_object
+
     create_module("mkapi.plugins")
     cls = get_object("mkapi.plugins.MkAPIConfig")
     assert isinstance(cls, Class)
@@ -85,6 +86,8 @@ def test_inherit_base_classes():
 
 
 def test_iter_dataclass_parameters():
+    from mkapi.objects import Class, get_object
+
     cls = get_object("mkapi.objects.Parameter")
     assert isinstance(cls, Class)
     p = cls.parameters

@@ -5,40 +5,16 @@ import time
 from collections import namedtuple
 from pathlib import Path
 
-from mkapi.utils import (
-    _is_module,
-    cache,
-    cache_clear,
-    cached_objects,
-    del_by_name,
-    find_submodule_names,
-    get_base_classes,
-    get_by_kind,
-    get_by_name,
-    get_by_type,
-    get_export_names,
-    get_module_name,
-    get_module_node,
-    get_module_node_source,
-    get_module_path,
-    is_module_cache_dirty,
-    is_package,
-    iter_identifiers,
-    iter_submodule_names,
-    module_cache,
-    unique_names,
-)
-
-
-@cache
-def f():
-    return datetime.datetime.now()  # noqa: DTZ005
-
-
-c = cache({})
-
 
 def test_cache():
+    from mkapi.utils import cache, cache_clear, cached_objects
+
+    @cache
+    def f():
+        return datetime.datetime.now()  # noqa: DTZ005
+
+    c = cache({})
+
     assert f in cached_objects
     x = f()
     time.sleep(0.1)
@@ -57,6 +33,8 @@ def test_cache():
 
 
 def test_get_module_path():
+    from mkapi.utils import get_module_path
+
     assert get_module_path("mkdocs")
     assert get_module_path("polars")
     assert get_module_path("sys") is None
@@ -64,12 +42,16 @@ def test_get_module_path():
 
 
 def test_is_module():
+    from mkapi.utils import _is_module, get_module_path
+
     path = get_module_path("mkapi.objects")
     assert path
     assert not _is_module(path, r"^mkapi\..+")
 
 
 def test_is_package():
+    from mkapi.utils import is_package
+
     assert is_package("mkdocs")
     assert is_package("mkapi")
     assert not is_package("mkapi.objects")
@@ -78,6 +60,8 @@ def test_is_package():
 
 
 def test_iter_submodule_names():
+    from mkapi.utils import iter_submodule_names
+
     for name in iter_submodule_names("mkdocs"):
         assert name.startswith("mkdocs.")
     for name in iter_submodule_names("mkdocs.structure"):
@@ -86,6 +70,8 @@ def test_iter_submodule_names():
 
 
 def test_find_submodule_names():
+    from mkapi.utils import find_submodule_names, is_package
+
     names = find_submodule_names("mkdocs", lambda x: "tests" not in x)
     assert "mkdocs.plugins" in names
     assert "mkdocs.tests" not in names
@@ -95,6 +81,8 @@ def test_find_submodule_names():
 
 
 def test_get_module_node():
+    from mkapi.utils import get_module_node
+
     node1 = get_module_node("mkapi")
     assert node1
     node2 = get_module_node("mkapi")
@@ -103,6 +91,13 @@ def test_get_module_node():
 
 
 def test_module_cache(tmpdir: Path):
+    from mkapi.utils import (
+        get_module_node_source,
+        get_module_path,
+        is_module_cache_dirty,
+        module_cache,
+    )
+
     module_cache.clear()
     assert not is_module_cache_dirty("a")
 
@@ -134,6 +129,8 @@ def test_module_cache(tmpdir: Path):
 
 
 def test_get_by_name():
+    from mkapi.utils import get_by_name
+
     A = namedtuple("A", ["name", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
     a = get_by_name(x, "a")
@@ -143,6 +140,8 @@ def test_get_by_name():
 
 
 def test_get_by_kind():
+    from mkapi.utils import get_by_kind
+
     A = namedtuple("A", ["kind", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
     a = get_by_kind(x, "a")
@@ -152,6 +151,8 @@ def test_get_by_kind():
 
 
 def test_get_by_type():
+    from mkapi.utils import get_by_type
+
     A = namedtuple("A", ["name", "value"])  # noqa: PYI024
     B = namedtuple("B", ["name", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), B("b", 3), B("c", 4)]
@@ -162,6 +163,8 @@ def test_get_by_type():
 
 
 def test_del_by_name():
+    from mkapi.utils import del_by_name, get_by_name
+
     A = namedtuple("A", ["name", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
     del_by_name(x, "a")
@@ -175,6 +178,8 @@ def test_del_by_name():
 
 
 def test_unique_names():
+    from mkapi.utils import unique_names
+
     A = namedtuple("A", ["name", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
     y = [A("b", 1), A("a", 2), A("d", 3), A("e", 4)]
@@ -182,6 +187,8 @@ def test_unique_names():
 
 
 def test_iter_identifiers():
+    from mkapi.utils import iter_identifiers
+
     x = "a, b, c"
     y = list(iter_identifiers(x))
     assert y[0] == ("a", True)
@@ -214,6 +221,8 @@ def test_iter_identifiers():
 
 
 def test_get_module_name():
+    from mkapi.utils import get_module_name
+
     name = "_collections_abc"
     abc = importlib.import_module(name)
     assert abc.__name__ == "collections.abc"
@@ -221,11 +230,15 @@ def test_get_module_name():
 
 
 def test_get_export_names():
+    from mkapi.utils import get_export_names
+
     x = get_export_names("tqdm")
     assert "tqdm" in x
     assert "trange" in x
 
 
 def test_get_base_classes():
+    from mkapi.utils import get_base_classes
+
     x = get_base_classes("Class", "mkapi.objects")
     assert x == [("Callable", "mkapi.objects")]

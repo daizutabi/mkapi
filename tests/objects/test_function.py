@@ -1,10 +1,10 @@
 import ast
 
-from mkapi.objects import Function, create_function
-from mkapi.utils import get_by_name
-
 
 def test_create_function(get):
+    from mkapi.objects import Function, create_function
+    from mkapi.utils import get_by_name
+
     node = get("module_level_function")
     assert isinstance(node, ast.FunctionDef)
     func = create_function(node, "", None)

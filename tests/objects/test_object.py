@@ -1,20 +1,10 @@
 import ast
 import inspect
 
-from mkapi.objects import (
-    Attribute,
-    Class,
-    Function,
-    _create_module,
-    create_module,
-    get_object,
-    get_source,
-    is_member,
-    iter_objects,
-)
-
 
 def test_create_module():
+    from mkapi.objects import create_module
+
     module = create_module("examples.styles.google")
     assert module
     assert module.get("ExampleClass")
@@ -25,6 +15,8 @@ def test_create_module():
 
 
 def test_get_source():
+    from mkapi.objects import Class, Function, create_module, get_source
+
     module = create_module("mkapi.objects")
     assert module
     s = get_source(module)
@@ -52,6 +44,8 @@ def test_get_source():
 
 
 def test_kind():
+    from mkapi.objects import Attribute, Class, Function, create_module
+
     module = create_module("mkapi")
     assert module
     assert module.kind == "package"
@@ -74,6 +68,8 @@ def test_kind():
 
 
 def test_is_member():
+    from mkapi.objects import Class, get_object, is_member
+
     cls = get_object("mkapi.plugins.MkAPIPlugin")
     assert isinstance(cls, Class)
     for name, obj in cls.children.items():
@@ -86,7 +82,9 @@ def test_is_member():
 
 
 def test_iter_objects():
-    """'''test module.'''
+    from mkapi.objects import Class, Function, _create_module, iter_objects
+
+    src = """'''test module.'''
     m: str
     n = 1
     '''int: attribute n.'''
@@ -103,7 +101,7 @@ def test_iter_objects():
                 c: list
             raise ValueError
     """
-    src = inspect.getdoc(test_iter_objects)
+    src = inspect.cleandoc(src)
     assert src
     node = ast.parse(src)
     module = _create_module("x", node)
@@ -126,6 +124,8 @@ def test_iter_objects():
 
 
 def test_get_object():
+    from mkapi.objects import Class, Function, create_module, get_object
+
     module = create_module("mkapi.objects")
     a = get_object("mkapi.objects")
     assert module is a

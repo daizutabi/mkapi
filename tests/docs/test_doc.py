@@ -1,7 +1,6 @@
-from mkapi.docs import create_doc, is_empty, iter_merged_sections, merge_sections
-
-
 def test_parse():
+    from mkapi.docs import create_doc
+
     doc = create_doc("")
     assert not doc.type
     assert not doc.text
@@ -13,6 +12,8 @@ def test_parse():
 
 
 def test_merge_sections():
+    from mkapi.docs import create_doc, merge_sections
+
     doc = create_doc("a:\n    x\n\na:\n    y\n\nb:\n    z\n")
     s = doc.sections
     x = merge_sections(s[0], s[1])
@@ -20,6 +21,8 @@ def test_merge_sections():
 
 
 def test_iter_merged_sections():
+    from mkapi.docs import create_doc, iter_merged_sections
+
     doc = create_doc("a:\n    x\n\nb:\n    y\n\na:\n    z\n")
     s = doc.sections
     x = list(iter_merged_sections(s[0:2], [s[2]]))
@@ -27,6 +30,8 @@ def test_iter_merged_sections():
 
 
 def test_is_empty():
+    from mkapi.docs import create_doc, is_empty
+
     doc = create_doc("")
     assert is_empty(doc)
     doc = create_doc("a")
