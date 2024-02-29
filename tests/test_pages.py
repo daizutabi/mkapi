@@ -10,6 +10,8 @@ from mkapi.pages import (
 )
 from mkapi.utils import cache_clear
 
+mkapi.renderers.load_templates()
+
 
 def test_create_markdown_markdown():
     filters = ["a", "b"]
@@ -55,9 +57,6 @@ def test_create_markdown_failure():
     m, names = create_markdown("a.b.c", [])
     assert "!!! failure" in m
     assert not names
-
-
-mkapi.renderers.load_templates()
 
 
 def test_convert_markdown():

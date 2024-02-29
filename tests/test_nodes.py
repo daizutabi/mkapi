@@ -134,3 +134,19 @@ def test_resolve_from_module_qualname():
 def test_resolve_from_schemdraw():
     x = resolve_from_module("Drawing", "schemdraw")
     assert x == "schemdraw.schemdraw.Drawing"
+
+
+def test_resolve_from_mkapi_plugins():
+    name = "mkapi.plugins"
+    x = resolve_from_module("MkAPIPlugin", name)
+    assert x == "mkapi.plugins.MkAPIPlugin"
+    x = resolve_from_module("MkDocsConfig", name)
+    assert x == "mkdocs.config.defaults.MkDocsConfig"
+    x = resolve_from_module("Config", name)
+    assert x == "mkdocs.config.base.Config"
+    x = resolve_from_module("config_options", name)
+    assert x == "mkdocs.config.config_options"
+    x = resolve_from_module("config_options.Type", name)
+    assert x == "mkdocs.config.config_options.Type"
+    x = resolve_from_module("get_plugin_logger", name)
+    assert x == "mkdocs.plugins.get_plugin_logger"

@@ -51,10 +51,10 @@ class Page:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.path!r})"
 
-    def is_source_page(self) -> bool:
-        return self.kind is PageKind.SOURCE
-
     def is_object_page(self) -> bool:
+        return self.kind is PageKind.OBJECT
+
+    def is_source_page(self) -> bool:
         return self.kind is PageKind.SOURCE
 
     def is_api_page(self) -> bool:
