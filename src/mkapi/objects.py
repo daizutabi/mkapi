@@ -150,18 +150,10 @@ class Parent(Object):
 
         return child if isinstance(child, type_) else None
 
-    def objects(self, type_: type[T] = Object) -> list[tuple[str, T]]:
+    def get_children(self, type_: type[T] = Object) -> list[tuple[str, T]]:
         it = self.children.items()
 
         return [(name, obj) for (name, obj) in it if isinstance(obj, type_)]
-
-    def iter_objects(self, type_: type[T] = Object) -> Iterator[T]:
-        for obj in self.children.values():
-            if isinstance(obj, type_):
-                yield obj
-
-            if isinstance(obj, Parent):
-                yield from obj.iter_objects(type_)
 
 
 @dataclass(repr=False)
@@ -200,7 +192,7 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
             children.setdefault(name, obj)
 
     for base in get_base_classes(node.name, module):
-        for name, obj in base.objects():
+        for name, obj in base.get_children():
             children.setdefault(name, obj)
 
     cls.set_children(children)
@@ -243,7 +235,7 @@ def _create_class_from_name(name: str, module: str) -> Class | None:
 def iter_attributes_from_method(func: Function, parent: Parent) -> Iterator[tuple[str, Attribute]]:
     self = func.parameters[0].name
 
-    for name, obj in func.objects(Attribute):
+    for name, obj in func.get_children(Attribute):
         if name.startswith(f"{self}."):
             name_ = name[len(self) + 1 :]
             attr = create_attribute(name_, obj.node, obj.module, parent)
@@ -318,15 +310,28 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
     module.set_children(children)
 
     if source:
-        lines = source.splitlines()
-        for attr in module.iter_objects(Attribute):
-            if not is_empty(attr.doc) or attr.module != name:
-                continue
-
-            if doc := _get_doc_from_comment(attr.node, lines):
-                attr.doc = doc
+        _set_doc_from_comment(module, source)
 
     return module
+
+
+def _set_doc_from_comment(module: Module, source: str) -> None:
+    lines = source.splitlines()
+    for attr in iter_objects(module, Attribute):
+        if not is_empty(attr.doc) or attr.module != module.name:
+            continue
+
+        if doc := _get_doc_from_comment(attr.node, lines):
+            attr.doc = doc
+
+
+def iter_objects(obj: Parent, type_: type[T] = Object) -> Iterator[T]:
+    for child in obj.children.values():
+        if isinstance(child, type_):
+            yield child
+
+        if isinstance(child, Parent):
+            yield from iter_objects(child, type_)
 
 
 def _get_doc_from_comment(node: AST, lines: list[str]) -> Doc | None:
@@ -388,34 +393,6 @@ def is_member(obj: Object, parent: Object | None) -> bool:
         return True
 
     return obj.parent is parent
-
-
-def iter_objects_with_depth(
-    obj: Object,
-    maxdepth: int = -1,
-    predicate: Callable_[[Object, Object | None], bool] | None = None,
-    depth: int = 0,
-) -> Iterator[tuple[Object, int]]:
-    """Yield [Object] instances and depth."""
-    if not predicate or predicate(obj, None):
-        yield obj, depth
-
-    if depth == maxdepth or not isinstance(obj, Parent):
-        return
-
-    for name, child in obj.children.items():
-        if not predicate or predicate(child, obj):
-            yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
-
-
-def iter_objects(
-    obj: Object,
-    maxdepth: int = -1,
-    predicate: Callable_[[Object, Object | None], bool] | None = None,
-) -> Iterator[Object]:
-    """Yield [Object] instances."""
-    for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
-        yield child
 
 
 @cache

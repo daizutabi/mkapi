@@ -104,7 +104,7 @@ def split_item_without_name(text: str, style: str) -> tuple[str, str]:
 @dataclass
 class Item:
     name: str
-    type: str | ast.expr | None
+    type: str | ast.expr | None  # noqa: A003, RUF100
     text: str
 
     def __repr__(self) -> str:

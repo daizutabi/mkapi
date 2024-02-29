@@ -143,7 +143,7 @@ def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | 
 @dataclass
 class Parameter:
     name: str
-    type: ast.expr | None
+    type: ast.expr | None  # noqa: A003, RUF100
     default: ast.expr | None
     kind: _ParameterKind
 

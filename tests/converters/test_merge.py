@@ -53,7 +53,7 @@ def test_merge_raises():
 def test_merge_attribute_module():
     module = create_module("examples.styles.google")
     assert module
-    attrs = [x for _, x in module.objects(Attribute)]
+    attrs = [x for _, x in module.get_children(Attribute)]
     sections = module.doc.sections
     merge_attributes(sections, attrs)
     section = get_by_name(sections, "Attributes")

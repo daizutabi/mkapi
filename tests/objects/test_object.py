@@ -12,7 +12,6 @@ from mkapi.objects import (
     is_member,
     iter_objects,
 )
-from mkapi.utils import get_by_name
 
 
 def test_create_module():
@@ -117,7 +116,6 @@ def test_iter_objects():
     assert isinstance(cls, Class)
     assert cls.fullname == "x.A.f.B"
     objs = iter_objects(module)
-    assert next(objs).name == "x"
     assert next(objs).name == "m"
     assert next(objs).name == "n"
     assert next(objs).name == "A"
@@ -125,32 +123,6 @@ def test_iter_objects():
     assert next(objs).name == "f"
     assert next(objs).name == "B"
     assert next(objs).name == "c"
-
-
-def test_iter_objects_predicate():
-    module = create_module("mkapi.plugins")
-    assert module
-    cls = module.get("MkAPIPlugin")
-    assert isinstance(cls, Class)
-    x = list(iter_objects(cls))
-    members = ["MkAPIPlugin", "on_nav", "pages"]
-    others = ["load_config", "config"]
-    for name in members:
-        assert get_by_name(x, name)
-    for name in others:
-        assert get_by_name(x, name)
-
-    def predicate(obj, parent):
-        if parent is None:
-            return True
-
-        return obj.module is parent.module
-
-    x = list(iter_objects(cls, predicate=predicate))
-    for name in members:
-        assert get_by_name(x, name)
-    for name in others:
-        assert not get_by_name(x, name)
 
 
 def test_get_object():

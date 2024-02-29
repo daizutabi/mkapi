@@ -9,6 +9,7 @@ from mkapi.objects import (
     create_class,
     create_module,
     iter_attributes_from_method,
+    iter_objects,
 )
 
 
@@ -37,7 +38,7 @@ def test_merge_attributes_comment():
     source = inspect.cleandoc(src)
     node = ast.parse(source)
     module = _create_module("a", node, source)
-    for a in module.iter_objects(Attribute):
+    for a in iter_objects(module, Attribute):
         if a.name == "attr5":
             assert not a.doc.text
         else:

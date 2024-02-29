@@ -4,12 +4,11 @@ from __future__ import annotations
 import datetime
 import os.path
 import re
-from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING
 
 import mkapi.markdown
 import mkapi.renderers
@@ -19,14 +18,15 @@ from mkapi.objects import (
     get_object,
     is_empty,
     is_member,
-    iter_objects_with_depth,
 )
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from mkapi.objects import Object
 
-PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "MARKDOWN"])
+PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "DOCUMENTATION"])
 
 object_paths: dict[str, dict[str, Path]] = {}
 
@@ -118,18 +118,15 @@ def create_source_page(name: str, path: Path, filters: list[str]):
 
 
 def create_documentation_page(path: Path) -> Page:
-    return Page("", path, PageKind.MARKDOWN, [])
-
-
-Predicate: TypeAlias = Callable[[str], bool] | None
+    return Page("", path, PageKind.DOCUMENTATION, [])
 
 
 def create_markdown(
     name: str,
     filters: list[str],
-    predicate: Predicate = None,
+    predicate: Callable[[str], bool] | None = None,
 ) -> tuple[str, list[str]]:
-    """Create object page for an object."""
+    """Create module page."""
     if not (module := create_module(name)):
         return f"!!! failure\n\n    module {name!r} not found.\n", []
 
@@ -156,11 +153,13 @@ def _predicate(
 ) -> bool:
     if not is_member(obj, parent):
         return False
-    # if is_empty(obj):
+
     if is_empty(obj.doc):
         return False
+
     if predicate and not predicate(obj.fullname):
         return False
+
     return True
 
 
