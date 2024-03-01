@@ -278,4 +278,4 @@ def test_split_name():
     assert x
     assert x[0] == "ExampleClassGoogle"
     assert x[1] == "examples.styles"
-    assert not split_name("a.b.c")
+    assert not split_name("x.x")

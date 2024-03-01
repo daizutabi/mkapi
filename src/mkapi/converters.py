@@ -12,15 +12,9 @@ from typing import TYPE_CHECKING, TypeAlias
 import mkapi.ast
 import mkapi.markdown
 from mkapi.docs import Item, Section, create_summary_item
+from mkapi.inspect import resolve, resolve_from_object
 from mkapi.nodes import resolve_from_module
-from mkapi.objects import (
-    Attribute,
-    Class,
-    Function,
-    Object,
-    resolve,
-    resolve_from_object,
-)
+from mkapi.objects import Attribute, Class, Function, Object
 from mkapi.utils import (
     get_by_name,
     is_identifier,

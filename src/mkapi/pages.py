@@ -1,4 +1,5 @@
 """Page class that works with other converter."""
+
 from __future__ import annotations
 
 import datetime
@@ -12,13 +13,9 @@ from typing import TYPE_CHECKING
 
 import mkapi.markdown
 import mkapi.renderers
+from mkapi.inspect import get_object, is_child
 from mkapi.nodes import resolve
-from mkapi.objects import (
-    create_module,
-    get_object,
-    is_empty,
-    is_member,
-)
+from mkapi.objects import create_module, is_empty
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
@@ -151,7 +148,7 @@ def _predicate(
     parent: Object | None,
     predicate: Callable[[str], bool] | None,
 ) -> bool:
-    if not is_member(obj, parent):
+    if not is_child(obj, parent):
         return False
 
     if is_empty(obj.doc):

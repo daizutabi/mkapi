@@ -395,7 +395,7 @@ def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
 def split_name(name: str) -> tuple[str, str | None] | None:
     modulename = None
     for module in iter_attribute_names(name):
-        if not get_object(module, None):
+        if not get_module_node(module):
             if not modulename:
                 return None
 

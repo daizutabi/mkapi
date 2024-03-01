@@ -69,16 +69,19 @@ def test_class_parameters():
 
 
 def test_inherit_base_classes():
-    from mkapi.objects import Class, create_module, get_object
+    from mkapi.objects import Class, create_module
 
-    create_module("mkapi.plugins")
-    cls = get_object("mkapi.plugins.MkAPIConfig")
+    module = create_module("mkapi.plugins")
+    assert module
+    cls = module.get("MkAPIConfig")
     assert isinstance(cls, Class)
     assert cls.get("config_file_path")
-    cls = get_object("mkapi.plugins.MkAPIPlugin")
+    cls = module.get("MkAPIPlugin")
     assert isinstance(cls, Class)
     assert cls.get("on_page_read_source")
-    cls = get_object("mkapi.objects.Parameter")
+    module = create_module("mkapi.ast")
+    assert module
+    cls = module.get("Parameter")
     assert isinstance(cls, Class)
     assert cls.get("name")
     assert cls.get("type")
@@ -86,9 +89,11 @@ def test_inherit_base_classes():
 
 
 def test_iter_dataclass_parameters():
-    from mkapi.objects import Class, get_object
+    from mkapi.objects import Class, create_module
 
-    cls = get_object("mkapi.objects.Parameter")
+    module = create_module("mkapi.ast")
+    assert module
+    cls = module.get("Parameter")
     assert isinstance(cls, Class)
     p = cls.parameters
     assert p[0].name == "name"
