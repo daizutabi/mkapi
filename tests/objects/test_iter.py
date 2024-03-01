@@ -1,4 +1,23 @@
+# def test_iter():
+#     from mkapi.objects import create_module
+
+#     a = create_module("examples.styles")
+#     assert a
+#     b = create_module("examples.styles.google")
+#     assert b
+
+#     x = a.get("ExampleClassGoogle")
+#     assert x
+#     print(x, id(x), x.node)
+
+#     x = b.get("ExampleClass")
+#     assert x
+#     print(x, id(x), x.node)
+#     assert 0
+
 # def test_iter_objects_predicate():
+
+
 #     module = create_module("mkapi.plugins")
 #     assert module
 #     cls = module.get("MkAPIPlugin")

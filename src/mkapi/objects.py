@@ -1,4 +1,5 @@
 """Object module."""
+
 from __future__ import annotations
 
 import ast
@@ -77,6 +78,7 @@ def _create_doc(node: AST) -> Doc:
     return create_doc(text)
 
 
+nodes: dict[tuple[AST, str, AST | None], Object] = cache({})
 objects: dict[str, Object] = cache({})
 aliases: dict[str, list[str]] = cache({})
 
@@ -91,19 +93,28 @@ def _register_object(fullname: str, obj: Object):
 
 
 def _create_object(node: AST, module: str, parent: Parent | None) -> Object | None:
+    key = (node, module, parent.node if parent else None)
+
+    if obj := nodes.get(key):
+        return obj
+
     if isinstance(node, ast.ClassDef):
-        return create_class(node, module, parent)
+        obj = create_class(node, module, parent)
 
-    if is_function(node):
-        return create_function(node, module, parent)
+    elif is_function(node):
+        obj = create_function(node, module, parent)
 
-    if is_property(node):
-        return create_property(node, module, parent)
+    elif is_property(node):
+        obj = create_property(node, module, parent)
 
-    if is_assign(node) and (name := get_assign_name(node)):
-        return create_attribute(name, node, module, parent)
+    elif is_assign(node) and (name := get_assign_name(node)):
+        obj = create_attribute(name, node, module, parent)
 
-    return None
+    else:
+        return None
+
+    nodes[key] = obj
+    return obj
 
 
 def _iter_child_objects(node: AST, module: str, parent: Parent) -> Iterator[Object]:
@@ -154,6 +165,15 @@ class Parent(Object):
         it = self.children.items()
 
         return [(name, obj) for (name, obj) in it if isinstance(obj, type_)]
+
+
+def iter_objects(obj: Parent, type_: type[T] = Object) -> Iterator[T]:
+    for child in obj.children.values():
+        if isinstance(child, type_):
+            yield child
+
+        if isinstance(child, Parent):
+            yield from iter_objects(child, type_)
 
 
 @dataclass(repr=False)
@@ -302,7 +322,10 @@ def _create_module(name: str, node: ast.Module, source: str | None = None) -> Mo
             module.imports[name_] = child
 
         elif isinstance(child, mkapi.nodes.Module):
-            children[name_] = Module(child.name, child.node, {})
+            if child.name in objects:
+                children[name_] = objects[child.name]
+            else:
+                children[name_] = Module(child.name, child.node, {})
 
         elif obj := _create_object(child.node, child.module, None):
             children[name_] = obj
@@ -323,15 +346,6 @@ def _set_doc_from_comment(module: Module, source: str) -> None:
 
         if doc := _get_doc_from_comment(attr.node, lines):
             attr.doc = doc
-
-
-def iter_objects(obj: Parent, type_: type[T] = Object) -> Iterator[T]:
-    for child in obj.children.values():
-        if isinstance(child, type_):
-            yield child
-
-        if isinstance(child, Parent):
-            yield from iter_objects(child, type_)
 
 
 def _get_doc_from_comment(node: AST, lines: list[str]) -> Doc | None:
@@ -460,3 +474,25 @@ def resolve_from_object(name: str, obj: Object) -> str | None:
         return resolved[2].fullname
 
     return None
+
+
+# def iter_child_objects(
+#     obj: Parent,
+#     predicate: Callable_[[Object, Object | None], bool] | None = None,
+# ) -> Iterator[tuple[str, Object]]:
+#     """Yield child [Object] instances."""
+#     for name, child in obj.children.items():
+#         if not predicate or predicate(child, obj):
+#             yield name, child
+#             if isinstance(child,Pa)
+#             yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
+
+
+# def iter_objects(
+#     obj: Object,
+#     maxdepth: int = -1,
+#     predicate: Callable_[[Object, Object | None], bool] | None = None,
+# ) -> Iterator[Object]:
+#     """Yield [Object] instances."""
+#     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
+#         yield child

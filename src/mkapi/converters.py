@@ -1,4 +1,5 @@
 """Converter module."""
+
 from __future__ import annotations
 
 import ast
@@ -67,27 +68,6 @@ def create_converter(name: str) -> Converter | None:
 
     return None
 
-
-# def iter_child_objects(
-#     obj: Parent,
-#     predicate: Callable_[[Object, Object | None], bool] | None = None,
-# ) -> Iterator[tuple[str, Object]]:
-#     """Yield child [Object] instances."""
-#     for name, child in obj.children.items():
-#         if not predicate or predicate(child, obj):
-#             yield name, child
-#             if isinstance(child,Pa)
-#             yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
-
-
-# def iter_objects(
-#     obj: Object,
-#     maxdepth: int = -1,
-#     predicate: Callable_[[Object, Object | None], bool] | None = None,
-# ) -> Iterator[Object]:
-#     """Yield [Object] instances."""
-#     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
-#         yield child
 
 PREFIX = "__mkapi__."
 LINK_PATTERN = re.compile(r"(?<!\])\[(?P<name>[^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")

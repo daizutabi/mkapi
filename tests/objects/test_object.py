@@ -156,3 +156,18 @@ def test_get_object_schemdraw():
     x = get_object("schemdraw.Drawing")
     assert x
     assert x.fullname == "schemdraw.schemdraw.Drawing"
+
+
+def test_object_id():
+    from mkapi.objects import create_module
+
+    a = create_module("examples.styles")
+    assert a
+    b = create_module("examples.styles.google")
+    assert b
+
+    x = a.get("ExampleClassGoogle")
+    assert x
+    y = b.get("ExampleClass")
+    assert y
+    assert x is y
