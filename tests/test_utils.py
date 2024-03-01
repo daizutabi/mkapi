@@ -229,6 +229,21 @@ def test_get_module_name():
     assert get_module_name(name) == "collections.abc"
 
 
+def test_get_object():
+    from mkapi.utils import get_object
+
+    name = "ExampleClass"
+    module = "examples.styles.google"
+    obj = get_object(name, module)
+    assert obj.__name__ == name  # type: ignore
+    assert obj.__module__ == module
+    name_ = "ExampleClassGoogle"
+    module_ = "examples.styles"
+    obj = get_object(name_, module_)
+    assert obj.__name__ == name  # type: ignore
+    assert obj.__module__ == module
+
+
 def test_get_export_names():
     from mkapi.utils import get_export_names
 
@@ -242,3 +257,25 @@ def test_get_base_classes():
 
     x = get_base_classes("Class", "mkapi.objects")
     assert x == [("Callable", "mkapi.objects")]
+
+
+def test_split_name():
+    from mkapi.utils import split_name
+
+    x = split_name("ast")
+    assert x
+    assert x[0] == "ast"
+    assert not x[1]
+    x = split_name("ast.ClassDef")
+    assert x
+    assert x[0] == "ClassDef"
+    assert x[1] == "ast"
+    x = split_name("examples.styles.google.ExampleClass")
+    assert x
+    assert x[0] == "ExampleClass"
+    assert x[1] == "examples.styles.google"
+    x = split_name("examples.styles.ExampleClassGoogle")
+    assert x
+    assert x[0] == "ExampleClassGoogle"
+    assert x[1] == "examples.styles"
+    assert not split_name("a.b.c")

@@ -23,7 +23,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.nodes import Import, parse, resolve_from_module
+from mkapi.nodes import parse, resolve_from_module
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -143,6 +143,26 @@ class Property(Type):
     node: ast.FunctionDef | ast.AsyncFunctionDef
 
 
+def create_attribute(
+    name: str,
+    node: ast.AnnAssign | ast.Assign | TypeAlias,  # type: ignore
+    module: str,
+    parent: Parent | None,
+) -> Attribute:
+    type_ = get_assign_type(node)
+    default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
+
+    return Attribute(name, node, module, parent, type_, default)
+
+
+def create_property(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    module: str,
+    parent: Parent | None,
+) -> Property:
+    return Property(node.name, node, module, parent, node.returns)
+
+
 T = TypeVar("T")
 
 
@@ -190,14 +210,6 @@ class Class(Callable):
 @dataclass(repr=False)
 class Function(Callable):
     node: ast.FunctionDef | ast.AsyncFunctionDef
-
-
-@dataclass(repr=False)
-class Module(Parent):
-    node: ast.Module
-    module: None = field(default=None, init=False)
-    parent: None = field(default=None, init=False)
-    imports: dict[str, Import]
 
 
 def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Class:
@@ -292,40 +304,30 @@ def create_function(
     return func
 
 
-def create_property(
-    node: ast.FunctionDef | ast.AsyncFunctionDef,
-    module: str,
-    parent: Parent | None,
-) -> Property:
-    return Property(node.name, node, module, parent, node.returns)
-
-
-def create_attribute(
-    name: str,
-    node: ast.AnnAssign | ast.Assign | TypeAlias,  # type: ignore
-    module: str,
-    parent: Parent | None,
-) -> Attribute:
-    type_ = get_assign_type(node)
-    default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
-
-    return Attribute(name, node, module, parent, type_, default)
+@dataclass(repr=False)
+class Module(Parent):
+    node: ast.Module
+    module: None = field(default=None, init=False)
+    parent: None = field(default=None, init=False)
+    imports: dict[str, str] = field(default_factory=dict, init=False)
+    modules: dict[str, str] = field(default_factory=dict, init=False)
 
 
 def _create_module(name: str, node: ast.Module, source: str | None = None) -> Module:
-    module = Module(name, node, {})
+    module = Module(name, node)
 
     children: dict[str, Object] = {}
 
     for name_, child in parse(node, name):
-        if isinstance(child, Import):
-            module.imports[name_] = child
+        if isinstance(child, mkapi.nodes.Import):
+            module.imports[name_] = child.fullname
 
         elif isinstance(child, mkapi.nodes.Module):
-            if child.name in objects:
-                children[name_] = objects[child.name]
-            else:
-                children[name_] = Module(child.name, child.node, {})
+            module.modules[name_] = child.name
+            # if child.name in objects:
+            #     children[name_] = objects[child.name]
+            # else:
+            #     children[name_] = Module(child.name, child.node)
 
         elif obj := _create_object(child.node, child.module, None):
             children[name_] = obj

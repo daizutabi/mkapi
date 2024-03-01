@@ -1,4 +1,5 @@
 """Utility code."""
+
 from __future__ import annotations
 
 import ast
@@ -21,18 +22,15 @@ T = TypeVar("T")
 
 
 @overload
-def cache(obj: Callable[..., T]) -> Callable[..., T]:
-    ...  # no cov
+def cache(obj: Callable[..., T]) -> Callable[..., T]: ...  # no cov
 
 
 @overload
-def cache(obj: dict) -> dict:
-    ...  # no cov
+def cache(obj: dict) -> dict: ...  # no cov
 
 
 @overload
-def cache(obj: list) -> list:
-    ...  # no cov
+def cache(obj: list) -> list: ...  # no cov
 
 
 def cache(obj: Callable[..., T] | dict | list) -> Callable[..., T] | dict | list:
@@ -342,6 +340,20 @@ def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
 
 
 @cache
+def get_export_names(module: str) -> list[str]:
+    try:
+        members = importlib.import_module(module).__dict__
+    except ModuleNotFoundError:
+        return []
+
+    names = members.get("__all__")
+    if isinstance(names, list | tuple):
+        return list(names)
+
+    return []
+
+
+@cache
 def get_object(name: str, module: str | None) -> object | None:
     try:
         obj = importlib.import_module(module or name)
@@ -365,21 +377,6 @@ def is_dataclass(name: str, module: str) -> bool:
 
 
 @cache
-def get_export_names(module: str) -> list[str]:
-    try:
-        members = importlib.import_module(module).__dict__
-    except ModuleNotFoundError:
-        return []
-
-    names = members.get("__all__")
-    if isinstance(names, list | tuple):
-        return list(names)
-
-    return []
-    # return [name for name in names if name not in members]
-
-
-@cache
 def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
     obj = get_object(name, module)
 
@@ -392,3 +389,18 @@ def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
                 bases.append((basename, base.__module__))
 
     return bases
+
+
+@cache
+def split_name(name: str) -> tuple[str, str | None] | None:
+    modulename = None
+    for module in iter_attribute_names(name):
+        if not get_object(module, None):
+            if not modulename:
+                return None
+
+            return name[len(modulename) + 1 :], modulename
+
+        modulename = module
+
+    return name, None
