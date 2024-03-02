@@ -11,8 +11,7 @@ from jinja2 import Environment, FileSystemLoader, Template
 import mkapi
 from mkapi.converters import create_converter
 from mkapi.docs import Doc, create_summary_item
-from mkapi.inspect import get_source
-from mkapi.objects import Attribute, Class, Function, Module
+from mkapi.objects import Attribute, Class, Function, Module, get_source
 
 # is_empty,
 # is_member,

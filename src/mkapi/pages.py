@@ -13,9 +13,8 @@ from typing import TYPE_CHECKING
 
 import mkapi.markdown
 import mkapi.renderers
-from mkapi.inspect import get_object, is_child
-from mkapi.nodes import resolve
-from mkapi.objects import create_module, is_empty
+from mkapi.nodes import iter_nodes
+from mkapi.objects import create_module, get_object, is_child, is_empty
 from mkapi.utils import split_filters
 
 if TYPE_CHECKING:
@@ -238,7 +237,7 @@ def _replace_link_from_paths(
     else:
         from_mkapi = False
 
-    fullname = resolve(fullname) or fullname
+    fullname = iter_nodes(fullname) or fullname
 
     if path := paths.get(fullname):
         # Python 3.12

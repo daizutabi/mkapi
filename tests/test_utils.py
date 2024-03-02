@@ -230,16 +230,16 @@ def test_get_module_name():
 
 
 def test_get_object():
-    from mkapi.utils import get_object
+    from mkapi.utils import get_object_from_module
 
     name = "ExampleClass"
     module = "examples.styles.google"
-    obj = get_object(name, module)
+    obj = get_object_from_module(name, module)
     assert obj.__name__ == name  # type: ignore
     assert obj.__module__ == module
     name_ = "ExampleClassGoogle"
     module_ = "examples.styles"
-    obj = get_object(name_, module_)
+    obj = get_object_from_module(name_, module_)
     assert obj.__name__ == name  # type: ignore
     assert obj.__module__ == module
 
@@ -266,14 +266,22 @@ def test_split_name():
     assert x
     assert x[0] == "ast"
     assert not x[1]
+
+    x = split_name("mkapi.objects.ast")
+    assert x
+    assert x[0] == "ast"
+    assert x[1] == "mkapi.objects"
+
     x = split_name("ast.ClassDef")
     assert x
     assert x[0] == "ClassDef"
     assert x[1] == "ast"
+
     x = split_name("examples.styles.google.ExampleClass")
     assert x
     assert x[0] == "ExampleClass"
     assert x[1] == "examples.styles.google"
+
     x = split_name("examples.styles.ExampleClassGoogle")
     assert x
     assert x[0] == "ExampleClassGoogle"

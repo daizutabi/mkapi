@@ -354,14 +354,11 @@ def get_export_names(module: str) -> list[str]:
 
 
 @cache
-def get_object(name: str, module: str | None) -> object | None:
+def get_object_from_module(name: str, module: str) -> object | None:
     try:
         obj = importlib.import_module(module or name)
     except ModuleNotFoundError:
         return None
-
-    if not module:
-        return obj
 
     for name_ in name.split("."):
         if not (obj := dict(inspect.getmembers(obj)).get(name_)):
@@ -372,13 +369,13 @@ def get_object(name: str, module: str | None) -> object | None:
 
 @cache
 def is_dataclass(name: str, module: str) -> bool:
-    obj = get_object(name, module)
+    obj = get_object_from_module(name, module)
     return dataclasses.is_dataclass(obj)
 
 
 @cache
 def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
-    obj = get_object(name, module)
+    obj = get_object_from_module(name, module)
 
     bases = []
 
@@ -404,3 +401,16 @@ def split_name(name: str) -> tuple[str, str | None] | None:
         modulename = module
 
     return name, None
+
+
+# @cache
+# def get_name_module(name: str) -> tuple[str, str | None] | None:
+#     if not (name_module := split_name(name)):
+#         return None
+
+#     name, module = name_module
+#     if not module:
+#         return name, module
+
+#     if obj := get_object_from_module(name, module):
+#         return obj.__qualname__, obj.__module__

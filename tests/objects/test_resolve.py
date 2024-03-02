@@ -1,50 +1,3 @@
-def test_get_source():
-    from mkapi.inspect import get_source
-    from mkapi.objects import Class, Function, create_module
-
-    module = create_module("mkapi.objects")
-    assert module
-    s = get_source(module)
-    assert s
-    assert "def create_module(" in s
-    func = module.get("create_module")
-    assert isinstance(func, Function)
-    assert func
-    s = get_source(func)
-    assert s
-    assert s.startswith("def create_module")
-
-    module = create_module("examples.styles.google")
-    assert module
-    s = get_source(module)
-    assert s
-    assert s.startswith('"""Example')
-    assert s.endswith("attr2: int\n")
-    cls = module.get("ExampleClass")
-    assert isinstance(cls, Class)
-    s = get_source(cls)
-    assert s
-    assert s.startswith("class ExampleClass")
-    assert s.endswith("pass")
-
-
-def test_is_child():
-    from mkapi.inspect import is_child
-    from mkapi.objects import Class, create_module
-
-    module = create_module("mkapi.plugins")
-    assert module
-    cls = module.get("MkAPIPlugin")
-    assert isinstance(cls, Class)
-    for name, obj in cls.children.items():
-        for x in ["api_dirs", "on_config", "on_serve", "dirty"]:
-            if name == x:
-                assert is_child(obj, cls)
-        for x in ["config_class", "config", "on_post_build", "_is_protocol"]:
-            if name == x:
-                assert not is_child(obj, cls)
-
-
 # def test_get_object():
 #     from mkapi.objects import Class, Function, create_module, get_object
 
@@ -155,3 +108,54 @@ def test_is_child():
 #     assert x
 #     r = resolve_from_object("Object", x)
 #     assert r
+
+# def test_iter():
+#     from mkapi.objects import create_module
+
+#     a = create_module("examples.styles")
+#     assert a
+#     b = create_module("examples.styles.google")
+#     assert b
+
+#     x = a.get("ExampleClassGoogle")
+#     assert x
+#     print(x, id(x), x.node)
+
+#     x = b.get("ExampleClass")
+#     assert x
+#     print(x, id(x), x.node)
+#     assert 0
+
+# def test_iter_objects_predicate():
+
+
+#     module = create_module("mkapi.plugins")
+#     assert module
+#     cls = module.get("MkAPIPlugin")
+#     assert isinstance(cls, Class)
+#     x = list(iter_objects(cls))
+#     members = ["MkAPIPlugin", "on_nav", "pages"]
+#     others = ["load_config", "config"]
+#     for name in members:
+#         assert get_by_name(x, name)
+#     for name in others:
+#         assert get_by_name(x, name)
+
+#     def predicate(obj, parent):
+#         if parent is None:
+#             return True
+
+#         return obj.module is parent.module
+
+#     x = list(iter_objects(cls, predicate=predicate))
+#     for name in members:
+#         assert get_by_name(x, name)
+#     for name in others:
+#         assert not get_by_name(x, name)
+
+
+# def test_iter_object_package():
+#     module = create_module("examples.styles")
+#     assert module
+#     for x in iter_objects(module):
+#         print(x)

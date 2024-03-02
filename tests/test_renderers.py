@@ -1,5 +1,5 @@
 from mkapi.converters import set_markdown
-from mkapi.objects import Class, Function, Module, get_object
+from mkapi.objects import Class, Function, Module, get_object_from_module
 from mkapi.renderers import (
     _create_summary_docstring,
     _get_source,
@@ -24,7 +24,7 @@ def test_load_templates():
 
 
 def test_render_heading():
-    obj = get_object("examples.styles.google.module_level_function")
+    obj = get_object_from_module("examples.styles.google.module_level_function")
     assert obj
     set_markdown(obj)
     x = render_heading(obj.fullname.str, 2)
@@ -33,7 +33,7 @@ def test_render_heading():
 
 
 def test_render_header():
-    obj = get_object("examples.styles.google")
+    obj = get_object_from_module("examples.styles.google")
     assert obj
     set_markdown(obj)
     x = render_header(obj.fullname, "object")
@@ -42,7 +42,7 @@ def test_render_header():
 
 
 def test_render_object_function():
-    obj = get_object("mkapi.items.create_parameters")
+    obj = get_object_from_module("mkapi.items.create_parameters")
     assert obj
     set_markdown(obj)
     x = render_object(obj)
@@ -52,7 +52,7 @@ def test_render_object_function():
 
 
 def test_render_object_class():
-    obj = get_object("mkapi.objects.Class")
+    obj = get_object_from_module("mkapi.objects.Class")
     assert obj
     set_markdown(obj)
     x = render_object(obj)
@@ -60,7 +60,7 @@ def test_render_object_class():
 
 
 def test_render_object_module():
-    obj = get_object("examples.styles.google")
+    obj = get_object_from_module("examples.styles.google")
     assert obj
     set_markdown(obj)
     x = render_object(obj)
@@ -68,7 +68,7 @@ def test_render_object_module():
 
 
 def test_render_document():
-    obj = get_object("examples.styles.google.module_level_function")
+    obj = get_object_from_module("examples.styles.google.module_level_function")
     assert obj
     set_markdown(obj)
     assert isinstance(obj, Function)
@@ -78,7 +78,7 @@ def test_render_document():
 
 
 def test_render_source():
-    obj = get_object("examples.styles.google.ExampleClass")
+    obj = get_object_from_module("examples.styles.google.ExampleClass")
     assert obj
     x = render_source(obj, attr=".test")
     assert x.startswith("``` {.python .mkapi-source .test}\n")
@@ -86,7 +86,7 @@ def test_render_source():
 
 
 def test_get_source_class():
-    obj = get_object("examples.styles.google")
+    obj = get_object_from_module("examples.styles.google")
     assert obj
     x = _get_source(obj)
     assert "docstrings.## __mkapi__.examples.styles.google" not in x
@@ -99,7 +99,7 @@ def test_get_source_class():
 
 
 def test_get_source_module():
-    obj = get_object("examples.styles.google.ExampleClass")
+    obj = get_object_from_module("examples.styles.google.ExampleClass")
     assert obj
     x = _get_source(obj)
     assert "class ExampleClass:## __mkapi__.examples.styles.google.ExampleClass" not in x
@@ -110,7 +110,7 @@ def test_get_source_module():
 
 
 def test_summary():
-    obj = get_object("examples.styles.google.ExampleClass")
+    obj = get_object_from_module("examples.styles.google.ExampleClass")
     assert isinstance(obj, Class)
     doc = _create_summary_docstring(obj)
     assert doc
@@ -119,7 +119,7 @@ def test_summary():
     assert '<p class="mkapi-section"><span class="mkapi-section-name">Methods</span></p>' in m
     assert "&mdash;\nClass methods are similar to regular functions.\n</li>" in m
 
-    obj = get_object("examples.styles.google")
+    obj = get_object_from_module("examples.styles.google")
     assert isinstance(obj, Module)
     doc = _create_summary_docstring(obj)
     assert doc
@@ -130,7 +130,7 @@ def test_summary():
 
 
 def test_summary_alias():
-    obj = get_object("examples.styles")
+    obj = get_object_from_module("examples.styles")
     assert isinstance(obj, Module)
     assert obj.aliases
     doc = _create_summary_docstring(obj)

@@ -173,12 +173,12 @@ def test_resolve_from_mkapi_plugins():
 
 
 def test_resolve_polars():
-    from mkapi.nodes import resolve
+    from mkapi.nodes import iter_nodes
 
-    assert next(resolve("polars.DataFrame")).fullname == "polars.dataframe.frame.DataFrame"
-    assert next(resolve("polars.DataType")).fullname == "polars.datatypes.classes.DataType"
-    assert next(resolve("polars.col")).fullname == "polars.functions.col"
-    assert next(resolve("polars.api")).fullname == "polars.api"
+    assert next(iter_nodes("polars.DataFrame")).fullname == "polars.dataframe.frame.DataFrame"
+    assert next(iter_nodes("polars.DataType")).fullname == "polars.datatypes.classes.DataType"
+    assert next(iter_nodes("polars.col")).fullname == "polars.functions.col"
+    assert next(iter_nodes("polars.api")).fullname == "polars.api"
 
 
 def test_resolve_from_polars():

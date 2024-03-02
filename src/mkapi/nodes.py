@@ -130,10 +130,10 @@ def _iter_imports_from_star(node: ast.ImportFrom, module: str) -> Iterator[Objec
 
 
 @cache
-def get_child_nodes(node: ast.Module, name: str) -> list[Object | Import]:
+def get_child_nodes(node: AST, module: str) -> list[Object | Import]:
     node_dict: dict[str, list[Object | Import]] = {}
 
-    for child in iter_child_nodes(node, name):
+    for child in iter_child_nodes(node, module):
         if child.name not in node_dict:
             node_dict[child.name] = [child]
 
@@ -147,7 +147,7 @@ def get_child_nodes(node: ast.Module, name: str) -> list[Object | Import]:
     return list(chain(*node_dict.values()))
 
 
-def resolve(fullname: str) -> Iterator[Module | Object | Import]:
+def iter_nodes(fullname: str) -> Iterator[Module | Object | Import]:
     if node := get_module_node(fullname):
         yield Module(fullname, node)
         return
@@ -166,17 +166,17 @@ def resolve(fullname: str) -> Iterator[Module | Object | Import]:
                 yield member
 
             elif member.fullname != fullname:
-                yield from resolve(member.fullname)
+                yield from iter_nodes(member.fullname)
 
 
 @cache
-def parse(node: ast.Module, module: str) -> list[tuple[str, Module | Object | Import]]:
+def parse(node: AST, module: str) -> list[tuple[str, Module | Object | Import]]:
     members = []
 
     for member in get_child_nodes(node, module):
         name = member.name
 
-        if isinstance(member, Import) and (resolved := list(resolve(member.fullname))):
+        if isinstance(member, Import) and (resolved := list(iter_nodes(member.fullname))):
             members.extend((name, r) for r in resolved)
 
         else:
@@ -202,7 +202,7 @@ def resolve_from_module(name: str, module: str) -> str | None:
     for name_, obj in parse(node, module):
         if name_ == name:
             if isinstance(obj, Module):
-                resolved = list(resolve(f"{obj.name}.{attr}"))
+                resolved = list(iter_nodes(f"{obj.name}.{attr}"))
                 if resolved:
                     return resolved[0].fullname
 

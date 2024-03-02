@@ -24,7 +24,17 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.utils import cache, get_module_node, get_module_node_source, is_dataclass, is_package
+from mkapi.nodes import parse, resolve_from_module
+from mkapi.utils import (
+    cache,
+    get_module_node,
+    get_module_node_source,
+    get_module_source,
+    get_object_from_module,
+    is_dataclass,
+    is_package,
+    split_name,
+)
 
 if TYPE_CHECKING:
     from ast import AST
@@ -41,13 +51,11 @@ class Object:
     parent: Parent | None
     qualname: str = field(init=False)
     fullname: str = field(init=False)
-    kind: str = field(init=False)
     doc: Doc = field(init=False)
 
     def __post_init__(self):
         self.qualname = f"{self.parent.qualname}.{self.name}" if self.parent else self.name
         self.fullname = f"{self.module}.{self.qualname}" if self.module else self.name
-        self.kind = _get_kind(self)
 
         types = ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
         node = self.node
@@ -63,7 +71,7 @@ class Object:
 objects: dict[str, Object] = cache({})
 
 
-def _iter_child_objects(node: AST, module: str, parent: Parent | None) -> Iterator[Object]:
+def iter_child_objects(node: AST, module: str, parent: Parent | None) -> Iterator[Object]:
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             yield create_class(child, module, parent)
@@ -153,7 +161,7 @@ class Callable(Parent):
     def __post_init__(self):
         super().__post_init__()
 
-        for obj in _iter_child_objects(self.node, self.module, self):
+        for obj in iter_child_objects(self.node, self.module, self):
             self.children[obj.name] = obj
 
 
@@ -173,15 +181,15 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
     init = cls.children.get("__init__")
 
     if isinstance(init, Function):
-        for name, obj in iter_attributes_from_method(init, cls):
-            cls.children.setdefault(name, obj)
+        for attr in iter_attributes_from_function(init, cls):
+            cls.children.setdefault(attr.name, attr)
 
     for base in get_base_classes(node.name, module):
         for name, obj in base.get_children():
             cls.children.setdefault(name, obj)
 
     if is_dataclass(node.name, module):
-        params = iter_dataclass_parameters(cls)
+        params = iter_parameters_from_dataclass(cls)
         cls.parameters.extend(params)
 
     elif isinstance(init, Function):
@@ -215,19 +223,18 @@ def _create_class_from_name(name: str, module: str) -> Class | None:
     return None
 
 
-def iter_attributes_from_method(func: Function, parent: Parent) -> Iterator[tuple[str, Attribute]]:
+def iter_attributes_from_function(func: Function, parent: Parent) -> Iterator[Attribute]:
     self = func.parameters[0].name
 
     for name, obj in func.get_children(Attribute):
         if name.startswith(f"{self}."):
             name_ = name[len(self) + 1 :]
-            attr = create_attribute(name_, obj.node, obj.module, parent)
-            yield name_, attr
+            yield create_attribute(name_, obj.node, obj.module, parent)
             del func.children[name]
 
 
-def iter_dataclass_parameters(cls: Class) -> Iterator[Parameter]:
-    obj = mkapi.utils.get_object(cls.name, cls.module)
+def iter_parameters_from_dataclass(cls: Class) -> Iterator[Parameter]:
+    obj = get_object_from_module(cls.name, cls.module)
 
     if inspect.isclass(obj):
         for param in inspect.signature(obj).parameters.values():
@@ -259,7 +266,7 @@ class Module(Parent):
     def __post_init__(self):
         super().__post_init__()
 
-        for obj in _iter_child_objects(self.node, self.name, None):
+        for obj in iter_child_objects(self.node, self.name, None):
             self.children[obj.name] = obj
 
 
@@ -303,7 +310,7 @@ def _get_doc_from_comment(node: AST, lines: list[str]) -> Doc | None:
     return None
 
 
-def _get_kind(obj: Object | Module) -> str:
+def get_kind(obj: Object | Module) -> str:
     """Return kind."""
     if isinstance(obj, Module):
         return "package" if is_package(obj.name) else "module"
@@ -321,3 +328,126 @@ def _get_kind(obj: Object | Module) -> str:
         return "method" if "." in obj.qualname else "function"
 
     return obj.__class__.__name__.lower()
+
+
+def get_source(obj: Object) -> str | None:
+    """Return the source code of an object."""
+    if isinstance(obj, Module):
+        return get_module_source(obj.name)
+
+    if source := get_module_source(obj.module):
+        return ast.get_source_segment(source, obj.node)
+
+    return None
+
+
+def is_child(obj: Object, parent: Object | None) -> bool:
+    """Return True if obj is a member of parent."""
+    if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
+        return True
+
+    return obj.parent is parent
+
+
+@cache
+def resolve(fullname: str) -> tuple[str | None, str | None] | None:
+    if not (name_module := split_name(fullname)):
+        return None
+
+    name, module = name_module
+    if not module:
+        return name, None
+
+    if name_module := split_name(name):
+        return resolve(name)
+
+    names = name.split(".")
+    node = get_module_node(module)
+
+    for name, obj in parse(node, module):
+        if name == names[0]:
+            if isinstance(obj, mkapi.nodes.Object):
+                qualname = ".".join([obj.name, *names[1:]])
+                return qualname, obj.module
+            if isinstance(obj, mkapi.nodes.Import):
+                return None, obj.fullname
+
+    return None
+
+
+@cache
+def get_object(fullname: str) -> Object | None:
+    if obj := objects.get(fullname):
+        return obj
+
+    if not (name_module := resolve(fullname)):
+        return None
+
+    name, module = name_module
+    if not name:
+        return None
+
+    if not module:
+        return create_module(name)
+
+    create_module(module)
+    return objects.get(f"{module}.{name}")
+
+
+def resolve_from_object(name: str, obj: Object) -> str | None:
+    """Return fullname from object."""
+    if isinstance(obj, Module):
+        return resolve_from_module(name, obj.name)
+
+    if isinstance(obj, Parent):  # noqa: SIM102
+        if child := obj.get(name):
+            return child.fullname
+
+    if "." not in name:
+        if obj.parent:
+            return resolve_from_object(name, obj.parent)
+
+        return resolve_from_module(name, obj.module)
+
+    parent, name_ = name.rsplit(".", maxsplit=1)
+
+    if obj_ := objects.get(parent):
+        return resolve_from_object(name, obj_)
+
+    if obj.name == parent:
+        return resolve_from_object(name_, obj)
+
+    if not (name_module := resolve(name)):
+        return None
+
+    name_, module = name_module
+
+    if not module:
+        return name_
+
+    if not name_:
+        return module
+
+    return f"{module}.{name_}"
+
+
+# def iter_child_objects(
+#     obj: Parent,
+#     predicate: Callable_[[Object, Object | None], bool] | None = None,
+# ) -> Iterator[tuple[str, Object]]:
+#     """Yield child [Object] instances."""
+#     for name, child in obj.children.items():
+#         if not predicate or predicate(child, obj):
+#             yield name, child
+#             if isinstance(child,Pa)
+#             yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
+
+
+# def iter_objects(
+#     obj: Object,
+#     maxdepth: int = -1,
+#     predicate: Callable_[[Object, Object | None], bool] | None = None,
+# ) -> Iterator[Object]:
+#     """Yield [Object] instances."""
+#     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
+#         yield child

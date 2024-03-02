@@ -14,30 +14,6 @@ def test_create_module():
     assert not module.get("ExampleClassNumPy")
 
 
-def test_kind():
-    from mkapi.objects import Attribute, Class, Function, create_module
-
-    module = create_module("mkapi")
-    assert module
-    assert module.kind == "package"
-    module = create_module("mkapi.objects")
-    assert module
-    assert module.kind == "module"
-    cls = module.get("Object")
-    assert isinstance(cls, Class)
-    assert cls.kind == "dataclass"
-    func = module.get("create_function")
-    assert isinstance(func, Function)
-    assert func.kind == "function"
-    method = cls.get("__post_init__")
-    assert isinstance(method, Function)
-    assert method
-    assert method.kind == "method"
-    assign = cls.get("node")
-    assert isinstance(assign, Attribute)
-    assert assign.kind == "attribute"
-
-
 def test_iter_objects():
     from mkapi.objects import Class, Function, create_module, iter_objects
 
@@ -78,3 +54,117 @@ def test_iter_objects():
     assert next(objs).name == "f"
     assert next(objs).name == "B"
     assert next(objs).name == "c"
+
+
+def test_kind():
+    from mkapi.objects import Attribute, Class, Function, create_module, get_kind
+
+    module = create_module("mkapi")
+    assert module
+    assert get_kind(module) == "package"
+    module = create_module("mkapi.objects")
+    assert module
+    assert get_kind(module) == "module"
+    cls = module.get("Object")
+    assert isinstance(cls, Class)
+    assert get_kind(cls) == "dataclass"
+    func = module.get("create_function")
+    assert isinstance(func, Function)
+    assert get_kind(func) == "function"
+    method = cls.get("__post_init__")
+    assert isinstance(method, Function)
+    assert method
+    assert get_kind(method) == "method"
+    assign = cls.get("node")
+    assert isinstance(assign, Attribute)
+    assert get_kind(assign) == "attribute"
+
+
+def test_get_source():
+    from mkapi.objects import Class, Function, create_module, get_source
+
+    module = create_module("mkapi.objects")
+    assert module
+    s = get_source(module)
+    assert s
+    assert "def create_module(" in s
+    func = module.get("create_module")
+    assert isinstance(func, Function)
+    assert func
+    s = get_source(func)
+    assert s
+    assert s.startswith("def create_module")
+
+    module = create_module("examples.styles.google")
+    assert module
+    s = get_source(module)
+    assert s
+    assert s.startswith('"""Example')
+    assert s.endswith("attr2: int\n")
+    cls = module.get("ExampleClass")
+    assert isinstance(cls, Class)
+    s = get_source(cls)
+    assert s
+    assert s.startswith("class ExampleClass")
+    assert s.endswith("pass")
+
+
+def test_is_child():
+    from mkapi.objects import Class, create_module, is_child
+
+    module = create_module("mkapi.plugins")
+    assert module
+    cls = module.get("MkAPIPlugin")
+    assert isinstance(cls, Class)
+    for name, obj in cls.children.items():
+        for x in ["api_dirs", "on_config", "on_serve", "dirty"]:
+            if name == x:
+                assert is_child(obj, cls)
+        for x in ["config_class", "config", "on_post_build", "_is_protocol"]:
+            if name == x:
+                assert not is_child(obj, cls)
+
+
+def test_resolve():
+    from mkapi.objects import resolve
+
+    fullname = "examples.styles.ExampleClassGoogle"
+    x = resolve(fullname)
+    assert x
+    assert x[0] == "ExampleClass"
+    assert x[1] == "examples.styles.google"
+
+    fullname = "mkapi.objects.ast"
+    x = resolve(fullname)
+    assert x
+    assert x[0] == "ast"
+    assert not x[1]
+
+    fullname = "mkapi.objects.mkapi.ast"
+    x = resolve(fullname)
+    assert x
+    assert x[0] == "mkapi.ast"
+    assert not x[1]
+
+    fullname = "mkapi.objects.mkapi.ast.iter_parameters"
+    x = resolve(fullname)
+    assert x
+    assert x[0] == "iter_parameters"
+    assert x[1] == "mkapi.ast"
+
+
+def test_get_object():
+    from mkapi.objects import get_object
+
+    fullname = "examples.styles.ExampleClassGoogle"
+    x = get_object(fullname)
+    assert x
+    assert x.module == "examples.styles.google"
+    assert x.name == "ExampleClass"
+
+    fullname = "examples.styles.ExampleClassGoogle.attr1"
+    x = get_object(fullname)
+    assert x
+    assert x.module == "examples.styles.google"
+    assert x.name == "attr1"
+    assert x.qualname == "ExampleClass.attr1"
