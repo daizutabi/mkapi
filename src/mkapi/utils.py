@@ -401,16 +401,3 @@ def split_name(name: str) -> tuple[str, str | None] | None:
         modulename = module
 
     return name, None
-
-
-# @cache
-# def get_name_module(name: str) -> tuple[str, str | None] | None:
-#     if not (name_module := split_name(name)):
-#         return None
-
-#     name, module = name_module
-#     if not module:
-#         return name, module
-
-#     if obj := get_object_from_module(name, module):
-#         return obj.__qualname__, obj.__module__

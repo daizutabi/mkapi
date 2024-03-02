@@ -168,3 +168,21 @@ def test_get_object():
     assert x.module == "examples.styles.google"
     assert x.name == "attr1"
     assert x.qualname == "ExampleClass.attr1"
+
+
+def test_get_object_cache():
+    from mkapi.objects import Class, Function, create_module, get_object
+
+    module = create_module("mkapi.objects")
+    a = get_object("mkapi.objects")
+    assert module is a
+    c = get_object("mkapi.objects.Object")
+    f = get_object("mkapi.objects.Module.__post_init__")
+    assert isinstance(c, Class)
+    assert c.module == "mkapi.objects"
+    assert isinstance(f, Function)
+    assert f.module == "mkapi.objects"
+    c2 = get_object("mkapi.objects.Object")
+    f2 = get_object("mkapi.objects.Module.__post_init__")
+    assert c is c2
+    assert f is f2

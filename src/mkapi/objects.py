@@ -24,7 +24,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.nodes import parse, resolve_from_module
+from mkapi.nodes import resolve, resolve_from_module
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -33,7 +33,6 @@ from mkapi.utils import (
     get_object_from_module,
     is_dataclass,
     is_package,
-    split_name,
 )
 
 if TYPE_CHECKING:
@@ -210,7 +209,6 @@ def get_base_classes(name: str, module: str) -> list[Class]:
 
         elif cls := _create_class_from_name(basename, basemodule):
             bases.append(cls)
-
     return bases
 
 
@@ -347,32 +345,6 @@ def is_child(obj: Object, parent: Object | None) -> bool:
         return True
 
     return obj.parent is parent
-
-
-@cache
-def resolve(fullname: str) -> tuple[str | None, str | None] | None:
-    if not (name_module := split_name(fullname)):
-        return None
-
-    name, module = name_module
-    if not module:
-        return name, None
-
-    if name_module := split_name(name):
-        return resolve(name)
-
-    names = name.split(".")
-    node = get_module_node(module)
-
-    for name, obj in parse(node, module):
-        if name == names[0]:
-            if isinstance(obj, mkapi.nodes.Object):
-                qualname = ".".join([obj.name, *names[1:]])
-                return qualname, obj.module
-            if isinstance(obj, mkapi.nodes.Import):
-                return None, obj.fullname
-
-    return None
 
 
 @cache

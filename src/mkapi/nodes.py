@@ -9,7 +9,14 @@ from typing import TYPE_CHECKING
 
 import mkapi.ast
 from mkapi.ast import TypeAlias, get_assign_name, is_assign
-from mkapi.utils import cache, get_export_names, get_module_node, is_package, iter_attribute_names
+from mkapi.utils import (
+    cache,
+    get_export_names,
+    get_module_node,
+    is_package,
+    iter_attribute_names,
+    split_name,
+)
 
 if TYPE_CHECKING:
     from ast import AST
@@ -186,26 +193,45 @@ def parse(node: AST, module: str) -> list[tuple[str, Module | Object | Import]]:
 
 
 @cache
-def resolve_from_module(name: str, module: str) -> str | None:
+def resolve(name: str, module: str | None = None) -> tuple[str | None, str | None] | None:
+    if not module:
+        if not (name_module := split_name(name)):
+            return None
+
+        name, module = name_module
+        if not module:
+            return name, None
+
     if not (node := get_module_node(module)):
         return None
 
+    names = name.split(".")
     for name_, obj in parse(node, module):
-        if name_ == name:
-            return obj.fullname
+        if name_ == names[0]:
+            qualname = ".".join([obj.name, *names[1:]])
+            if isinstance(obj, Module):
+                return resolve(qualname)
 
-    if "." not in name:
+            if isinstance(obj, Object):
+                return qualname, obj.module
+
+            if isinstance(obj, Import):
+                return None, obj.fullname
+
+    return name, module
+
+
+@cache
+def resolve_from_module(name: str, module: str | None) -> str | None:
+    if not (name_module := resolve(name, module)):
         return None
 
-    name, attr = name.rsplit(".", maxsplit=1)
+    name_, module = name_module
 
-    for name_, obj in parse(node, module):
-        if name_ == name:
-            if isinstance(obj, Module):
-                resolved = list(iter_nodes(f"{obj.name}.{attr}"))
-                if resolved:
-                    return resolved[0].fullname
+    if not module:
+        return name_
 
-            return f"{obj.fullname}.{attr}"
+    if not name_:
+        return module
 
-    return None
+    return f"{module}.{name_}"
