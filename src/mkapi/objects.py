@@ -27,6 +27,7 @@ from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
 from mkapi.nodes import get_fullname, parse
 from mkapi.utils import (
     cache,
+    get_export_names,
     get_module_node,
     get_module_node_source,
     get_module_source,
@@ -423,10 +424,17 @@ def get_members(
         if name not in members and (not predicate or predicate(child)):
             members[name] = child
 
-    module = obj.name if isinstance(obj, Module) else obj.module
+    if not isinstance(obj, Module) or not is_package(obj.name):
+        return members
 
-    for name, node in parse(obj.node, module):
-        if isinstance(node, mkapi.nodes.Object) and name not in members:
+    if not (names := get_export_names(obj.name)):
+        return members
+
+    for name, node in parse(obj.node, obj.name):
+        if name not in names or name in members:
+            continue
+
+        if isinstance(node, mkapi.nodes.Object):
             child = get_object(node.name, node.module)
             if child and (not predicate or predicate(child)):
                 members[name] = child

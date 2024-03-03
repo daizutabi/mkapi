@@ -1,3 +1,4 @@
+import ast
 import re
 
 
@@ -79,11 +80,44 @@ def test_get_markdown_str():
     assert "or [Class][__mkapi__.mkapi.objects.Class]." in x
 
 
-def test_get_markdown_text():
+def test_get_markdown_expr():
+    from mkapi.converters import get_markdown_expr
+    from mkapi.nodes import get_fullname
+
+    def replace(name: str) -> str | None:
+        return get_fullname(name, "mkapi.converters")
+
+    expr = ast.parse("re.Match[Converter](Replace)").body[0].value  # type: ignore
+    assert isinstance(expr, ast.expr)
+    x = get_markdown_expr(expr, replace)
+    assert x.startswith("[re][__mkapi__.re].[Match][__mkapi__.re.Match]")
+    assert "[[Converter][__mkapi__.mkapi.converters.Converter]]" in x
+    assert x.endswith("([Replace][__mkapi__.mkapi.converters.Replace])")
+
+
+def test_get_markdown_expr_constant():
+    from mkapi.converters import get_markdown_expr
+    from mkapi.nodes import get_fullname
+
+    def replace(name: str) -> str | None:
+        return get_fullname(name, "mkapi.converters")
+
+    expr = ast.Constant("re.Match")
+    assert isinstance(expr, ast.expr)
+    x = get_markdown_expr(expr, replace)
+    assert x == "[re][__mkapi__.re].[Match][__mkapi__.re.Match]"
+
+    expr = ast.Constant(123)
+    assert isinstance(expr, ast.expr)
+    x = get_markdown_expr(expr, replace)
+    assert x == "123"
+
+
+def test_get_markdown_text_module_objects():
     from mkapi.converters import get_markdown_text
     from mkapi.nodes import get_fullname
 
-    def replace(name: str) -> str | None:  # type: ignore
+    def replace(name: str) -> str | None:
         return get_fullname(name, "mkapi.objects")
 
     x = get_markdown_text("Class", replace)
@@ -96,6 +130,11 @@ def test_get_markdown_text():
     assert x == "a [Class][a] b"
     m = "a \n```\n[Class][a]\n```\n b"
     assert get_markdown_text(m, replace) == m
+
+
+def test_get_markdown_text_module_plugins():
+    from mkapi.converters import get_markdown_text
+    from mkapi.nodes import get_fullname
 
     def replace(name: str) -> str | None:
         return get_fullname(name, "mkapi.plugins")
@@ -111,217 +150,3 @@ def test_get_markdown_text():
     assert x == "a b c"
     x = get_markdown_text("a [b] c", replace)
     assert x == "a [b] c"
-
-
-# def test_set_markdown_module():
-#     name = "mkapi.plugins"
-#     module = create_module(name)
-#     assert module
-#     set_markdown(module)
-#     x = module.name.markdown
-#     assert x == "[mkapi][__mkapi__.mkapi].[plugins][__mkapi__.mkapi.plugins]"
-#     obj = get_by_name(module.classes, "MkAPIPlugin")
-#     assert isinstance(obj, Class)
-#     set_markdown(obj)
-#     m = obj.fullname.markdown
-#     assert "[mkapi][__mkapi__.mkapi]." in m
-#     assert ".[plugins][__mkapi__.mkapi.plugins]." in m
-#     m = obj.bases[0].type.markdown
-#     assert "[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]" in m
-#     assert "[[MkAPIConfig][__mkapi__.mkapi.plugins.MkAPIConfig]]" in m
-
-
-# def test_set_markdown_text():
-#     name = "mkapi.items"
-#     module = create_module(name)
-#     assert module
-#     func = get_by_name(module.functions, "iter_raises")
-#     assert isinstance(func, Function)
-#     set_markdown(func)
-#     m = func.doc.text.markdown
-#     assert m == "Yield [Raise][__mkapi__.mkapi.items.Raise] instances."
-
-
-# def test_set_markdown_class():
-#     name = "mkapi.ast"
-#     module = create_module(name)
-#     assert module
-#     cls = get_by_name(module.classes, "Transformer")
-#     assert isinstance(cls, Class)
-#     for func in cls.functions:
-#         set_markdown(func)
-#         m = func.name.markdown
-#         if func.name.str == "_rename":
-#             assert m == r"[\_rename][__mkapi__.mkapi.ast.Transformer._rename]"
-#         if func.name.str == "visit_Name":
-#             assert m == r"[visit\_Name][__mkapi__.mkapi.ast.Transformer.visit_Name]"
-#         if func.name.str == "unparse":
-#             assert m == r"[unparse][__mkapi__.mkapi.ast.Transformer.unparse]"
-#         if func.name.str == "visit":
-#             assert m == r"[visit][__mkapi__.ast.NodeVisitor.visit]"
-#         if func.name.str == "generic_visit":
-#             assert m == r"[generic\_visit][__mkapi__.ast.NodeTransformer.generic_visit]"
-#         if func.name.str == "visit_Constant":
-#             assert m == r"[visit\_Constant][__mkapi__.ast.NodeVisitor.visit_Constant]"
-
-
-# def test_set_markdown_attribute():
-#     name = "examples.styles.google"
-#     module = create_module(name)
-#     assert module
-#     for attr in module.attributes:
-#         set_markdown(attr)
-#         assert "][__mkapi__.examples.styles.google.module_level_v" in attr.name.markdown
-
-
-# def test_set_markdown_default():
-#     src = 'def f(x:int=0,y:str="x",z:str=""): pass'
-#     node = ast.parse(src).body[0]
-#     assert isinstance(node, ast.FunctionDef)
-#     func = create_function(node)
-#     set_markdown(func)
-#     assert func.parameters[0].default.markdown == "0"
-#     assert func.parameters[1].default.markdown == "'x'"
-#     assert func.parameters[2].default.markdown == "''"
-
-
-# def test_set_markdown_alias():
-#     name = "examples.styles"
-#     module = load_module(name)
-#     assert module
-#     x = module.aliases[0]
-#     set_markdown(x)
-#     assert "][__mkapi__.examples.styles.ExampleClassGoogle" in x.name.markdown
-#     x = module.aliases[1]
-#     set_markdown(x)
-#     assert "][__mkapi__.examples.styles.ExampleClassNumPy" in x.name.markdown
-
-
-# def test_create_attribute_without_module(google):
-#     module = _create_empty_module()
-#     assigns = list(iter_assigns(google))
-#     assert len(assigns) == 2
-#     assign = get_by_name(assigns, "module_level_variable1")
-#     assert assign
-#     attr = create_attribute(assign, module, None)
-#     assert attr.name.str == "module_level_variable1"
-#     assert not attr.type.expr
-#     assert not attr.doc.text.str
-#     assign = get_by_name(assigns, "module_level_variable2")
-#     assert assign
-#     attr = create_attribute(assign, module, None)
-#     assert attr.name.str == "module_level_variable2"
-#     assert attr.type.expr
-#     assert ast.unparse(attr.type.expr) == "'int'"
-#     assert attr.doc.text.str.startswith("Module level")
-#     assert attr.doc.text.str.endswith("a colon.")
-
-
-# def test_create_property_without_module(get):
-#     node = get("ExampleClass")
-#     assert node
-#     assigns = list(iter_assigns(node))
-#     assign = get_by_name(assigns, "readonly_property")
-#     assert assign
-
-#     module = _create_empty_module()
-#     attr = create_attribute(assign, module, None)
-#     assert attr.name.str == "readonly_property"
-#     assert attr.type.expr
-#     assert ast.unparse(attr.type.expr) == "'str'"
-#     assert attr.doc.text.str.startswith("Properties should")
-#     assert attr.doc.text.str.endswith("getter method.")
-#     assign = get_by_name(assigns, "readwrite_property")
-#     assert assign
-
-#     attr = create_attribute(assign, module, None)
-#     assert attr.name.str == "readwrite_property"
-#     assert attr.type.expr
-#     assert ast.unparse(attr.type.expr) == "'list(str)'"
-#     assert attr.doc.text.str.startswith("Properties with")
-#     assert attr.doc.text.str.endswith("here.")
-
-
-# def test_create_attribute_pep526_without_module(get):
-#     node = get("ExamplePEP526Class")
-#     assert node
-#     assigns = list(iter_assigns(node))
-#     assign = get_by_name(assigns, "attr1")
-#     assert assign
-
-#     module = _create_empty_module()
-#     attr = create_attribute(assign, module, None)
-#     assert attr.name.str == "attr1"
-#     assert attr.type.expr
-#     assert ast.unparse(attr.type.expr) == "str"
-#     assert not attr.doc.text.str
-#     assign = get_by_name(assigns, "attr2")
-#     assert assign
-
-#     attr = create_attribute(assign, module, None)
-#     assert attr.name.str == "attr2"
-#     assert attr.type.expr
-#     assert ast.unparse(attr.type.expr) == "int"
-#     assert not attr.doc.text.str
-
-
-# def test_class_attribute(google, source, get):
-#     module = _create_module("google", google, source)
-#     node = get("ExampleClass")
-#     assert node
-#     cls = create_class(node, module, None)
-#     assert not get_by_type(cls.doc.sections, Assigns)
-#     attrs = cls.attributes
-#     assert len(attrs) == 7
-#     names = ["attr1", "attr2", "attr3", "attr4", "attr5", "readonly_property", "readwrite_property"]
-#     section = get_by_type(cls.doc.sections, Attributes)
-#     assert section
-#     for x in [section.items, cls.attributes]:
-#         for k, name in enumerate(names):
-#             assert x[k].name.str == name
-#     assert not get_by_name(cls.functions, "__init__")
-
-
-# def test_create_module_attribute_with_module(google, source):
-#     module = _create_module("google", google, source)
-#     attrs = module.attributes
-#     assert len(attrs) == 2
-#     attr = attrs[0]
-#     assert attr.name.str == "module_level_variable1"
-#     assert attr.type.expr
-#     assert ast.unparse(attr.type.expr) == "'int'"
-#     assert attr.doc.text.str
-#     assert attr.doc.text.str.startswith("Module level")
-#     assert attr.doc.text.str.endswith("with it.")
-#     assert not get_by_type(module.doc.sections, Assigns)
-
-
-# def test_merge_items():
-#     """'''test'''
-#     def f(x: int = 0, y: str = 's') -> bool:
-#         '''function.
-
-#         Args:
-#             x: parameter x.
-#             z: parameter z.
-
-#         Returns:
-#             Return True.'''
-#     """
-#     src = inspect.getdoc(test_merge_items)
-#     assert src
-#     node = ast.parse(src).body[1]
-#     assert isinstance(node, ast.FunctionDef)
-#     func = create_function(node)
-#     assert get_by_name(func.parameters, "x")
-#     assert get_by_name(func.parameters, "y")
-#     assert not get_by_name(func.parameters, "z")
-#     items = get_by_name(func.doc.sections, "Parameters").items  # type: ignore
-#     assert get_by_name(items, "x")
-#     assert not get_by_name(items, "y")
-#     assert get_by_name(items, "z")
-#     assert [item.name.str for item in items] == ["x", "z"]
-#     assert func.returns[0].type
-#     items = get_by_name(func.doc.sections, "Returns").items  # type: ignore
-#     assert items[0].text.str == "Return True."
-#     assert items[0].type.expr.id == "bool"  # type: ignore

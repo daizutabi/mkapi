@@ -39,7 +39,13 @@ exclude = ["/.github", "/docs"]
 packages = ["src/mkapi"]
 
 [tool.hatch.envs.test]
-dependencies = ["altair", "polars", "pytest-cov", "schemdraw"]
+dependencies = [
+  "altair",
+  "polars",
+  "pytest-cov",
+  "pytest-randomly",
+  "schemdraw",
+]
 
 [tool.hatch.envs.test.scripts]
 run = "pytest {args:tests src/mkapi}"

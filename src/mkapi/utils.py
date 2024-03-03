@@ -181,16 +181,16 @@ def get_module_source(name: str) -> str | None:
     return None
 
 
-def iter_attribute_names(fullname: str, *, reverse: bool = False) -> Iterator[str]:
+def iter_attribute_names(name: str, *, reverse: bool = False) -> Iterator[str]:
     """Yield parent module names.
 
     Examples:
-        >>> list(iter_parent_module_names("a.b.c.d"))
+        >>> list(iter_attribute_names("a.b.c.d"))
         ['a', 'a.b', 'a.b.c', 'a.b.c.d']
-        >>> list(iter_parent_module_names("a.b.c.d", reverse=True))
+        >>> list(iter_attribute_names("a.b.c.d", reverse=True))
         ['a.b.c.d', 'a.b.c', 'a.b', 'a']
     """
-    names = fullname.split(".")
+    names = name.split(".")
     it = range(len(names), 0, -1) if reverse else range(1, len(names) + 1)
     for k in it:
         yield ".".join(names[:k])
@@ -256,6 +256,7 @@ def unique_names(a: Iterable, b: Iterable, attr: str = "name") -> list[str]:
     for x in b:
         if (name := getattr(x, attr)) not in names:
             names.append(name)
+
     return names
 
 
@@ -275,6 +276,7 @@ def split_filters(name: str) -> tuple[str, list[str]]:
     index = name.find("|")
     if index == -1:
         return name, []
+
     name, filters = name[:index], name[index + 1 :]
     return name, filters.split("|")
 
@@ -296,8 +298,10 @@ def update_filters(org: list[str], update: list[str]) -> list[str]:
     for x, y in [["lower", "upper"], ["long", "short"]]:
         if x in org and y in update:
             del filters[filters.index(x)]
+
         if y in org and x in update:
             del filters[filters.index(y)]
+
     return filters
 
 
@@ -317,23 +321,31 @@ def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
                 c = source[stop]
                 if c == "." or c.isdigit() or c.isidentifier():
                     stop += 1
+
                 else:
                     break
+
             if source[stop - 1] == ".":
                 yield source[start : stop - 1], True
                 yield ".", False
+
             else:
                 yield source[start:stop], True
+
             start = stop
+
         elif c in ['"', "'"]:
             stop = start + 1
             while stop < len(source):
                 if source[stop] != source[start]:
                     stop += 1
+
                 else:
                     break
+
             yield source[start : stop + 1], False
             start = stop + 1
+
         else:
             yield c, False
             start += 1
