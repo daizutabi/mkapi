@@ -61,7 +61,7 @@ class Page:
 
     def create_markdown(self) -> None:
         """Create markdown source."""
-        if not self.is_api_page():
+        if self.is_documentation_page():
             return
 
         with self.path.open("w") as file:

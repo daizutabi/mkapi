@@ -100,7 +100,7 @@ def iter_child_objects(
 
 @dataclass(repr=False)
 class Type(Object):
-    type: ast.expr | None
+    type: ast.expr | None  # noqa: A003, RUF100
 
     def __post_init__(self):
         super().__post_init__()

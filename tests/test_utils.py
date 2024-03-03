@@ -90,7 +90,7 @@ def test_get_module_node():
     assert not get_module_node("sys")
 
 
-def test_module_cache(tmpdir: Path):
+def test_module_cache(tmp_path: Path):
     from mkapi.utils import (
         get_module_node_source,
         get_module_path,
@@ -101,9 +101,9 @@ def test_module_cache(tmpdir: Path):
     module_cache.clear()
     assert not is_module_cache_dirty("a")
 
-    sys.path.insert(0, str(tmpdir))
+    sys.path.insert(0, str(tmp_path))
 
-    path = tmpdir / "a.py"
+    path = tmp_path / "a.py"
     source = "1\n"
     with path.open("w") as f:
         f.write(source)
@@ -237,11 +237,16 @@ def test_get_object():
     obj = get_object_from_module(name, module)
     assert obj.__name__ == name  # type: ignore
     assert obj.__module__ == module
+
+
+def test_get_object_asname():
+    from mkapi.utils import get_object_from_module
+
     name_ = "ExampleClassGoogle"
     module_ = "examples.styles"
     obj = get_object_from_module(name_, module_)
-    assert obj.__name__ == name  # type: ignore
-    assert obj.__module__ == module
+    assert obj.__name__ == "ExampleClass"  # type: ignore
+    assert obj.__module__ == "examples.styles.google"
 
 
 def test_get_export_names():
@@ -256,34 +261,41 @@ def test_get_base_classes():
     from mkapi.utils import get_base_classes
 
     x = get_base_classes("Class", "mkapi.objects")
-    assert x == [("Callable", "mkapi.objects")]
+    assert x == [("Definition", "mkapi.objects")]
 
 
-def test_split_name():
+def test_split_name_module():
     from mkapi.utils import split_name
 
-    x = split_name("ast")
-    assert x
-    assert x[0] == "ast"
-    assert not x[1]
+    assert split_name("ast") == ("ast", None)
 
-    x = split_name("mkapi.objects.ast")
-    assert x
-    assert x[0] == "ast"
-    assert x[1] == "mkapi.objects"
 
-    x = split_name("ast.ClassDef")
-    assert x
-    assert x[0] == "ClassDef"
-    assert x[1] == "ast"
+def test_split_name_submodule():
+    from mkapi.utils import split_name
 
-    x = split_name("examples.styles.google.ExampleClass")
-    assert x
-    assert x[0] == "ExampleClass"
-    assert x[1] == "examples.styles.google"
+    assert split_name("mkapi.nodes") == ("mkapi.nodes", None)
+
+
+def test_split_name_module_imported():
+    from mkapi.utils import split_name
+
+    assert split_name("mkapi.objects.ast") == ("ast", "mkapi.objects")
+
+
+def test_split_name_class():
+    from mkapi.utils import split_name
+
+    assert split_name("ast.ClassDef") == ("ClassDef", "ast")
+
+
+def test_split_name_asname():
+    from mkapi.utils import split_name
 
     x = split_name("examples.styles.ExampleClassGoogle")
-    assert x
-    assert x[0] == "ExampleClassGoogle"
-    assert x[1] == "examples.styles"
+    assert x == ("ExampleClassGoogle", "examples.styles")
+
+
+def test_split_name_none():
+    from mkapi.utils import split_name
+
     assert not split_name("x.x")

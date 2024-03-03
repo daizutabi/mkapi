@@ -3,6 +3,7 @@
 MkAPI Plugin is a MkDocs plugin that creates Python API documentation
 from Docstring.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -25,12 +26,7 @@ import mkapi.nav
 from mkapi import renderers
 from mkapi.nav import split_name_depth
 from mkapi.pages import create_documentation_page, create_object_page, create_source_page
-from mkapi.utils import (
-    cache_clear,
-    get_module_path,
-    is_module_cache_dirty,
-    is_package,
-)
+from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -83,6 +79,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             for page in self.pages.values():
                 if page.name and is_module_cache_dirty(page.name):
                     pages.append(page)  # noqa: PERF401
+
             for page in pages:
                 page.create_markdown()
 

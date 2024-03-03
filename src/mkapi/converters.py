@@ -13,7 +13,7 @@ import mkapi.ast
 import mkapi.markdown
 from mkapi.docs import Item, Section, create_summary_item
 from mkapi.nodes import get_fullname, resolve
-from mkapi.objects import Attribute, Class, Function, Object, get_fullname_from_object
+from mkapi.objects import Attribute, Class, Function, Object, get_fullname_from_object, get_kind
 from mkapi.utils import (
     get_by_name,
     is_identifier,
@@ -154,7 +154,7 @@ def _iter_signature(obj: Class | Function) -> Iterator[tuple[ast.expr | str, str
     prev_kind = None
 
     for k, param in enumerate(obj.parameters):
-        if k == 0 and obj.kind in ["class", "method", "classmethod"]:
+        if k == 0 and get_kind(obj) in ["class", "method", "classmethod"]:
             continue
 
         yield from _iter_sep(param.kind, prev_kind)

@@ -13,6 +13,7 @@ from mkapi.utils import (
     cache,
     get_export_names,
     get_module_node,
+    get_object_from_module,
     is_package,
     iter_attribute_names,
     split_name,
@@ -216,7 +217,10 @@ def resolve(name: str, module: str | None = None) -> tuple[str | None, str | Non
             if isinstance(obj, Import):
                 return None, obj.fullname
 
-    return name, module
+    if get_object_from_module(name, module):
+        return name, module
+
+    return None
 
 
 @cache

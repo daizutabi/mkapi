@@ -103,11 +103,17 @@ def test_resolve_polars():
     assert not x[1]
 
 
-@pytest.mark.parametrize("name", ["mkapi", "mkapi.ast", "mkapi.ast.XXX"])
+@pytest.mark.parametrize("name", ["mkapi", "mkapi.ast", "mkapi.ast.AST", "mkapi.ast.XXX"])
 def test_get_fullname_module(name):
     from mkapi.nodes import get_fullname
 
-    assert get_fullname(name, "mkapi.nodes") == name
+    x = get_fullname(name, "mkapi.nodes")
+    if "AST" in name:
+        assert x == "ast.AST"
+    elif "XXX" in name:
+        assert not x
+    else:
+        assert x == name
 
 
 def test_get_fullname_class():
@@ -125,8 +131,6 @@ def test_get_fullname_jinja2():
 
     x = get_fullname("jinja2.Template", "mkdocs.plugins")
     assert x == "jinja2.environment.Template"
-    x = get_fullname("jinja2.XXX", "mkdocs.plugins")
-    assert x == "jinja2.XXX"
 
 
 @pytest.fixture(params=["", ".attr1", "._private", ".readonly_property"])
@@ -164,6 +168,13 @@ def test_get_fullname_self():
     name = "MkAPIPlugin"
     module = "mkapi.plugins"
     assert get_fullname(name, module) == f"{module}.{name}"
+
+
+def test_get_fullname_unknown():
+    from mkapi.nodes import get_fullname
+
+    assert not get_fullname("xxx", "mkapi.plugins")
+    assert not get_fullname("jinja2.xxx", "mkdocs.plugins")
 
 
 def test_get_fullname_other():
