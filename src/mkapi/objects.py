@@ -24,7 +24,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.nodes import get_fullname, resolve
+from mkapi.nodes import get_fullname, parse
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -38,7 +38,7 @@ from mkapi.utils import (
 
 if TYPE_CHECKING:
     from ast import AST
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from mkapi.docs import Doc
 
@@ -56,13 +56,12 @@ class Object:
     def __post_init__(self):
         self.qualname = f"{self.parent.qualname}.{self.name}" if self.parent else self.name
         self.fullname = f"{self.module}.{self.qualname}" if self.module else self.name
+        objects[self.fullname] = self
 
-        types = ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
         node = self.node
+        types = ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
         text = ast.get_docstring(node) if isinstance(node, types) else node.__doc__
         self.doc = create_doc(text)
-
-        objects[self.fullname] = self
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
@@ -71,7 +70,11 @@ class Object:
 objects: dict[str, Object] = cache({})
 
 
-def iter_child_objects(node: AST, module: str, parent: Parent | None) -> Iterator[Object]:
+def iter_child_objects(
+    node: AST,
+    module: str,
+    parent: Parent | None,
+) -> Iterator[Object]:
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             yield create_class(child, module, parent)
@@ -154,7 +157,7 @@ def iter_objects(obj: Parent, type_: type[T] = Object) -> Iterator[T]:
 
 
 @dataclass(repr=False)
-class Callable(Parent):
+class Definition(Parent):
     parameters: list[Parameter]
     raises: list[ast.expr]
 
@@ -166,12 +169,12 @@ class Callable(Parent):
 
 
 @dataclass(repr=False)
-class Class(Callable):
+class Class(Definition):
     node: ast.ClassDef
 
 
 @dataclass(repr=False)
-class Function(Callable):
+class Function(Definition):
     node: ast.FunctionDef | ast.AsyncFunctionDef
 
 
@@ -210,6 +213,7 @@ def get_base_classes(name: str, module: str) -> list[Class]:
 
         elif cls := _create_class_from_name(basename, basemodule):
             bases.append(cls)
+
     return bases
 
 
@@ -396,27 +400,22 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
     return get_fullname(name)
 
 
-def get_members(obj: Parent) -> list[tuple[str, Object]]:
-    pass
+def get_members(
+    obj: Parent,
+    predicate: Callable[[Object], bool] | None = None,
+) -> dict[str, Object]:
+    members: dict[str, Object] = {}
 
+    for name, child in obj.children.items():
+        if name not in members and (not predicate or predicate(child)):
+            members[name] = child
 
-# def iter_child_objects(
-#     obj: Parent,
-#     predicate: Callable_[[Object, Object | None], bool] | None = None,
-# ) -> Iterator[tuple[str, Object]]:
-#     """Yield child [Object] instances."""
-#     for name, child in obj.children.items():
-#         if not predicate or predicate(child, obj):
-#             yield name, child
-#             if isinstance(child,Pa)
-#             yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
+    module = obj.name if isinstance(obj, Module) else obj.module
 
+    for name, node in parse(obj.node, module):
+        if isinstance(node, mkapi.nodes.Object) and name not in members:
+            child = get_object(node.name, node.module)
+            if child and (not predicate or predicate(child)):
+                members[name] = child
 
-# def iter_objects(
-#     obj: Object,
-#     maxdepth: int = -1,
-#     predicate: Callable_[[Object, Object | None], bool] | None = None,
-# ) -> Iterator[Object]:
-#     """Yield [Object] instances."""
-#     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
-#         yield child
+    return members

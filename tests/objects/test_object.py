@@ -12,13 +12,13 @@ def test_create_module():
     assert module.get("ExampleClass")
 
 
-def test_create_function(get):
-    from mkapi.objects import Function, create_function
+def test_create_function():
+    from mkapi.objects import Function, create_module
     from mkapi.utils import get_by_name
 
-    node = get("module_level_function")
-    assert isinstance(node, ast.FunctionDef)
-    func = create_function(node, "", None)
+    module = create_module("examples.styles.google")
+    assert module
+    func = module.get("module_level_function")
     assert isinstance(func, Function)
     assert func.name == "module_level_function"
     assert func.qualname == "module_level_function"
@@ -239,10 +239,82 @@ def test_get_fullname_from_object():
     assert r == "mkapi.objects.Object"
 
 
-# def test_iter():
-#     from mkapi.objects import create_module
+@pytest.fixture
+def google():
+    from mkapi.objects import Module, get_object
 
-#     a = create_module("examples.styles")
+    module = get_object("examples.styles.google")
+    assert isinstance(module, Module)
+    return module
+
+
+@pytest.fixture(params=["module_level_variable1", "module_level_function", "ExampleClass"])
+def name(request):
+    return request.param
+
+
+def test_get_members_examples(google, name):
+    from mkapi.objects import get_members
+
+    assert name in get_members(google)
+
+
+def test_get_members_examples_class(google, name):
+    from mkapi.objects import Class, get_members
+
+    m = get_members(google, lambda x: isinstance(x, Class))
+    if "Class" in name:
+        assert name in m
+    else:
+        assert name not in m
+
+
+def test_get_members_examples_function(google, name):
+    from mkapi.objects import Function, get_members
+
+    m = get_members(google, lambda x: isinstance(x, Function))
+    if "function" in name:
+        assert name in m
+    else:
+        assert name not in m
+
+
+def test_get_members_examples_attribute(google, name):
+    from mkapi.objects import Attribute, get_members
+
+    m = get_members(google, lambda x: isinstance(x, Attribute))
+    if "variable" in name:
+        assert name in m
+    else:
+        assert name not in m
+
+
+@pytest.mark.parametrize("name", ["attr1", "__init__"])
+def test_get_members_name(google, name):
+    from mkapi.objects import Class, get_members
+
+    cls = google.get("ExampleClass")
+    assert isinstance(cls, Class)
+
+    m = get_members(cls)
+    assert name in m
+
+    m = get_members(cls, lambda x: "_" not in x.name)
+    if "_" in name:
+        assert name not in m
+    else:
+        assert name in m
+
+
+@pytest.mark.parametrize("name", ["__all__", "ExampleClassGoogle", "ExampleClassNumPy"])
+def test_get_members_asname(name):
+    from mkapi.objects import create_module, get_members
+
+    module = create_module("examples.styles")
+    assert module
+    assert name in get_members(module)
+
+
 #     assert a
 #     b = create_module("examples.styles.google")
 #     assert b

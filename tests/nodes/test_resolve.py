@@ -15,7 +15,7 @@ def test_resolve_class():
     assert x == ("ExampleClass", "examples.styles.google")
 
 
-def test_resolve_alias():
+def test_resolve_asname():
     from mkapi.nodes import resolve
 
     x = resolve("examples.styles.ExampleClassGoogle")

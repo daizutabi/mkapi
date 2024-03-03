@@ -48,7 +48,7 @@ class Object(Node):
 
 
 @dataclass(repr=False)
-class Def(Object):
+class Definition(Object):
     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
 
 
@@ -82,7 +82,7 @@ def iter_child_nodes(node: AST, module: str) -> Iterator[Object | Import]:
                     yield Import(name, child, fullname)
 
         elif isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
-            yield Def(child.name, child, module)
+            yield Definition(child.name, child, module)
 
         elif is_assign(child) and (name := get_assign_name(child)):
             yield Assign(name, child, module)
@@ -146,7 +146,7 @@ def get_child_nodes(node: AST, module: str) -> list[Object | Import]:
 
         else:
             nodes = node_dict[child.name]
-            if not isinstance(nodes[-1], Def) or not isinstance(child, Def):
+            if not isinstance(nodes[-1], Definition) or not isinstance(child, Definition):
                 nodes.clear()
 
             nodes.append(child)
