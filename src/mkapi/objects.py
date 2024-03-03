@@ -341,7 +341,7 @@ def get_kind(obj: Object | Module) -> str:
         if is_staticmethod(obj.node):
             return "staticmethod"
 
-        return "method" if "." in obj.qualname else "function"
+        return "method" if obj.parent else "function"
 
     return obj.__class__.__name__.lower()
 
@@ -358,7 +358,7 @@ def get_source(obj: Object) -> str | None:
 
 
 def is_child(obj: Object, parent: Object | None) -> bool:
-    """Return True if obj is a member of parent."""
+    """Return True if obj is a child of parent."""
     if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
         return True
 
