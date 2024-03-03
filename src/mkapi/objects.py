@@ -215,7 +215,7 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
     return cls
 
 
-def create_class_from_name(name: str, module: str, parent: Parent | None) -> Class | None:
+def create_class_by_name(name: str, module: str, parent: Parent | None) -> Class | None:
     if node := get_module_node(module):
         for child in ast.iter_child_nodes(node):
             if isinstance(child, ast.ClassDef) and child.name == name:
@@ -233,7 +233,7 @@ def get_base_classes(name: str, module: str) -> list[Class]:
             if isinstance(cls, Class):
                 bases.append(cls)
 
-        elif cls := create_class_from_name(basename, basemodule, None):
+        elif cls := create_class_by_name(basename, basemodule, None):
             bases.append(cls)
 
     return bases
