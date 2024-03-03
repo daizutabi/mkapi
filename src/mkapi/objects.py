@@ -215,6 +215,15 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
     return cls
 
 
+def create_class_from_name(name: str, module: str, parent: Parent | None) -> Class | None:
+    if node := get_module_node(module):
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, ast.ClassDef) and child.name == name:
+                return create_class(child, module, parent)
+
+    return None
+
+
 @cache
 def get_base_classes(name: str, module: str) -> list[Class]:
     bases = []
@@ -224,19 +233,10 @@ def get_base_classes(name: str, module: str) -> list[Class]:
             if isinstance(cls, Class):
                 bases.append(cls)
 
-        elif cls := _create_class_from_name(basename, basemodule):
+        elif cls := create_class_from_name(basename, basemodule, None):
             bases.append(cls)
 
     return bases
-
-
-def _create_class_from_name(name: str, module: str) -> Class | None:
-    if node := get_module_node(module):
-        for child in ast.iter_child_nodes(node):
-            if isinstance(child, ast.ClassDef) and child.name == name:
-                return create_class(child, module, None)
-
-    return None
 
 
 def iter_attributes_from_function(func: Function, parent: Parent) -> Iterator[Attribute]:
