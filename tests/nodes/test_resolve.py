@@ -104,28 +104,28 @@ def test_resolve_polars():
 
 
 @pytest.mark.parametrize("name", ["mkapi", "mkapi.ast", "mkapi.ast.XXX"])
-def test_resolve_from_module_module(name):
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_module(name):
+    from mkapi.nodes import get_fullname
 
-    assert resolve_from_module(name, "mkapi.nodes") == name
+    assert get_fullname(name, "mkapi.nodes") == name
 
 
-def test_resolve_from_module_class():
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_class():
+    from mkapi.nodes import get_fullname
 
-    x = resolve_from_module("Class", "mkapi.objects")
+    x = get_fullname("Class", "mkapi.objects")
     assert x == "mkapi.objects.Class"
-    assert resolve_from_module("ast", "mkapi.objects") == "ast"
-    x = resolve_from_module("ast.ClassDef", "mkapi.objects")
+    assert get_fullname("ast", "mkapi.objects") == "ast"
+    x = get_fullname("ast.ClassDef", "mkapi.objects")
     assert x == "ast.ClassDef"
 
 
-def test_resolve_from_module_jinja2():
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_jinja2():
+    from mkapi.nodes import get_fullname
 
-    x = resolve_from_module("jinja2.Template", "mkdocs.plugins")
+    x = get_fullname("jinja2.Template", "mkdocs.plugins")
     assert x == "jinja2.environment.Template"
-    x = resolve_from_module("jinja2.XXX", "mkdocs.plugins")
+    x = get_fullname("jinja2.XXX", "mkdocs.plugins")
     assert x == "jinja2.XXX"
 
 
@@ -134,57 +134,57 @@ def attr(request):
     return request.param
 
 
-def test_resolve_from_module_qualname(attr):
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_qualname(attr):
+    from mkapi.nodes import get_fullname
 
     module = "examples.styles.google"
     name = f"ExampleClass{attr}"
-    assert resolve_from_module(name, module) == f"{module}.{name}"
+    assert get_fullname(name, module) == f"{module}.{name}"
 
 
-def test_resolve_from_module_qualname_alias(attr):
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_qualname_alias(attr):
+    from mkapi.nodes import get_fullname
 
     module = "examples.styles"
     name = f"ExampleClassGoogle{attr}"
-    x = resolve_from_module(name, module)
+    x = get_fullname(name, module)
     assert x == f"{module}.google.{name}".replace("Google", "")
 
 
-def test_resolve_from_module_schemdraw():
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_schemdraw():
+    from mkapi.nodes import get_fullname
 
-    x = resolve_from_module("Drawing", "schemdraw")
+    x = get_fullname("Drawing", "schemdraw")
     assert x == "schemdraw.schemdraw.Drawing"
 
 
-def test_resolve_from_module_self():
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_self():
+    from mkapi.nodes import get_fullname
 
     name = "MkAPIPlugin"
     module = "mkapi.plugins"
-    assert resolve_from_module(name, module) == f"{module}.{name}"
+    assert get_fullname(name, module) == f"{module}.{name}"
 
 
-def test_resolve_from_module_other():
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_other():
+    from mkapi.nodes import get_fullname
 
     module = "mkapi.plugins"
-    x = resolve_from_module("MkDocsConfig", module)
+    x = get_fullname("MkDocsConfig", module)
     assert x == "mkdocs.config.defaults.MkDocsConfig"
-    x = resolve_from_module("Config", module)
+    x = get_fullname("Config", module)
     assert x == "mkdocs.config.base.Config"
-    x = resolve_from_module("config_options", module)
+    x = get_fullname("config_options", module)
     assert x == "mkdocs.config.config_options"
-    x = resolve_from_module("config_options.Type", module)
+    x = get_fullname("config_options.Type", module)
     assert x == "mkdocs.config.config_options.Type"
-    x = resolve_from_module("get_plugin_logger", module)
+    x = get_fullname("get_plugin_logger", module)
     assert x == "mkdocs.plugins.get_plugin_logger"
 
 
-def test_resolve_from_module_polars():
-    from mkapi.nodes import resolve_from_module
+def test_get_fullname_polars():
+    from mkapi.nodes import get_fullname
 
-    x = resolve_from_module("DataType", "polars.dataframe.frame")
+    x = get_fullname("DataType", "polars.dataframe.frame")
     assert x == "polars.datatypes.classes.DataType"
-    assert resolve_from_module("api", "polars") == "polars.api"
+    assert get_fullname("api", "polars") == "polars.api"

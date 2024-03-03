@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, TypeAlias
 import mkapi.ast
 import mkapi.markdown
 from mkapi.docs import Item, Section, create_summary_item
-from mkapi.nodes import resolve, resolve_from_module
-from mkapi.objects import Attribute, Class, Function, Object, resolve_from_object
+from mkapi.nodes import get_fullname, resolve
+from mkapi.objects import Attribute, Class, Function, Object, get_fullname_from_object
 from mkapi.utils import (
     get_by_name,
     is_identifier,
@@ -42,10 +42,10 @@ class Converter:
         return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
 
     def replace_from_module(self, name: str) -> str | None:
-        return resolve_from_module(name, self.module or self.name)
+        return get_fullname(name, self.module or self.name)
 
     def replace_from_object(self, name: str) -> str | None:
-        return resolve_from_object(name, self.obj)
+        return get_fullname_from_object(name, self.obj)
 
     def convert_name(self) -> dict[str, Any]:
         id_ = self.fullname

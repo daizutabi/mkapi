@@ -167,29 +167,27 @@ def iter_nodes(fullname: str) -> Iterator[Module | Object | Import]:
     if not (node := get_module_node(module)):
         return
 
-    for member in get_child_nodes(node, module):
-        if member.name == name:
-            if not isinstance(member, Import):
-                yield member
+    for child in get_child_nodes(node, module):
+        if child.name == name:
+            if isinstance(child, Import) and child.fullname != fullname:
+                yield from iter_nodes(child.fullname)
 
-            elif member.fullname != fullname:
-                yield from iter_nodes(member.fullname)
+            else:
+                yield child
 
 
 @cache
 def parse(node: AST, module: str) -> list[tuple[str, Module | Object | Import]]:
-    members = []
+    children = []
 
-    for member in get_child_nodes(node, module):
-        name = member.name
-
-        if isinstance(member, Import) and (resolved := list(iter_nodes(member.fullname))):
-            members.extend((name, r) for r in resolved)
+    for child in get_child_nodes(node, module):
+        if isinstance(child, Import) and (nodes := list(iter_nodes(child.fullname))):
+            children.extend((child.name, node) for node in nodes)
 
         else:
-            members.append((name, member))
+            children.append((child.name, child))
 
-    return members
+    return children
 
 
 @cache
@@ -222,7 +220,7 @@ def resolve(name: str, module: str | None = None) -> tuple[str | None, str | Non
 
 
 @cache
-def resolve_from_module(name: str, module: str | None) -> str | None:
+def get_fullname(name: str, module: str | None = None) -> str | None:
     if not (name_module := resolve(name, module)):
         return None
 

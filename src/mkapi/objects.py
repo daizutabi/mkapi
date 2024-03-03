@@ -24,7 +24,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
-from mkapi.nodes import resolve, resolve_from_module
+from mkapi.nodes import get_fullname, resolve
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -33,6 +33,7 @@ from mkapi.utils import (
     get_object_from_module,
     is_dataclass,
     is_package,
+    split_name,
 )
 
 if TYPE_CHECKING:
@@ -288,13 +289,13 @@ def create_module(
             if not is_empty(attr.doc) or attr.module != name:
                 continue
 
-            if doc := _get_doc_from_comment(attr.node, lines):
+            if doc := _create_doc_comment(attr.node, lines):
                 attr.doc = doc
 
     return module
 
 
-def _get_doc_from_comment(node: AST, lines: list[str]) -> Doc | None:
+def _create_doc_comment(node: AST, lines: list[str]) -> Doc | None:
     line = lines[node.lineno - 1][node.end_col_offset :].strip()
 
     if line.startswith("#:"):
@@ -348,28 +349,31 @@ def is_child(obj: Object, parent: Object | None) -> bool:
 
 
 @cache
-def get_object(fullname: str) -> Object | None:
+def get_object(name: str, module: str | None = None) -> Object | None:
+    if not (fullname := get_fullname(name, module)):
+        return None
+
     if obj := objects.get(fullname):
         return obj
 
-    if not (name_module := resolve(fullname)):
+    if not (name_module := split_name(fullname)):
         return None
 
-    name, module = name_module
-    if not name:
+    name_, module = name_module
+    if not name_:
         return None
 
     if not module:
-        return create_module(name)
+        return create_module(name_)
 
     create_module(module)
-    return objects.get(f"{module}.{name}")
+    return objects.get(fullname)
 
 
-def resolve_from_object(name: str, obj: Object) -> str | None:
+def get_fullname_from_object(name: str, obj: Object) -> str | None:
     """Return fullname from object."""
     if isinstance(obj, Module):
-        return resolve_from_module(name, obj.name)
+        return get_fullname(name, obj.name)
 
     if isinstance(obj, Parent):  # noqa: SIM102
         if child := obj.get(name):
@@ -377,30 +381,23 @@ def resolve_from_object(name: str, obj: Object) -> str | None:
 
     if "." not in name:
         if obj.parent:
-            return resolve_from_object(name, obj.parent)
+            return get_fullname_from_object(name, obj.parent)
 
-        return resolve_from_module(name, obj.module)
+        return get_fullname(name, obj.module)
 
     parent, name_ = name.rsplit(".", maxsplit=1)
 
     if obj_ := objects.get(parent):
-        return resolve_from_object(name, obj_)
+        return get_fullname_from_object(name, obj_)
 
     if obj.name == parent:
-        return resolve_from_object(name_, obj)
+        return get_fullname_from_object(name_, obj)
 
-    if not (name_module := resolve(name)):
-        return None
+    return get_fullname(name)
 
-    name_, module = name_module
 
-    if not module:
-        return name_
-
-    if not name_:
-        return module
-
-    return f"{module}.{name_}"
+def get_members(obj: Parent) -> list[tuple[str, Object]]:
+    pass
 
 
 # def iter_child_objects(
