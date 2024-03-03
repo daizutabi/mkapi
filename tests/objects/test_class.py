@@ -13,7 +13,7 @@ def test_create_class_nested():
     """
     node = ast.parse(inspect.cleandoc(src)).body[0]
     assert isinstance(node, ast.ClassDef)
-    cls = create_class(node, "x", None)
+    cls = create_class(node, "test_create_class_nested", None)
     assert len(cls.children) == 1
     cls = cls.children["B"]
     assert isinstance(cls, Class)
@@ -27,7 +27,7 @@ def test_create_class(get):
 
     node = get("ExampleClass")
     assert isinstance(node, ast.ClassDef)
-    cls = create_class(node, "x", None)
+    cls = create_class(node, "test_create_class", None)
     assert isinstance(cls, Class)
     assert cls.name == "ExampleClass"
     assert len(cls.raises) == 0

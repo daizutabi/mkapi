@@ -43,6 +43,15 @@ if TYPE_CHECKING:
     from mkapi.docs import Doc
 
 
+def _qualname(name: str, parent: Parent | None) -> str:
+    return f"{parent.qualname}.{name}" if parent else name
+
+
+def _fullname(name: str, module: str | None, parent: Parent | None) -> str:
+    qualname = _qualname(name, parent)
+    return f"{module}.{qualname}" if module else name
+
+
 @dataclass
 class Object:
     name: str
@@ -54,8 +63,8 @@ class Object:
     doc: Doc = field(init=False)
 
     def __post_init__(self):
-        self.qualname = f"{self.parent.qualname}.{self.name}" if self.parent else self.name
-        self.fullname = f"{self.module}.{self.qualname}" if self.module else self.name
+        self.qualname = _qualname(self.name, self.parent)
+        self.fullname = _fullname(self.name, self.module, self.parent)
         objects[self.fullname] = self
 
         node = self.node
@@ -179,6 +188,10 @@ class Function(Definition):
 
 
 def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Class:
+    fullname = _fullname(node.name, module, parent)
+    if (cls := objects.get(fullname)) and isinstance(cls, Class):
+        return cls
+
     cls = Class(node.name, node, module, parent, [], [])
 
     init = cls.children.get("__init__")

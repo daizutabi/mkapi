@@ -28,7 +28,7 @@ def test_merge_attributes_comment():
     '''
     source = inspect.cleandoc(src)
     node = ast.parse(source)
-    module = create_module("a", node, source)
+    module = create_module("test_merge_attributes_comment", node, source)
     assert module
     for a in iter_objects(module, Attribute):
         if a.name == "attr5":
@@ -55,7 +55,7 @@ def test_iter_init_attributes(get):
 
     node = get("ExampleClass")
     assert isinstance(node, ast.ClassDef)
-    cls = create_class(node, "x", None)
+    cls = create_class(node, "test_iter_init_attributes", None)
     assert isinstance(cls, Class)
     func = cls.get("__init__")
     assert isinstance(func, Function)
