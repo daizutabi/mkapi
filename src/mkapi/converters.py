@@ -19,6 +19,7 @@ from mkapi.objects import (
     Function,
     Object,
     Parent,
+    Type,
     get_fullname_from_object,
     get_kind,
     get_members,
@@ -333,11 +334,12 @@ def merge_returns(sections: list[Section], returns: ast.expr | None) -> None:
             item.type = returns
 
 
-def merge_attributes(sections: list[Section], attrs: list[Attribute]) -> None:
-    """Merge returns."""
+def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
+    """Merge attributes."""
     if section := get_by_name(sections, "Attributes"):
         items = section.items
         created = False
+
     else:
         if not attrs:
             return
@@ -350,98 +352,22 @@ def merge_attributes(sections: list[Section], attrs: list[Attribute]) -> None:
         if item.type:
             continue
 
-        param = get_by_name(attrs, item.name)
-        if param and param.type:
-            item.type = param.type
+        attr = get_by_name(attrs, item.name)
+        if attr and (attr.type or attr.doc.type):
+            item.type = attr.type or attr.doc.type
 
     for attr in attrs:
         if get_by_name(items, attr.name):
             continue
 
+        type_ = attr.type or attr.doc.type
         if attr.doc.sections:
-            item = create_summary_item(attr.name, attr.doc, attr.type)
+            item = create_summary_item(attr.name, attr.doc.text, type_)
             items.append(item)
 
         elif attr.doc.text:
-            item = Item(attr.name, attr.type, attr.doc.text)
+            item = Item(attr.name, type_, attr.doc.text)
             items.append(item)
 
     if items and created:
         sections.append(section)
-
-
-# def _merge_attributes(
-#     attributes: list[Attribute],
-#     module: Module,
-#     parent_doc: Module | Class | Function | None,
-#     parent_create: Class | Function | None,
-# ) -> None:
-#     """Merge attributes."""
-#     sections = parent_doc.doc.sections if parent_doc else module.doc.sections
-
-#     if section := get_by_type(sections, Assigns):
-#         for attr in attributes:
-#             _merge_attribute_docstring(attr, section)
-
-#         for item in reversed(section.items):
-#             attr = create_attribute(item, module, parent_create)
-#             attributes.insert(0, attr)
-
-#     if module.source:
-#         _merge_attributes_comment(attributes, module.source)
-
-
-# def _merge_attribute_docstring(attr: Attribute, section: Assigns):
-#     if item := get_by_name(section.items, attr.name):
-#         if not attr.doc.text.str:
-#             attr.doc.text.str = item.text.str
-
-#         if not attr.type.expr:
-#             attr.type.expr = item.type.expr
-
-#         index = section.items.index(item)
-#         del section.items[index]
-
-
-# def _add_attributes_section(doc: Docstring, attrs: list[Attribute]):
-#     """Add an Attributes section."""
-#     items = []
-
-#     for attr in attrs:
-#         if attr.doc.sections:
-#             item = create_summary_item(attr.name, attr.doc, attr.type)
-#             items.append(item)
-#         elif attr.doc.text.str:
-#             item = Item(attr.name, attr.type, attr.doc.text)
-#             items.append(item)
-
-#     if not items:
-#         return
-
-#     section = Attributes(Name("Attributes"), Type(), Text(), items)
-
-#     if section_assigns := get_by_type(doc.sections, Assigns):
-#         index = doc.sections.index(section_assigns)
-#         doc.sections[index] = section
-#     else:
-#         doc.sections.append(section)
-
-#     return
-
-
-# def _union_attributes(la: list[Attribute], lb: list[Attribute]) -> Iterator[Attribute]:
-#     """Yield merged [Attribute] instances."""
-#     for name in unique_names(la, lb):
-#         a, b = get_by_name(la, name), get_by_name(lb, name)
-
-#         if a and not b:
-#             yield a
-
-#         elif not a and b:
-#             yield b
-
-#         elif isinstance(a, Attribute) and isinstance(b, Attribute):
-#             a.node = a.node if a.node else b.node
-#             a.type = a.type if a.type.expr else b.type
-#             a.doc = mkapi.docstrings.merge(a.doc, b.doc)
-#             yield a

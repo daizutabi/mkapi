@@ -280,6 +280,7 @@ def _create_admonition(name: str, text: str) -> str:
 def iter_sections(text: str, style: Style) -> Iterator[Section]:
     """Yield [Section] instances by splitting a docstring."""
     prev_text = ""
+
     for name, text_ in _iter_sections(text, style):
         if name in ["", "Note", "Notes", "Warning", "Warnings", "See Also"]:
             cur_text = _create_admonition(name, text_) if name else text_
@@ -349,8 +350,8 @@ def split_type(doc: Doc) -> None:
         doc.type, doc.text = split_item_without_name(doc.text, "google")
 
 
-def create_summary_item(name: str, doc: Doc, type_: str | ast.expr | None = None):
-    text = doc.text.split("\n\n")[0]  # summary line
+def create_summary_item(name: str, text: str, type_: str | ast.expr | None = None):
+    text = text.split("\n\n")[0]  # summary line
     return Item(name, type_, text)
 
 

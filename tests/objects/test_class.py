@@ -113,6 +113,23 @@ def test_iter_attributes_from_function():
         assert f"attr{k}" in cls.children
 
 
+def test_type():
+    from mkapi.objects import Attribute, Class, Property, create_module
+
+    module = create_module("examples.styles.google")
+    assert module
+    cls = module.get("ExampleClass")
+    assert isinstance(cls, Class)
+    x = cls.get("attr4")
+    assert isinstance(x, Attribute)
+    assert x.type is None
+    assert x.doc.type == "list(str)"
+    x = cls.get("readonly_property")
+    assert isinstance(x, Property)
+    assert x.type is None
+    assert x.doc.type == "str"
+
+
 def test_merge_init_doc():
     from mkapi.objects import Class, create_module
 
@@ -120,7 +137,5 @@ def test_merge_init_doc():
     assert module
     cls = module.get("ExampleClass")
     assert isinstance(cls, Class)
-    print(cls.doc.text)
-    for x in cls.doc.sections:
-        print(x.text, x.items)
-    assert 0
+    assert cls.doc.text
+    assert len(cls.doc.sections) == 2

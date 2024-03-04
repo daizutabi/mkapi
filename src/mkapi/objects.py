@@ -201,6 +201,9 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
         for attr in iter_attributes_from_function(init, cls):
             cls.children.setdefault(attr.name, attr)
 
+        objs = sorted(cls.children.values(), key=lambda x: x.node.lineno)
+        cls.children = {obj.name: obj for obj in objs}
+
         cls.doc = merge(cls.doc, init.doc)
 
     for base in get_base_classes(node.name, module):
