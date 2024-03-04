@@ -39,7 +39,7 @@ from mkapi.utils import (
 
 if TYPE_CHECKING:
     from ast import AST
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
 
     from mkapi.docs import Doc
 
@@ -445,3 +445,30 @@ def get_members(
                 members[name] = child
 
     return members
+
+
+def _iter_members(
+    obj: Parent,
+    types: Iterable[type] = (Class, Function, Type),
+) -> Iterator[tuple[str, Object]]:
+    for type_ in types:
+        members = get_members(obj, lambda x, type_=type_: isinstance(x, type_))
+        yield from members.items()
+
+
+def iter_members(
+    obj: Parent,
+    maxdepth: int,
+    predicate: Callable[[Object, Parent], bool] | None = None,
+    depth: int = 1,
+    prefix: str = "",
+) -> Iterator[tuple[str, Object, int]]:
+    for name, member in _iter_members(obj):
+        if predicate and not predicate(member, obj):
+            continue
+
+        qualname = f"{prefix}.{name}" if prefix else name
+        yield qualname, member, depth
+
+        if isinstance(member, Parent) and depth < maxdepth:
+            yield from iter_members(member, maxdepth, predicate, depth + 1, qualname)

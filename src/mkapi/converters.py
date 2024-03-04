@@ -5,12 +5,13 @@ from __future__ import annotations
 import ast
 import re
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from inspect import _ParameterKind as P
 from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
+import mkapi.objects
 from mkapi.docs import Item, Section, create_summary_item, is_empty
 from mkapi.nodes import get_fullname
 from mkapi.objects import (
@@ -22,7 +23,6 @@ from mkapi.objects import (
     Type,
     get_fullname_from_object,
     get_kind,
-    get_members,
     get_object,
     is_child,
 )
@@ -46,11 +46,7 @@ class Converter:
     name: str
     module: str | None
     obj: Object
-    depth: int
-    fullname: str = field(init=False)
-
-    def __post_init__(self):
-        self.fullname = f"{self.module}.{self.name}" if self.module else self.name
+    maxdepth: int
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
@@ -62,9 +58,9 @@ class Converter:
         return get_fullname_from_object(name, self.obj)
 
     def convert_name(self) -> dict[str, Any]:
-        id_ = self.fullname
+        id_ = f"{self.module}.{self.name}" if self.module else self.name
         names = [x.replace("_", "\\_") for x in self.name.split(".")]
-        fullname = get_markdown_name(self.fullname)
+        fullname = get_markdown_name(id_)
 
         return {"id": id_, "fullname": fullname, "names": names}
 
@@ -95,7 +91,7 @@ def create_converter(name: str) -> Converter | None:
 def iter_objects(
     converter: Converter,
     predicate: Callable[[str], bool] | None = None,
-) -> Iterator[tuple[str, Object, int]]:
+) -> Iterator[tuple[str | None, Object, int]]:
     fullname = converter.fullname
     obj = converter.obj
     maxdepth = converter.depth
@@ -105,44 +101,7 @@ def iter_objects(
     if not isinstance(obj, Parent) or not maxdepth:
         return
 
-    yield from _iter_object(obj, fullname, maxdepth, predicate)
-
-
-def _iter_object(
-    obj: Parent,
-    prefix: str,
-    maxdepth: int,
-    predicate: Callable[[str], bool] | None = None,
-    depth: int = 1,
-) -> Iterator[tuple[str, Object, int]]:
-    for name, member in _get_members(obj):
-        if not _predicate(member, obj):
-            continue
-
-        fullname = f"{prefix}.{name}"
-        if predicate and not predicate(fullname):
-            continue
-
-        yield fullname, member, depth
-
-        if isinstance(member, Parent) and depth < maxdepth:
-            yield from _iter_object(member, fullname, maxdepth, predicate, depth + 1)
-
-
-def _get_members(obj: Parent) -> Iterator[tuple[str, Object]]:
-    for type_ in [Class, Function, Attribute]:
-        members = get_members(obj, lambda x, type_=type_: isinstance(x, type_))
-        yield from members.items()
-
-
-def _predicate(obj: Object, parent: Object | None) -> bool:
-    if not is_child(obj, parent):
-        return False
-
-    if is_empty(obj.doc):
-        return False
-
-    return True
+    yield from iter_members(obj, fullname, maxdepth, predicate)
 
 
 PREFIX = "__mkapi__."

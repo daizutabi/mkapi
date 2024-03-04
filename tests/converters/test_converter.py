@@ -16,7 +16,7 @@ def test_create_converter_module():
     assert c.name == "mkapi.converters"
     assert not c.module
     assert c.obj.fullname == "mkapi.converters"
-    assert c.depth == 2
+    assert c.maxdepth == 2
 
 
 def test_create_converter_class():
@@ -27,7 +27,7 @@ def test_create_converter_class():
     assert c.name == "Converter"
     assert c.module == "mkapi.converters"
     assert c.obj.fullname == "mkapi.converters.Converter"
-    assert c.depth == 1
+    assert c.maxdepth == 1
 
 
 def test_create_converter_asname():
@@ -38,20 +38,7 @@ def test_create_converter_asname():
     assert c.name == "ExampleClassGoogle"
     assert c.module == "examples.styles"
     assert c.obj.fullname == "examples.styles.google.ExampleClass"
-    assert c.depth == 0
-
-
-def test_iter_object_module():
-    from mkapi.converters import _iter_object
-    from mkapi.objects import Module, get_object
-
-    obj = get_object("examples.styles.google")
-    obj = get_object("examples.styles")
-    assert isinstance(obj, Module)
-    x = list(_iter_object(obj, obj.fullname, 2))
-    for a in x:
-        print(a)
-    assert 0
+    assert c.maxdepth == 0
 
 
 # def test_():
