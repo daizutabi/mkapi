@@ -104,28 +104,28 @@ def iter_objects(
     if not isinstance(obj, Parent) or not maxdepth:
         return
 
-    yield from _iter_object(obj, fullname, maxdepth, 1, predicate)
+    yield from _iter_object(obj, fullname, maxdepth, predicate)
 
 
 def _iter_object(
     obj: Parent,
-    fullname: str,
+    prefix: str,
     maxdepth: int,
-    depth: int,
     predicate: Callable[[str], bool] | None = None,
+    depth: int = 1,
 ) -> Iterator[tuple[str, Object, int]]:
     for name, member in _get_members(obj):
         if not _predicate(member, obj):
             continue
 
-        fullname = f"{fullname}.{name}"
+        fullname = f"{prefix}.{name}"
         if predicate and not predicate(fullname):
             continue
 
         yield fullname, member, depth
 
         if isinstance(member, Parent) and depth < maxdepth:
-            yield from _iter_object(member, fullname, maxdepth, depth + 1, predicate)
+            yield from _iter_object(member, fullname, maxdepth, predicate, depth + 1)
 
 
 def _get_members(obj: Parent) -> Iterator[tuple[str, Object]]:

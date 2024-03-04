@@ -1,4 +1,4 @@
-def test_parse():
+def test_create_doc():
     from mkapi.docs import create_doc
 
     doc = create_doc("")

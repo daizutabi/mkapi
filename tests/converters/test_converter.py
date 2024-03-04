@@ -8,56 +8,49 @@ def test_split_name_depth(name: str):
     assert _split_name_depth(name) == ("a.b", name.count("*"))
 
 
-@pytest.fixture
-def converter_module():
+def test_create_converter_module():
     from mkapi.converters import create_converter
 
-    return create_converter("mkapi.converters.**")
-
-
-def test_create_converter_module(converter_module):
-    c = converter_module
+    c = create_converter("mkapi.converters.**")
+    assert c
     assert c.name == "mkapi.converters"
     assert not c.module
     assert c.obj.fullname == "mkapi.converters"
     assert c.depth == 2
 
 
-@pytest.fixture
-def converter_class():
+def test_create_converter_class():
     from mkapi.converters import create_converter
 
-    return create_converter("mkapi.converters.Converter.*")
-
-
-def test_create_converter_class(converter_class):
-    c = converter_class
+    c = create_converter("mkapi.converters.Converter.*")
+    assert c
     assert c.name == "Converter"
     assert c.module == "mkapi.converters"
     assert c.obj.fullname == "mkapi.converters.Converter"
     assert c.depth == 1
 
 
-@pytest.fixture
-def converter_asname():
+def test_create_converter_asname():
     from mkapi.converters import create_converter
 
-    return create_converter("examples.styles.ExampleClassGoogle")
-
-
-def test_create_converter_asname(converter_asname):
-    c = converter_asname
+    c = create_converter("examples.styles.ExampleClassGoogle")
+    assert c
     assert c.name == "ExampleClassGoogle"
     assert c.module == "examples.styles"
     assert c.obj.fullname == "examples.styles.google.ExampleClass"
     assert c.depth == 0
 
 
-def test_get_members(converter_module):
-    from mkapi.converters import _get_members
+def test_iter_object_module():
+    from mkapi.converters import _iter_object
+    from mkapi.objects import Module, get_object
 
-    x = list(_get_members(converter_module.obj))
-    print(x)
+    obj = get_object("examples.styles.google")
+    obj = get_object("examples.styles")
+    assert isinstance(obj, Module)
+    x = list(_iter_object(obj, obj.fullname, 2))
+    for a in x:
+        print(a)
     assert 0
 
 

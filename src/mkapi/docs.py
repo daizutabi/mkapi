@@ -1,4 +1,5 @@
 """Parse docstrings."""
+
 from __future__ import annotations
 
 import re
@@ -259,7 +260,7 @@ class Section(Item):
     items: list[Item]
 
 
-def _create_admonition(name: str, text: str) -> Section:
+def _create_admonition(name: str, text: str) -> str:
     if name.startswith("Note"):
         kind = "note"
 
@@ -273,13 +274,22 @@ def _create_admonition(name: str, text: str) -> Section:
     else:
         raise NotImplementedError
 
-    text = mkapi.markdown.get_admonition(kind, name, text)
-    return Section("", "", text, [])
+    return mkapi.markdown.get_admonition(kind, name, text)
 
 
 def iter_sections(text: str, style: Style) -> Iterator[Section]:
     """Yield [Section] instances by splitting a docstring."""
+    prev_text = ""
     for name, text_ in _iter_sections(text, style):
+        if name in ["", "Note", "Notes", "Warning", "Warnings", "See Also"]:
+            cur_text = _create_admonition(name, text_) if name else text_
+            prev_text = f"{prev_text}\n\n{cur_text}" if prev_text else cur_text
+            continue
+
+        if prev_text:
+            yield Section("", "", prev_text, [])
+            prev_text = ""
+
         if name in ["Parameters", "Attributes", "Raises"]:
             items = list(iter_items(text_, style))
             yield Section(name, "", "", items)
@@ -288,11 +298,11 @@ def iter_sections(text: str, style: Style) -> Iterator[Section]:
             items = list(iter_items_without_name(text_, style))
             yield Section(name, "", "", items)
 
-        elif name in ["Note", "Notes", "Warning", "Warnings", "See Also"]:
-            yield _create_admonition(name, text_)
-
         else:
             yield Section(name, "", text_, [])
+
+    if prev_text:
+        yield Section("", "", prev_text, [])
 
 
 @dataclass

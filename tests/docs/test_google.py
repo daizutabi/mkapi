@@ -132,8 +132,8 @@ def test_merge(google, get, get_node):
     doc = merge(a, b)
     assert doc.text
     assert doc.text.startswith("The summary line")
-    assert doc.text.endswith("with it.")
-    assert len(doc.sections) == 3
+    assert doc.text.endswith("``Args`` section.")
+    assert len(doc.sections) == 2
 
 
 def test_repr(google):

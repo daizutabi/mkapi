@@ -23,7 +23,7 @@ from mkapi.ast import (
     iter_parameters,
     iter_raises,
 )
-from mkapi.docs import create_doc, create_doc_comment, is_empty, split_type
+from mkapi.docs import create_doc, create_doc_comment, is_empty, merge, split_type
 from mkapi.nodes import get_fullname, parse
 from mkapi.utils import (
     cache,
@@ -200,6 +200,8 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
     if isinstance(init, Function):
         for attr in iter_attributes_from_function(init, cls):
             cls.children.setdefault(attr.name, attr)
+
+        cls.doc = merge(cls.doc, init.doc)
 
     for base in get_base_classes(node.name, module):
         for name, obj in base.get_children():
@@ -389,7 +391,7 @@ def get_object(name: str, module: str | None = None) -> Object | None:
 
 
 def get_fullname_from_object(name: str, obj: Object) -> str | None:
-    """Return fullname from object."""
+    """Return fullname of `name` relative to an [Object] instance."""
     if isinstance(obj, Module):
         return get_fullname(name, obj.name)
 
