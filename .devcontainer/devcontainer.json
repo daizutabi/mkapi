@@ -1,0 +1,30 @@
+{
+  "name": "mkapi",
+  "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "configureZshAsDefaultShell": "true",
+      "username": "mkapi"
+    },
+    "ghcr.io/devcontainers-contrib/features/hatch:2": {},
+    "ghcr.io/devcontainers-contrib/features/starship:1": {}
+  },
+  "remoteUser": "mkapi",
+  "containerEnv": {
+    "TZ": "Asia/Tokyo"
+  },
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/usr/local/py-utils/bin"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "github.vscode-github-actions",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+  "postCreateCommand": ".devcontainer/postCreate.sh"
+}
