@@ -25,8 +25,7 @@
         "charliermarsh.ruff",
         "github.vscode-github-actions",
         "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-toolsai.jupyter"
+        "ms-python.vscode-pylance"
       ]
     }
   },
