@@ -1,6 +1,8 @@
 {
   "name": "mkapi",
-  "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
       "configureZshAsDefaultShell": "true",
@@ -18,11 +20,13 @@
   },
   "customizations": {
     "vscode": {
+      "settings": {},
       "extensions": [
         "charliermarsh.ruff",
         "github.vscode-github-actions",
         "ms-python.python",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter"
       ]
     }
   },

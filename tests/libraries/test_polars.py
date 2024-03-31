@@ -158,12 +158,12 @@ def test_get_globals():
     assert n
 
 
-def test_get_fullnamel():
+def test_get_fullname():
     x = get_fullname("polars.dataframe.frame", "DataType")
     assert x == "polars.datatypes.classes.DataType"
     x = get_fullname("polars.dataframe.frame", "Workbook")
     assert x == "xlsxwriter.Workbook"
-    assert get_fullname("polars", "exceptions") != "polars.exceptions"
+    assert get_fullname("polars", "exceptions") == "polars.exceptions"
     assert get_fullname("polars", "api") == "polars.api"
 
 
