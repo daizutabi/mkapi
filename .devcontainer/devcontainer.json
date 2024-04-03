@@ -20,7 +20,6 @@
   },
   "customizations": {
     "vscode": {
-      "settings": {},
       "extensions": [
         "charliermarsh.ruff",
         "github.vscode-github-actions",
