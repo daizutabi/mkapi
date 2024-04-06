@@ -49,6 +49,7 @@ dependencies = [
 
 [tool.hatch.envs.test.scripts]
 run = "pytest {args:tests src/mkapi}"
+cov = "coverage report {args:--skip-covered --show-missing}"
 
 [[tool.hatch.envs.test.matrix]]
 python = ["3.10", "3.11", "3.12"]
