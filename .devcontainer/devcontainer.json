@@ -12,9 +12,6 @@
     "ghcr.io/devcontainers-contrib/features/starship:1": {}
   },
   "remoteUser": "mkapi",
-  "containerEnv": {
-    "TZ": "Asia/Tokyo"
-  },
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:/usr/local/py-utils/bin"
   },

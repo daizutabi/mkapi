@@ -1,0 +1,34 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = false
+
+[username]
+disabled = true
+
+[hostname]
+disabled = true
+
+[package]
+format = '[$symbol$version]($style) '
+symbol = "󰏗 "
+style = 'bold blue'
+
+[git_branch]
+format = '[$symbol$branch(:$remote_branch)]($style)'
+symbol = ' '
+style = 'bold green'
+
+[git_status]
+style = 'red'
+modified = '*'
+format = '([$modified]($style)) '
+
+[julia]
+format = '[$symbol($version)]($style) '
+symbol = ' '
+style = 'bold purple'
+
+[python]
+format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+symbol = ' '
+style = 'yellow'
