@@ -5,7 +5,7 @@
   },
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
-      "configureZshAsDefaultShell": "true",
+      "installZsh": false,
       "username": "mkapi"
     },
     "ghcr.io/devcontainers-contrib/features/hatch:2": {},
