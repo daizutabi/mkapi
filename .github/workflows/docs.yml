@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
-      - name: Install Hatch
-        run: pip install --upgrade hatch
+      - name: Install package
+        run: pip install -e .[docs]
       - name: Deploy documentation
-        run: hatch run docs:deploy
+        run: mkdocs gh-deploy --force

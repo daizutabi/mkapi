@@ -1,4 +1,5 @@
 """Navigation utility functions."""
+
 from __future__ import annotations
 
 import re
@@ -17,6 +18,7 @@ def split_name_depth(name: str) -> tuple[str, int]:
     if m := re.match(r"^(.+?)\.(\*+)$", name):
         name, option = m.groups()
         return name, len(option)
+
     return name, 0
 
 
@@ -25,15 +27,21 @@ def get_apinav(name: str, predicate: Callable[[str], bool] | None = None) -> lis
     name, depth = split_name_depth(name)
     if not get_module_path(name):
         return []
+
     if not is_package(name):
         return [name]
+
     find = partial(find_submodule_names, predicate=predicate)
+
     if depth == 1:
         return [name, *find(name)]
-    if depth == 2:  # noqa: PLR2004
+
+    if depth == 2:
         return _get_apinav_list(name, find)
-    if depth == 3:  # noqa: PLR2004
+
+    if depth == 3:
         return [_get_apinav_dict(name, find)]
+
     return [name]
 
 

@@ -25,7 +25,11 @@ import mkapi
 import mkapi.nav
 from mkapi import renderers
 from mkapi.nav import split_name_depth
-from mkapi.pages import create_documentation_page, create_object_page, create_source_page
+from mkapi.pages import (
+    create_documentation_page,
+    create_object_page,
+    create_source_page,
+)
 from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
 
 if TYPE_CHECKING:
@@ -78,7 +82,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             pages: list[Page] = []
             for page in self.pages.values():
                 if page.name and is_module_cache_dirty(page.name):
-                    pages.append(page)  # noqa: PERF401
+                    pages.append(page)
 
             for page in pages:
                 page.create_markdown()
@@ -137,7 +141,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
         try:
             return page_.convert_markdown(markdown, anchors)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             if self.config.debug:
                 raise
 
@@ -326,7 +330,9 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         spinner.start()
 
         try:
-            mkapi.nav.update(config.nav, _create_page, section_title, page_title, predicate)
+            mkapi.nav.update(
+                config.nav, _create_page, section_title, page_title, predicate
+            )
 
         except Exception as e:
             if plugin.config.debug:

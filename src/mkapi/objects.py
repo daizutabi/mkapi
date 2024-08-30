@@ -70,7 +70,7 @@ class Object:
 
         node = self.node
         types = ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
-        text = ast.get_docstring(node) if isinstance(node, types) else node.__doc__
+        text = ast.get_docstring(node) if isinstance(node, types) else node.__doc__  # type: ignore
         self.doc = create_doc(text)
 
     def __repr__(self) -> str:
@@ -201,7 +201,7 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
         for attr in iter_attributes_from_function(init, cls):
             cls.children.setdefault(attr.name, attr)
 
-        objs = sorted(cls.children.values(), key=lambda x: x.node.lineno)
+        objs = sorted(cls.children.values(), key=lambda x: x.node.lineno)  # type: ignore
         cls.children = {obj.name: obj for obj in objs}
 
         cls.doc = merge(cls.doc, init.doc)
@@ -245,7 +245,9 @@ def get_base_classes(name: str, module: str) -> list[Class]:
     return bases
 
 
-def iter_attributes_from_function(func: Function, parent: Parent) -> Iterator[Attribute]:
+def iter_attributes_from_function(
+    func: Function, parent: Parent
+) -> Iterator[Attribute]:
     self = func.parameters[0].name
 
     for name, obj in func.get_children(Attribute):
@@ -319,13 +321,13 @@ def create_module(
 
 
 def _create_doc_comment(node: AST, lines: list[str]) -> Doc | None:
-    line = lines[node.lineno - 1][node.end_col_offset :].strip()
+    line = lines[node.lineno - 1][node.end_col_offset :].strip()  # type: ignore
 
     if line.startswith("#:"):
         return create_doc_comment(line[2:].strip())
 
-    if node.lineno > 1:
-        line = lines[node.lineno - 2][node.col_offset :]
+    if node.lineno > 1:  # type: ignore
+        line = lines[node.lineno - 2][node.col_offset :]  # type: ignore
         if line.startswith("#:"):
             return create_doc_comment(line[2:].strip())
 

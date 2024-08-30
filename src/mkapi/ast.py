@@ -20,7 +20,7 @@ from ast import (
     Raise,
 )
 from dataclasses import dataclass
-from inspect import Parameter as P  # noqa: N817
+from inspect import Parameter as P
 from inspect import cleandoc
 from typing import TYPE_CHECKING, TypeGuard
 
@@ -155,7 +155,8 @@ def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]
     """Yield [Parameter] instances from a function node."""
     it = _iter_defaults(node)
     for name, type_, kind in _iter_parameters(node):
-        default = None if kind in [P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)
+        default = None if kind in [
+            P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)
         yield Parameter(name, type_, default, kind)
 
 
@@ -210,7 +211,8 @@ class Transformer(NodeTransformer):
         return self._rename(node.id)
 
     def unparse(self, node: AST) -> str:
-        node_ = ast.parse(ast.unparse(node))  # copy node for avoiding in-place rename.
+        # copy node for avoiding in-place rename.
+        node_ = ast.parse(ast.unparse(node))
         return ast.unparse(self.visit(node_))
 
 
@@ -321,5 +323,5 @@ def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     return is_function_def(node) and has_decorator(node, "staticmethod")
 
 
-def is_assign(node: AST) -> TypeGuard[ast.AnnAssign | ast.Assign | TypeAlias]:  # type: ignore
+def is_assign(node: AST) -> TypeGuard[ast.AnnAssign | ast.Assign | TypeAlias]:
     return isinstance(node, ast.AnnAssign | ast.Assign | TypeAlias)

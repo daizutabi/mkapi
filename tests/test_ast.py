@@ -98,10 +98,10 @@ def test_iter_identifiers():
     assert len(x) == 2
     assert x[0] == ("'ab'\n ", False)
     assert x[1] == ("a", True)
-    x = list(_iter_identifiers("'ab'\n __mkapi__.α.β.γ"))  # noqa: RUF001
+    x = list(_iter_identifiers("'ab'\n __mkapi__.α.β.γ"))
     assert len(x) == 2
     assert x[0] == ("'ab'\n ", False)
-    assert x[1] == ("α.β.γ", True)  # noqa: RUF001
+    assert x[1] == ("α.β.γ", True)
 
 
 def test_unparse():

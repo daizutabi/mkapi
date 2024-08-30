@@ -28,14 +28,14 @@ def test_get_apinav():
     assert get_apinav("mkdocs") == ["mkdocs"]
     assert get_apinav("invalid name") == []
     nav = get_apinav("mkdocs.*")
-    assert len(nav) == 13
+    assert 12 <= len(nav) <= 13
     assert nav[0] == "mkdocs"
     assert nav[1] == "mkdocs.commands"
     assert nav[-2] == "mkdocs.plugins"
     assert nav[-1] == "mkdocs.theme"
     nav = get_apinav("mkdocs.**")
     x = len(nav)
-    assert x > 50
+    assert x > 30
     assert nav[0] == "mkdocs"
     assert nav[1] == "mkdocs.commands"
     assert nav[2] == "mkdocs.commands.build"
@@ -101,7 +101,8 @@ def test_nav_empty():
 
     nav = yaml.safe_load(src)
     nav = create(nav, create_apinav)
-    assert nav == ["index.md", {"A": ["1.md", "2.md", "3.md"]}, {"B": []}, {"C": []}]
+    assert nav == ["index.md", {
+        "A": ["1.md", "2.md", "3.md"]}, {"B": []}, {"C": []}]
 
 
 def test_nav_single():

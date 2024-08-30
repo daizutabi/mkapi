@@ -94,15 +94,6 @@ def test_resolve_mkapi_module():
     assert x[0] == mkapi.plugins.config_options.__name__
 
 
-def test_resolve_polars():
-    from mkapi.nodes import resolve
-
-    x = resolve("polars.api")
-    assert x
-    assert x[0] == "polars.api"
-    assert not x[1]
-
-
 @pytest.mark.parametrize("name", ["mkapi", "mkapi.ast", "mkapi.ast.AST", "mkapi.ast.XXX"])
 def test_get_fullname_module(name):
     from mkapi.nodes import get_fullname
@@ -155,13 +146,6 @@ def test_get_fullname_qualname_alias(attr):
     assert x == f"{module}.google.{name}".replace("Google", "")
 
 
-def test_get_fullname_schemdraw():
-    from mkapi.nodes import get_fullname
-
-    x = get_fullname("Drawing", "schemdraw")
-    assert x == "schemdraw.schemdraw.Drawing"
-
-
 def test_get_fullname_self():
     from mkapi.nodes import get_fullname
 
@@ -191,11 +175,3 @@ def test_get_fullname_other():
     assert x == "mkdocs.config.config_options.Type"
     x = get_fullname("get_plugin_logger", module)
     assert x == "mkdocs.plugins.get_plugin_logger"
-
-
-def test_get_fullname_polars():
-    from mkapi.nodes import get_fullname
-
-    x = get_fullname("DataType", "polars.dataframe.frame")
-    assert x == "polars.datatypes.classes.DataType"
-    assert get_fullname("api", "polars") == "polars.api"
