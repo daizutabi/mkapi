@@ -51,6 +51,9 @@ filterwarnings = [
   'ignore:\nPyarrow will become a required dependency:DeprecationWarning',
 ]
 
+[tool.coverage.run]
+disable_warnings = ["module-not-measured"]
+
 [tool.coverage.report]
 exclude_lines = [
   "no cov",
