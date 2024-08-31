@@ -1,4 +1,5 @@
 """AST module."""
+
 from __future__ import annotations
 
 import ast
@@ -36,11 +37,32 @@ if TYPE_CHECKING:
 
 
 def iter_child_nodes(node: AST) -> Iterator[AST]:
-    """Yield child nodes."""
+    """Yield child nodes of the given AST node.
+
+    This function traverses the child nodes of the specified AST node and
+    yields each child node that is of interest, including import statements,
+    class definitions, and function definitions. It allows for recursive
+    traversal of the AST structure.
+
+    Args:
+        node (AST): The AST node from which to yield child nodes.
+
+    Yields:
+        AST: The child nodes of the specified AST node.
+
+    Example:
+        >>> import ast
+        >>> tree = ast.parse("def foo(): pass")
+        >>> for child in iter_child_nodes(tree):
+        ...     print(type(child))
+        <class 'ast.FunctionDef'>
+    """
     it = ast.iter_child_nodes(node)
 
     for child in it:
-        if isinstance(child, Import | ImportFrom | ClassDef | FunctionDef | AsyncFunctionDef):
+        if isinstance(
+            child, Import | ImportFrom | ClassDef | FunctionDef | AsyncFunctionDef
+        ):
             yield child
 
         elif isinstance(child, AnnAssign | Assign | TypeAlias):
@@ -51,6 +73,20 @@ def iter_child_nodes(node: AST) -> Iterator[AST]:
 
 
 def _get_pseudo_docstring(node: AST) -> str | None:
+    """Retrieve the pseudo docstring from an AST node.
+
+    This function checks if the given AST node is an expression containing
+    a constant value. If the constant value is a string that starts with
+    the pseudo docstring marker (i.e., '#:'), it returns the cleaned-up
+    version of the docstring. If the node does not contain a valid
+    pseudo docstring, it returns None.
+
+    Args:
+        node (AST): The AST node to inspect for a pseudo docstring.
+
+    Returns:
+        str | None: The cleaned pseudo docstring if found, otherwise None.
+    """
     if isinstance(node, Expr) and isinstance(node.value, Constant):
         doc = node.value.value
         return cleandoc(doc) if isinstance(doc, str) else None
@@ -62,7 +98,21 @@ def _iter_assign_nodes(
     node: AnnAssign | Assign | TypeAlias,  # type: ignore
     it: Iterator[AST],
 ) -> Iterator[AST]:
-    """Yield assign nodes."""
+    """Yield assignment nodes from the given AST node.
+
+    This function recursively yields assignment nodes (AnnAssign, Assign,
+    or TypeAlias) from the provided AST node. It processes the current
+    node and its subsequent nodes in the iterator, yielding each relevant
+    assignment node until a non-assignment node is encountered.
+
+    Args:
+        node (AnnAssign | Assign | TypeAlias): The initial assignment node
+            to process.
+        it (Iterator[AST]): An iterator over the child nodes of the AST.
+
+    Yields:
+        AST: The assignment nodes found in the AST.
+    """
     node.__doc__ = None
 
     try:
@@ -85,7 +135,29 @@ def _iter_assign_nodes(
 
 
 def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type: ignore
-    """Return the name of the assign node."""
+    """Return the name of the assign node.
+
+    This function retrieves the name associated with an assignment node,
+    which can be of type AnnAssign, Assign, or TypeAlias. It handles
+    different types of assignment nodes and returns the name as a string.
+    If the node does not represent a valid assignment, it returns None.
+
+    Args:
+        node (AnnAssign | Assign | TypeAlias): The assignment node from
+            which to extract the name.
+
+    Returns:
+        str | None: The name of the assignment node if found, otherwise None.
+
+    Example:
+        >>> import ast
+        >>> node = ast.parse("x = 1").body[0]
+        >>> get_assign_name(node)
+        'x'
+        >>> node = ast.parse("y: int = 2").body[0]
+        >>> get_assign_name(node)
+        'y'
+    """
     if isinstance(node, Assign):
         name = node.targets[0]
 
@@ -105,7 +177,30 @@ def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type
 
 
 def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:  # type: ignore
-    """Return a type annotation of the Assign or TypeAlias AST node."""
+    """Return the type annotation of the Assign or TypeAlias AST node.
+
+    This function retrieves the type annotation associated with an assignment
+    node, which can be of type AnnAssign, Assign, or TypeAlias. It checks the
+    node type and returns the corresponding type annotation if available.
+    If the node does not represent a valid assignment or does not have a type
+    annotation, it returns None.
+
+    Args:
+        node (AnnAssign | Assign | TypeAlias): The assignment node from which
+            to extract the type annotation.
+
+    Returns:
+        ast.expr | None: The type annotation of the assignment node if found,
+            otherwise None.
+
+    Example:
+        >>> import ast
+        >>> node = ast.parse("x: int = 1").body[0]
+        >>> get_assign_type(node)  # doctest: +ELLIPSIS
+        <ast.Name object at 0x...>
+        >>> node = ast.parse("y = 2").body[0]
+        >>> get_assign_type(node)
+    """
     if isinstance(node, AnnAssign):
         return node.annotation
 
@@ -118,6 +213,40 @@ def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:  #
 def _iter_parameters(
     node: FunctionDef | AsyncFunctionDef,
 ) -> Iterator[tuple[str, ast.expr | None, _ParameterKind]]:
+    """Yield parameters from a function definition node.
+
+    This function extracts and yields the parameters of a function definition
+    node, which can be either a synchronous or asynchronous function. It
+    processes positional-only arguments, positional-or-keyword arguments,
+    variable positional arguments, keyword-only arguments, and variable
+    keyword arguments, yielding each parameter along with its type annotation
+    and kind.
+
+    Args:
+        node (FunctionDef | AsyncFunctionDef): The function definition node
+            from which to extract parameters.
+
+    Yields:
+        tuple[str, ast.expr | None, _ParameterKind]: A tuple containing the
+        parameter name, its type annotation (if any), and its kind (e.g.,
+        positional-only, positional-or-keyword, keyword-only, or variable).
+
+    Example:
+        >>> import ast
+        >>> src = "def func(a, b: int, *args, c: str, d=5, **kwargs): pass"
+        >>> node = ast.parse(src).body[0]
+        >>> args = list(_iter_parameters(node))
+        >>> args[0]
+        ('a', None, <_ParameterKind.POSITIONAL_OR_KEYWORD: 1>)
+        >>> args[1]  # doctest: +ELLIPSIS
+        ('b', <ast.Name object at 0x...>, <_ParameterKind.POSITIONAL_OR_KEYWORD: 1>)
+        >>> args[2]  # doctest: +ELLIPSIS
+        ('args', None, <_ParameterKind.VAR_POSITIONAL: 2>)
+        >>> args[3]  # doctest: +ELLIPSIS
+        ('c', <ast.Name object at 0x...>, <_ParameterKind.KEYWORD_ONLY: 3>)
+        >>> args[4]
+        ('d', None, <_ParameterKind.KEYWORD_ONLY: 3>)
+    """
     args = node.args
     for arg in args.posonlyargs:
         yield arg.arg, arg.annotation, P.POSITIONAL_ONLY
@@ -132,6 +261,28 @@ def _iter_parameters(
 
 
 def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | None]:
+    """Yield default values for parameters in a function definition node.
+
+    This function extracts and yields the default values for parameters
+    defined in a function definition node, which can be either a synchronous
+    or asynchronous function. It processes both positional and keyword
+    arguments, yielding the default values in the order they are defined.
+
+    Args:
+        node (FunctionDef | AsyncFunctionDef): The function definition node
+            from which to extract default values.
+
+    Yields:
+        ast.expr | None: The default values for the parameters, or None
+        for parameters that do not have a default value.
+
+    Example:
+        >>> import ast
+        >>> src = "def func(a, b=2, c=3): pass"
+        >>> node = ast.parse(src).body[0]
+        >>> list(_iter_defaults(node))  # doctest: +ELLIPSIS
+        [None, <ast.Constant object at 0x...>, <ast.Constant object at 0x...>]
+    """
     args = node.args
     num_positional = len(args.posonlyargs) + len(args.args)
     nones = [None] * num_positional
@@ -155,8 +306,7 @@ def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]
     """Yield [Parameter] instances from a function node."""
     it = _iter_defaults(node)
     for name, type_, kind in _iter_parameters(node):
-        default = None if kind in [
-            P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)
+        default = None if kind in [P.VAR_POSITIONAL, P.VAR_KEYWORD] else next(it)
         yield Parameter(name, type_, default, kind)
 
 
@@ -186,7 +336,7 @@ def _is_identifier(name: str) -> bool:
     return name != "" and all(x.isidentifier() for x in _split_name(name))
 
 
-def create_expr(name: str) -> ast.expr:
+def create_ast_expr(name: str) -> ast.expr:
     """Return an [ast.expr] instance of a name."""
     if _is_identifier(name):
         try:
@@ -259,7 +409,9 @@ def iter_identifiers(node: AST) -> Iterator[str]:
             yield code
 
 
-def _unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) -> Iterator[str]:
+def _unparse(
+    node: AST, callback: Callable[[str], str], *, is_type: bool = True
+) -> Iterator[str]:
     trans = StringTransformer() if is_type else Transformer()
     source = trans.unparse(node)
     for code, isidentifier in _iter_identifiers(source):
