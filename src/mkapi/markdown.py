@@ -1,3 +1,22 @@
+"""
+This module provides functions for processing and converting Markdown text.
+
+It includes utilities for handling code blocks, links, directives, and examples
+within Markdown content. The functions are designed to facilitate the extraction,
+transformation, and formatting of Markdown elements, making it easier to generate
+well-structured documentation.
+
+Key functionalities include:
+- Iterating over matches of regex patterns in text.
+- Handling fenced and inline code blocks.
+- Escaping and unescaping specific patterns for processing.
+- Generating 'See Also' sections and admonition blocks.
+- Replacing links and directives with their Markdown equivalents.
+
+This module is intended for use in documentation generation and text processing
+tasks where Markdown formatting is required.
+"""
+
 from __future__ import annotations
 
 import doctest
