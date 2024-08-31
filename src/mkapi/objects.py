@@ -250,6 +250,32 @@ def create_attribute(
     module: str,
     parent: Parent | None,
 ) -> Attribute:
+    """Create an Attribute object from the given parameters.
+
+    This function constructs an instance of the Attribute class, which
+    represents an attribute in the Abstract Syntax Tree (AST). It extracts
+    relevant information from the provided AST node and associates it with
+    the attribute.
+
+    Args:
+        name (str): The name of the attribute, typically representing the
+            identifier in the source code.
+        node (ast.AnnAssign | ast.Assign | TypeAlias): The AST node
+            associated with this attribute, which can be an assignment
+            statement or a type alias.
+        module (str): The name of the module in which the attribute is defined.
+        parent (Parent | None): The parent object of this attribute, if any.
+            This is used to maintain the hierarchy of objects.
+
+    Returns:
+        Attribute: An instance of the Attribute class representing the
+        specified attribute, including its name, node, module, parent, and
+        any associated type information.
+
+    This function is useful for analyzing and processing attributes within
+    the AST, allowing for easy access to their properties and relationships
+    within the code structure.
+    """
     type_ = get_assign_type(node)
     default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
 
@@ -261,6 +287,30 @@ def create_property(
     module: str,
     parent: Parent | None,
 ) -> Property:
+    """Create a Property object from the given parameters.
+
+    This function constructs an instance of the Property class, which
+    represents a property in the Abstract Syntax Tree (AST). It extracts
+    relevant information from the provided AST node and associates it with
+    the property.
+
+    Args:
+        node (ast.FunctionDef | ast.AsyncFunctionDef): The AST node
+            associated with this property, which can be a function definition
+            for a property.
+        module (str): The name of the module in which the property is defined.
+        parent (Parent | None): The parent object of this property, if any.
+            This is used to maintain the hierarchy of objects.
+
+    Returns:
+        Property: An instance of the Property class representing the
+        specified property, including its name, node, module, parent, and
+        any associated type information.
+
+    This function is useful for analyzing and processing properties within
+    the AST, allowing for easy access to their properties and relationships
+    within the code structure.
+    """
     return Property(node.name, node, module, parent, node.returns)
 
 
@@ -269,20 +319,79 @@ T = TypeVar("T")
 
 @dataclass(repr=False)
 class Parent(Object):
+    """Represents a parent node in the Abstract Syntax Tree (AST).
+
+    This class is a specialized subclass of the `Object` class that
+    manages child objects, allowing for hierarchical relationships
+    between objects in the AST structure. It provides methods to
+    retrieve child objects by name or type, facilitating the
+    organization and manipulation of AST nodes.
+
+    Attributes:
+        children (dict[str, Object]): A dictionary that stores child
+            objects, where the keys are the names of the children and
+            the values are instances of `Object`. This attribute is
+            initialized with an empty dictionary and is not intended to
+            be set during initialization.
+
+    This class is intended to be subclassed by more specific object types
+    that require additional attributes or behaviors specific to their
+    context within the AST.
+    """
+
     children: dict[str, Object] = field(default_factory=dict, init=False)
+    """A dictionary that stores child objects, where the keys are the names
+    of the children and the values are instances of `Object`."""
 
     def get(self, name: str, type_: type[T] = Object) -> T | None:
+        """Retrieve a child object by name, ensuring it is of the specified type.
+
+        Args:
+            name (str): The name of the child object to retrieve.
+            type_ (type[T]): The type of the child object to ensure.
+
+        Returns:
+            T | None: The child object if found and of the specified type,
+            otherwise None.
+        """
         child = self.children.get(name)
 
         return child if isinstance(child, type_) else None
 
     def get_children(self, type_: type[T] = Object) -> list[tuple[str, T]]:
-        it = self.children.items()
+        """Retrieve a list of child objects of the specified type.
 
+        Args:
+            type_ (type[T]): The type of the child objects to retrieve.
+
+        Returns:
+            list[tuple[str, T]]: A list of tuples, where each tuple contains
+            the name and the child object, ensuring the object is of the
+            specified type.
+        """
+        it = self.children.items()
         return [(name, obj) for (name, obj) in it if isinstance(obj, type_)]
 
 
 def iter_objects(obj: Parent, type_: type[T] = Object) -> Iterator[T]:
+    """Iterate over child objects of a given parent object, ensuring they are of the specified type.
+
+    This function recursively traverses the children of the provided parent
+    object and yields objects that match the specified type. It ensures that
+    all objects in the hierarchy are of the desired type, allowing for
+    consistent processing and analysis of the AST structure.
+
+    Args:
+        obj (Parent): The parent object whose children are to be iterated over.
+        type_ (type[T]): The type of the child objects to ensure.
+
+    Yields:
+        T: An object that is a child of the parent and matches the specified type.
+
+    This function is useful for filtering and processing specific types of
+    objects within the AST, providing a way to access and manipulate the
+    components defined within a given parent object.
+    """
     for child in obj.children.values():
         if isinstance(child, type_):
             yield child
@@ -293,8 +402,32 @@ def iter_objects(obj: Parent, type_: type[T] = Object) -> Iterator[T]:
 
 @dataclass(repr=False)
 class Definition(Parent):
+    """Represents a definition in the Abstract Syntax Tree (AST).
+
+    This class is a specialized representation of a definition, such as
+    a class or function, within the AST. It inherits from the `Parent`
+    class and includes additional attributes specific to definitions,
+    such as parameters and exceptions that may be raised.
+
+    Attributes:
+        parameters (list[Parameter]): A list of parameters associated
+            with the definition, representing the input values for
+            functions or methods.
+        raises (list[ast.expr]): A list of expressions representing
+            the exceptions that may be raised by the definition.
+
+    This class is intended to encapsulate the details of definitions
+    within the AST, allowing for easier manipulation and analysis of
+    function and class definitions in Python code.
+    """
+
     parameters: list[Parameter]
+    """A list of parameters associated with the definition,
+    representing the input values for functions or methods."""
+
     raises: list[ast.expr]
+    """A list of expressions representing the exceptions that may be
+    raised by the definition."""
 
     def __post_init__(self):
         super().__post_init__()
