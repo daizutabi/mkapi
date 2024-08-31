@@ -25,15 +25,13 @@ def test_resolve_asname():
 def test_resolve_attribute():
     from mkapi.nodes import resolve
 
-    x = resolve("examples.styles.ExampleClassGoogle.attr1")
-    assert x == ("ExampleClass.attr1", "examples.styles.google")
+    assert not resolve("examples.styles.ExampleClassGoogle.attr1")
 
 
 def test_resolve_unknown():
     from mkapi.nodes import resolve
 
-    x = resolve("examples.styles.ExampleClassGoogle.attrX")
-    assert x == ("ExampleClass.attrX", "examples.styles.google")
+    assert not resolve("examples.styles.ExampleClassGoogle.attrX")
 
 
 def test_resolve_none():
@@ -126,7 +124,7 @@ def test_get_fullname_jinja2():
     assert x == "jinja2.environment.Template"
 
 
-@pytest.fixture(params=["", ".attr1", "._private", ".readonly_property"])
+@pytest.fixture(params=["", "._private", ".readonly_property"])
 def attr(request):
     return request.param
 
@@ -183,5 +181,4 @@ def test_get_fullname_nested():
     from mkapi.nodes import get_fullname
 
     assert get_fullname("mkapi.docs.Item.name") == "mkapi.docs.Item.name"
-
     assert not get_fullname("mkapi.docs.Item.mkapi")

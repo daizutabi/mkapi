@@ -55,15 +55,6 @@ class Node:
     is characterized by its name, the corresponding AST node, and its
     fully qualified name.
 
-    Attributes:
-        name (str): The name of the node, typically representing the
-            identifier in the source code.
-        node (AST): The actual AST node associated with this representation,
-            providing access to the underlying structure of the code.
-        fullname (str): The fully qualified name of the node, which may
-            include module or package information, allowing for unique
-            identification within the codebase.
-
     This class is intended to be subclassed by more specific node types
     (e.g., Import, Object, Definition) that require additional attributes
     or behaviors specific to their context within the AST.
@@ -75,11 +66,8 @@ class Node:
     node: AST
     """The AST node associated with this representation."""
 
-    fullname: str
-    """The fully qualified name of the node."""
-
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.fullname!r})"
+        return f"{self.__class__.__name__}({self.name!r})"
 
 
 @dataclass(repr=False)
@@ -91,18 +79,22 @@ class Import(Node):
     module. It inherits from the `Node` class and includes additional
     attributes specific to import statements.
 
-    Attributes:
-        node (ast.Import | ast.ImportFrom): The actual AST node associated
-            with this import statement, which can be either an `Import`
-            or `ImportFrom` node from the `ast` module.
-
     This class is intended to encapsulate the details of import statements
     within the AST, allowing for easier manipulation and analysis of
     import-related information in Python code.
     """
 
     node: ast.Import | ast.ImportFrom
-    """The actual AST node associated with this import statement."""
+    """The actual AST node associated with this import statement,
+    which can be either an `Import` or `ImportFrom` node from the `ast` module.
+    """
+
+    fullname: str
+    """The fully qualified name of the import statement,
+    including the module and any aliases."""
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r} -> {self.fullname!r})"
 
 
 @dataclass(repr=False)
@@ -113,24 +105,13 @@ class Object(Node):
     function, or method, within the AST. It inherits from the `Node` class
     and includes additional attributes specific to object representations.
 
-    Attributes:
-        fullname (str): The fully qualified name of the object, which may
-            include module or package information, allowing for unique
-            identification within the codebase.
-        module (str): The module in which the object is defined.
-
     This class is intended to be subclassed by more specific object types
     (e.g., `Class`, `Function`, `Method`) that require additional attributes
     or behaviors specific to their context within the AST.
     """
 
-    fullname: str = field(init=False)
-    """The fully qualified name of the object."""
     module: str
     """The module in which the object is defined."""
-
-    def __post_init__(self):
-        self.fullname = f"{self.module}.{self.name}"
 
 
 @dataclass(repr=False)
@@ -141,19 +122,14 @@ class Definition(Object):
     function, or method, within the AST. It inherits from the `Object` class
     and includes additional attributes specific to definition representations.
 
-    Attributes:
-        fullname (str): The fully qualified name of the definition, which may
-            include module or package information, allowing for unique
-            identification within the codebase.
-        module (str): The module in which the definition is defined.
-
     This class is intended to be subclassed by more specific definition types
     (e.g., `Class`, `Function`, `Method`) that require additional attributes
     or behaviors specific to their context within the AST.
     """
 
     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
-    """The actual AST node associated with this definition."""
+    """The actual AST node associated with this definition, which can be a class definition,
+    a function definition, or an asynchronous function definition from the `ast` module."""
 
 
 @dataclass(repr=False)
@@ -165,17 +141,15 @@ class Assign(Object):
     It inherits from the `Object` class and includes additional attributes
     specific to assignment representations.
 
-    Attributes:
-        node (ast.AnnAssign | ast.Assign | TypeAlias): The actual AST node
-            associated with this assignment statement.
-
     This class is intended to encapsulate the details of assignment statements
     within the AST, allowing for easier manipulation and analysis of
     assignment-related information in Python code.
     """
 
     node: ast.AnnAssign | ast.Assign | TypeAlias
-    """The actual AST node associated with this assignment statement."""
+    """The actual AST node associated with this assignment statement,
+    which can be an annotated assignment,
+    a simple assignment, or a type alias from the `ast` module."""
 
 
 @dataclass(repr=False)
@@ -186,22 +160,15 @@ class Module(Node):
     It inherits from the `Node` class and includes additional attributes
     specific to module representations.
 
-    Attributes:
-        node (ast.Module): The actual AST node associated with this module.
-
     This class is intended to encapsulate the details of module nodes within
     the AST, allowing for easier manipulation and analysis of module-related
     information in Python code.
     """
 
     node: ast.Module
-    """The actual AST node associated with this module."""
-
-    fullname: str = field(init=False)
-    """The fully qualified name of the module."""
-
-    def __post_init__(self):
-        self.fullname = self.name
+    """The actual AST node associated with this module, representing the entire
+    module structure as defined in the Abstract Syntax Tree (AST) from the
+    `ast` module."""
 
 
 def iter_child_nodes(node: AST, module: str) -> Iterator[Object | Import]:
@@ -538,9 +505,7 @@ def resolve(
                 if len(names) == 1:
                     return qualname, obj.module
 
-                print(obj, names, module)
                 for child in get_child_nodes(obj.node, obj.module):
-                    print(child, child.name, child.module)
                     if child.name == names[1]:
                         return qualname, obj.module
 
