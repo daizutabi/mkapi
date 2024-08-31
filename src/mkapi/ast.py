@@ -1,4 +1,24 @@
-"""AST module."""
+"""
+This module provides utilities for working with Abstract Syntax Trees (AST)
+in Python. It includes functions and classes for analyzing, transforming, and
+manipulating AST nodes, which represent the structure of Python code.
+
+Key Features:
+- Identification of various node types, such as function definitions,
+  class definitions, assignments, and decorators.
+- Utilities for renaming nodes and transforming AST structures.
+- Functions to extract identifiers and analyze function signatures.
+- Support for decorators, including properties, class methods, and static methods.
+
+Usage:
+This module is intended for use in code analysis, refactoring, and
+metaprogramming tasks. It can be used to programmatically inspect and
+modify Python code by manipulating its AST.
+
+This module is designed to facilitate the analysis and transformation of
+Python code at the syntactic level, enabling developers to create tools
+for code generation, refactoring, and static analysis.
+"""
 
 from __future__ import annotations
 
@@ -931,9 +951,9 @@ def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 def is_assign(node: AST) -> TypeGuard[ast.AnnAssign | ast.Assign | TypeAlias]:  # type: ignore
     """Check if the AST node is an assignment.
 
-    This function determines whether the given AST node is an assignment
-    statement, which can be an annotated assignment, a regular assignment,
-    or a type alias.
+    This function determines whether the given Abstract Syntax Tree (AST)
+    node is an assignment statement, which can be an annotated assignment,
+    a regular assignment, or a type alias.
 
     Args:
         node (AST): The AST node to check.
