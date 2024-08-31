@@ -67,7 +67,9 @@ class Page:
         with self.path.open("w") as file:
             file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
 
-        self.markdown, names = create_markdown(self.name, self.filters)
+        # self.markdown, names = create_markdown(self.name, self.filters)
+        self.markdown = "test"
+        names = []
 
         namespace = "source" if self.is_source_page() else "object"
 
@@ -82,7 +84,9 @@ class Page:
         if self.is_api_page():
             markdown = self.markdown
 
-        namespaces = ("source", "object") if self.is_source_page() else ("object", "source")
+        namespaces = (
+            ("source", "object") if self.is_source_page() else ("object", "source")
+        )
 
         def predicate(name: str, content: str) -> bool:
             if self.is_source_page():
@@ -93,7 +97,9 @@ class Page:
 
             return content != "source"
 
-        return convert_markdown(markdown, self.path, namespaces, object_paths, anchors, predicate)
+        return convert_markdown(
+            markdown, self.path, namespaces, object_paths, anchors, predicate
+        )
 
     def convert_html(self, html: str, anchors: dict[str, str]) -> str:
         """Return converted html."""
@@ -191,7 +197,8 @@ def _render(
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    return mkapi.renderers.render(obj, level, namespace, filters, predicate)
+    return name
+    # return mkapi.renderers.render(obj, level, namespace, filters, predicate)
 
 
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")

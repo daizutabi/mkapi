@@ -20,7 +20,15 @@ classifiers = [
   "Topic :: Software Development :: Documentation",
 ]
 requires-python = ">=3.10"
-dependencies = ["halo", "jinja2", "mkdocs-material", "tqdm", "rich", "typer"]
+dependencies = [
+  "halo",
+  "jinja2",
+  "mkdocs-material",
+  "tqdm",
+  "rich",
+  "typer",
+  "tomli>=1.1.0; python_version<'3.11'",
+]
 
 [project.optional-dependencies]
 dev = ["pytest-clarity", "pytest-cov", "pytest-randomly", "pytest-xdist"]

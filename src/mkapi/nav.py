@@ -339,7 +339,6 @@ def update_nav(
 
     def _create_apinav(name: str, path: str, filters: list[str]) -> list:
         def page(name: str, depth: int) -> str | dict[str, str]:
-            print("AAAA", name, depth)
             uri = create_page(name, path, filters)
 
             if page_title:
@@ -347,7 +346,6 @@ def update_nav(
             return uri
 
         name, depth = _split_name_depth(name)
-        print("AAA", name)
         nav = get_apinav(name, depth, predicate)
         update_apinav(nav, page, section_title)
         return nav

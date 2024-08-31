@@ -1,9 +1,3 @@
-"""MkAPI Plugin class.
-
-MkAPI Plugin is a MkDocs plugin that creates Python API documentation
-from Docstring.
-"""
-
 from __future__ import annotations
 
 import importlib
