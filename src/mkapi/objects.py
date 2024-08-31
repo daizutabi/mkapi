@@ -55,15 +55,56 @@ def _fullname(name: str, module: str | None, parent: Parent | None) -> str:
 
 @dataclass
 class Object:
+    """Represents a generic object in the Abstract Syntax Tree (AST).
+
+    This class serves as a base representation for various types of objects
+    in the AST, encapsulating common attributes and behaviors. Each object
+    is characterized by its name, the corresponding AST node, the module
+    it belongs to, its parent object, and its fully qualified name.
+
+    Attributes:
+        name (str): The name of the object, typically representing the
+            identifier in the source code.
+        node (AST): The actual AST node associated with this object,
+            providing access to the underlying structure of the code.
+        module (str): The name of the module in which the object is defined.
+        parent (Parent | None): The parent object of this object, if any.
+        qualname (str): The qualified name of the object, combining its
+            name and the parent's qualified name.
+        fullname (str): The fully qualified name of the object, which may
+            include module or package information, allowing for unique
+            identification within the codebase.
+        doc (Doc): The documentation associated with the object, extracted
+            from the AST node or the object's docstring.
+
+    This class is intended to be subclassed by more specific object types
+    (e.g., Class, Function, Attribute) that require additional attributes
+    or behaviors specific to their context within the AST.
+    """
+
     name: str
+    """The name of the object."""
+
     node: AST
+    """The AST node associated with this object."""
+
     module: str
+    """The name of the module in which the object is defined."""
+
     parent: Parent | None
+    """The parent object of this object, if any."""
+
     qualname: str = field(init=False)
+    """The qualified name of the object."""
+
     fullname: str = field(init=False)
+    """The fully qualified name of the object."""
+
     doc: Doc = field(init=False)
+    """The documentation associated with the object."""
 
     def __post_init__(self):
+        """Initialize the qualified and full names of the object."""
         self.qualname = _qualname(self.name, self.parent)
         self.fullname = _fullname(self.name, self.module, self.parent)
         objects[self.fullname] = self
@@ -85,6 +126,29 @@ def iter_child_objects(
     module: str,
     parent: Parent | None,
 ) -> Iterator[Object]:
+    """Iterate over child objects of a given AST node.
+
+    This function traverses the child nodes of the specified Abstract
+    Syntax Tree (AST) node and yields instances of Object for each
+    recognized child node type. It identifies classes, functions,
+    properties, and attributes within the AST structure, allowing for
+    easy access to the components of the code.
+
+    Args:
+        node (AST): The AST node from which to iterate child objects.
+        module (str): The name of the module in which the node is defined.
+        parent (Parent | None): The parent object of the current node,
+            if applicable. This is used to maintain the hierarchy of
+            objects.
+
+    Yields:
+        Object: An instance of Object representing each recognized child
+        node, such as a class, function, property, or attribute.
+
+    This function is useful for analyzing and processing the structure
+    of Python code by providing a way to access and manipulate the
+    components defined within a given AST node.
+    """
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
             yield create_class(child, module, parent)
@@ -101,7 +165,27 @@ def iter_child_objects(
 
 @dataclass(repr=False)
 class Type(Object):
-    type: ast.expr | None  # noqa: A003, RUF100
+    """Represents a type in the Abstract Syntax Tree (AST).
+
+    This class is a specialized representation of a type, which can be
+    associated with variables, function parameters, return values, and
+    other constructs in Python code. It inherits from the `Object` class
+    and includes additional attributes specific to type information.
+
+    Attributes:
+        type (ast.expr | None): The AST expression representing the type,
+            or None if the type is not specified. This can include type
+            annotations, type hints, or other expressions that define the
+            type of an object.
+
+    This class is intended to encapsulate type-related information within
+    the AST, allowing for easier manipulation and analysis of type
+    annotations and type hints in Python code.
+    """
+
+    type: ast.expr | None
+    """The AST expression representing the type, or None
+    if the type is not specified."""
 
     def __post_init__(self):
         super().__post_init__()
@@ -110,13 +194,54 @@ class Type(Object):
 
 @dataclass(repr=False)
 class Attribute(Type):
-    node: ast.AnnAssign | ast.Assign | TypeAlias
+    """Represents an attribute in the Abstract Syntax Tree (AST).
+
+    This class is a specialized representation of an attribute, which can
+    be associated with variables, function parameters, return values, and
+    other constructs in Python code. It inherits from the `Type` class
+    and includes additional attributes specific to attribute information.
+
+    Attributes:
+        name (str): The name of the attribute.
+        node (ast.AnnAssign | ast.Assign | TypeAlias): The AST node
+            associated with this attribute.
+        module (str): The name of the module in which the attribute is defined.
+        parent (Parent | None): The parent object of this attribute, if any.
+        type (ast.expr | None): The AST expression representing the type,
+            or None if the type is not specified.
+        default (ast.expr | None): The default value of the attribute, if any.
+
+    This class is intended to encapsulate attribute-related information
+    within the AST, allowing for easier manipulation and analysis of
+    attribute annotations and hints in Python code.
+    """
+
     default: ast.expr | None
+    """The default value of the attribute, if any."""
 
 
 @dataclass(repr=False)
 class Property(Type):
-    node: ast.FunctionDef | ast.AsyncFunctionDef
+    """Represents a property in the Abstract Syntax Tree (AST).
+
+    This class is a specialized representation of a property, which can
+    be associated with variables, function parameters, return values, and
+    other constructs in Python code. It inherits from the `Type` class
+    and includes additional attributes specific to property information.
+
+    Attributes:
+        name (str): The name of the property.
+        node (ast.FunctionDef | ast.AsyncFunctionDef): The AST node
+            associated with this property.
+        module (str): The name of the module in which the property is defined.
+        parent (Parent | None): The parent object of this property, if any.
+        type (ast.expr | None): The AST expression representing the type,
+            or None if the type is not specified.
+
+    This class is intended to encapsulate property-related information
+    within the AST, allowing for easier manipulation and analysis of
+    property annotations and hints in Python code.
+    """
 
 
 def create_attribute(
