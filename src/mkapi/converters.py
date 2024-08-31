@@ -22,8 +22,8 @@ from mkapi.objects import (
     Parent,
     Type,
     get_fullname_from_object,
-    get_kind,
     get_object,
+    get_object_type,
     is_child,
 )
 from mkapi.utils import (
@@ -196,7 +196,7 @@ def _iter_signature(obj: Class | Function) -> Iterator[tuple[ast.expr | str, str
     prev_kind = None
 
     for k, param in enumerate(obj.parameters):
-        if k == 0 and get_kind(obj) in ["class", "method", "classmethod"]:
+        if k == 0 and get_object_type(obj) in ["class", "method", "classmethod"]:
             continue
 
         yield from _iter_sep(param.kind, prev_kind)
