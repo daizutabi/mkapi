@@ -11,12 +11,12 @@ import mkapi.ast
 from mkapi.ast import TypeAlias, get_assign_name, is_assign
 from mkapi.utils import (
     cache,
-    get_export_names,
     get_module_node,
     get_object_from_module,
     is_package,
     iter_attribute_names,
-    split_name,
+    list_exported_names,
+    split_module_name,
 )
 
 if TYPE_CHECKING:
@@ -121,13 +121,15 @@ def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str,
         yield alias.asname or alias.name, f"{module}.{alias.name}"
 
 
-def _iter_imports_from_star(node: ast.ImportFrom, module: str) -> Iterator[Object | Import]:
+def _iter_imports_from_star(
+    node: ast.ImportFrom, module: str
+) -> Iterator[Object | Import]:
     module = _get_module(node, module)
 
     if not (node_ := get_module_node(module)):
         return
 
-    names = get_export_names(module)
+    names = list_exported_names(module)
 
     for child in iter_child_nodes(node_, module):
         if child.name.startswith("_"):
@@ -147,7 +149,9 @@ def get_child_nodes(node: AST, module: str) -> list[Object | Import]:
 
         else:
             nodes = node_dict[child.name]
-            if not isinstance(nodes[-1], Definition) or not isinstance(child, Definition):
+            if not isinstance(nodes[-1], Definition) or not isinstance(
+                child, Definition
+            ):
                 nodes.clear()
 
             nodes.append(child)
@@ -192,9 +196,11 @@ def parse(node: AST, module: str) -> list[tuple[str, Module | Object | Import]]:
 
 
 @cache
-def resolve(name: str, module: str | None = None) -> tuple[str | None, str | None] | None:
+def resolve(
+    name: str, module: str | None = None
+) -> tuple[str | None, str | None] | None:
     if not module:
-        if not (name_module := split_name(name)):
+        if not (name_module := split_module_name(name)):
             return None
 
         name, module = name_module

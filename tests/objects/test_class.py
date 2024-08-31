@@ -51,7 +51,7 @@ def test_inherit():
 
 def test_class_parameters():
     from mkapi.objects import Class, create_module
-    from mkapi.utils import get_by_name
+    from mkapi.utils import find_item_by_name
 
     module = create_module("examples.styles.google")
     assert module
@@ -62,10 +62,10 @@ def test_class_parameters():
     assert module
     cls = module.get("Class")
     assert isinstance(cls, Class)
-    assert get_by_name(cls.parameters, "name")
-    assert get_by_name(cls.parameters, "node")
-    assert get_by_name(cls.parameters, "module")
-    assert get_by_name(cls.parameters, "parent")
+    assert find_item_by_name(cls.parameters, "name")
+    assert find_item_by_name(cls.parameters, "node")
+    assert find_item_by_name(cls.parameters, "module")
+    assert find_item_by_name(cls.parameters, "parent")
 
 
 def test_inherit_base_classes():

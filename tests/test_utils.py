@@ -1,9 +1,12 @@
+import ast
 import datetime
 import importlib
 import sys
 import time
 from collections import namedtuple
 from pathlib import Path
+
+import pytest
 
 
 def test_cache():
@@ -36,9 +39,17 @@ def test_get_module_path():
     from mkapi.utils import get_module_path
 
     assert get_module_path("mkdocs")
-    assert get_module_path("polars")
     assert get_module_path("sys") is None
     assert get_module_path("a.b") is None
+
+
+def test_get_module_name():
+    from mkapi.utils import get_module_name
+
+    name = "_collections_abc"
+    abc = importlib.import_module(name)
+    assert abc.__name__ == "collections.abc"
+    assert get_module_name(name) == "collections.abc"
 
 
 def test_is_module():
@@ -128,62 +139,62 @@ def test_module_cache(tmp_path: Path):
     sys.path.pop(0)
 
 
-def test_get_by_name():
-    from mkapi.utils import get_by_name
+def test_find_item_by_name():
+    from mkapi.utils import find_item_by_name
 
     A = namedtuple("A", ["name", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
-    a = get_by_name(x, "a")
+    a = find_item_by_name(x, "a")
     assert a
     assert a.value == 1
-    assert not get_by_name(x, "d")
+    assert not find_item_by_name(x, "d")
 
 
-def test_get_by_kind():
-    from mkapi.utils import get_by_kind
+def test_find_item_by_kind():
+    from mkapi.utils import find_item_by_kind
 
     A = namedtuple("A", ["kind", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
-    a = get_by_kind(x, "a")
+    a = find_item_by_kind(x, "a")
     assert a
     assert a.value == 1
-    assert not get_by_kind(x, "d")
+    assert not find_item_by_kind(x, "d")
 
 
-def test_get_by_type():
-    from mkapi.utils import get_by_type
+def test_find_item_by_type():
+    from mkapi.utils import find_item_by_type
 
     A = namedtuple("A", ["name", "value"])  # noqa: PYI024
     B = namedtuple("B", ["name", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), B("b", 3), B("c", 4)]
-    a = get_by_type(x, B)
+    a = find_item_by_type(x, B)
     assert a
     assert a.value == 3
-    assert not get_by_type(x, int)
+    assert not find_item_by_type(x, int)
 
 
-def test_del_by_name():
-    from mkapi.utils import del_by_name, get_by_name
+def test_delete_item_by_name():
+    from mkapi.utils import delete_item_by_name, find_item_by_name
 
     A = namedtuple("A", ["name", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
-    del_by_name(x, "a")
+    delete_item_by_name(x, "a")
     assert len(x) == 3
-    a = get_by_name(x, "a")
+    a = find_item_by_name(x, "a")
     assert a
     assert a.value == 2
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
-    del_by_name(x, "c")
+    delete_item_by_name(x, "c")
     assert x == [A("a", 1), A("a", 2), A("b", 3)]
 
 
-def test_unique_names():
-    from mkapi.utils import unique_names
+def test_merge_unique_names():
+    from mkapi.utils import merge_unique_names
 
     A = namedtuple("A", ["name", "value"])  # noqa: PYI024
     x = [A("a", 1), A("a", 2), A("b", 3), A("c", 4)]
     y = [A("b", 1), A("a", 2), A("d", 3), A("e", 4)]
-    assert unique_names(x, y) == ["a", "a", "b", "c", "d", "e"]
+    assert merge_unique_names(x, y) == ["a", "a", "b", "c", "d", "e"]
 
 
 def test_iter_identifiers():
@@ -220,13 +231,12 @@ def test_iter_identifiers():
     assert ("pandas.DataFrame", True) in x
 
 
-def test_get_module_name():
-    from mkapi.utils import get_module_name
+def test_list_exported_names():
+    from mkapi.utils import list_exported_names
 
-    name = "_collections_abc"
-    abc = importlib.import_module(name)
-    assert abc.__name__ == "collections.abc"
-    assert get_module_name(name) == "collections.abc"
+    x = list_exported_names("tqdm")
+    assert "tqdm" in x
+    assert "trange" in x
 
 
 def test_get_object():
@@ -249,14 +259,6 @@ def test_get_object_asname():
     assert obj.__module__ == "examples.styles.google"
 
 
-def test_get_export_names():
-    from mkapi.utils import get_export_names
-
-    x = get_export_names("tqdm")
-    assert "tqdm" in x
-    assert "trange" in x
-
-
 def test_get_base_classes():
     from mkapi.utils import get_base_classes
 
@@ -264,38 +266,112 @@ def test_get_base_classes():
     assert x == [("Definition", "mkapi.objects")]
 
 
-def test_split_name_module():
-    from mkapi.utils import split_name
+def test_split_module_name_module():
+    from mkapi.utils import split_module_name
 
-    assert split_name("ast") == ("ast", None)
-
-
-def test_split_name_submodule():
-    from mkapi.utils import split_name
-
-    assert split_name("mkapi.nodes") == ("mkapi.nodes", None)
+    assert split_module_name("ast") == ("ast", None)
 
 
-def test_split_name_module_imported():
-    from mkapi.utils import split_name
+def test_split_module_name_submodule():
+    from mkapi.utils import split_module_name
 
-    assert split_name("mkapi.objects.ast") == ("ast", "mkapi.objects")
-
-
-def test_split_name_class():
-    from mkapi.utils import split_name
-
-    assert split_name("ast.ClassDef") == ("ClassDef", "ast")
+    assert split_module_name("mkapi.nodes") == ("mkapi.nodes", None)
 
 
-def test_split_name_asname():
-    from mkapi.utils import split_name
+def test_split_module_name_module_imported():
+    from mkapi.utils import split_module_name
 
-    x = split_name("examples.styles.ExampleClassGoogle")
+    assert split_module_name("mkapi.objects.ast") == ("ast", "mkapi.objects")
+
+
+def test_split_module_name_class():
+    from mkapi.utils import split_module_name
+
+    assert split_module_name("ast.ClassDef") == ("ClassDef", "ast")
+
+
+def test_split_module_name_asname():
+    from mkapi.utils import split_module_name
+
+    x = split_module_name("examples.styles.ExampleClassGoogle")
     assert x == ("ExampleClassGoogle", "examples.styles")
 
 
-def test_split_name_none():
-    from mkapi.utils import split_name
+def test_split_module_name_none():
+    from mkapi.utils import split_module_name
 
-    assert not split_name("x.x")
+    assert not split_module_name("x.x")
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    from mkapi.utils import cache_clear
+
+    cache_clear()
+
+
+def test_cache_function():
+    from mkapi.utils import cache
+
+    @cache
+    def sample_function(x):
+        return x * 2
+
+    assert sample_function(5) == 10
+    assert sample_function(5) == 10
+
+
+def test_cache_clear():
+    from mkapi.utils import cache, cache_clear
+
+    @cache
+    def sample_function(x):
+        return x * 2
+
+    sample_function(5)
+    cache_clear()
+    assert sample_function(5) == 10
+
+
+def test_get_module_path_none():
+    from mkapi.utils import get_module_path
+
+    assert get_module_path("collections") is not None
+    assert get_module_path("non_existent_module") is None
+
+
+def test_is_module_none():
+    from mkapi.utils import _is_module
+
+    assert _is_module(Path(__file__))
+    assert not _is_module(Path("non_existent_path"))
+
+
+def test_is_package_none():
+    from mkapi.utils import is_package
+
+    assert is_package("mkapi")
+    assert not is_package("non_existent_module")
+
+
+def test_is_module_cache_dirty():
+    from mkapi.utils import is_module_cache_dirty
+
+    assert not is_module_cache_dirty("non_existent_module")
+
+
+def test_get_object_from_module():
+    from mkapi.utils import get_object_from_module
+
+    assert get_object_from_module("Path", "pathlib") is not None
+    assert get_object_from_module("NonExistent", "my_module") is None
+
+
+def test_get_module_node_source():
+    from mkapi.utils import get_module_node_source
+
+    node, source = get_module_node_source("os")  # type: ignore
+    assert isinstance(node, ast.Module)
+    assert isinstance(source, str)
+
+    assert get_module_node_source("non_existent_module") is None

@@ -27,11 +27,11 @@ from mkapi.objects import (
     is_child,
 )
 from mkapi.utils import (
-    get_by_name,
+    find_item_by_name,
     is_identifier,
     iter_attribute_names,
     iter_identifiers,
-    split_name,
+    split_module_name,
 )
 
 if TYPE_CHECKING:
@@ -75,7 +75,7 @@ def _split_name_depth(name: str) -> tuple[str, int]:
 def create_converter(name: str) -> Converter | None:
     name, depth = _split_name_depth(name)
 
-    if not (name_module := split_name(name)):
+    if not (name_module := split_module_name(name)):
         return None
 
     name_, module = name_module
@@ -251,7 +251,7 @@ def _iter_param(param: Parameter) -> Iterator[tuple[ast.expr | str, str]]:
 
 def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:
     """Merge parameters."""
-    if not (section := get_by_name(sections, "Parameters")):
+    if not (section := find_item_by_name(sections, "Parameters")):
         return
 
     for item in section.items:
@@ -259,13 +259,13 @@ def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:
             continue
 
         name = item.name.replace("*", "")
-        if param := get_by_name(params, name):
+        if param := find_item_by_name(params, name):
             item.type = param.type
 
 
 def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
     """Merge raises."""
-    section = get_by_name(sections, "Raises")
+    section = find_item_by_name(sections, "Raises")
 
     if not section:
         if not raises:
@@ -275,7 +275,7 @@ def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
         sections.append(section)
 
     for raise_ in raises:
-        if get_by_name(section.items, ast.unparse(raise_), attr="type"):
+        if find_item_by_name(section.items, ast.unparse(raise_), attr="type"):
             continue
 
         section.items.append(Item("", raise_, ""))
@@ -283,7 +283,7 @@ def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
 
 def merge_returns(sections: list[Section], returns: ast.expr | None) -> None:
     """Merge returns."""
-    if not (section := get_by_name(sections, ("Returns", "Yields"))):
+    if not (section := find_item_by_name(sections, ("Returns", "Yields"))):
         return
 
     if len(section.items) == 1:
@@ -295,7 +295,7 @@ def merge_returns(sections: list[Section], returns: ast.expr | None) -> None:
 
 def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
     """Merge attributes."""
-    if section := get_by_name(sections, "Attributes"):
+    if section := find_item_by_name(sections, "Attributes"):
         items = section.items
         created = False
 
@@ -311,12 +311,12 @@ def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
         if item.type:
             continue
 
-        attr = get_by_name(attrs, item.name)
+        attr = find_item_by_name(attrs, item.name)
         if attr and (attr.type or attr.doc.type):
             item.type = attr.type or attr.doc.type
 
     for attr in attrs:
-        if get_by_name(items, attr.name):
+        if find_item_by_name(items, attr.name):
             continue
 
         type_ = attr.type or attr.doc.type

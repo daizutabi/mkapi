@@ -14,7 +14,7 @@ def test_create_module():
 
 def test_create_function():
     from mkapi.objects import Function, create_module
-    from mkapi.utils import get_by_name
+    from mkapi.utils import find_item_by_name
 
     module = create_module("examples.styles.google")
     assert module
@@ -23,10 +23,10 @@ def test_create_function():
     assert func.name == "module_level_function"
     assert func.qualname == "module_level_function"
     assert len(func.parameters) == 4
-    assert get_by_name(func.parameters, "param1")
-    assert get_by_name(func.parameters, "param2")
-    assert get_by_name(func.parameters, "args")
-    assert get_by_name(func.parameters, "kwargs")
+    assert find_item_by_name(func.parameters, "param1")
+    assert find_item_by_name(func.parameters, "param2")
+    assert find_item_by_name(func.parameters, "args")
+    assert find_item_by_name(func.parameters, "kwargs")
     assert len(func.raises) == 1
 
 
@@ -172,7 +172,9 @@ def test_is_child(mkapiplugin, name):
             assert is_child(obj, mkapiplugin)
 
 
-@pytest.mark.parametrize("name", ["config_class", "config", "on_post_build", "_is_protocol"])
+@pytest.mark.parametrize(
+    "name", ["config_class", "config", "on_post_build", "_is_protocol"]
+)
 def test_is_not_child(mkapiplugin, name):
     from mkapi.objects import is_child
 
@@ -248,7 +250,9 @@ def google():
     return module
 
 
-@pytest.fixture(params=["module_level_variable1", "module_level_function", "ExampleClass"])
+@pytest.fixture(
+    params=["module_level_variable1", "module_level_function", "ExampleClass"]
+)
 def name(request):
     return request.param
 

@@ -27,14 +27,14 @@ from mkapi.docs import create_doc, create_doc_comment, is_empty, merge, split_ty
 from mkapi.nodes import get_fullname, parse
 from mkapi.utils import (
     cache,
-    get_export_names,
     get_module_node,
     get_module_node_source,
     get_module_source,
     get_object_from_module,
     is_dataclass,
     is_package,
-    split_name,
+    list_exported_names,
+    split_module_name,
 )
 
 if TYPE_CHECKING:
@@ -381,7 +381,7 @@ def get_object(name: str, module: str | None = None) -> Object | None:
     if obj := objects.get(fullname):
         return obj
 
-    if not (name_module := split_name(fullname)):
+    if not (name_module := split_module_name(fullname)):
         return None
 
     name_, module = name_module
@@ -434,7 +434,7 @@ def get_members(
     if not isinstance(obj, Module) or not is_package(obj.name):
         return members
 
-    if not (names := get_export_names(obj.name)):
+    if not (names := list_exported_names(obj.name)):
         return members
 
     for name, node in parse(obj.node, obj.name):

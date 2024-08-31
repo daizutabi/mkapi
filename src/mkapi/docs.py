@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 import mkapi.markdown
-from mkapi.utils import get_by_name, unique_names
+from mkapi.utils import find_item_by_name, merge_unique_names
 
 if TYPE_CHECKING:
     import ast
@@ -983,8 +983,8 @@ def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
     Item instances across different lists, allowing for easier processing
     and rendering of documentation elements.
     """
-    for name in unique_names(a, b):
-        ai, bi = get_by_name(a, name), get_by_name(b, name)
+    for name in merge_unique_names(a, b):
+        ai, bi = find_item_by_name(a, name), find_item_by_name(b, name)
 
         if ai and not bi:
             yield ai
@@ -1050,9 +1050,9 @@ def iter_merged_sections(a: list[Section], b: list[Section]) -> Iterator[Section
 
         yield ai
 
-    for name in unique_names(a, b):
+    for name in merge_unique_names(a, b):
         if name:
-            ai, bi = get_by_name(a, name), get_by_name(b, name)
+            ai, bi = find_item_by_name(a, name), find_item_by_name(b, name)
             if ai and not bi:
                 yield ai
 
