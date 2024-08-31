@@ -1,4 +1,24 @@
-"""Object module."""
+"""Module for handling objects in the Abstract Syntax Tree (AST).
+
+This module provides classes and functions for representing and manipulating
+various types of objects within the Abstract Syntax Tree (AST) of Python code.
+It includes representations for modules, classes, functions, attributes, and
+properties, allowing for detailed analysis and processing of Python code
+structures.
+
+Key Features:
+- Representation of AST nodes as Python objects, including their attributes
+  and relationships.
+- Functions to create, retrieve, and manipulate objects based on their
+  definitions in the source code.
+- Iteration utilities for traversing child objects and members within the
+  AST structure.
+- Support for type annotations and documentation extraction from AST nodes.
+
+This module is intended for use in tools and libraries that analyze or
+transform Python code, providing a structured way to work with the
+components of the AST.
+"""
 
 from __future__ import annotations
 
