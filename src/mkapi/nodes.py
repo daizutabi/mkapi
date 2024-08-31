@@ -335,7 +335,8 @@ def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str,
 
 
 def _iter_imports_from_star(
-    node: ast.ImportFrom, module: str
+    node: ast.ImportFrom,
+    module: str,
 ) -> Iterator[Object | Import]:
     """Iterates over the imports from the given import from node.
 
@@ -526,15 +527,24 @@ def resolve(
     names = name.split(".")
     for name_, obj in parse(node, module):
         if name_ == names[0]:
+            if isinstance(obj, Import):
+                return None, obj.fullname
+
             qualname = ".".join([obj.name, *names[1:]])
             if isinstance(obj, Module):
                 return resolve(qualname)
 
             if isinstance(obj, Object):
-                return qualname, obj.module
+                if len(names) == 1:
+                    return qualname, obj.module
 
-            if isinstance(obj, Import):
-                return None, obj.fullname
+                print(obj, names, module)
+                for child in get_child_nodes(obj.node, obj.module):
+                    print(child, child.name, child.module)
+                    if child.name == names[1]:
+                        return qualname, obj.module
+
+                return None
 
     if get_object_from_module(name, module):
         return name, module

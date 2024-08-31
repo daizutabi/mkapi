@@ -94,7 +94,9 @@ def test_resolve_mkapi_module():
     assert x[0] == mkapi.plugins.config_options.__name__
 
 
-@pytest.mark.parametrize("name", ["mkapi", "mkapi.ast", "mkapi.ast.AST", "mkapi.ast.XXX"])
+@pytest.mark.parametrize(
+    "name", ["mkapi", "mkapi.ast", "mkapi.ast.AST", "mkapi.ast.XXX"]
+)
 def test_get_fullname_module(name):
     from mkapi.nodes import get_fullname
 
@@ -175,3 +177,11 @@ def test_get_fullname_other():
     assert x == "mkdocs.config.config_options.Type"
     x = get_fullname("get_plugin_logger", module)
     assert x == "mkdocs.plugins.get_plugin_logger"
+
+
+def test_get_fullname_nested():
+    from mkapi.nodes import get_fullname
+
+    assert get_fullname("mkapi.docs.Item.name") == "mkapi.docs.Item.name"
+
+    assert not get_fullname("mkapi.docs.Item.mkapi")

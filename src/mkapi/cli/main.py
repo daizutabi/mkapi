@@ -109,18 +109,19 @@ def ls(cmd: str, args: list[str], current: str) -> None:
     if not args:
         fullname = current
     elif not (fullname := get_fullname(args[0], current)):
-        error("ls", args[0])
+        error(cmd, args[0])
         return
 
     if not (name_module := get_name_module(fullname)):
-        error("ls", fullname)
+        error(cmd, fullname)
         return
 
     name, module = name_module
     if not module:
-        if list_ := generate_nav_list(name):
+        if list_ := generate_nav_list(name, exclude_module=cmd == "ls"):
             print(list_)
 
+    # list_ = [item.replace(f"{module}.", "") for item in list_[1:]]
     # if not fullname:
     #     raise typer.Exit(code=1)
     # if tree := generate_nav_list(current):

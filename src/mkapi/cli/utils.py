@@ -107,10 +107,13 @@ def get_fullname(name: str, current: str) -> str | None:
 
         return None
 
+    print("AAA", current, name)
     if fullname := get_fullname(f"{current}.{name}"):
+        print("BBB", fullname)
         return fullname
 
     if fullname := get_fullname(name):
+        print("CCC", fullname)
         return fullname
 
     return None
@@ -152,10 +155,15 @@ def _get_styled_name(names: list[str] | str, color: str = "cyan") -> str:
     return "[grey].[/grey]".join(it)
 
 
-def generate_nav_list(module: str) -> list[str]:
+def generate_nav_list(module: str, *, exclude_module: bool = False) -> list[str]:
     import mkapi.nav
 
-    return mkapi.nav.get_apinav(module, 1)
+    list_ = mkapi.nav.get_apinav(module, 1)
+
+    if exclude_module:
+        list_ = [item.replace(f"{module}.", "") for item in list_[1:]]
+
+    return list_
 
 
 def generate_nav_tree(module: str, color: str = "green") -> Tree | None:
