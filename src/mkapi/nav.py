@@ -18,8 +18,7 @@ def get_apinav(
     depth: int,
     predicate: Callable[[str], bool] | None = None,
 ) -> list:
-    """
-    Retrieve a list of module names based on the specified module name and depth.
+    """Retrieve a list of module names based on the specified module name and depth.
 
     This function checks if the given module name corresponds to a valid module
     path. If the module is not a package, it returns a list containing only the
@@ -87,9 +86,43 @@ def gen_apinav(
     nav: list,
     depth: int = 0,
 ) -> Generator[tuple[str, bool, int], Any, None]:
-    """Yield tuple of (module name, is_section, depth).
+    """Yield tuples of (module name, is_section, depth).
 
-    Sent value is used to modify section names or nav items.
+    This function iterates over the provided navigation list and yields
+    tuples containing the name of each module or section, a boolean
+    indicating whether the item is a section, and the depth of the
+    item in the navigation hierarchy. It allows for dynamic modification
+    of section names or navigation items based on the values sent back
+    during iteration.
+
+    Args:
+        nav (list): A list representing the navigation structure,
+            which can contain module names or nested dictionaries
+            representing sections and their corresponding pages.
+        depth (int, optional): The current depth in the navigation
+            hierarchy. Defaults to 0.
+
+    Yields:
+        tuple[str, bool, int]: A tuple containing:
+            - module name (str): The name of the module or section.
+            - is_section (bool): True if the item is a section, False otherwise.
+            - depth (int): The depth of the item in the navigation hierarchy.
+
+    Examples:
+        >>> nav_structure = ['module1', {'section1': ['module2', 'module3']}]
+        >>> for name, is_section, depth in gen_apinav(nav_structure):
+        ...     print(name, is_section, depth)
+        module1 False 0
+        section1 True 0
+        module2 False 1
+        module3 False 1
+
+        >>> nav_structure = ['moduleA', {'sectionA': ['moduleB']}]
+        >>> for name, is_section, depth in gen_apinav(nav_structure, 1):
+        ...     print(name, is_section, depth)
+        moduleA False 1
+        sectionA True 1
+        moduleB False 2
     """
     for k, page in enumerate(nav):
         if isinstance(page, str):
@@ -105,12 +138,45 @@ def gen_apinav(
             yield from gen_apinav(pages, depth + 1)
 
 
-def create_apinav(
+def update_apinav(
     nav: list,
     page: Callable[[str, int], str | dict[str, str]],
     section: Callable[[str, int], str] | None = None,
 ) -> None:
-    """Update API navigation."""
+    """Update the API navigation structure.
+
+    This function iterates over the provided navigation list and updates
+    it by generating page and section titles based on the provided
+    callable functions. It utilizes a generator to traverse the navigation
+    structure, allowing for dynamic modification of section names and
+    page titles.
+
+    Args:
+        nav (list): A list representing the navigation structure, which can
+            contain module names, sections, and nested pages.
+        page (Callable[[str, int], str | dict[str, str]]): A callable
+            function that takes a module name and its depth as arguments
+            and returns a string or a dictionary representing the page
+            title or content.
+        section (Callable[[str, int], str] | None, optional): A callable
+            function that takes a section name and its depth as arguments
+            and returns a string representing the section title. If None,
+            the section name will remain unchanged. Defaults to None.
+
+    Raises:
+        StopIteration: If the generator completes without yielding any
+            further values.
+
+    Example:
+        >>> def page_title(name: str, depth: int) -> str:
+        ...     return f"{name.upper()}.{depth}"
+        >>> def section_title(name: str, depth: int) -> str:
+        ...     return f"Section: {name}"
+        >>> nav_structure = ["module1", {"section1": ["module2"]}]
+        >>> update_apinav(nav_structure, page_title, section_title)
+        >>> print(nav_structure)
+        ['MODULE1.0', {'Section: section1': ['MODULE2.1']}]
+    """
     it = gen_apinav(nav)
     try:
         name, is_section, depth = it.send(None)
@@ -127,27 +193,62 @@ def create_apinav(
             break
 
 
-def create(nav: list, create_apinav: Callable[[str, str, list[str]], list]) -> list:
-    """Create navigation."""
+def build_apinav(
+    nav: list,
+    create_apinav: Callable[[str, str, list[str]], list],
+) -> list:
+    """Build the API navigation structure.
+
+    This function constructs a navigation structure for the API documentation
+    by iterating over the provided navigation list. It processes each item,
+    checking for API entries and creating corresponding navigation entries
+    using the provided `create_apinav` function. The resulting navigation
+    structure can include both flat and nested entries based on the input.
+
+    Args:
+        nav (list): A list representing the initial navigation structure,
+            which can contain module names, sections, and nested pages.
+        create_apinav (Callable[[str, str, list[str]], list]): A callable
+            function that takes a module name, path, and filters as arguments
+            and returns a list of navigation entries for that module.
+
+    Returns:
+        list: A list representing the updated navigation structure, which
+            includes the processed API entries and any nested structures.
+
+    Example:
+        >>> def create_apinav(name: str, path: str, filters: list[str]) -> list:
+        ...     return [f"{name}.md"]
+        >>> nav_structure = ["$api/module1", {"section1": ["$api/module2"]}]
+        >>> updated_nav = build_apinav(nav_structure, create_apinav)
+        >>> print(updated_nav)
+        ['module1.md', {'section1': ['module2.md']}]
+    """
     nav_ = []
     for item in nav:
         if match := _match_api_entry(item):
             name, path, filters = _split_name_path_filters(match)
             nav_.extend(create_apinav(name, path, filters))
+
         elif isinstance(item, dict) and len(item) == 1:
             key, value = next(iter(item.items()))
+
             if match := _match_api_entry(value):
                 name, path, filters = _split_name_path_filters(match)
                 value = create_apinav(name, path, filters)
+
                 if len(value) == 1 and isinstance(value[0], str):
                     value = value[0]
                 elif len(value) == 1 and isinstance(value[0], dict):
                     value = next(iter(value[0].values()))
+
             elif isinstance(value, list):
-                value = create(value, create_apinav)
+                value = build_apinav(value, create_apinav)
             nav_.append({key: value})
+
         else:
             nav_.append(item)
+
     return nav_
 
 
@@ -167,35 +268,70 @@ def _split_name_path_filters(match: re.Match) -> tuple[str, str, list[str]]:
     return name, path, filters
 
 
-def update(
-    nav: list,
-    create_page: Callable[[str, str, list[str]], str],
-    section_title: Callable[[str, int], str] | None = None,
-    page_title: Callable[[str, int], str] | None = None,
-    predicate: Callable[[str], bool] | None = None,
-) -> None:
-    """Update navigation."""
-
-    def _create_apinav(name: str, path: str, filters: list[str]) -> list:
-        def page(name: str, depth: int) -> str | dict[str, str]:
-            uri = create_page(name, path, filters)
-
-            if page_title:
-                return {page_title(name, depth): uri}
-            return uri
-
-        name, depth = split_name_depth(name)
-        nav = get_apinav(name, depth, predicate)
-        create_apinav(nav, page, section_title)
-        return nav
-
-    nav[:] = create(nav, _create_apinav)
-
-
-def split_name_depth(name: str) -> tuple[str, int]:
+def _split_name_depth(name: str) -> tuple[str, int]:
     """Split a nav entry into name and depth."""
     if m := re.match(r"^(.+?)\.(\*+)$", name):
         name, option = m.groups()
         return name, len(option)
 
     return name, 0
+
+
+def update_nav(
+    nav: list,
+    create_page: Callable[[str, str, list[str]], str],
+    section_title: Callable[[str, int], str] | None = None,
+    page_title: Callable[[str, int], str] | None = None,
+    predicate: Callable[[str], bool] | None = None,
+) -> None:
+    """Update the navigation structure.
+
+    This function updates the provided navigation list by constructing
+    API entries and section titles based on the specified callable
+    functions. It processes each entry in the navigation list, creating
+    pages and sections as needed, and modifies the navigation structure
+    in place.
+
+    Args:
+        nav (list): A list representing the navigation structure, which can
+            contain module names, sections, and nested pages.
+        create_page (Callable[[str, str, list[str]], str]): A callable
+            function that takes a module name, path, and filters as
+            arguments and returns a string representing the URI of the
+            created page.
+        section_title (Callable[[str, int], str] | None, optional): A
+            callable function that takes a section name and its depth as
+            arguments and returns a string representing the section title.
+            If None, the section title will remain unchanged. Defaults to
+            None.
+        page_title (Callable[[str, int], str] | None, optional): A
+            callable function that takes a page name and its depth as
+            arguments and returns a string representing the page title.
+            If None, the page title will remain unchanged. Defaults to
+            None.
+        predicate (Callable[[str], bool] | None, optional): An optional
+            predicate function to filter the navigation entries. If provided,
+            only entries that satisfy this predicate will be included in the
+            updated navigation structure.
+
+    Returns:
+        None: This function modifies the `nav` list in place and does not
+            return a value.
+    """
+
+    def _create_apinav(name: str, path: str, filters: list[str]) -> list:
+        def page(name: str, depth: int) -> str | dict[str, str]:
+            print("AAAA", name, depth)
+            uri = create_page(name, path, filters)
+
+            if page_title:
+                return {page_title(name, depth): uri}
+            return uri
+
+        name, depth = _split_name_depth(name)
+        print("AAA", name)
+        nav = get_apinav(name, depth, predicate)
+        update_apinav(nav, page, section_title)
+        return nav
+
+    nav[:] = build_apinav(nav, _create_apinav)

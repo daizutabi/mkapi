@@ -24,7 +24,7 @@ from tqdm.std import tqdm
 import mkapi
 import mkapi.nav
 from mkapi import renderers
-from mkapi.nav import split_name_depth
+from mkapi.nav import _split_name_depth
 from mkapi.pages import (
     create_documentation_page,
     create_object_page,
@@ -239,7 +239,7 @@ def _watch_directory(name: str, config: MkDocsConfig) -> None:
     if not name:
         return
 
-    name, depth = split_name_depth(name)
+    name, depth = _split_name_depth(name)
     if path := get_module_path(name):
         path = str(path.parent if depth else path)
         if path not in config.watch:
@@ -286,7 +286,7 @@ def _create_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
         return []
 
-    mkapi.nav.create(config.nav, lambda *args: mkdir(args[0], args[1]))
+    mkapi.nav.build_apinav(config.nav, lambda *args: mkdir(args[0], args[1]))
 
 
 def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
@@ -330,7 +330,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         spinner.start()
 
         try:
-            mkapi.nav.update(
+            mkapi.nav.update_nav(
                 config.nav, _create_page, section_title, page_title, predicate
             )
 

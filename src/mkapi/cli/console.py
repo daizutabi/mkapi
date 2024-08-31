@@ -10,11 +10,11 @@ def generate_nav_list(module: str) -> str:
     return "\n".join(nav)
 
 
-def generate_nav_tree(module: str, color: str = "green") -> Tree:
+def generate_nav_tree(module: str, color: str = "green") -> Tree | None:
     nav = mkapi.nav.get_apinav(module, 3)
 
     if not nav:
-        return Tree(f"[red]not found: {module}")
+        return None
 
     tree = Tree(f"[{color}]{module}[/{color}]")
 
