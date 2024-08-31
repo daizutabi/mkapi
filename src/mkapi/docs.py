@@ -1,3 +1,31 @@
+"""
+Module for processing and managing documentation strings.
+
+This module provides functionality for parsing, organizing, and manipulating
+documentation strings in various formats, specifically Google and NumPy styles.
+It defines data structures and utility functions to facilitate the extraction
+of structured information from docstrings, including parameters, return values,
+and sections.
+
+Key Classes:
+- Item: Represents an individual item in a documentation string, such as a
+  parameter or return value, encapsulating its name, type, and description.
+- Section: Represents a section in a documentation string, containing a name,
+  type, description, and a list of associated items.
+- Doc: Represents a complete documentation string, including its type, main
+  text content, and sections.
+
+Key Functions:
+- _iter_items: Iterates over items in a given text based on a specific pattern.
+- split_item: Splits a text item into its components based on the specified style.
+- merge: Merges two Doc instances into one, consolidating their attributes and sections.
+- is_empty: Checks if a Doc instance is empty, meaning it contains no text or sections.
+
+This module is useful for developers and tools that need to process and generate
+documentation from code, ensuring that the documentation is structured and
+easily accessible for rendering or analysis.
+"""
+
 from __future__ import annotations
 
 import re
