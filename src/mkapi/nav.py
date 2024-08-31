@@ -1,4 +1,22 @@
-"""Navigation utility functions."""
+"""Navigation Module for API Documentation.
+
+This module provides utility functions for managing and updating the
+navigation structure of API documentation. It includes functions to
+retrieve module names, build navigation trees, and update navigation
+entries dynamically based on specified criteria.
+
+Key Functions:
+- get_apinav: Retrieve a list of module names based on the specified
+  module name and depth.
+- update_apinav: Update the API navigation structure by generating
+  page and section titles based on provided callable functions.
+- build_apinav: Construct a navigation structure for the API
+  documentation by processing the provided navigation list.
+
+This module is designed to facilitate the organization and
+presentation of API documentation, making it easier for users to
+navigate through modules and their respective sections.
+"""
 
 from __future__ import annotations
 

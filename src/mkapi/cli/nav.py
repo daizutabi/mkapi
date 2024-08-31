@@ -1,7 +1,7 @@
 import typer
 from rich import print
 
-app = typer.Typer(add_completion=False)
+app = typer.Typer()
 
 
 @app.command()
