@@ -32,7 +32,7 @@ Source = "https://github.com/daizutabi/mkapi"
 Issues = "https://github.com/daizutabi/mkapi/issues"
 
 [project.scripts]
-mkapi = "mkapi.main:app"
+mkapi = "mkapi.cli.main:app"
 
 [project.entry-points."mkdocs.plugins"]
 mkapi = "mkapi.plugins:MkAPIPlugin"

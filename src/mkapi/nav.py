@@ -13,18 +13,36 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-def split_name_depth(name: str) -> tuple[str, int]:
-    """Split a nav entry into name and depth."""
-    if m := re.match(r"^(.+?)\.(\*+)$", name):
-        name, option = m.groups()
-        return name, len(option)
+def get_apinav(
+    name: str,
+    depth: int,
+    predicate: Callable[[str], bool] | None = None,
+) -> list:
+    """
+    Retrieve a list of module names based on the specified module name and depth.
 
-    return name, 0
+    This function checks if the given module name corresponds to a valid module
+    path. If the module is not a package, it returns a list containing only the
+    module name. If the module is a package, it retrieves submodule names based
+    on the specified depth.
 
+    Args:
+        name (str): The name of the module for which to retrieve the navigation.
+        depth (int): The depth level for retrieving submodules:
+            - 1: Returns the module name and its immediate submodules.
+            - 2: Returns a flat list of the module and its submodules,
+              including deeper levels.
+            - 3: Returns a nested dictionary structure representing the module
+              and its submodules.
+        predicate (Callable[[str], bool], optional): An optional predicate
+            function to filter submodule names. If provided, only submodules
+            that satisfy this predicate will be included in the result.
 
-def get_apinav(name: str, predicate: Callable[[str], bool] | None = None) -> list:
-    """Return list of module names."""
-    name, depth = split_name_depth(name)
+    Returns:
+        list: A list of module names or a nested structure of module names
+            based on the specified depth. Returns an empty list if the module
+            path is invalid.
+    """
     if not get_module_path(name):
         return []
 
@@ -166,8 +184,18 @@ def update(
                 return {page_title(name, depth): uri}
             return uri
 
-        nav = get_apinav(name, predicate)
+        name, depth = split_name_depth(name)
+        nav = get_apinav(name, depth, predicate)
         create_apinav(nav, page, section_title)
         return nav
 
     nav[:] = create(nav, _create_apinav)
+
+
+def split_name_depth(name: str) -> tuple[str, int]:
+    """Split a nav entry into name and depth."""
+    if m := re.match(r"^(.+?)\.(\*+)$", name):
+        name, option = m.groups()
+        return name, len(option)
+
+    return name, 0
