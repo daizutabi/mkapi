@@ -183,7 +183,7 @@ def test_is_not_child(mkapiplugin, name):
             assert not is_child(obj, mkapiplugin)
 
 
-@pytest.mark.parametrize("attr", ["", ".attr1"])
+@pytest.mark.parametrize("attr", ["", ".example_method"])
 def test_get_object_class(attr):
     from mkapi.objects import get_object
 

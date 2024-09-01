@@ -3,7 +3,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from rich.console import Console
+from rich.table import Table
 from rich.tree import Tree
+
+from mkapi.utils import is_package
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -107,13 +111,10 @@ def get_fullname(name: str, current: str) -> str | None:
 
         return None
 
-    print("AAA", current, name)
     if fullname := get_fullname(f"{current}.{name}"):
-        print("BBB", fullname)
         return fullname
 
     if fullname := get_fullname(name):
-        print("CCC", fullname)
         return fullname
 
     return None
@@ -129,41 +130,55 @@ def get_name_module(name: str) -> tuple[str, str | None] | None:
     return split_module_name(fullname)
 
 
-def get_styled_name(fullname: str) -> str | None:
+def get_styled_name(fullname: str, *, exclude_prefix: int = 0) -> str | None:
     if not (name_module := get_name_module(fullname)):
         return None
 
     name, module = name_module
     if not module:
-        return _get_styled_name(name, "bold cyan")
+        styled_names = _get_styled_modules(name)
 
-    module = _get_styled_name(module, "bold cyan")
-    name, *members = name.split(".")
+    else:
+        styled_names = _get_styled_modules(module)
+        name, *members = name.split(".")
 
-    member = _get_styled_name(members, "bold white")
-    name = _get_styled_name(name, "bold green")
+        styled_names.extend(_get_styled_names(name, "green"))
 
-    return f"{module}[gray].[/gray]{name}[gray].[/gray]{member}"
+        if members:
+            styled_names.extend(_get_styled_names(members, "white"))
+
+    if exclude_prefix:
+        styled_names = styled_names[exclude_prefix:]
+
+    return "[gray50].[/gray50]".join(styled_names)
 
 
-def _get_styled_name(names: list[str] | str, color: str = "cyan") -> str:
+def _get_styled_names(names: list[str] | str, color: str = "cyan") -> list[str]:
     if isinstance(names, str):
         names = names.split(".")
 
-    it = (f"[{color}]{name}[/{color}]" for name in names)
-    print(names)
-    return "[grey].[/grey]".join(it)
+    return [f"[{color}]{name}[/{color}]" for name in names]
 
 
-def generate_nav_list(module: str, *, exclude_module: bool = False) -> list[str]:
+def _get_styled_modules(modules: list[str] | str) -> list[str]:
+    if isinstance(modules, str):
+        modules = modules.split(".")
+
+    *packages, module = modules
+
+    names = _get_styled_names(packages, "bold cyan") if packages else []
+    color = "bold cyan" if is_package(".".join(modules)) else "cyan"
+    names.extend(_get_styled_names(module, color))
+
+    return names
+
+
+def generate_nav_list(module: str, *, exclude_prefix: int = 0) -> list[str]:
     import mkapi.nav
 
     list_ = mkapi.nav.get_apinav(module, 1)
-
-    if exclude_module:
-        list_ = [item.replace(f"{module}.", "") for item in list_[1:]]
-
-    return list_
+    it = (get_styled_name(item, exclude_prefix=exclude_prefix) for item in list_)
+    return [name for name in it if name]
 
 
 def generate_nav_tree(module: str, color: str = "green") -> Tree | None:
@@ -192,3 +207,26 @@ def _add_to_tree(tree: Tree, data: list, color: str = "green") -> None:
                 _add_to_tree(branch, value, color)
         else:
             tree.add(item)
+
+
+def crate_table(data: list[str], **kwargs) -> Table:
+    t = Table.grid(expand=True)
+    t.add_column(ratio=1)
+    t.add_row("foo " * 20, "bar " * 20)
+    print(t)
+    return
+
+    console = Console()
+    terminal_width = console.width
+    item_width = 10
+    columns = terminal_width // item_width
+    table = Table(show_header=False, **kwargs)
+
+    for _ in range(columns):
+        table.add_column("Item", justify="left")
+
+    for i, item in enumerate(data):
+        if i % columns == 0:
+            table.add_row(*data[i : i + columns])
+
+    return table

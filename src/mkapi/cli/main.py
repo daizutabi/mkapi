@@ -5,10 +5,12 @@ from typing import Annotated, Any
 import typer
 from rich import print
 from rich.console import Console
+from rich.table import Table
 from rich.tree import Tree
 from typer import Argument
 
 from mkapi.cli.utils import (
+    crate_table,
     generate_nav_list,
     get_fullname,
     get_name_module,
@@ -106,6 +108,12 @@ def repl():
 
 
 def ls(cmd: str, args: list[str], current: str) -> None:
+    t = Table.grid(expand=True)
+    t.add_column(ratio=1)
+    t.add_row("foo " * 20, "bar " * 20)
+    print(t)
+    return
+
     if not args:
         fullname = current
     elif not (fullname := get_fullname(args[0], current)):
@@ -118,8 +126,10 @@ def ls(cmd: str, args: list[str], current: str) -> None:
 
     name, module = name_module
     if not module:
-        if list_ := generate_nav_list(name, exclude_module=cmd == "ls"):
-            print(list_)
+        exclude_prefix = name.count(".") + 1 if cmd == "ls" else 0
+        if list_ := generate_nav_list(name, exclude_prefix=exclude_prefix):
+            table = crate_table(list_)
+            print(table)
 
     # list_ = [item.replace(f"{module}.", "") for item in list_[1:]]
     # if not fullname:
