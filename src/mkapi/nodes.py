@@ -25,7 +25,7 @@ parameters, and return values.
 from __future__ import annotations
 
 import ast
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from itertools import chain
 from typing import TYPE_CHECKING
 
@@ -52,8 +52,7 @@ class Node:
 
     This class serves as a base representation for various types of nodes
     in the AST, encapsulating common attributes and behaviors. Each node
-    is characterized by its name, the corresponding AST node, and its
-    fully qualified name.
+    is characterized by its name and the corresponding AST node.
 
     This class is intended to be subclassed by more specific node types
     (e.g., Import, Object, Definition) that require additional attributes
@@ -171,12 +170,12 @@ class Module(Node):
     `ast` module."""
 
 
-def iter_child_nodes(node: AST, module: str) -> Iterator[Object | Import]:
+def iter_child_nodes(node: AST, module: str) -> Iterator[Definition | Assign | Import]:
     """Iterates over the child nodes of the given AST node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
-    yield child nodes that are either `Object` or `Import` instances. It uses
-    the `mkapi.ast` module to iterate over the child nodes of the provided
+    yield child nodes that are instances of `Node`, `Definition`, `Assign`, or `Import`.
+    It uses the `mkapi.ast` module to iterate over the child nodes of the provided
     AST node.
 
     Args:
@@ -184,13 +183,14 @@ def iter_child_nodes(node: AST, module: str) -> Iterator[Object | Import]:
         module (str): The module in which the node is defined.
 
     Yields:
-        Object | Import: An iterator over the child nodes.
+        Definition | Assign | Import: An iterator over the child nodes.
 
     This function is intended to be used for traversing the AST and processing
     child nodes of the given root node. It ensures that only relevant nodes
-    (i.e., `Object` or `Import`) are yielded, allowing for further analysis
-    or manipulation of the AST.
+    (i.e., `Definition`, `Assign`, or `Import`) are yielded, allowing for
+    further analysis or manipulation of the AST.
     """
+
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.Import):
             for name, fullname in _iter_imports(child):
@@ -304,7 +304,7 @@ def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str,
 def _iter_imports_from_star(
     node: ast.ImportFrom,
     module: str,
-) -> Iterator[Object | Import]:
+) -> Iterator[Definition | Assign | Import]:
     """Iterates over the imports from the given import from node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
@@ -317,7 +317,7 @@ def _iter_imports_from_star(
         module (str): The module in which the node is defined.
 
     Yields:
-        Object | Import: An iterator over the child nodes.
+        Definition | Assign | Import: An iterator over the child nodes.
 
     This function is intended to be used for traversing the AST and processing
     child nodes of the given root node. It ensures that only relevant nodes
@@ -340,7 +340,7 @@ def _iter_imports_from_star(
 
 
 @cache
-def get_child_nodes(node: AST, module: str) -> list[Object | Import]:
+def get_child_nodes(node: AST, module: str) -> list[Definition | Assign | Import]:
     """Gets the child nodes of the given AST node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
@@ -352,7 +352,7 @@ def get_child_nodes(node: AST, module: str) -> list[Object | Import]:
         module (str): The module in which the node is defined.
 
     Returns:
-        list[Object | Import]: A list of child nodes.
+        list[Definition | Assign | Import]: A list of child nodes.
 
     This function is intended to be used for collecting child nodes of the
     given root node, allowing for further analysis or manipulation of the
@@ -360,7 +360,7 @@ def get_child_nodes(node: AST, module: str) -> list[Object | Import]:
     are collected, allowing for easier access to the relevant information
     in the AST.
     """
-    node_dict: dict[str, list[Object | Import]] = {}
+    node_dict: dict[str, list[Definition | Assign | Import]] = {}
 
     for child in iter_child_nodes(node, module):
         if child.name not in node_dict:
@@ -378,7 +378,7 @@ def get_child_nodes(node: AST, module: str) -> list[Object | Import]:
     return list(chain(*node_dict.values()))
 
 
-def iter_nodes(fullname: str) -> Iterator[Module | Object | Import]:
+def iter_nodes(fullname: str) -> Iterator[Module | Definition | Assign | Import]:
     """Iterates over the nodes in the given full name.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
@@ -391,7 +391,7 @@ def iter_nodes(fullname: str) -> Iterator[Module | Object | Import]:
         fullname (str): The fully qualified name of the module or object.
 
     Yields:
-        Module | Object | Import: An iterator over the nodes.
+        Module | Definition | Assign | Import: An iterator over the nodes.
 
     This function is intended to be used for traversing the AST and processing
     nodes of the given full name, allowing for further analysis or manipulation
@@ -421,7 +421,9 @@ def iter_nodes(fullname: str) -> Iterator[Module | Object | Import]:
 
 
 @cache
-def parse(node: AST, module: str) -> list[tuple[str, Module | Object | Import]]:
+def parse(
+    node: AST, module: str
+) -> list[tuple[str, Module | Definition | Assign | Import]]:
     """Parses the given AST node and returns a list of tuples.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
@@ -435,7 +437,7 @@ def parse(node: AST, module: str) -> list[tuple[str, Module | Object | Import]]:
         module (str): The module in which the node is defined.
 
     Returns:
-        list[tuple[str, Module | Object | Import]]: A list of tuples
+        list[tuple[str, Module | Definition | Assign | Import]]: A list of tuples
             containing the name and the corresponding node.
 
     This function is intended to be used for parsing the AST and collecting
