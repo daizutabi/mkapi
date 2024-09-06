@@ -82,6 +82,7 @@ def cd(args: list[str], current: str) -> str | None:
 
 def ls(cmd: str, args: list[str], current: str) -> None:
     from mkapi.nodes import parse_module
+    from mkapi.objects import get_object
 
     if not args:
         if not current:
@@ -106,6 +107,7 @@ def ls(cmd: str, args: list[str], current: str) -> None:
                 print(sep.join(list_))
             return
 
+        # `la`
         print(parse_module(name))
         return
 
@@ -116,11 +118,14 @@ def ls(cmd: str, args: list[str], current: str) -> None:
             print(" ".join(name for name, _ in members))
             return
 
+        # `ll` or `la`
         for name, node in members:
-            print(name, node)
+            print(f"{name} {node}")
         return
 
-    print(name, module)
+    # object
+    obj = get_object(name, module)
+    print(obj)
 
 
 def tree(cmd: str, args: list[str], current: str) -> None:

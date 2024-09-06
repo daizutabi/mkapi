@@ -19,11 +19,7 @@ import mkapi
 import mkapi.nav
 from mkapi import renderers
 from mkapi.nav import _split_name_depth
-from mkapi.pages import (
-    create_documentation_page,
-    create_object_page,
-    create_source_page,
-)
+from mkapi.pages import Page
 from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
 
 if TYPE_CHECKING:
@@ -79,7 +75,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
                     pages.append(page)
 
             for page in pages:
-                page.create_markdown()
+                page.generate_markdown()
 
         self.bar = None
         self.uri_width = 0
@@ -103,14 +99,19 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         """Collect plugin CSS and append them to `files`."""
+        for src_uri, page in self.pages.items():
+            if page.is_object_page() and src_uri not in files.src_uris:
+                files.append(File.generated(config, src_uri, content=page.markdown))
+
         for file in files:
             if page := self.pages.get(file.src_uri):
                 if page.is_source_page():
                     file.inclusion = InclusionLevel.NOT_IN_NAV
 
             elif file.is_documentation_page():
-                path = Path(file.abs_src_path)
-                self.pages[file.src_uri] = create_documentation_page(path)
+                content = file.content_string
+                src_uri = file.src_uri
+                self.pages[src_uri] = Page.create_documentation(src_uri, content)
 
         for file in _collect_stylesheets(config, self):
             files.append(file)
@@ -128,8 +129,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         """Convert Markdown source to intermediate version."""
-        uri = page.file.src_uri
-        page_ = self.pages[uri]
+        src_uri = page.file.src_uri
+        page_ = self.pages[src_uri]
 
         anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
 
@@ -139,20 +140,16 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             if self.config.debug:
                 raise
 
-            msg = f"{uri}:{type(e).__name__}: {e}"
+            msg = f"{src_uri}:{type(e).__name__}: {e}"
             logger.warning(msg)
             return markdown
 
     def on_page_content(
-        self,
-        html: str,
-        page: MkDocsPage,
-        config: MkDocsConfig,
-        **kwargs,
+        self, html: str, page: MkDocsPage, config: MkDocsConfig, **kwargs
     ) -> str:
         """Merge HTML and MkAPI's object structure."""
-        uri = page.file.src_uri
-        page_ = self.pages[uri]
+        src_uri = page.file.src_uri
+        page_ = self.pages[src_uri]
 
         if page_.is_api_page():
             _replace_toc(page.toc, self.toc_title)
@@ -161,7 +158,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
         html = page_.convert_html(html, anchors)
 
-        self._update_bar(page.file.src_uri)
+        self._update_bar(src_uri)
         return html
 
     def _update_bar(self, uri: str) -> None:
@@ -293,16 +290,14 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
         suffix = "/README.md" if is_package(name) else ".md"
         object_uri = f"{object_path}/{uri}{suffix}"
-        abs_path = Path(config.docs_dir) / object_uri
 
         if object_uri not in plugin.pages:
-            plugin.pages[object_uri] = create_object_page(name, abs_path, filters)
+            plugin.pages[object_uri] = Page.create_object(object_uri, name)
 
         source_uri = f"{source_path}/{uri}.md"
-        abs_path = Path(config.docs_dir) / source_uri
 
         if source_uri not in plugin.pages:
-            plugin.pages[source_uri] = create_source_page(name, abs_path, filters)
+            plugin.pages[source_uri] = Page.create_source(source_uri, name)
 
         spinner.text = f"Collecting modules [{len(plugin.pages):>3}]: {name}"
 

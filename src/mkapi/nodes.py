@@ -438,7 +438,7 @@ def parse_node(
 
     Returns:
         list[tuple[str, Module | Definition | Assign | Import]]: A list of tuples
-            containing the name and the corresponding node.
+        containing the name and the corresponding node.
 
     This function is intended to be used for parsing the AST and collecting
     relevant information about the nodes in the given full name. It ensures
@@ -474,12 +474,27 @@ def parse_module(
 
     Returns:
         list[tuple[str, Module | Definition | Assign | Import]]: A list of tuples
-            containing the name and the corresponding node.
+        containing the name and the corresponding node.
     """
     if not (node := get_module_node(module)):
         return []
 
     return parse_node(node, module)
+
+
+def iter_module_members(module: str) -> Iterator[str]:
+    members = parse_module(module)
+
+    for name, obj in members:
+        if is_package(module):
+            if isinstance(obj, Module) and obj.name.startswith(module):
+                yield name
+
+            elif isinstance(obj, Definition) and obj.module.startswith(module):
+                yield name
+
+        elif isinstance(obj, Definition) and obj.module == module:
+            yield name
 
 
 @cache
@@ -499,7 +514,7 @@ def resolve(
 
     Returns:
         tuple[str | None, str | None] | None: A tuple containing the name
-            and module, or None if the name could not be resolved.
+        and module, or None if the name could not be resolved.
 
     This function is intended to be used for resolving the given name and
     returning the corresponding name and module. It ensures that the name

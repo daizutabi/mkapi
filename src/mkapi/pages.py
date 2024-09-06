@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import datetime
 import os.path
 import re
 from dataclasses import dataclass
@@ -13,39 +12,45 @@ from typing import TYPE_CHECKING
 
 import mkapi.markdown
 import mkapi.renderers
-from mkapi.nodes import iter_nodes
-from mkapi.objects import create_module, get_object, is_child, is_empty
-from mkapi.utils import split_filters
+from mkapi.nodes import iter_module_members, iter_nodes
+from mkapi.objects import get_object
+from mkapi.utils import get_module_node, split_filters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mkapi.objects import Object
 
 PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "DOCUMENTATION"])
 
-object_paths: dict[str, dict[str, Path]] = {}
+object_paths: dict[str, dict[str, str]] = {}
 
 
 @dataclass
 class Page:
     """Page class."""
 
+    src_uri: str
     name: str
-    path: Path
+    markdown: str
     kind: PageKind
-    filters: list[str]
-    markdown: str = ""
+
+    @staticmethod
+    def create_object(src_uri: str, name: str) -> Page:
+        return Page(src_uri, name, "", PageKind.OBJECT)
+
+    @staticmethod
+    def create_source(src_uri: str, name: str) -> Page:
+        return Page(src_uri, name, "", PageKind.SOURCE)
+
+    @staticmethod
+    def create_documentation(src_uri: str, content: str) -> Page:
+        return Page(src_uri, "", content, PageKind.DOCUMENTATION)
 
     def __post_init__(self) -> None:
-        if not self.path.exists():
-            if not self.path.parent.exists():
-                self.path.parent.mkdir(parents=True)
-
-            self.create_markdown()
+        self.generate_markdown()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.path!r})"
+        return f"{self.__class__.__name__}({self.src_uri!r})"
 
     def is_object_page(self) -> bool:
         return self.kind is PageKind.OBJECT
@@ -59,17 +64,11 @@ class Page:
     def is_documentation_page(self) -> bool:
         return not self.is_api_page()
 
-    def create_markdown(self) -> None:
-        """Create markdown source."""
-        if self.is_documentation_page():
+    def generate_markdown(self) -> None:
+        if self.is_documentation_page() or not self.name:
             return
 
-        with self.path.open("w") as file:
-            file.write(f"{datetime.datetime.now()}")  # noqa: DTZ005
-
-        # self.markdown, names = create_markdown(self.name, self.filters)
-        self.markdown = "test"
-        names = []
+        self.markdown, names = generate_module_markdown(self.name)
 
         namespace = "source" if self.is_source_page() else "object"
 
@@ -77,92 +76,57 @@ class Page:
             object_paths[namespace] = {}
 
         for name in names:
-            object_paths[namespace][name] = self.path
+            object_paths[namespace][name] = self.src_uri
 
     def convert_markdown(self, markdown: str, anchors: dict[str, str]) -> str:
-        """Return converted markdown."""
-        if self.is_api_page():
-            markdown = self.markdown
+        return markdown
+        # if self.is_api_page():
+        #     markdown = self.markdown
 
-        namespaces = (
-            ("source", "object") if self.is_source_page() else ("object", "source")
-        )
+        # if self.is_source_page():
+        #     namespaces = ("source", "object")
+        # else:
+        #     namespaces = ("object", "source")
 
-        def predicate(name: str, content: str) -> bool:
-            if self.is_source_page():
-                if self.name == name and content in ["header", "object", "source"]:
-                    return True
+        # def predicate(name: str, content: str) -> bool:
+        #     if self.is_source_page():
+        #         if self.name == name and content in ["header", "object", "source"]:
+        #             return True
 
-                return False
+        #         return False
 
-            return content != "source"
+        #     return content != "source"
 
-        return convert_markdown(
-            markdown, self.path, namespaces, object_paths, anchors, predicate
-        )
+        # return convert_markdown(
+        #     markdown, self.path, namespaces, object_paths, anchors, predicate
+        # )
 
     def convert_html(self, html: str, anchors: dict[str, str]) -> str:
         """Return converted html."""
+        return html
 
-        namespace = "object" if self.is_source_page() else "source"
-        paths = object_paths[namespace]
-        anchor = anchors[namespace]
+        # namespace = "object" if self.is_source_page() else "source"
+        # paths = object_paths[namespace]
+        # anchor = anchors[namespace]
 
-        return convert_html(html, self.path, paths, anchor)
-
-
-def create_object_page(name: str, path: Path, filters: list[str]):
-    return Page(name, path, PageKind.OBJECT, filters)
+        # return convert_html(html, self.path, paths, anchor)
 
 
-def create_source_page(name: str, path: Path, filters: list[str]):
-    return Page(name, path, PageKind.SOURCE, filters)
-
-
-def create_documentation_page(path: Path) -> Page:
-    return Page("", path, PageKind.DOCUMENTATION, [])
-
-
-def create_markdown(
-    name: str,
-    filters: list[str],
-    predicate: Callable[[str], bool] | None = None,
-) -> tuple[str, list[str]]:
+def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     """Create module page."""
-    if not (module := create_module(name)):
-        return f"!!! failure\n\n    module {name!r} not found.\n", []
+    if not get_module_node(module):
+        return f"!!! failure\n\n    module {module!r} not found.\n", []
 
-    filters_str = "|" + "|".join(filters) if filters else ""
-
-    predicate_ = partial(_predicate, predicate=predicate)
-
-    markdowns = []
     names = []
+    markdowns = [f"# ::: {module}"]
 
-    for obj, depth in iter_objects_with_depth(module, 2, predicate_):
-        names.append(obj.fullname)
-        heading = "#" * (depth + 1)
-        markdown = f"{heading} ::: {obj.fullname}{filters_str}\n"
+    for name in iter_module_members(module):
+        fullname = f"{module}.{name}"
+        markdown = f"## ::: {fullname}"
+        names.append(fullname)
         markdowns.append(markdown)
 
     return "\n".join(markdowns), names
-
-
-def _predicate(
-    obj: Object,
-    parent: Object | None,
-    predicate: Callable[[str], bool] | None,
-) -> bool:
-    if not is_child(obj, parent):
-        return False
-
-    if is_empty(obj.doc):
-        return False
-
-    if predicate and not predicate(obj.fullname):
-        return False
-
-    return True
 
 
 OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)

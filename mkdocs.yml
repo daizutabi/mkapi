@@ -11,7 +11,7 @@ theme:
     text: Fira Sans
     code: Fira Code
   icon:
-      repo: fontawesome/brands/github
+    repo: fontawesome/brands/github
   palette:
     - scheme: default
       primary: indigo
@@ -28,7 +28,6 @@ theme:
   features:
     - content.tooltips
     - content.code.annotate
-    - navigation.expand
     - navigation.indexes
     - navigation.instant
     - navigation.sections
@@ -56,11 +55,15 @@ markdown_extensions:
 nav:
   - index.md
   - Usage:
-    - usage/object.md
-    - usage/page.md
-    - usage/config.md
-  - API: $api:src/mkapi.**
-  - Examples: $api:src/examples.**
+      - aere: usage/object.md
+      - usage/page.md
+      - usage/config.md
+  - Reference:
+      - $api:src/mkapi.***
+  - Examples:
+      - $api:src/examples.**
+  - Jinja2:
+      - $api:src/jinja2.***
   # - Schemdraw: $api/schemdraw.***
   # - Polars: $api/polars.***
   # - Altair: $api/altair.***
