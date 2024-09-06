@@ -21,14 +21,13 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "halo",
   "jinja2",
-  "mkdocs>=1.6.0",
   "mkdocs-material",
-  "tqdm",
+  "mkdocs>=1.6.0",
+  "omegaconf",
   "rich",
-  "typer",
   "tomli>=1.1.0; python_version<'3.11'",
+  "typer",
 ]
 
 [project.optional-dependencies]

@@ -3,17 +3,20 @@ from __future__ import annotations
 import importlib
 import os
 import re
-import shutil
 import sys
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from halo import Halo
 from mkdocs.config import Config, config_options
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel, get_files
-from tqdm.std import tqdm
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+)
 
 import mkapi
 import mkapi.nav
@@ -39,11 +42,8 @@ logger = get_plugin_logger("MkAPI")
 
 
 class MkAPIConfig(Config):
-    """Specify the config schema."""
-
     config = config_options.Type(str, default="")
     exclude = config_options.Type(list, default=[])
-    filters = config_options.Type(list, default=[])
     src_dir = config_options.Type(str, default="src")
     docs_anchor = config_options.Type(str, default="docs")
     src_anchor = config_options.Type(str, default="source")
@@ -51,13 +51,9 @@ class MkAPIConfig(Config):
 
 
 class MkAPIPlugin(BasePlugin[MkAPIConfig]):
-    """MkAPIPlugin class for API generation."""
-
-    api_dirs: list[Path]
     pages: dict[str, Page]
 
     def __init__(self) -> None:
-        self.api_dirs = []
         self.pages = {}
         self.server = None
         self.dirty = False
@@ -77,8 +73,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             for page in pages:
                 page.generate_markdown()
 
-        self.bar = None
-        self.uri_width = 0
+        self.progress = None
+        self.progress_task = None
 
         self.page_title = _get_function("page_title", self)
         self.section_title = _get_function("section_title", self)
@@ -98,9 +94,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         return config
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
-        """Collect plugin CSS and append them to `files`."""
         for src_uri, page in self.pages.items():
-            if page.is_object_page() and src_uri not in files.src_uris:
+            if page.is_api_page() and src_uri not in files.src_uris:
                 files.append(File.generated(config, src_uri, content=page.markdown))
 
         for file in files:
@@ -120,15 +115,17 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_nav(self, *args, **kwargs) -> None:
         if self.pages and not (self.dirty and self.server):
-            self.uri_width = max(len(uri) for uri in self.pages)
-            desc = "MkAPI: Building API pages"
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self.bar = tqdm(desc=desc, total=len(self.pages), leave=False)
+            columns = [
+                TextColumn("MkAPI: Building pages"),
+                MofNCompleteColumn(),
+                BarColumn(),
+                TextColumn("{task.description}"),
+            ]
+            self.progress = Progress(*columns, transient=True)
+            self.progress_task = self.progress.add_task("", total=len(self.pages))
+            self.progress.start()
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
-        """Convert Markdown source to intermediate version."""
         src_uri = page.file.src_uri
         page_ = self.pages[src_uri]
 
@@ -147,7 +144,6 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def on_page_content(
         self, html: str, page: MkDocsPage, config: MkDocsConfig, **kwargs
     ) -> str:
-        """Merge HTML and MkAPI's object structure."""
         src_uri = page.file.src_uri
         page_ = self.pages[src_uri]
 
@@ -158,22 +154,14 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
         html = page_.convert_html(html, anchors)
 
-        self._update_bar(src_uri)
+        if self.progress and self.progress_task is not None:
+            self.progress.update(self.progress_task, description=src_uri, advance=1)
+            import time
+
+            time.sleep(0.1)
+            if self.progress.finished:
+                self.progress.stop()
         return html
-
-    def _update_bar(self, uri: str) -> None:
-        if not self.bar:
-            return
-
-        uri = uri.ljust(self.uri_width)
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.bar.set_postfix_str(uri, refresh=False)
-
-        self.bar.update(1)
-        if self.bar.n == self.bar.total:
-            self.bar.close()
 
     # def on_page_context(
     #     self,
@@ -189,12 +177,6 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_serve(self, server: LiveReloadServer, *args, **kwargs) -> None:
         self.server = server
-
-    def on_shutdown(self) -> None:
-        for path in self.api_dirs:
-            if path.exists():
-                logger.info(f"Deleting API directory: {path}")
-                shutil.rmtree(path)
 
 
 def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
@@ -216,45 +198,30 @@ def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
     return getattr(module, name, None)
 
 
-def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
+def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     renderers.load_templates()
 
 
-def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:  # noqa: ARG001
+def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     for name in ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]:
         if name not in config.markdown_extensions:
             config.markdown_extensions.append(name)
 
 
-def _watch_directory(name: str, config: MkDocsConfig) -> None:
-    if not name:
+def _create_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+    if not config.nav:
         return
 
-    name, depth = _split_name_depth(name)
-    if path := get_module_path(name):
-        path = str(path.parent if depth else path)
-        if path not in config.watch:
-            config.watch.append(path)
+    def watch_directory(name: str, *arg):
+        name, depth = _split_name_depth(name)
+        if path := get_module_path(name):
+            path = str(path.parent if depth else path)
+            if path not in config.watch:
+                config.watch.append(path)
 
+        return []
 
-def _mkdir(path: Path, paths: list[Path]) -> None:
-    if path.exists() and path not in paths:
-        logger.warning(f"API directory exists: {path}")
-
-        ans = input("Delete the directory? [yes/no] ")
-        if ans.lower() == "yes":
-            logger.info(f"Deleting API directory: {path}")
-            shutil.rmtree(path)
-        else:
-            logger.error("Delete the directory manually.")
-            sys.exit()
-
-    if not path.exists():
-        msg = f"Making API directory: {path}"
-
-        logger.info(msg)
-        path.mkdir(parents=True)
-        paths.append(path)
+    mkapi.nav.build_apinav(config.nav, watch_directory)
 
 
 def _split_path(path: str, plugin: MkAPIPlugin) -> list[str]:
@@ -264,44 +231,9 @@ def _split_path(path: str, plugin: MkAPIPlugin) -> list[str]:
     return [path, plugin.config.src_dir]
 
 
-def _create_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
-    if not config.nav:
-        return
-
-    def mkdir(name: str, path: str) -> list:
-        _watch_directory(name, config)
-
-        for path_ in _split_path(path, plugin):
-            api_dir = Path(config.docs_dir) / path_
-            _mkdir(api_dir, plugin.api_dirs)
-
-        return []
-
-    mkapi.nav.build_apinav(config.nav, lambda *args: mkdir(args[0], args[1]))
-
-
 def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
-    if not config.nav:
+    if not (nav := config.nav):
         return
-
-    def _create_page(name: str, path: str, filters: list[str]) -> str:
-        uri = name.replace(".", "/")
-        object_path, source_path = _split_path(path, plugin)
-
-        suffix = "/README.md" if is_package(name) else ".md"
-        object_uri = f"{object_path}/{uri}{suffix}"
-
-        if object_uri not in plugin.pages:
-            plugin.pages[object_uri] = Page.create_object(object_uri, name)
-
-        source_uri = f"{source_path}/{uri}.md"
-
-        if source_uri not in plugin.pages:
-            plugin.pages[source_uri] = Page.create_source(source_uri, name)
-
-        spinner.text = f"Collecting modules [{len(plugin.pages):>3}]: {name}"
-
-        return object_uri
 
     section_title = plugin.section_title
     page_title = plugin.page_title
@@ -312,28 +244,32 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
         return all(ex not in name for ex in plugin.config.exclude)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    columns = [SpinnerColumn(), MofNCompleteColumn(), TextColumn("{task.description}")]
+    with Progress(*columns, transient=True) as progress:
+        task_name = "Collecting modules"
+        task = progress.add_task(task_name, total=len(plugin.pages) or None)
 
-        spinner = Halo()
-        spinner.start()
+        def create_page(name: str, path: str) -> str:
+            uri = name.replace(".", "/")
+            object_path, source_path = _split_path(path, plugin)
 
-        try:
-            mkapi.nav.update_nav(
-                config.nav, _create_page, section_title, page_title, predicate
-            )
+            suffix = "/README.md" if is_package(name) else ".md"
+            object_uri = f"{object_path}/{uri}{suffix}"
+            plugin.pages.setdefault(object_uri, Page.create_object(object_uri, name))
+            description = f"{task_name}: {name} ({object_uri})"
+            progress.update(task, description=description, advance=1)
 
-        except Exception as e:
-            if plugin.config.debug:
-                raise
+            source_uri = f"{source_path}/{uri}.md"
+            plugin.pages.setdefault(source_uri, Page.create_source(source_uri, name))
+            description = f"{task_name}: {name} ({source_uri})"
+            progress.update(task, description=description, advance=1)
 
-            logger.exception(e)  # noqa: TRY401
+            return object_uri
 
-        finally:
-            spinner.stop()
+        mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
 
 
-def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:  # noqa: ARG001
+def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:
     root = Path(mkapi.__file__).parent / "stylesheets"
 
     docs_dir = config.docs_dir

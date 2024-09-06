@@ -24,7 +24,7 @@ import re
 from functools import partial
 from typing import TYPE_CHECKING
 
-from mkapi.utils import find_submodule_names, get_module_path, is_package, split_filters
+from mkapi.utils import find_submodule_names, get_module_path, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -213,7 +213,7 @@ def update_apinav(
 
 def build_apinav(
     nav: list,
-    create_apinav: Callable[[str, str, list[str]], list],
+    create_apinav: Callable[[str, str], list],
 ) -> list:
     """Build the API navigation structure.
 
@@ -226,8 +226,8 @@ def build_apinav(
     Args:
         nav (list): A list representing the initial navigation structure,
             which can contain module names, sections, and nested pages.
-        create_apinav (Callable[[str, str, list[str]], list]): A callable
-            function that takes a module name, path, and filters as arguments
+        create_apinav (Callable[[str, str], list]): A callable
+            function that takes a module name and `src_uri` as arguments
             and returns a list of navigation entries for that module.
 
     Returns:
@@ -235,7 +235,7 @@ def build_apinav(
             includes the processed API entries and any nested structures.
 
     Example:
-        >>> def create_apinav(name: str, path: str, filters: list[str]) -> list:
+        >>> def create_apinav(name: str, path: str) -> list:
         ...     return [f"{name}.md"]
         >>> nav_structure = ["$api/module1", {"section1": ["$api/module2"]}]
         >>> updated_nav = build_apinav(nav_structure, create_apinav)
@@ -245,15 +245,15 @@ def build_apinav(
     nav_ = []
     for item in nav:
         if match := _match_api_entry(item):
-            name, path, filters = _split_name_path_filters(match)
-            nav_.extend(create_apinav(name, path, filters))
+            name, path = _split_name_path(match)
+            nav_.extend(create_apinav(name, path))
 
         elif isinstance(item, dict) and len(item) == 1:
             key, value = next(iter(item.items()))
 
             if match := _match_api_entry(value):
-                name, path, filters = _split_name_path_filters(match)
-                value = create_apinav(name, path, filters)
+                name, path = _split_name_path(match)
+                value = create_apinav(name, path)
 
                 if len(value) == 1 and isinstance(value[0], str):
                     value = value[0]
@@ -279,11 +279,10 @@ def _match_api_entry(item: str | list | dict) -> re.Match | None:
     return re.match(API_URI_PATTERN, item)
 
 
-def _split_name_path_filters(match: re.Match) -> tuple[str, str, list[str]]:
-    path, name_filters = match.groups()
+def _split_name_path(match: re.Match) -> tuple[str, str]:
+    path, name = match.groups()
     path = path[1:-1] if path.startswith("<") else path[1:]
-    name, filters = split_filters(name_filters)
-    return name, path, filters
+    return name, path
 
 
 def _split_name_depth(name: str) -> tuple[str, int]:
@@ -297,7 +296,7 @@ def _split_name_depth(name: str) -> tuple[str, int]:
 
 def update_nav(
     nav: list,
-    create_page: Callable[[str, str, list[str]], str],
+    create_page: Callable[[str, str], str],
     section_title: Callable[[str, int], str] | None = None,
     page_title: Callable[[str, int], str] | None = None,
     predicate: Callable[[str], bool] | None = None,
@@ -337,9 +336,9 @@ def update_nav(
             return a value.
     """
 
-    def _create_apinav(name: str, path: str, filters: list[str]) -> list:
+    def _create_apinav(name: str, path: str) -> list:
         def page(name: str, depth: int) -> str | dict[str, str]:
-            uri = create_page(name, path, filters)
+            uri = create_page(name, path)
 
             if page_title:
                 return {page_title(name, depth): uri}

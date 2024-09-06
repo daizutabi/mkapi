@@ -482,10 +482,20 @@ def parse_module(
     return parse_node(node, module)
 
 
-def iter_module_members(module: str) -> Iterator[str]:
+def iter_module_members(
+    module: str,
+    private: bool = False,
+    special: bool = False,
+) -> Iterator[str]:
     members = parse_module(module)
 
     for name, obj in members:
+        if not private and name.startswith("_") and not name.startswith("__"):
+            continue
+
+        if not special and name.startswith("__") and not name.endswith("_"):
+            continue
+
         if is_package(module):
             if isinstance(obj, Module) and obj.name.startswith(module):
                 yield name

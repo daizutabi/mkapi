@@ -120,7 +120,7 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     names = []
     markdowns = [f"# ::: {module}"]
 
-    for name in iter_module_members(module):
+    for name in iter_module_members(module, private=False, special=False):
         fullname = f"{module}.{name}"
         markdown = f"## ::: {fullname}"
         names.append(fullname)
