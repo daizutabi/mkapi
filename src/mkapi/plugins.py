@@ -29,12 +29,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from mkdocs.config.defaults import MkDocsConfig
-    from mkdocs.livereload import LiveReloadServer
     from mkdocs.structure.files import Files
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
 
     from mkapi.pages import Page
+    # from mkdocs.livereload import LiveReloadServer
     # from mkdocs.structure.nav import Navigation
     # from mkdocs.utils.templates import TemplateContext
 
@@ -54,9 +54,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     pages: dict[str, Page]
 
     def __init__(self) -> None:
-        self.pages = {}
-        self.server = None
         self.dirty = False
+        self.pages = {}
+        self.progress = None
+        self.task_id = None
 
     def on_startup(self, *, command: str, dirty: bool) -> None:
         self.dirty = dirty
@@ -73,9 +74,6 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             for page in pages:
                 page.generate_markdown()
 
-        self.progress = None
-        self.progress_task = None
-
         self.page_title = _get_function("page_title", self)
         self.section_title = _get_function("section_title", self)
         self.toc_title = _get_function("toc_title", self)
@@ -84,7 +82,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             before_on_config(config, self)
 
         _update_templates(config, self)
-        _create_nav(config, self)
+        _build_apinav(config, self)
         _update_nav(config, self)
         _update_extensions(config, self)
 
@@ -114,16 +112,15 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         return files
 
     def on_nav(self, *args, **kwargs) -> None:
-        if self.pages and not (self.dirty and self.server):
-            columns = [
-                TextColumn("MkAPI: Building pages"),
-                MofNCompleteColumn(),
-                BarColumn(),
-                TextColumn("{task.description}"),
-            ]
-            self.progress = Progress(*columns, transient=True)
-            self.progress_task = self.progress.add_task("", total=len(self.pages))
-            self.progress.start()
+        columns = [
+            TextColumn("MkAPI: Building pages"),
+            MofNCompleteColumn(),
+            BarColumn(),
+            TextColumn("{task.description}"),
+        ]
+        self.progress = Progress(*columns, transient=True)
+        self.task_id = self.progress.add_task("", total=len(self.pages))
+        self.progress.start()
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         src_uri = page.file.src_uri
@@ -154,13 +151,11 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
         html = page_.convert_html(html, anchors)
 
-        if self.progress and self.progress_task is not None:
-            self.progress.update(self.progress_task, description=src_uri, advance=1)
-            import time
-
-            time.sleep(0.1)
+        if self.progress and self.task_id is not None:
+            self.progress.update(self.task_id, description=src_uri, advance=1)
             if self.progress.finished:
                 self.progress.stop()
+
         return html
 
     # def on_page_context(
@@ -175,8 +170,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     #         nav.items.pop()
     #     return context
 
-    def on_serve(self, server: LiveReloadServer, *args, **kwargs) -> None:
-        self.server = server
+    # def on_serve(self, server: LiveReloadServer, *args, **kwargs) -> None:
+    #     self.server = server
 
 
 def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
@@ -208,7 +203,7 @@ def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
             config.markdown_extensions.append(name)
 
 
-def _create_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _build_apinav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     if not config.nav:
         return
 
@@ -224,13 +219,6 @@ def _create_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     mkapi.nav.build_apinav(config.nav, watch_directory)
 
 
-def _split_path(path: str, plugin: MkAPIPlugin) -> list[str]:
-    if ":" in path:
-        return path.split(":", maxsplit=1)
-
-    return [path, plugin.config.src_dir]
-
-
 def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     if not (nav := config.nav):
         return
@@ -244,25 +232,31 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
         return all(ex not in name for ex in plugin.config.exclude)
 
-    columns = [SpinnerColumn(), MofNCompleteColumn(), TextColumn("{task.description}")]
+    columns = [
+        TextColumn("MkAPI: Collecting modules"),
+        MofNCompleteColumn(),
+        BarColumn(),
+        TextColumn("{task.description}"),
+    ]
     with Progress(*columns, transient=True) as progress:
-        task_name = "Collecting modules"
-        task = progress.add_task(task_name, total=len(plugin.pages) or None)
+        task_id = progress.add_task("", total=len(plugin.pages) or None)
 
         def create_page(name: str, path: str) -> str:
             uri = name.replace(".", "/")
-            object_path, source_path = _split_path(path, plugin)
+
+            if ":" in path:
+                object_path, source_path = path.split(":", maxsplit=1)
+            else:
+                object_path, source_path = path, plugin.config.src_dir
 
             suffix = "/README.md" if is_package(name) else ".md"
             object_uri = f"{object_path}/{uri}{suffix}"
             plugin.pages.setdefault(object_uri, Page.create_object(object_uri, name))
-            description = f"{task_name}: {name} ({object_uri})"
-            progress.update(task, description=description, advance=1)
+            progress.update(task_id, description=object_uri, advance=1)
 
             source_uri = f"{source_path}/{uri}.md"
             plugin.pages.setdefault(source_uri, Page.create_source(source_uri, name))
-            description = f"{task_name}: {name} ({source_uri})"
-            progress.update(task, description=description, advance=1)
+            progress.update(task_id, description=source_uri, advance=1)
 
             return object_uri
 

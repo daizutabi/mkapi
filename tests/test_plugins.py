@@ -16,8 +16,8 @@ import mkapi
 from mkapi.plugins import (
     MkAPIConfig,
     MkAPIPlugin,
+    _build_apinav,
     _collect_stylesheets,
-    _create_nav,
     _get_function,
     _update_extensions,
     _update_nav,
@@ -150,7 +150,7 @@ def test_update_extensions(config_plugin: tuple[MkDocsConfig, MkAPIPlugin]):
 
 def test_create_nav(config_plugin: tuple[MkDocsConfig, MkAPIPlugin]):
     config, plugin = config_plugin
-    _create_nav(config, plugin)
+    _build_apinav(config, plugin)
     docs_dir = Path(config.docs_dir)
     for x in ["api", "src"]:
         assert (docs_dir / x).exists()
