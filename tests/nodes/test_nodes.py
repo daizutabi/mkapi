@@ -34,12 +34,12 @@ def test_iter_imports_from():
 
 
 def test_parse_import():
-    from mkapi.nodes import Import, parse
+    from mkapi.nodes import Import, parse_node
 
     name = "test_parse_import"
     src = f"import {name}.b.c"
     node = ast.parse(src)
-    x = list(parse(node, "m"))
+    x = list(parse_node(node, "m"))
     for k, n in enumerate(["", ".b", ".b.c"]):
         i = x[k][1]
         assert isinstance(i, Import)
@@ -48,22 +48,22 @@ def test_parse_import():
 
 
 def test_parse_import_as():
-    from mkapi.nodes import Import, parse
+    from mkapi.nodes import Import, parse_node
 
     src = "import a.b.c as d"
     node = ast.parse(src)
-    x = parse(node, "m")[0]
+    x = parse_node(node, "m")[0]
     assert x[0] == "d"
     assert isinstance(x[1], Import)
     assert x[1].fullname == "a.b.c"
 
 
 def test_parse_import_from():
-    from mkapi.nodes import Import, parse
+    from mkapi.nodes import Import, parse_node
 
     src = "from x import a, b, c as C"
     node = ast.parse(src)
-    x = list(parse(node, "m"))
+    x = list(parse_node(node, "m"))
     for k, n in enumerate("abc"):
         i = x[k][1]
         assert isinstance(i, Import)

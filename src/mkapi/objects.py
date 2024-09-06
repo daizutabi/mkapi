@@ -44,7 +44,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, merge, split_type
-from mkapi.nodes import get_fullname, parse
+from mkapi.nodes import get_fullname, parse_node
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -1027,7 +1027,7 @@ def get_members(
     if not (names := list_exported_names(obj.name)):
         return members
 
-    for name, node in parse(obj.node, obj.name):
+    for name, node in parse_node(obj.node, obj.name):
         if name not in names or name in members:
             continue
 

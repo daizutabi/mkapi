@@ -33,6 +33,7 @@ import mkapi.ast
 from mkapi.ast import TypeAlias, get_assign_name, is_assign
 from mkapi.utils import (
     cache,
+    get_module_name,
     get_module_node,
     get_object_from_module,
     is_package,
@@ -48,14 +49,14 @@ if TYPE_CHECKING:
 
 @dataclass
 class Node:
-    """Represents a generic node in the Abstract Syntax Tree (AST).
+    """Represent a generic node in the Abstract Syntax Tree (AST).
 
     This class serves as a base representation for various types of nodes
     in the AST, encapsulating common attributes and behaviors. Each node
     is characterized by its name and the corresponding AST node.
 
     This class is intended to be subclassed by more specific node types
-    (e.g., Import, Object, Definition) that require additional attributes
+    (e.g., Import, Definition, Assign) that require additional attributes
     or behaviors specific to their context within the AST.
     """
 
@@ -71,7 +72,7 @@ class Node:
 
 @dataclass(repr=False)
 class Import(Node):
-    """Represents an import statement in the Abstract Syntax Tree (AST).
+    """Represent an import statement in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of an import statement,
     which can either be a standard import or an import from a specific
@@ -93,47 +94,48 @@ class Import(Node):
     including the module and any aliases."""
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r} -> {self.fullname!r})"
+        return f"{self.__class__.__name__}({self.fullname!r})"
 
 
 @dataclass(repr=False)
 class Object(Node):
-    """Represents an object (e.g., class, function, method) in the Abstract Syntax Tree (AST).
+    """Represent an object (e.g., class, function, method) in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of an object, such as a class,
     function, or method, within the AST. It inherits from the `Node` class
     and includes additional attributes specific to object representations.
 
     This class is intended to be subclassed by more specific object types
-    (e.g., `Class`, `Function`, `Method`) that require additional attributes
+    (e.g., `Definition`, `Assign`) that require additional attributes
     or behaviors specific to their context within the AST.
     """
 
     module: str
     """The module in which the object is defined."""
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
+
 
 @dataclass(repr=False)
 class Definition(Object):
-    """Represents a definition (e.g., class, function, method) in the Abstract Syntax Tree (AST).
+    """Represent a definition (e.g., class, function) in the Abstract Syntax Tree (AST).
 
-    This class is a specialized representation of a definition, such as a class,
-    function, or method, within the AST. It inherits from the `Object` class
+    This class is a specialized representation of a definition, such as a class
+    or function, within the AST. It inherits from the `Object` class
     and includes additional attributes specific to definition representations.
-
-    This class is intended to be subclassed by more specific definition types
-    (e.g., `Class`, `Function`, `Method`) that require additional attributes
     or behaviors specific to their context within the AST.
     """
 
     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
-    """The actual AST node associated with this definition, which can be a class definition,
-    a function definition, or an asynchronous function definition from the `ast` module."""
+    """The actual AST node associated with this definition,
+    which can be a class definition, a function definition,
+    or an asynchronous function definition from the `ast` module."""
 
 
 @dataclass(repr=False)
 class Assign(Object):
-    """Represents an assignment statement in the Abstract Syntax Tree (AST).
+    """Represent an assignment statement in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of an assignment statement,
     which can be either an annotated assignment or a simple assignment.
@@ -153,15 +155,11 @@ class Assign(Object):
 
 @dataclass(repr=False)
 class Module(Node):
-    """Represents a module in the Abstract Syntax Tree (AST).
+    """Represent a module in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of a module within the AST.
     It inherits from the `Node` class and includes additional attributes
     specific to module representations.
-
-    This class is intended to encapsulate the details of module nodes within
-    the AST, allowing for easier manipulation and analysis of module-related
-    information in Python code.
     """
 
     node: ast.Module
@@ -171,10 +169,10 @@ class Module(Node):
 
 
 def iter_child_nodes(node: AST, module: str) -> Iterator[Definition | Assign | Import]:
-    """Iterates over the child nodes of the given AST node.
+    """Iterate over the child nodes of the given AST node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
-    yield child nodes that are instances of `Node`, `Definition`, `Assign`, or `Import`.
+    yield child nodes that are instances of `Definition`, `Assign`, or `Import`.
     It uses the `mkapi.ast` module to iterate over the child nodes of the provided
     AST node.
 
@@ -206,14 +204,16 @@ def iter_child_nodes(node: AST, module: str) -> Iterator[Definition | Assign | I
                     yield Import(name, child, fullname)
 
         elif isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
-            yield Definition(child.name, child, module)
+            module_ = get_module_name(module)  # _collections_abc -> collections.abc
+            yield Definition(child.name, child, module_)
 
         elif is_assign(child) and (name := get_assign_name(child)):
-            yield Assign(name, child, module)
+            module_ = get_module_name(module)  # _collections_abc -> collections.abc
+            yield Assign(name, child, module_)
 
 
 def _iter_imports(node: ast.Import) -> Iterator[tuple[str, str]]:
-    """Iterates over the imports in the given import node.
+    """Iterate over the imports in the given import node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
     yield tuples of the alias name and the full name of the imported module
@@ -241,24 +241,24 @@ def _iter_imports(node: ast.Import) -> Iterator[tuple[str, str]]:
                 yield module_name, module_name
 
 
-def _get_module(node: ast.ImportFrom, module: str) -> str:
-    """Gets the module name from the given import from node.
+def extract_import_module_name(node: ast.ImportFrom, module: str) -> str:
+    """Extract the module name from the given `ImportFrom` node.
 
-    This function is designed to extract the module name from the given
-    import from node. It uses the `ast` module to determine the module name
-    based on the node's level and module attributes.
+    This function is designed to retrieve the module name from the specified
+    `ImportFrom` node. It utilizes the `ast` module to determine the module name
+    based on the node's level and the provided module attributes.
 
     Args:
-        node (ast.ImportFrom): The import from node to process.
+        node (ast.ImportFrom): The `ImportFrom` node to process.
         module (str): The module in which the node is defined.
 
     Returns:
-        str: The module name extracted from the import from node.
+        str: The module name extracted from the `ImportFrom` node.
 
-    This function is intended to be used for extracting the module name from
-    an import from node, allowing for further analysis or manipulation of
-    the AST. It ensures that the module name is correctly formatted based
-    on the node's level and module attributes.
+    This function is intended for extracting the module name from an `ImportFrom`
+    node, facilitating further analysis or manipulation of the AST. It ensures
+    that the module name is correctly formatted according to the node's level
+    and module attributes.
     """
     if not node.level and node.module:
         return node.module
@@ -275,7 +275,7 @@ def _get_module(node: ast.ImportFrom, module: str) -> str:
 
 
 def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str, str]]:
-    """Iterates over the imports from the given import from node.
+    """Iterate over the imports from the given `ImportFrom` node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
     yield tuples of the alias name and the full name of the imported module
@@ -283,7 +283,7 @@ def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str,
     in the provided import from node.
 
     Args:
-        node (ast.ImportFrom): The import from node to iterate over.
+        node (ast.ImportFrom): The `ImportFrom` node to iterate over.
         module (str): The module in which the node is defined.
 
     Yields:
@@ -295,7 +295,7 @@ def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str,
     information (i.e., alias name and full name) is yielded, allowing for
     further analysis or manipulation of the AST.
     """
-    module = _get_module(node, module)
+    module = extract_import_module_name(node, module)
 
     for alias in node.names:
         yield alias.asname or alias.name, f"{module}.{alias.name}"
@@ -305,15 +305,15 @@ def _iter_imports_from_star(
     node: ast.ImportFrom,
     module: str,
 ) -> Iterator[Definition | Assign | Import]:
-    """Iterates over the imports from the given import from node.
+    """Iterate over the imports from the given `ImportFrom` node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
     yield tuples of the alias name and the full name of the imported module
     or attribute. It uses the `ast` module to iterate over the import names
-    in the provided import from node.
+    in the provided `ImportFrom` node.
 
     Args:
-        node (ast.ImportFrom): The import from node to iterate over.
+        node (ast.ImportFrom): The `ImportFrom` node to iterate over.
         module (str): The module in which the node is defined.
 
     Yields:
@@ -324,7 +324,7 @@ def _iter_imports_from_star(
     (i.e., `Object` or `Import`) are yielded, allowing for further analysis
     or manipulation of the AST.
     """
-    module = _get_module(node, module)
+    module = extract_import_module_name(node, module)
 
     if not (node_ := get_module_node(module)):
         return
@@ -341,7 +341,7 @@ def _iter_imports_from_star(
 
 @cache
 def get_child_nodes(node: AST, module: str) -> list[Definition | Assign | Import]:
-    """Gets the child nodes of the given AST node.
+    """Get the child nodes of the given AST node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
     collect child nodes of the given root node. It uses the `iter_child_nodes`
@@ -379,7 +379,7 @@ def get_child_nodes(node: AST, module: str) -> list[Definition | Assign | Import
 
 
 def iter_nodes(fullname: str) -> Iterator[Module | Definition | Assign | Import]:
-    """Iterates over the nodes in the given full name.
+    """Iterate over the nodes in the given full name.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
     yield nodes that are either `Module`, `Object`, or `Import` instances.
@@ -421,10 +421,10 @@ def iter_nodes(fullname: str) -> Iterator[Module | Definition | Assign | Import]
 
 
 @cache
-def parse(
+def parse_node(
     node: AST, module: str
 ) -> list[tuple[str, Module | Definition | Assign | Import]]:
-    """Parses the given AST node and returns a list of tuples.
+    """Parse the given AST node and return a list of tuples.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
     return a list of tuples containing the name and the corresponding node.
@@ -459,10 +459,34 @@ def parse(
 
 
 @cache
+def parse_module(
+    module: str,
+) -> list[tuple[str, Module | Definition | Assign | Import]]:
+    """Parse the given module and return a list of tuples.
+
+    This function is designed to parse the given module and return a list of
+    tuples containing the name and the corresponding node. It uses the
+    `get_module_node` function to get the module node and the `parse_node`
+    function to iterate over the nodes in the given module.
+
+    Args:
+        module (str): The name of the module to parse.
+
+    Returns:
+        list[tuple[str, Module | Definition | Assign | Import]]: A list of tuples
+            containing the name and the corresponding node.
+    """
+    if not (node := get_module_node(module)):
+        return []
+
+    return parse_node(node, module)
+
+
+@cache
 def resolve(
     name: str, module: str | None = None
 ) -> tuple[str | None, str | None] | None:
-    """Resolves the given name and returns a tuple of the name and module.
+    """Resolve the given name and return a tuple of the name and module.
 
     This function is designed to resolve the given name and return a tuple
     containing the name and module. It uses the `get_module_node` function
@@ -494,7 +518,7 @@ def resolve(
         return None
 
     names = name.split(".")
-    for name_, obj in parse(node, module):
+    for name_, obj in parse_node(node, module):
         if name_ == names[0]:
             if isinstance(obj, Import):
                 return None, obj.fullname
@@ -521,7 +545,7 @@ def resolve(
 
 @cache
 def get_fullname(name: str, module: str | None = None) -> str | None:
-    """Gets the full name of the given name and module.
+    """Get the full name of the given name and module.
 
     This function is designed to get the full name of the given name and module.
     It uses the `resolve` function to resolve the given name and module.

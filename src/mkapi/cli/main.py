@@ -5,17 +5,16 @@ from typing import Annotated, Any
 import typer
 from rich import print
 from rich.console import Console
-from rich.table import Table
-from rich.tree import Tree
 from typer import Argument
 
 from mkapi.cli.utils import (
-    crate_table,
     generate_nav_list,
+    generate_nav_tree,
     get_fullname,
     get_name_module,
     get_package_name_from_current_dir,
     get_styled_name,
+    is_package,
 )
 
 app = typer.Typer(add_completion=False)
@@ -29,66 +28,23 @@ def cli(
         str,
         Argument(
             show_default=False,
-            help="The name of the object or module to find.",
+            help="The name of the object or module.",
         ),
     ] = "",
-):
-    if not name:
-        return repl()
+) -> None:
+    repl(name)
 
-    if result := parse(name):
-        print(result)
-        return
-    else:
+
+def repl(name: str = "") -> None:
+    if name and not get_fullname(name, ""):
         raise typer.Exit(1)
 
-    # if name.endswith("/"):
-    #     if tree := get_tree(name[:-1]):
-    #         print(tree)
-    #     else:
-    #         raise typer.Exit(1)
-
-    # fullname = get_fullname(name)
-    # if not fullname:
-    #     raise typer.Exit(code=1)
-
-    # print(fullname)
-    # name_module = split_module_name(fullname)
-
-    # if not name_module:
-    #     raise typer.Exit(code=1)
-
-    # name, module = name_module
-
-    # if module:
-    #     raise typer.Exit(code=1)
-
-    # print(name)
-    # node = get_module_node(name)
-    # print(node)
-
-    # nodes = parse(node, name)
-    # print(nodes)
-
-
-def parse(name: str) -> Any:
-    from mkapi.nodes import get_fullname, parse
-    from mkapi.utils import get_module_node, split_module_name
-
-    if name == "exit":
-        raise typer.Exit()
-
-    if name.endswith("/"):
-        return get_tree(name[:-1])
-
-    return None
-
-
-def repl():
-    current = get_package_name_from_current_dir() or ""
+    current = name or get_package_name_from_current_dir() or ""
 
     while True:
-        print(get_styled_name(current), end="")
+        if current:
+            print(get_styled_name(current), end="")
+
         print("> ", end="")
         args = input("")
 
@@ -103,39 +59,11 @@ def repl():
         if cmd == "cd" and (result := cd(args, current)):
             current = result
 
-        if cmd in ("ls", "ll"):
+        if cmd in ("la", "ll", "ls"):
             ls(cmd, args, current)
 
-
-def ls(cmd: str, args: list[str], current: str) -> None:
-    t = Table.grid(expand=True)
-    t.add_column(ratio=1)
-    t.add_row("foo " * 20, "bar " * 20)
-    print(t)
-    return
-
-    if not args:
-        fullname = current
-    elif not (fullname := get_fullname(args[0], current)):
-        error(cmd, args[0])
-        return
-
-    if not (name_module := get_name_module(fullname)):
-        error(cmd, fullname)
-        return
-
-    name, module = name_module
-    if not module:
-        exclude_prefix = name.count(".") + 1 if cmd == "ls" else 0
-        if list_ := generate_nav_list(name, exclude_prefix=exclude_prefix):
-            table = crate_table(list_)
-            print(table)
-
-    # list_ = [item.replace(f"{module}.", "") for item in list_[1:]]
-    # if not fullname:
-    #     raise typer.Exit(code=1)
-    # if tree := generate_nav_list(current):
-    #     print(tree)
+        if cmd == "tree":
+            tree(cmd, args, current)
 
 
 def cd(args: list[str], current: str) -> str | None:
@@ -152,13 +80,68 @@ def cd(args: list[str], current: str) -> str | None:
     return None
 
 
-def get_tree(module: str) -> Tree | None:
-    from mkapi.cli.utils import generate_nav_tree
+def ls(cmd: str, args: list[str], current: str) -> None:
+    from mkapi.nodes import parse_module
 
-    if tree := generate_nav_tree(module):
-        return tree
+    if not args:
+        if not current:
+            return
+        fullname = current
+    elif not (fullname := get_fullname(args[0], current)):
+        error(cmd, args[0])
+        return
 
-    return None
+    if not (name_module := get_name_module(fullname)):
+        error(cmd, fullname)
+        return
+
+    name, module = name_module
+
+    # package
+    if not module and is_package(name):
+        if cmd in ("ls", "ll"):
+            exclude_prefix = name.count(".") + 1
+            if list_ := generate_nav_list(name, exclude_prefix=exclude_prefix):
+                sep = "\n" if cmd == "ll" else " "
+                print(sep.join(list_))
+            return
+
+        print(parse_module(name))
+        return
+
+    # module
+    if not module:
+        members = parse_module(name)
+        if cmd == "ls":
+            print(" ".join(name for name, _ in members))
+            return
+
+        for name, node in members:
+            print(name, node)
+        return
+
+    print(name, module)
+
+
+def tree(cmd: str, args: list[str], current: str) -> None:
+    if not args:
+        fullname = current
+    elif not (fullname := get_fullname(args[0], current)):
+        error(cmd, args[0])
+        return
+
+    if not (name_module := get_name_module(fullname)):
+        error(cmd, fullname)
+        return
+
+    name, module = name_module
+    if not module:
+        # package
+        if tree := generate_nav_tree(name):
+            print(tree)
+            return
+
+    print(name, module)
 
 
 def error(cmd: str, name: str) -> None:

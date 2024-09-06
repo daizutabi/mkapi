@@ -3,8 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from rich.console import Console
-from rich.table import Table
 from rich.tree import Tree
 
 from mkapi.utils import is_package
@@ -13,6 +11,9 @@ if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
+
+# from rich.console import Console
+# from rich.table import Table
 
 
 def find_pyproject_toml(start_dir: Path | str | None = None) -> Path | None:
@@ -104,8 +105,8 @@ def get_fullname(name: str, current: str) -> str | None:
         else:
             return None
 
-    if name.startswith("/"):
-        name = name[1:]
+    if name.startswith("/") or not current:
+        name = name[1:] if name.startswith("/") else name
         if fullname := get_fullname(name):
             return fullname
 
@@ -181,7 +182,7 @@ def generate_nav_list(module: str, *, exclude_prefix: int = 0) -> list[str]:
     return [name for name in it if name]
 
 
-def generate_nav_tree(module: str, color: str = "green") -> Tree | None:
+def generate_nav_tree(module: str) -> Tree | None:
     import mkapi.nav
 
     nav = mkapi.nav.get_apinav(module, 3)
@@ -189,7 +190,11 @@ def generate_nav_tree(module: str, color: str = "green") -> Tree | None:
     if not nav:
         return None
 
-    tree = Tree(f"[{color}]{module}[/{color}]")
+    name = get_styled_name(module)
+    if not name:
+        return None
+
+    tree = Tree(name)
 
     if isinstance(nav[0], str):
         return tree
@@ -199,34 +204,34 @@ def generate_nav_tree(module: str, color: str = "green") -> Tree | None:
     return tree
 
 
-def _add_to_tree(tree: Tree, data: list, color: str = "green") -> None:
+def _add_to_tree(tree: Tree, data: list) -> None:
     for item in data:
         if isinstance(item, dict):
             for key, value in item.items():
-                branch = tree.add(f"[{color}]{key}[/{color}]")
-                _add_to_tree(branch, value, color)
+                branch = tree.add(get_styled_name(key))  # type: ignore
+                _add_to_tree(branch, value)
         else:
-            tree.add(item)
+            tree.add(get_styled_name(item))  # type: ignore
 
 
-def crate_table(data: list[str], **kwargs) -> Table:
-    t = Table.grid(expand=True)
-    t.add_column(ratio=1)
-    t.add_row("foo " * 20, "bar " * 20)
-    print(t)
-    return
+# def crate_table(data: list[str], **kwargs) -> Table:
+#     t = Table.grid(expand=True)
+#     t.add_column(ratio=1)
+#     t.add_row("foo " * 20, "bar " * 20)
+#     print(t)
+#     return
 
-    console = Console()
-    terminal_width = console.width
-    item_width = 10
-    columns = terminal_width // item_width
-    table = Table(show_header=False, **kwargs)
+# console = Console()
+# terminal_width = console.width
+# item_width = 10
+# columns = terminal_width // item_width
+# table = Table(show_header=False, **kwargs)
 
-    for _ in range(columns):
-        table.add_column("Item", justify="left")
+# for _ in range(columns):
+#     table.add_column("Item", justify="left")
 
-    for i, item in enumerate(data):
-        if i % columns == 0:
-            table.add_row(*data[i : i + columns])
+# for i, item in enumerate(data):
+#     if i % columns == 0:
+#         table.add_row(*data[i : i + columns])
 
-    return table
+# return table
