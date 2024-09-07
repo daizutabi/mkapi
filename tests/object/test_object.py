@@ -65,12 +65,12 @@ def test_iter_objects():
     assert next(objs).name == "c"
 
 
-def test_get_object_type_package():
-    from mkapi.object import create_module, get_object_type
+def test_get_object_kind_package():
+    from mkapi.object import create_module, get_object_kind
 
     module = create_module("mkapi")
     assert module
-    assert get_object_type(module) == "package"
+    assert get_object_kind(module) == "package"
 
 
 @pytest.fixture
@@ -82,40 +82,40 @@ def mkapi_objects():
     return module
 
 
-def test_get_object_type_module(mkapi_objects):
-    from mkapi.object import get_object_type
+def test_get_object_kind_module(mkapi_objects):
+    from mkapi.object import get_object_kind
 
-    assert get_object_type(mkapi_objects) == "module"
+    assert get_object_kind(mkapi_objects) == "module"
 
 
-def test_get_object_type_dataclass(mkapi_objects):
-    from mkapi.object import get_object_type
+def test_get_object_kind_dataclass(mkapi_objects):
+    from mkapi.object import get_object_kind
 
     cls = mkapi_objects.get("Object")
-    assert get_object_type(cls) == "dataclass"
+    assert get_object_kind(cls) == "dataclass"
 
 
-def test_get_object_type_function(mkapi_objects):
-    from mkapi.object import get_object_type
+def test_get_object_kind_function(mkapi_objects):
+    from mkapi.object import get_object_kind
 
     func = mkapi_objects.get("create_function")
-    assert get_object_type(func) == "function"
+    assert get_object_kind(func) == "function"
 
 
-def test_get_object_type_method(mkapi_objects):
-    from mkapi.object import get_object_type
+def test_get_object_kind_method(mkapi_objects):
+    from mkapi.object import get_object_kind
 
     cls = mkapi_objects.get("Object")
     method = cls.get("__post_init__")
-    assert get_object_type(method) == "method"
+    assert get_object_kind(method) == "method"
 
 
-def test_get_object_type_attribute(mkapi_objects):
-    from mkapi.object import get_object_type
+def test_get_object_kind_attribute(mkapi_objects):
+    from mkapi.object import get_object_kind
 
     cls = mkapi_objects.get("Object")
     attribute = cls.get("node")
-    assert get_object_type(attribute) == "attribute"
+    assert get_object_kind(attribute) == "attribute"
 
 
 def test_get_source_module(mkapi_objects):

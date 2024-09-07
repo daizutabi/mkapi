@@ -137,6 +137,11 @@ class Object:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
 
+    @property
+    def kind(self) -> str:
+        """Th kind of the object."""
+        return get_object_kind(self)
+
 
 objects: dict[str, Object] = cache({})
 
@@ -399,25 +404,28 @@ class Parent(Object):
         return [(name, obj) for (name, obj) in it if isinstance(obj, type_)]
 
 
-def iter_objects(obj: Parent, type_: type[T] = Object) -> Iterator[T]:
-    """Iterate over child objects of a given parent object, ensuring they are of the specified type.
+def iter_objects(obj: Object, type_: type[T] = Object) -> Iterator[T]:
+    """Iterate over child objects of a given object, ensuring they are of the specified type.
 
-    This function recursively traverses the children of the provided parent
+    This function recursively traverses the children of the provided
     object and yields objects that match the specified type. It ensures that
     all objects in the hierarchy are of the desired type, allowing for
     consistent processing and analysis of the AST structure.
 
     Args:
-        obj (Parent): The parent object whose children are to be iterated over.
+        obj (Object): The object whose children are to be iterated over.
         type_ (type[T]): The type of the child objects to ensure.
 
     Yields:
-        T: An object that is a child of the parent and matches the specified type.
+        T: An object that is a child of the object and matches the specified type.
 
     This function is useful for filtering and processing specific types of
     objects within the AST, providing a way to access and manipulate the
-    components defined within a given parent object.
+    components defined within a given object.
     """
+    if not isinstance(obj, Parent):
+        return
+
     for child in obj.children.values():
         if isinstance(child, type_):
             yield child
@@ -819,20 +827,19 @@ def _create_doc_comment(node: AST, lines: list[str]) -> Doc | None:
     return None
 
 
-def get_object_type(obj: Object | Module) -> str:
-    """Return the type of the given object.
+def get_object_kind(obj: Object) -> str:
+    """Return the kind of the given object.
 
-    This function determines the type of the provided object, which can be
+    This function determines the kind of the provided object, which can be
     a Module, Class, or Function, and returns a string representation of
     its kind. The function checks the specific type of the object and
     returns a corresponding label.
 
     Args:
-        obj (Object | Module): The object whose type is to be determined.
-            This can be an instance of Module, Class, or Function.
+        obj (Object): The object whose kind is to be determined.
 
     Returns:
-        str: A string representing the type of the object. Possible return
+        str: A string representing the kind of the object. Possible return
         values include "package", "module", "dataclass", "class", "function",
         "method", "classmethod", or "staticmethod", depending on the object's
         characteristics.

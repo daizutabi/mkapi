@@ -10,7 +10,13 @@ from typing import TYPE_CHECKING
 from mkdocs.config import Config, config_options
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel, get_files
-from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+)
 
 import mkapi
 import mkapi.nav
@@ -105,6 +111,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
     def on_nav(self, *args, **kwargs) -> None:
         columns = [
+            SpinnerColumn(),
             TextColumn("MkAPI: Building pages"),
             MofNCompleteColumn(),
             BarColumn(),
@@ -119,6 +126,9 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
         page_ = self.pages[src_uri]
 
         anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
+
+        if self.progress and self.task_id is not None:
+            self.progress.update(self.task_id, description=src_uri)
 
         try:
             return page_.convert_markdown(markdown, anchors)
@@ -145,22 +155,12 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
 
         if self.progress and self.task_id is not None:
             self.progress.update(self.task_id, description=src_uri, advance=1)
-            if self.progress.finished:
-                self.progress.stop()
 
         return html
 
-    # def on_page_context(
-    #     self,
-    #     context: TemplateContext,
-    #     *,
-    #     page: MkDocsPage,
-    #     config: MkDocsConfig,
-    #     nav: Navigation,
-    # ) -> TemplateContext | None:
-    #     if len(nav.items):
-    #         nav.items.pop()
-    #     return context
+    def on_page_context(self, *args, **kwargs) -> None:
+        if self.progress is not None:
+            self.progress.stop()
 
 
 def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
@@ -222,6 +222,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         return all(ex not in name for ex in plugin.config.exclude)
 
     columns = [
+        SpinnerColumn(),
         TextColumn("MkAPI: Collecting modules"),
         MofNCompleteColumn(),
         BarColumn(),

@@ -16,6 +16,7 @@ from mkapi.object import (
     Class,
     Function,
     Module,
+    Property,
     get_source,
     is_child,
     iter_objects,
@@ -122,6 +123,9 @@ def render_document(doc: Doc) -> str:
 
 
 def render_source(obj: Object, attr: str = "") -> str:
+    if not isinstance(obj, (Module, Class, Function, Attribute, Property)):
+        return ""
+
     if source := _get_source(obj):
         source = source.rstrip()
         return templates["source"].render(source=source, attr=attr) + "\n"
@@ -129,14 +133,22 @@ def render_source(obj: Object, attr: str = "") -> str:
     return ""
 
 
-def _get_source(obj: Object, *, skip_self: bool = True) -> str:
+def _get_source(
+    obj: Module | Class | Function | Attribute | Property,
+    *,
+    skip_self: bool = True,
+) -> str:
     if not (source := get_source(obj)) or not obj.node:
         return ""
+
     lines = source.splitlines()
     start = 1 if isinstance(obj, Module) else obj.node.lineno
     module = obj.name if isinstance(obj, Module) else obj.module
 
     for child in iter_objects(obj):
+        if not isinstance(child, (Class, Function, Attribute, Property)):
+            continue
+
         if skip_self and child is obj or isinstance(obj, Attribute) or not child.node:
             continue
 

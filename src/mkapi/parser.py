@@ -23,7 +23,7 @@ from mkapi.object import (
     Type,
     get_fullname_from_object,
     get_object,
-    get_object_type,
+    get_object_kind,
 )
 from mkapi.utils import (
     find_item_by_name,
@@ -281,7 +281,7 @@ def _iter_signature(
     prev_kind = None
 
     for k, param in enumerate(obj.parameters):
-        if k == 0 and get_object_type(obj) in ["class", "method", "classmethod"]:
+        if k == 0 and get_object_kind(obj) in ["class", "method", "classmethod"]:
             continue
 
         yield from _iter_sep(param.kind, prev_kind)
