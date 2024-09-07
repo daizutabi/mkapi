@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, TypeAlias
 import mkapi.ast
 import mkapi.markdown
 import mkapi.objects
-from mkapi.docs import Item, Section, create_summary_item, is_empty
+from mkapi.doc import Item, Section, create_summary_item, is_empty
 from mkapi.node import get_fullname
 from mkapi.objects import (
     Attribute,

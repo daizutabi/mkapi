@@ -43,7 +43,7 @@ from mkapi.ast import (
     iter_parameters,
     iter_raises,
 )
-from mkapi.docs import create_doc, create_doc_comment, is_empty, merge, split_type
+from mkapi.doc import create_doc, create_doc_comment, is_empty, merge, split_type
 from mkapi.node import get_fullname, parse_node
 from mkapi.utils import (
     cache,
@@ -61,7 +61,7 @@ if TYPE_CHECKING:
     from ast import AST
     from collections.abc import Callable, Iterator
 
-    from mkapi.docs import Doc
+    from mkapi.doc import Doc
 
 
 def _qualname(name: str, parent: Parent | None) -> str:

@@ -23,23 +23,23 @@ def test_node_object():
 def test_parser_module():
     from mkapi.parsers import Parser
 
-    name = "mkapi.nodes"
+    name = "mkapi.node"
     parser = Parser.create(name)
     assert parser
-    assert parser.name == "mkapi.nodes"
+    assert parser.name == "mkapi.node"
     assert parser.module is None
-    assert parser.obj.fullname == "mkapi.nodes"
+    assert parser.obj.fullname == "mkapi.node"
 
 
 def test_parser_class():
     from mkapi.parsers import Parser
 
-    name = "mkapi.nodes.Module"
+    name = "mkapi.node.Module"
     parser = Parser.create(name)
     assert parser
     assert parser.name == "Module"
-    assert parser.module == "mkapi.nodes"
-    assert parser.obj.fullname == "mkapi.nodes.Module"
+    assert parser.module == "mkapi.node"
+    assert parser.obj.fullname == "mkapi.node.Module"
 
 
 def test_parser_class_alias():
@@ -56,12 +56,12 @@ def test_parser_class_alias():
 def test_parser_function():
     from mkapi.parsers import Parser
 
-    name = "mkapi.nodes.get_node"
+    name = "mkapi.node.get_node"
     parser = Parser.create(name)
     assert parser
     assert parser.name == "get_node"
-    assert parser.module == "mkapi.nodes"
-    assert parser.obj.fullname == "mkapi.nodes.get_node"
+    assert parser.module == "mkapi.node"
+    assert parser.obj.fullname == "mkapi.node.get_node"
 
 
 def test_parser_method():

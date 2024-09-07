@@ -275,7 +275,7 @@ def test_split_module_name_module():
 def test_split_module_name_submodule():
     from mkapi.utils import split_module_name
 
-    assert split_module_name("mkapi.nodes") == ("mkapi.nodes", None)
+    assert split_module_name("mkapi.node") == ("mkapi.node", None)
 
 
 def test_split_module_name_module_imported():

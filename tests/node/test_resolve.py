@@ -98,7 +98,7 @@ def test_resolve_mkapi_module():
 def test_get_fullname_module(name):
     from mkapi.node import get_fullname
 
-    x = get_fullname(name, "mkapi.nodes")
+    x = get_fullname(name, "mkapi.node")
     if "AST" in name:
         assert x == "ast.AST"
     elif "XXX" in name:

@@ -76,7 +76,7 @@ def test_parse_import_from():
             assert x[k][0] == n
 
 
-@pytest.mark.parametrize("name", ["mkapi.nodes", "mkapi.renderers"])
+@pytest.mark.parametrize("name", ["mkapi.node", "mkapi.renderers"])
 def test_get_node_module(name: str):
     from mkapi.node import Module, get_node
 
