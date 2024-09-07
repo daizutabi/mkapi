@@ -20,6 +20,7 @@ from mkapi.object import (
     Class,
     Function,
     Module,
+    Property,
     Type,
     get_fullname_from_object,
     get_object,
@@ -50,7 +51,7 @@ class Name:
 class Parser:
     name: str
     module: str | None
-    obj: Attribute | Class | Function | Module
+    obj: Attribute | Class | Function | Module | Property
 
     @staticmethod
     def create(name: str) -> Parser | None:
@@ -60,7 +61,7 @@ class Parser:
         name, module = name_module
         obj = get_object(name, module)
 
-        if not isinstance(obj, (Attribute, Class, Function, Module)):
+        if not isinstance(obj, (Attribute, Class, Function, Module, Property)):
             return None
 
         return Parser(name, module, obj)
@@ -111,7 +112,7 @@ class Parser:
             merge_parameters(doc.sections, self.obj.parameters)
             merge_raises(doc.sections, self.obj.raises)
 
-        if isinstance(self.obj, Function):
+        if isinstance(self.obj, Function | Property):
             merge_returns(doc.sections, self.obj.node.returns)
 
         doc.text = get_markdown_text(doc.text, self.replace_from_object)
@@ -260,7 +261,7 @@ class PartKind(Enum):
     STAR = "star"
 
 
-def get_signature(obj: Class | Function | Attribute) -> Signature:
+def get_signature(obj: Class | Function | Attribute | Property) -> Signature:
     """Return signature."""
     if isinstance(obj, Class | Function):
         parts = [Part(value, kind) for value, kind in _iter_signature(obj)]

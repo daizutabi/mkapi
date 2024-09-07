@@ -139,7 +139,7 @@ class Object:
 
     @property
     def kind(self) -> str:
-        """Th kind of the object."""
+        """The kind of the object."""
         return get_object_kind(self)
 
 
