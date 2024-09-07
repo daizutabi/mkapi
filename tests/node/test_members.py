@@ -27,6 +27,15 @@ def test_module_members_overloads():
     assert members.count("cache") == 1
 
 
+def test_module_members_class():
+    from mkapi.node import iter_module_members
+
+    members = list(iter_module_members("mkapi.doc"))
+    assert "Item.clone" in members
+    assert "Section.clone" in members
+    assert "Doc.clone" in members
+
+
 @pytest.mark.parametrize("private", [True, False])
 def test_module_members_private(private: bool):
     from mkapi.node import iter_module_members
@@ -37,3 +46,15 @@ def test_module_members_private(private: bool):
         assert any(m.startswith("_") for m in members)
     else:
         assert not any(m.startswith("_") for m in members)
+
+
+@pytest.mark.parametrize("special", [True, False])
+def test_module_members_special(special: bool):
+    from mkapi.node import iter_module_members
+
+    members = list(iter_module_members("mkapi.node", special=special))
+
+    if special:
+        assert any("__" in m for m in members)
+    else:
+        assert not any("__" in m for m in members)
