@@ -133,7 +133,9 @@ LINK_PATTERN = re.compile(r"(?<!\])\[(?P<name>[^[\]\s\(\)]+?)\](\[\])?(?![\[\(])
 
 
 def get_markdown_link(name: str, ref: str | None, *, in_code: bool = False) -> str:
-    name = name.replace("_", "\\_")
+    if not in_code:
+        name = name.replace("_", "\\_")
+
     if in_code:
         return f"[`{name}`][{PREFIX}{ref}]" if ref else f"`{name}`"
 

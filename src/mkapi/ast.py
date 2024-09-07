@@ -366,7 +366,7 @@ def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]
     be either a synchronous or asynchronous function. It utilizes the helper
     function `_iter_parameters` to retrieve the parameter names, type annotations,
     and kinds. Additionally, it uses `_iter_defaults` to obtain the default values
-    for parameters that have them. The function yields instances of the `Parameter`
+    for parameters that have them. The function yields instances of the [`Parameter`]
     class, encapsulating the details of each parameter.
 
     Args:
@@ -374,7 +374,7 @@ def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]
             from which to extract parameters.
 
     Yields:
-        Parameter: An instance of the `Parameter` class for each parameter
+        Parameter: An instance of the [`Parameter`] class for each parameter
         defined in the function, containing the name, type annotation, default
         value (if any), and kind.
 

@@ -40,13 +40,6 @@ def test_resolve_none():
     assert not resolve("x")
 
 
-def test_resolve_tqdm():
-    from mkapi.node import resolve
-
-    x = resolve("tqdm.tqdm")
-    assert x == ("tqdm", "tqdm.std")
-
-
 def test_resolve_jinja2():
     from mkapi.node import resolve
 

@@ -234,9 +234,9 @@ def test_iter_identifiers():
 def test_list_exported_names():
     from mkapi.utils import list_exported_names
 
-    x = list_exported_names("tqdm")
-    assert "tqdm" in x
-    assert "trange" in x
+    x = list_exported_names("examples.styles")
+    assert "ExampleClassNumPy" in x
+    assert "ExampleClassGoogle" in x
 
 
 def test_get_object():

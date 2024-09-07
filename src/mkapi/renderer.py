@@ -132,7 +132,6 @@ def render_source(obj: Object, attr: str = "") -> str:
 def _get_source(obj: Object, *, skip_self: bool = True) -> str:
     if not (source := get_source(obj)) or not obj.node:
         return ""
-
     lines = source.splitlines()
     start = 1 if isinstance(obj, Module) else obj.node.lineno
     module = obj.name if isinstance(obj, Module) else obj.module

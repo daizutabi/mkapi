@@ -81,15 +81,15 @@ def test_update_apinav():
 
 src = """
 - index.md
-- <api1>/mkapi.objects|f1|f2
+- <api1>/mkapi.object
 - A:
   - 1.md
-  - <api2>/mkapi.**|f3
+  - <api2>/mkapi.**
   - 2.md
-  - <api2>/mkapi.***|f3
+  - <api2>/mkapi.***
   - 3.md
-- B: $api3/mkdocs.**|f4
-- C: $api3/mkdocs.***|f4
+- B: $api3/mkdocs.**
+- C: $api3/mkdocs.***
 """
 
 
@@ -132,13 +132,14 @@ def test_build_apinav_dict():
 def test_update_nav():
     from mkapi.nav import update_nav
 
-    def create_page(name: str, path: str, filters: list[str]) -> str:
-        return f"{path}/{name}.{filters[0]}.md"
+    def create_page(name: str, path: str) -> str:
+        return f"{path}/{name}.md"
 
     def page_title(name: str, depth) -> str:
         return name.upper() + f".{depth}"
 
     nav = yaml.safe_load(src)
     update_nav(nav, create_page, page_title=page_title)
-    assert "mkapi.object.0" in nav[1]
-    assert nav[1]["mkapi.object.0"] == "api1/mkapi.objects.f1.md"
+    print(nav)
+    assert "MKAPI.OBJECT.0" in nav[1]
+    assert nav[1]["MKAPI.OBJECT.0"] == "api1/mkapi.object.md"

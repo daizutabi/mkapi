@@ -231,7 +231,8 @@ def convert_html(html: str, src_uri: str, namespace: str, anchor: str) -> str:
 
             href = f"{uri}/#{name}"
             link = f'<a href="{href}">[{anchor}]</a>'
-            link = f'<span class="mkapi-source-link" id="{name}">{link}</span>'
+            link = f'<div class="mkapi-source-link" id="{name}">{link}</div>'
+            # https://github.com/daizutabi/mkapi/issues/123: span -> div
         else:
             link = ""
 

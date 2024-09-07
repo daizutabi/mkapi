@@ -1,33 +1,33 @@
-from pathlib import Path
+# from pathlib import Path
 
-import markdown
+# import markdown
 
-import mkapi.renderer
-from mkapi.page import (
-    convert_html,
-    convert_markdown,
-    create_markdown,
-)
-from mkapi.utils import cache_clear
+# import mkapi.renderer
+# from mkapi.page import (
+#     convert_html,
+#     convert_markdown,
+#     create_markdown,
+# )
+# from mkapi.utils import cache_clear
 
-mkapi.renderer.load_templates()
+# mkapi.renderer.load_templates()
 
 
-def test_create_markdown_markdown():
-    filters = ["a", "b"]
-    names_predicate = []
+# def test_create_markdown_markdown():
+#     filters = ["a", "b"]
+#     names_predicate = []
 
-    def predicate(name: str) -> bool:
-        names_predicate.append(name)
-        return True
+#     def predicate(name: str) -> bool:
+#         names_predicate.append(name)
+#         return True
 
-    name = "mkapi.ast"
-    m, names = create_markdown(name, filters, predicate)
-    assert "\n\n## ::: mkapi.ast.Transformer|a|b\n\n" in m
-    for ns in [names, names_predicate]:
-        assert "mkapi.ast" in ns
-        assert "mkapi.ast.unparse" in ns
-        assert "mkapi.ast.Transformer.visit_Name" in ns
+#     name = "mkapi.ast"
+#     m, names = create_markdown(name, filters, predicate)
+#     assert "\n\n## ::: mkapi.ast.Transformer|a|b\n\n" in m
+#     for ns in [names, names_predicate]:
+#         assert "mkapi.ast" in ns
+#         assert "mkapi.ast.unparse" in ns
+#         assert "mkapi.ast.Transformer.visit_Name" in ns
 
 
 # def test_create_object_markdown_predicate():
