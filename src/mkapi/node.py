@@ -506,6 +506,20 @@ def iter_module_members(
     private: bool = False,
     special: bool = False,
 ) -> Iterator[str]:
+    names = set()
+    for name in _iter_module_members(module, private, special):
+        if name in names:
+            continue
+
+        names.add(name)
+        yield name
+
+
+def _iter_module_members(
+    module: str,
+    private: bool = False,
+    special: bool = False,
+) -> Iterator[str]:
     members = parse_module(module)
 
     for name, obj in members:
