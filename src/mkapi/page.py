@@ -95,6 +95,9 @@ class Page:
             if kind == TemplateKind.HEADING:
                 return True
 
+            if kind == TemplateKind.OBJECT and parser.name == self.name:
+                return False
+
             if self.is_source_page():
                 if self.name == parser.name and kind == TemplateKind.SOURCE:
                     return True

@@ -5,7 +5,7 @@
 
 .mkapi-object-kind {
   color: var(--mkapi-object-kind-color);
-  font-size: 90%;
+  font-size: 0.9em;
   font-style: italic;
 }
 
@@ -13,7 +13,11 @@
   color: var(--mkapi-object-name-color);
   font-family: var(--mkapi-object-name-font-family);
   font-weight: bold;
-  font-size: 1.1em;
+}
+
+.mkapi-object-name a {
+  color: var(--mkapi-object-name-color);
+  text-decoration: none;
 }
 
 .mkapi-prefix {
@@ -63,12 +67,12 @@
 
 .mkapi-object-bases {
   color: var(--mkapi-object-bases-color);
-  font-size: 85%;
+  font-size: 0.85em;
   margin-block-start: 0px;
 }
 
 .mkapi-document {
-  margin-left: 1em;
+  margin-left: 1.5em;
 }
 
 .mkapi-section {
@@ -106,20 +110,24 @@
 }
 
 .mkapi-example-input code {
-  font-size: 85%;
+  font-size: 0.85em;
   background-color: var(--mkapi-example-bg-color);
 }
 
 .mkapi-example-output code {
-  font-size: 85%;
+  font-size: 0.85em;
   border: solid var(--mkapi-example-bg-color);
   background-color: transparent;
 }
 
 .mkapi-source-link,
 .mkapi-object-link {
-  font-size: 85%;
   font-family: var(--mkapi-docs-link-font-family);
   display: block;
   float: right;
+}
+
+.mkapi-object-link {
+  font-size: 0.85em;
+  margin-left: 1.2em;
 }

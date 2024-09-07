@@ -5,12 +5,12 @@ from __future__ import annotations
 import os
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING
 
 from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
-from mkapi.doc import Doc, create_summary_item
+from mkapi.doc import Doc
 from mkapi.object import (
     Attribute,
     Class,
@@ -23,12 +23,8 @@ from mkapi.object import (
 )
 from mkapi.parser import Parser
 
-# is_empty,
-# is_member,
-# iter_objects,
-
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator
+    from collections.abc import Callable
 
     from mkapi.object import Object
     from mkapi.parser import Name
@@ -72,9 +68,6 @@ def render(
     if level and (not predicate or predicate(parser, TemplateKind.HEADING)):
         markdowns.append(render_heading(name.id, name.fullname, level))
 
-    # if not predicate or predicate(parser, TemplateKind.HEADER):
-    #     markdowns.append(render_header(name.id, name.fullname, namespace))
-
     if not predicate or predicate(parser, TemplateKind.OBJECT):
         signature = parser.parse_signature()
         markdowns.append(render_object(obj, name, namespace, signature))
@@ -82,10 +75,6 @@ def render(
     if not predicate or predicate(parser, TemplateKind.DOCUMENT):
         doc = parser.parse_doc()
         markdowns.append(render_document(doc))
-
-    #     if isinstance(obj, Module | Class) and (doc := _create_summary_docstring(obj)):
-    #         set_markdown(obj, doc)
-    #         markdowns.append(render_document(doc))
 
     if not predicate or predicate(parser, TemplateKind.SOURCE):
         markdowns.append(render_source(obj))
@@ -169,35 +158,3 @@ def _get_source(
             lines[index] = f"{line}## __mkapi__.{child.fullname}"
 
     return "\n".join(lines)
-
-
-# def _create_summary_docstring(obj: Module | Class) -> Doc | None:
-#     if sections := list(_iter_summary_sections(obj)):
-#         return Doc(Name(), Type(), Text(), sections)
-#     return None
-
-
-# def _iter_summary_sections(obj: Module | Class) -> Iterator[Section]:
-#     """Add sections."""
-#     if section := _create_summary_section(obj.classes, "Classes"):
-#         yield section
-
-#     name = "Methods" if isinstance(obj, Class) else "Functions"
-#     if section := _create_summary_section(obj.functions, name):
-#         yield section
-
-
-# def _create_summary_section(
-#     children: Iterable[Class | Function],
-#     name: str,
-# ) -> Section | None:
-#     items = []
-#     for child in children:
-#         if not is_empty(child):
-#             item = create_summary_item(child.name, child.doc)
-#             items.append(item)
-
-#     if items:
-#         return Section(Name(name), Type(), Text(), items)
-
-#     return None
