@@ -86,14 +86,17 @@ class Parser:
             return []
 
         signatures = []
-        for name, kind in get_signature(self.obj):
-            if isinstance(name, ast.expr):
-                name = get_markdown_expr(name, self.replace_from_module)
+        for part in get_signature(self.obj):
+            if isinstance(part.name, ast.expr):
+                name = get_markdown_expr(part.name, self.replace_from_module)
 
-            elif kind in [PartKind.ANN, PartKind.RETURN]:
-                name = get_markdown_str(name, self.replace_from_module)
+            elif part._kind in [PartKind.ANN, PartKind.RETURN]:
+                name = get_markdown_str(part.name, self.replace_from_module)
 
-            signatures.append((name, kind.value))
+            else:
+                name = part.name
+
+            signatures.append((name, part.kind))
 
         return signatures
 
@@ -233,7 +236,7 @@ class Signature:
 
 @dataclass
 class Part:
-    value: ast.expr | str
+    name: ast.expr | str
     _kind: PartKind
 
     @property

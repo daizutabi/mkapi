@@ -57,13 +57,14 @@ def test_get_signature():
 
     obj = get("def f(x_:str='s',/,*y_,z_=1,**kwargs)->int: pass")
     s = get_signature(obj)
-    assert s[0][0] == "("
-    assert s[0][1].value == "paren"
-    assert s[1][0] == "x\\_"
-    assert s[1][1].value == "arg"
-    assert isinstance(s[-1][0], ast.expr)
-    assert ast.unparse(s[-1][0]) == "int"
-    assert s[-1][1].value == "return"
+    assert s[0].name == "("
+    assert s[0].kind == "paren"
+    assert s[1].name == "x\\_"
+    assert s[1].kind == "arg"
+    v = s[-1].name
+    assert isinstance(v, ast.expr)
+    assert ast.unparse(v) == "int"
+    assert s[-1].kind == "return"
 
 
 def test_get_signature_attribute():
@@ -76,8 +77,8 @@ def test_get_signature_attribute():
     attr = create_attribute("x", node, "", None)
     assert isinstance(attr, Attribute)
     s = get_signature(attr)
-    assert s[0][0] == ": "
-    assert s[0][1].value == "colon"
-    assert isinstance(s[-1][0], ast.expr)
-    assert ast.unparse(s[-1][0]) == "int"
-    assert s[-1][1].value == "return"
+    assert s[0].name == ": "
+    assert s[0].kind == "colon"
+    assert isinstance(s[-1].name, ast.expr)
+    assert ast.unparse(s[-1].name) == "int"
+    assert s[-1].kind == "return"
