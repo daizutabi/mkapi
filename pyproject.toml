@@ -27,20 +27,15 @@ dependencies = [
   "omegaconf",
   "rich",
   "tomli>=1.1.0; python_version<'3.11'",
-  "typer",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest-clarity", "pytest-cov", "pytest-randomly", "pytest-xdist"]
-docs = []
 
 [project.urls]
 Documentation = "https://daizutabi.github.io/mkapi/"
 Source = "https://github.com/daizutabi/mkapi"
 Issues = "https://github.com/daizutabi/mkapi/issues"
-
-[project.scripts]
-mkapi = "mkapi.cli.main:app"
 
 [project.entry-points."mkdocs.plugins"]
 mkapi = "mkapi.plugin:MkAPIPlugin"
@@ -63,16 +58,11 @@ filterwarnings = [
 disable_warnings = ["module-not-measured"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "raise NotImplementedError",
-  "if TYPE_CHECKING:",
-  "except Exception as e:",
-]
+exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py312"
 exclude = ["google.py", 'numpy.py']
 
 [tool.ruff.lint]

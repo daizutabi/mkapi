@@ -15,7 +15,6 @@ from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn
 import mkapi
 import mkapi.nav
 from mkapi import renderer
-from mkapi.nav import _split_name_depth
 from mkapi.page import Page
 from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
 
@@ -27,7 +26,6 @@ if TYPE_CHECKING:
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
 
-    from mkapi.page import Page
     # from mkdocs.livereload import LiveReloadServer
     # from mkdocs.structure.nav import Navigation
     # from mkdocs.utils.templates import TemplateContext
@@ -199,7 +197,7 @@ def _build_apinav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         return
 
     def watch_directory(name: str, *arg):
-        name, depth = _split_name_depth(name)
+        name, depth = mkapi.nav.split_name_depth(name)
         if path := get_module_path(name):
             path = str(path.parent if depth else path)
             if path not in config.watch:

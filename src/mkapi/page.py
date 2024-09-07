@@ -7,17 +7,20 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from pathlib import Path, PurePath
+from pathlib import PurePath
 from typing import TYPE_CHECKING
 
 import mkapi.markdown
 import mkapi.renderer
-from mkapi.node import iter_module_members, iter_nodes
+from mkapi.node import iter_module_members
 from mkapi.object import get_object
-from mkapi.utils import get_module_node, split_filters
+from mkapi.renderer import TemplateKind
+from mkapi.utils import get_module_node
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from mkapi.parser import Parser
 
 
 class PageKind(Enum):
@@ -88,27 +91,26 @@ class Page:
         else:
             namespaces = ("object", "source")
 
-        def predicate(name: str, kind: str) -> bool:
-            return True
-            # if self.is_source_page():
-            #     if self.name == name and content in ["header", "object", "source"]:
-            #         return True
+        def predicate(parser: Parser, kind: TemplateKind) -> bool:
+            if kind == TemplateKind.HEADING:
+                return True
 
-            #     return False
+            if self.is_source_page():
+                if self.name == parser.name and kind == TemplateKind.SOURCE:
+                    return True
 
-            # return content != "source"
+                return False
+
+            return kind != TemplateKind.SOURCE
 
         return convert_markdown(markdown, self.src_uri, namespaces, anchors, predicate)
 
     def convert_html(self, html: str, anchors: dict[str, str]) -> str:
         """Return converted html."""
-        return html
+        namespace = "object" if self.is_source_page() else "source"
+        anchor = anchors[namespace]
 
-        # namespace = "object" if self.is_source_page() else "source"
-        # paths = object_paths[namespace]
-        # anchor = anchors[namespace]
-
-        # return convert_html(html, self.path, paths, anchor)
+        return convert_html(html, self.src_uri, namespace, anchor)
 
 
 def generate_module_markdown(module: str) -> tuple[str, list[str]]:
@@ -137,12 +139,11 @@ def convert_markdown(
     src_uri: str,
     namespaces: tuple[str, str],
     anchors: dict[str, str],
-    predicate: Callable[[str, str], bool] | None = None,
+    predicate: Callable[[Parser, TemplateKind], bool] | None = None,
 ) -> str:
     """Return converted markdown."""
     render = partial(_render, namespace=namespaces[1], predicate=predicate)
     markdown = mkapi.markdown.sub(OBJECT_PATTERN, render, markdown)
-    return markdown
 
     linker = partial(_linker, src_uri=src_uri, namespace=namespaces[0], anchors=anchors)
     return mkapi.markdown.sub(LINK_PATTERN, linker, markdown)
@@ -151,7 +152,7 @@ def convert_markdown(
 def _render(
     match: re.Match,
     namespace: str,
-    predicate: Callable[[str, str], bool] | None = None,
+    predicate: Callable[[Parser, TemplateKind], bool] | None = None,
 ) -> str:
     heading, name = match.groups()
     level = len(heading)
@@ -159,7 +160,7 @@ def _render(
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    return mkapi.renderer.render(obj, level, namespace, filters, predicate)
+    return mkapi.renderer.render(obj, level, namespace, predicate)
 
 
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
@@ -188,6 +189,7 @@ def _linker(
     return _link_from_uris(name, fullname, src_uri, namespace) or asname
 
 
+# cache?
 def _link_from_uris(
     name: str,
     fullname: str,
@@ -216,16 +218,14 @@ SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
 HEADING_PATTERN = re.compile(r"<h\d.+?mkapi-heading.+?</h\d>\n?")
 
 
-def convert_html(html: str, path: Path, paths: dict[str, Path], anchor: str) -> str:
+def convert_html(html: str, src_uri: str, namespace: str, anchor: str) -> str:
     """Convert HTML for source pages."""
 
     def replace(match: re.Match) -> str:
         open_tag, name, close_tag = match.groups()
 
-        if object_path := paths.get(name):
-            # Python 3.12
-            # uri = object_path.relative_to(path, walk_up=True).as_posix()
-            uri = Path(os.path.relpath(object_path, path)).as_posix()
+        if uri := URIS[namespace].get(name):
+            uri = os.path.relpath(uri, src_uri)
             uri = uri[:-3]  # Remove `.md`
             uri = uri.replace("/README", "")  # Remove `/README`
 

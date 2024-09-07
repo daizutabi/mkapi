@@ -1,23 +1,23 @@
-{{ doc.text.markdown|safe }}
+{{ doc.text|safe }}
 
 {% for section in doc.sections -%}
-{% if section.name.markdown and not section.kind -%}
-<p class="mkapi-section"><span class="mkapi-section-name">{{ section.name.markdown|safe }}</span></p>
+{% if section.name and not section.kind -%}
+<p class="mkapi-section"><span class="mkapi-section-name">{{ section.name|safe }}</span></p>
 {%- endif %}
-{{ section.text.markdown|safe }}
+{{ section.text|safe }}
 {% if section.items -%}
 <ul markdown="1">
 {% for item in section.items -%}
 <li markdown="block">
-{% if item.name.markdown -%}
-<span class="mkapi-item-name">{{ item.name.markdown|safe }}</span>
+{% if item.name -%}
+<span class="mkapi-item-name">{{ item.name|safe }}</span>
 {%- endif -%}
-{%- if item.name.markdown and item.type.markdown %} : {% endif %}
-{% if item.type.markdown -%}
-<span class="mkapi-item-type">{{ item.type.markdown|safe }}</span>
+{%- if item.name and item.type %} : {% endif %}
+{% if item.type -%}
+<span class="mkapi-item-type">{{ item.type|safe }}</span>
 {%- endif -%}
-{%- if item.text.markdown %}{% if item.name.markdown or item.type.markdown %}&mdash;{% endif %}
-{{ item.text.markdown|safe }}
+{%- if item.text %}{% if item.name or item.type %} &mdash;{% endif %}
+{{ item.text|safe }}
 {% endif -%}
 </li>
 {% endfor -%}

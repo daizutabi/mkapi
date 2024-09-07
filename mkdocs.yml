@@ -59,7 +59,7 @@ nav:
   #     - usage/page.md
   #     - usage/config.md
   - Reference:
-      - $api:src/mkapi.pages.***
+      - $api:src/mkapi.node.***
   # - Examples:
   #     - $api:src/examples.**
   # - Jinja2:

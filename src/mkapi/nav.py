@@ -285,7 +285,7 @@ def _split_name_path(match: re.Match) -> tuple[str, str]:
     return name, path
 
 
-def _split_name_depth(name: str) -> tuple[str, int]:
+def split_name_depth(name: str) -> tuple[str, int]:
     """Split a nav entry into name and depth."""
     if m := re.match(r"^(.+?)\.(\*+)$", name):
         name, option = m.groups()
@@ -344,7 +344,7 @@ def update_nav(
                 return {page_title(name, depth): uri}
             return uri
 
-        name, depth = _split_name_depth(name)
+        name, depth = split_name_depth(name)
         nav = get_apinav(name, depth, predicate)
         update_apinav(nav, page, section_title)
         return nav
