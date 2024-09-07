@@ -29,21 +29,18 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Hatch
-        run: pip install --upgrade hatch
-      - name: Check format
-        run: hatch fmt --check
-      # - name: Run test
-      #   run: hatch run test
-      - name: Install dependencies
-        run : pip install --upgrade altair polars pytest-cov schemdraw
       - name: Install package
-        run: pip install -e .
+        run: pip install -e .[dev]
       - name: Run test
-        run: pytest
+        run: pytest -n 8 --junitxml=junit.xml
       - name: Upload Codecov Results
         if: success()
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: lcov.info
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

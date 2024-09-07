@@ -4,6 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mkapi"
+version = "2.1.1"
 description = "A plugin for MkDocs to generate API documentation"
 readme = "README.md"
 license = "MIT"
@@ -18,9 +19,18 @@ classifiers = [
   "Topic :: Documentation",
   "Topic :: Software Development :: Documentation",
 ]
-dynamic = ["version"]
 requires-python = ">=3.10"
-dependencies = ["halo", "jinja2", "mkdocs-material", "tqdm"]
+dependencies = [
+  "jinja2",
+  "mkdocs-material",
+  "mkdocs>=1.6.0",
+  "omegaconf",
+  "rich",
+  "tomli>=1.1.0; python_version<'3.11'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest-clarity", "pytest-cov", "pytest-randomly", "pytest-xdist"]
 
 [project.urls]
 Documentation = "https://daizutabi.github.io/mkapi/"
@@ -28,34 +38,16 @@ Source = "https://github.com/daizutabi/mkapi"
 Issues = "https://github.com/daizutabi/mkapi/issues"
 
 [project.entry-points."mkdocs.plugins"]
-mkapi = "mkapi.plugins:MkAPIPlugin"
-
-[tool.hatch.version]
-path = "src/mkapi/__about__.py"
+mkapi = "mkapi.plugin:MkAPIPlugin"
 
 [tool.hatch.build.targets.sdist]
 exclude = ["/.github", "/docs"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/mkapi"]
 
-[tool.hatch.envs.test]
-dependencies = ["altair", "polars", "pytest-cov", "schemdraw"]
-
-[tool.hatch.envs.test.scripts]
-run = "pytest {args:tests src/mkapi}"
-cov = "coverage report {args:--skip-covered --show-missing}"
-
-[[tool.hatch.envs.test.matrix]]
-python = ["3.10", "3.11", "3.12"]
-
 [tool.pytest.ini_options]
-addopts = [
-  "--verbose",
-  "--color=yes",
-  "--doctest-modules",
-  "--cov=mkapi",
-  "--cov-report=lcov:lcov.info",
-]
+addopts = ["--doctest-modules", "--cov=mkapi", "--cov-report=lcov:lcov.info"]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
 filterwarnings = [
   'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated:DeprecationWarning',
@@ -63,42 +55,15 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-omit = ["src/mkapi/__about__.py"]
+disable_warnings = ["module-not-measured"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "raise NotImplementedError",
-  "if TYPE_CHECKING:",
-  "except Exception as e:",
-]
-
-[tool.hatch.envs.docs]
-dependencies = ["altair", "polars", "pyparsing", "schemdraw"]
-python = "3.11"
-
-[tool.hatch.envs.docs.scripts]
-build = "mkdocs build --clean --strict {args}"
-serve = "mkdocs serve --dev-addr localhost:8000 {args}"
-deploy = "mkdocs gh-deploy --force"
-
-[tool.hatch.envs.hatch-static-analysis]
-config-path = "ruff_defaults.toml"
+exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
 
 [tool.ruff]
-target-version = "py311"
-extend = "ruff_defaults.toml"
+line-length = 88
+target-version = "py312"
 exclude = ["google.py", 'numpy.py']
 
-[tool.ruff.extend-per-file-ignores]
-"tests/*.py" = ["TD"]
-"plugins.py" = ["ARG002", "G004"]
-
 [tool.ruff.lint]
-unfixable = [
-  "F401",   # Don't touch unused imports
-  "RUF100", # Don't touch noqa lines
-]
-
-[tool.ruff.pydocstyle]
-convention = "google"
+unfixable = ["F401", "RUF100"]

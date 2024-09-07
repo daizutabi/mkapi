@@ -1,64 +1,24 @@
-<div class="mkapi-content" markdown="1">
-
-<{{ heading }} class="mkapi-heading" id="{{ obj.fullname }}" markdown="1">
-<span class="mkapi-heading-name">{{ fullname|safe }}</span>
-<span class="mkapi-source-link">[source][__mkapi__.__source__.{{ obj.fullname }}]</span>
-</{{ heading }}>
-
-<p class="mkapi-object" markdown="1">
-  <span class="mkapi-object-kind">{{ obj.kind }}</span>
-  <span class="mkapi-object-name">
-  {%- for name, kind in qualnames -%}
-    <span class="mkapi-{{ kind }}">{{ name }}</span>
-    {%- if not loop.last %}<span class="mkapi-dot">.</span>{% endif -%}
-  {%- endfor -%}
-  </span>
-
-  {%- if signature %}<span class="mkapi-signature">{% endif -%}
-    {%- for s in signature -%}
-      <span class="mkapi-{{ s.kind }}">{{ s.markdown|safe }}</span>
-    {%- endfor -%}
-  {%- if signature %}</span>{%- endif -%}
-
-  {%- if obj.kind in ["attribute", "property"] and obj.type.markdown %}
-    <span class="mkapi-colon">:</span>
-    <span class="mkapi-object-type">{{ obj.type.markdown|safe }}</span>
-  {%- endif -%}
-</p>
-
-{% if obj.kind in ["class", "dataclass"] and obj.bases -%}
-<p class="mkapi-object-bases" markdown="1">Bases :
-{% for base in obj.bases %}<span class="mkapi-object-base">{{ base.type.markdown|safe }}</span>
-  {%- if not loop.last %}<span class="mkapi-comma">, </span>{% endif %}
-{% endfor %}</p>
-{% endif -%}
-
-{{ doc.text.markdown|safe }}
-
-{% for section in doc.sections %}
-{%- if section.name and not section.kind -%}
-<p class="mkapi-section"><span class="mkapi-section-name">{{ section.name }}</span></p>
+<p class="mkapi-object" id="{{ id }}" markdown="1">
+<span class="mkapi-object-kind">{{ obj.kind }}</span>
+<span class="mkapi-object-name">
+{%- for name, kind in names -%}
+<span class="mkapi-{{ kind }}">{{ name }}</span>
+{%- if not loop.last %}<span class="mkapi-dot">.</span>{% endif -%}
+{%- endfor -%}
+</span>
+{%- if signature -%}
+<span class="mkapi-signature">
+{%- for name, kind in signature -%}
+<span class="mkapi-{{ kind }}">{{ name|safe }}</span>
+{%- endfor -%}
+</span>
 {%- endif %}
-
-{{ section.text.markdown|safe }}
-
-{% if section.items -%}
-<ul markdown="1">
-  {% for item in section.items %}
-  <li markdown="block">
-  {% if item.name -%}
-    <span class="mkapi-item-name">{{ item.name.replace("_", "\\_") }}</span>
-  {%- endif -%}
-  {%- if item.name and item.type.markdown %} : {% endif %}
-  {% if item.type.markdown -%}
-    <span class="mkapi-item-type">{{ item.type.markdown|safe }}</span>
-  {%- endif -%}
-  {%- if item.text.markdown %} &mdash;
-{{ item.text.markdown|safe}}
-  {%- endif %}
-  </li>
-{% endfor %}
-</ul>
-{% endif %}
-{% endfor %}
-</div>
+<span class="mkapi-object-link">[{{ namespace }}][__mkapi__.__{{ namespace }}__.{{ id }}]</span>
+</p>
+{%- if bases -%}
+<p class="mkapi-object-bases" markdown="1">Bases :
+{% for base in bases %}<span class="mkapi-object-base">{{ base|safe }}</span>
+{%- if not loop.last %}<span class="mkapi-comma">, </span>{% endif -%}
+{%- endfor -%}
+</p>
+{%- endif %}

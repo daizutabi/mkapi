@@ -1,24 +1,5 @@
-<div class="mkapi-content" markdown="1">
-
-{% if "bare" not in filters %}
-{% if heading %}<{{ heading }} id="{{ obj.fullname }}" class="mkapi-heading" markdown="1">{% endif %}
-<span class="mkapi-heading-name">{{ fullname|safe }}</span>
-<span class="mkapi-docs-link">[docs][__mkapi__.__object__.{{ obj.fullname }}]</span>
-{%- if heading %}</{{ heading }}>{% endif %}
-
-<p class="mkapi-object" markdown="1">
-<span class="mkapi-object-kind">{{ obj.kind }}</span>
-<span class="mkapi-object-name">
-{%- for name, kind in qualnames -%}
-<span class="{{ kind }}">{{ name }}</span>
-{%- if not loop.last %}<span class="dot">.</span>{% endif -%}
-{%- endfor -%}
-</span>
-</p>
-{% endif %}
-
-``` {.python .mkapi-source}
+``` {.python .mkapi-source{% if attr %} {{ attr }}{% endif %}}
 {{ source|safe }}
 ```
 
-</div>
+{# {{ source|safe }} #}

@@ -1,10 +1,10 @@
 [data-md-color-scheme="default"],
 [data-md-color-scheme="slate"] {
-  --mkapi-heading-name-color: var(--md-default-fg-color--lighter);
   --mkapi-object-border-color: var(--md-default-fg-color--light);
   --mkapi-object-kind-color: var(--md-default-fg-color--light);
   --mkapi-object-name-color: var(--md-code-hl-name-color);
   --mkapi-object-name-font-family: var(--md-code-font-family);
+  --mkapi-object-bg-color: var(--md-code-bg-color);
   --mkapi-prefix-color: var(--md-code-hl-name-color);
   --mkapi-arg-color: var(--md-code-hl-name-color);
   --mkapi-punctuation-color: var(--md-code-hl-punctuation-color);
@@ -30,5 +30,5 @@
 .md-typeset .deprecated > summary::before {
   background-color: #ff5252;
   -webkit-mask-image: var(--md-admonition-icon--info);
-          mask-image: var(--md-admonition-icon--info);
+  mask-image: var(--md-admonition-icon--info);
 }

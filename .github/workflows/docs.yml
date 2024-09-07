@@ -2,7 +2,7 @@ name: Documentation
 on:
   push:
     branches: [main]
-    tags: ['*']
+    tags: ["*"]
 permissions:
   contents: write
 jobs:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
-      - name: Install Hatch
-        run: pip install --upgrade hatch
-      - name: Deploy documentation
-        run: hatch run docs:deploy
+      - name: Install package
+        run: pip install -e .[docs]
+      # - name: Deploy documentation
+      #   run: mkdocs gh-deploy --force
