@@ -507,7 +507,14 @@ def iter_module_members(
     special: bool = False,
 ) -> Iterator[str]:
     names = set()
-    for name in _iter_module_members(module, private, special):
+    for name in _iter_module_members(module):
+        last = name.split(".")[-1]
+        if not private and last.startswith("_") and not last.startswith("__"):
+            continue
+
+        if not special and last.startswith("__"):
+            continue
+
         if name in names:
             continue
 
@@ -515,20 +522,10 @@ def iter_module_members(
         yield name
 
 
-def _iter_module_members(
-    module: str,
-    private: bool = False,
-    special: bool = False,
-) -> Iterator[str]:
+def _iter_module_members(module: str) -> Iterator[str]:
     members = parse_module(module)
 
     for name, obj in members:
-        if not private and name.startswith("_") and not name.startswith("__"):
-            continue
-
-        if not special and name.startswith("__") and not name.endswith("_"):
-            continue
-
         if is_package(module):
             if isinstance(obj, Module) and obj.name.startswith(module):
                 yield name
@@ -538,6 +535,10 @@ def _iter_module_members(
 
         elif isinstance(obj, Definition) and obj.module == module:
             yield name
+
+            for child in get_child_nodes(obj.node, obj.module):
+                if isinstance(child, Definition):
+                    yield f"{name}.{child.name}"
 
 
 @cache

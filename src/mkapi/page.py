@@ -122,8 +122,9 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     markdowns = [f"# ::: {module}"]
 
     for name in iter_module_members(module, private=False, special=False):
+        level = name.count(".") + 2
         fullname = f"{module}.{name}"
-        markdown = f"## ::: {fullname}"
+        markdown = f"{'#' * level} ::: {fullname}"
         names.append(fullname)
         markdowns.append(markdown)
 
