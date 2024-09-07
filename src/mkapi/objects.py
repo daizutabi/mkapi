@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, TypeVar
 
 import mkapi.ast
-import mkapi.nodes
+import mkapi.node
 import mkapi.utils
 from mkapi.ast import (
     Parameter,
@@ -44,7 +44,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.docs import create_doc, create_doc_comment, is_empty, merge, split_type
-from mkapi.nodes import get_fullname, parse_node
+from mkapi.node import get_fullname, parse_node
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -59,7 +59,7 @@ from mkapi.utils import (
 
 if TYPE_CHECKING:
     from ast import AST
-    from collections.abc import Callable, Iterable, Iterator
+    from collections.abc import Callable, Iterator
 
     from mkapi.docs import Doc
 
@@ -1031,61 +1031,9 @@ def get_members(
         if name not in names or name in members:
             continue
 
-        if isinstance(node, mkapi.nodes.Object):
+        if isinstance(node, mkapi.node.Object):
             child = get_object(node.name, node.module)
             if child and (not predicate or predicate(child)):
                 members[name] = child
 
     return members
-
-
-def _iter_members(
-    obj: Parent,
-    types: Iterable[type] = (Class, Function, Type),
-) -> Iterator[tuple[str, Object]]:
-    for type_ in types:
-        members = get_members(obj, lambda x, type_=type_: isinstance(x, type_))
-        yield from members.items()
-
-
-def iter_members(
-    obj: Parent,
-    maxdepth: int,
-    predicate: Callable[[Object, Parent], bool] | None = None,
-    depth: int = 1,
-    prefix: str = "",
-) -> Iterator[tuple[str, Object, int]]:
-    """Iterate over members of a Parent object up to a specified depth.
-
-    This function recursively traverses the members of the given Parent object,
-    yielding tuples that contain the qualified name, the member object, and
-    the current depth in the hierarchy. It allows for filtering of members
-    based on an optional predicate function and limits the depth of traversal.
-
-    Args:
-        obj (Parent): The Parent object whose members are to be iterated over.
-        maxdepth (int): The maximum depth to traverse in the hierarchy.
-        predicate (Callable[[Object, Parent], bool] | None): An optional function
-            that takes an Object and its Parent as input and returns a boolean
-            indicating whether the member should be included in the result. If None,
-            all members are included.
-        depth (int): The current depth in the hierarchy, initialized to 1.
-        prefix (str): A prefix for the qualified name, used for nested members.
-
-    Yields:
-        tuple[str, Object, int]: A tuple containing the qualified name of the member,
-        the member object, and the current depth in the hierarchy.
-
-    This function is useful for accessing and processing the members of a Parent
-    object within the Abstract Syntax Tree (AST) structure, allowing for flexible
-    manipulation and analysis of the object's children at various levels of depth.
-    """
-    for name, member in _iter_members(obj):
-        if predicate and not predicate(member, obj):
-            continue
-
-        qualname = f"{prefix}.{name}" if prefix else name
-        yield qualname, member, depth
-
-        if isinstance(member, Parent) and depth < maxdepth:
-            yield from iter_members(member, maxdepth, predicate, depth + 1, qualname)

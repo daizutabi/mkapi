@@ -9,9 +9,10 @@ from typing import TYPE_CHECKING, TypeAlias
 from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
-from mkapi.converters import create_converter
 from mkapi.docs import Doc, create_summary_item
 from mkapi.objects import Attribute, Class, Function, Module, get_source
+
+# from mkapi.parsers import create_converter
 
 # is_empty,
 # is_member,

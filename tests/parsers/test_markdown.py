@@ -3,7 +3,7 @@ import re
 
 
 def test_link_pattern():
-    from mkapi.converters import LINK_PATTERN
+    from mkapi.parsers import LINK_PATTERN
 
     def f(m: re.Match) -> str:
         name = m.group(1)
@@ -27,7 +27,7 @@ def test_link_pattern():
 
 
 def test_get_markdown_name_noreplace():
-    from mkapi.converters import get_markdown_name
+    from mkapi.parsers import get_markdown_name
 
     x = get_markdown_name("abc")
     assert x == "[abc][__mkapi__.abc]"
@@ -38,8 +38,8 @@ def test_get_markdown_name_noreplace():
 
 
 def test_get_markdown_name():
-    from mkapi.converters import get_markdown_name
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
+    from mkapi.parsers import get_markdown_name
 
     def replace(name: str) -> str | None:  # type: ignore
         return get_fullname(name, "mkapi.objects")
@@ -68,8 +68,8 @@ def test_get_markdown_name():
 
 
 def test_get_markdown_str():
-    from mkapi.converters import get_markdown_str
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
+    from mkapi.parsers import get_markdown_str
 
     def replace(name: str) -> str | None:
         return get_fullname(name, "mkapi.objects")
@@ -81,26 +81,26 @@ def test_get_markdown_str():
 
 
 def test_get_markdown_expr():
-    from mkapi.converters import get_markdown_expr
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
+    from mkapi.parsers import get_markdown_expr
 
     def replace(name: str) -> str | None:
-        return get_fullname(name, "mkapi.converters")
+        return get_fullname(name, "mkapi.markdown")
 
-    expr = ast.parse("re.Match[Converter](Replace)").body[0].value  # type: ignore
+    expr = ast.parse("re.Match[convert](sub)").body[0].value  # type: ignore
     assert isinstance(expr, ast.expr)
     x = get_markdown_expr(expr, replace)
     assert x.startswith("[re][__mkapi__.re].[Match][__mkapi__.re.Match]")
-    assert "[[Converter][__mkapi__.mkapi.converters.Converter]]" in x
-    assert x.endswith("([Replace][__mkapi__.mkapi.converters.Replace])")
+    assert "[[convert][__mkapi__.mkapi.markdown.convert]]" in x
+    assert x.endswith("([sub][__mkapi__.mkapi.markdown.sub])")
 
 
 def test_get_markdown_expr_constant():
-    from mkapi.converters import get_markdown_expr
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
+    from mkapi.parsers import get_markdown_expr
 
     def replace(name: str) -> str | None:
-        return get_fullname(name, "mkapi.converters")
+        return get_fullname(name, "mkapi.markdown")
 
     expr = ast.Constant("re.Match")
     assert isinstance(expr, ast.expr)
@@ -114,8 +114,8 @@ def test_get_markdown_expr_constant():
 
 
 def test_get_markdown_text_module_objects():
-    from mkapi.converters import get_markdown_text
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
+    from mkapi.parsers import get_markdown_text
 
     def replace(name: str) -> str | None:
         return get_fullname(name, "mkapi.objects")
@@ -133,8 +133,8 @@ def test_get_markdown_text_module_objects():
 
 
 def test_get_markdown_text_module_plugins():
-    from mkapi.converters import get_markdown_text
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
+    from mkapi.parsers import get_markdown_text
 
     def replace(name: str) -> str | None:
         return get_fullname(name, "mkapi.plugins")

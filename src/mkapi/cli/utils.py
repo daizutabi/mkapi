@@ -94,7 +94,7 @@ def get_package_name_from_current_dir() -> str | None:
 
 
 def get_fullname(name: str, current: str) -> str | None:
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     if name == ".":
         return current
@@ -122,7 +122,7 @@ def get_fullname(name: str, current: str) -> str | None:
 
 
 def get_name_module(name: str) -> tuple[str, str | None] | None:
-    from mkapi.nodes import get_fullname, split_module_name
+    from mkapi.node import get_fullname, split_module_name
 
     fullname = get_fullname(name)
     if not fullname:

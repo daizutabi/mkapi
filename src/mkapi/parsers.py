@@ -13,7 +13,7 @@ import mkapi.ast
 import mkapi.markdown
 import mkapi.objects
 from mkapi.docs import Item, Section, create_summary_item, is_empty
-from mkapi.nodes import get_fullname
+from mkapi.node import get_fullname
 from mkapi.objects import (
     Attribute,
     Class,
@@ -42,11 +42,22 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Converter:
+class Parser:
     name: str
     module: str | None
     obj: Object
-    maxdepth: int
+
+    @staticmethod
+    def create(name: str) -> Parser | None:
+        if not (name_module := split_module_name(name)):
+            return None
+
+        name, module = name_module
+
+        if not (obj := get_object(name, module)):
+            return None
+
+        return Parser(name, module, obj)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
@@ -57,51 +68,12 @@ class Converter:
     def replace_from_object(self, name: str) -> str | None:
         return get_fullname_from_object(name, self.obj)
 
-    def convert_name(self) -> dict[str, Any]:
+    def parse_name(self) -> dict[str, Any]:
         id_ = f"{self.module}.{self.name}" if self.module else self.name
         names = [x.replace("_", "\\_") for x in self.name.split(".")]
         fullname = get_markdown_name(id_)
 
         return {"id": id_, "fullname": fullname, "names": names}
-
-
-def _split_name_depth(name: str) -> tuple[str, int]:
-    if m := re.match(r"(.*)\.(\*+)", name):
-        return m.group(1), int(len(m.group(2)))
-
-    return name, 0
-
-
-def create_converter(name: str) -> Converter | None:
-    name, depth = _split_name_depth(name)
-
-    if not (name_module := split_module_name(name)):
-        return None
-
-    name_, module = name_module
-    if not name_:
-        return None
-
-    if not (obj := get_object(name_, module)):
-        return None
-
-    return Converter(name_, module, obj, depth)
-
-
-def iter_objects(
-    converter: Converter,
-    predicate: Callable[[str], bool] | None = None,
-) -> Iterator[tuple[str | None, Object, int]]:
-    fullname = converter.fullname
-    obj = converter.obj
-    maxdepth = converter.depth
-
-    yield fullname, obj, 0
-
-    if not isinstance(obj, Parent) or not maxdepth:
-        return
-
-    yield from iter_members(obj, fullname, maxdepth, predicate)
 
 
 PREFIX = "__mkapi__."

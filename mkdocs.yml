@@ -54,16 +54,16 @@ markdown_extensions:
       alternate_style: true
 nav:
   - index.md
-  - Usage:
-      - aere: usage/object.md
-      - usage/page.md
-      - usage/config.md
+  # - Usage:
+  #     - aere: usage/object.md
+  #     - usage/page.md
+  #     - usage/config.md
   - Reference:
-      - $api:src/mkapi.***
-  - Examples:
-      - $api:src/examples.**
-  - Jinja2:
-      - $api:src/jinja2.***
+      - $api:src/mkapi.pages.***
+  # - Examples:
+  #     - $api:src/examples.**
+  # - Jinja2:
+  #     - $api:src/jinja2.***
   # - Schemdraw: $api/schemdraw.***
   # - Polars: $api/polars.***
   # - Altair: $api/altair.***

@@ -7,12 +7,12 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING
 
 import mkapi.markdown
 import mkapi.renderers
-from mkapi.nodes import iter_module_members, iter_nodes
+from mkapi.node import iter_module_members, iter_nodes
 from mkapi.objects import get_object
 from mkapi.utils import get_module_node, split_filters
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "DOCUMENTATION"])
 
-object_paths: dict[str, dict[str, str]] = {}
+URIS: dict[str, dict[str, str]] = {}
 
 
 @dataclass
@@ -65,41 +65,36 @@ class Page:
         return not self.is_api_page()
 
     def generate_markdown(self) -> None:
-        if self.is_documentation_page() or not self.name:
+        if self.is_documentation_page():
             return
 
         self.markdown, names = generate_module_markdown(self.name)
-
         namespace = "source" if self.is_source_page() else "object"
-
-        if namespace not in object_paths:
-            object_paths[namespace] = {}
+        uris = URIS.setdefault(namespace, {})
 
         for name in names:
-            object_paths[namespace][name] = self.src_uri
+            uris[name] = self.src_uri
 
     def convert_markdown(self, markdown: str, anchors: dict[str, str]) -> str:
-        return markdown
-        # if self.is_api_page():
-        #     markdown = self.markdown
+        if self.is_api_page():
+            markdown = self.markdown
 
-        # if self.is_source_page():
-        #     namespaces = ("source", "object")
-        # else:
-        #     namespaces = ("object", "source")
+        if self.is_source_page():
+            namespaces = ("source", "object")
+        else:
+            namespaces = ("object", "source")
 
-        # def predicate(name: str, content: str) -> bool:
-        #     if self.is_source_page():
-        #         if self.name == name and content in ["header", "object", "source"]:
-        #             return True
+        def predicate(name: str, kind: str) -> bool:
+            return True
+            # if self.is_source_page():
+            #     if self.name == name and content in ["header", "object", "source"]:
+            #         return True
 
-        #         return False
+            #     return False
 
-        #     return content != "source"
+            # return content != "source"
 
-        # return convert_markdown(
-        #     markdown, self.path, namespaces, object_paths, anchors, predicate
-        # )
+        return convert_markdown(markdown, self.src_uri, namespaces, anchors, predicate)
 
     def convert_html(self, html: str, anchors: dict[str, str]) -> str:
         """Return converted html."""
@@ -135,72 +130,65 @@ LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
 
 def convert_markdown(
     markdown: str,
-    path: Path,
+    src_uri: str,
     namespaces: tuple[str, str],
-    paths: dict[str, dict[str, Path]],
     anchors: dict[str, str],
     predicate: Callable[[str, str], bool] | None = None,
 ) -> str:
     """Return converted markdown."""
     render = partial(_render, namespace=namespaces[1], predicate=predicate)
     markdown = mkapi.markdown.sub(OBJECT_PATTERN, render, markdown)
+    return markdown
 
-    def replace_link(match: re.Match) -> str:
-        return _replace_link(match, path.parent, namespaces[0], paths, anchors)
-
-    return mkapi.markdown.sub(LINK_PATTERN, replace_link, markdown)
+    linker = partial(_linker, src_uri=src_uri, namespace=namespaces[0], anchors=anchors)
+    return mkapi.markdown.sub(LINK_PATTERN, linker, markdown)
 
 
 def _render(
-    match: re.Match, namespace: str, predicate: Callable[[str, str], bool] | None = None
+    match: re.Match,
+    namespace: str,
+    predicate: Callable[[str, str], bool] | None = None,
 ) -> str:
     heading, name = match.groups()
     level = len(heading)
-    name, filters = split_filters(name)
 
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    return name
-    # return mkapi.renderers.render(obj, level, namespace, filters, predicate)
+    return mkapi.renderers.render(obj, level, namespace, filters, predicate)
 
 
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
 
 
-def _replace_link(
+def _linker(
     match: re.Match,
-    directory: Path,
+    src_uri: str,
     namespace: str,
-    paths: dict[str, dict[str, Path]],
     anchors: dict[str, str],
 ) -> str:
     name, fullname = match.groups()
-    fullname, filters = split_filters(fullname)
-
     asname = ""
 
     if m := OBJECT_LINK_PATTERN.match(fullname):
         namespace, fullname = m.groups()
 
-        if namespace in anchors and namespace in paths:
+        if namespace in anchors and namespace in URIS:
             name = f"[{anchors[namespace]}]"
-            paths_ = paths[namespace]
         else:
             return ""
 
     else:
-        paths_ = paths[namespace]
         asname = match.group()
 
-    # if "source" in filters:
-    #     paths = source_paths
-
-    return _replace_link_from_paths(name, fullname, directory, paths_) or asname
+    return _link_from_uris(name, fullname, src_uri, namespace) or asname
 
 
-def _replace_link_from_paths(
-    name: str, fullname: str, directory: Path, paths: dict[str, Path]
+def _link_from_uris(
+    name: str,
+    fullname: str,
+    src_uri: str,
+    namespace: str,
 ) -> str | None:
     if fullname.startswith("__mkapi__."):
         from_mkapi = True
@@ -208,12 +196,10 @@ def _replace_link_from_paths(
     else:
         from_mkapi = False
 
-    fullname = iter_nodes(fullname) or fullname
+    # fullname = iter_nodes(fullname) or fullname
 
-    if path := paths.get(fullname):
-        # Python 3.12
-        # uri = path.relative_to(directory, walk_up=True).as_posix()
-        uri = Path(os.path.relpath(path, directory)).as_posix()
+    if uri := URIS[namespace].get(fullname):
+        uri = os.path.relpath(uri, PurePath(src_uri).parent)
         return f'[{name}]({uri}#{fullname} "{fullname}")'
 
     if from_mkapi:

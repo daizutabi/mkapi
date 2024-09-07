@@ -1,5 +1,5 @@
 def test_parse_module_mkdocs():
-    from mkapi.nodes import parse_module
+    from mkapi.node import parse_module
 
     objects = parse_module("mkdocs")
     assert len(objects) == 1
@@ -7,7 +7,7 @@ def test_parse_module_mkdocs():
 
 
 def test_parse_module_jinja2():
-    from mkapi.nodes import parse_module
+    from mkapi.node import parse_module
 
     objects = parse_module("jinja2")
     assert len(objects) > 30

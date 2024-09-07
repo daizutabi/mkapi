@@ -1,5 +1,5 @@
-from mkapi.converters import set_markdown
 from mkapi.objects import Class, Function, Module, get_object_from_module
+from mkapi.parsers import set_markdown
 from mkapi.renderers import (
     _create_summary_docstring,
     _get_source,
@@ -28,7 +28,10 @@ def test_render_heading():
     assert obj
     set_markdown(obj)
     x = render_heading(obj.fullname.str, 2)
-    assert '<h2 class="mkapi-heading" id="examples.styles.google.module_level_function"' in x
+    assert (
+        '<h2 class="mkapi-heading" id="examples.styles.google.module_level_function"'
+        in x
+    )
     assert r'markdown="1">examples.styles.google.module\_level\_function</h2>' in x
 
 
@@ -102,11 +105,17 @@ def test_get_source_module():
     obj = get_object_from_module("examples.styles.google.ExampleClass")
     assert obj
     x = _get_source(obj)
-    assert "class ExampleClass:## __mkapi__.examples.styles.google.ExampleClass" not in x
-    assert "self.attr1 = param1## __mkapi__.examples.styles.google.ExampleClass.attr1" in x
+    assert (
+        "class ExampleClass:## __mkapi__.examples.styles.google.ExampleClass" not in x
+    )
+    assert (
+        "self.attr1 = param1## __mkapi__.examples.styles.google.ExampleClass.attr1" in x
+    )
     x = _get_source(obj, skip_self=False)
     assert "class ExampleClass:## __mkapi__.examples.styles.google.ExampleClass" in x
-    assert "self.attr1 = param1## __mkapi__.examples.styles.google.ExampleClass.attr1" in x
+    assert (
+        "self.attr1 = param1## __mkapi__.examples.styles.google.ExampleClass.attr1" in x
+    )
 
 
 def test_summary():
@@ -116,7 +125,10 @@ def test_summary():
     assert doc
     set_markdown(obj, doc)
     m = render_document(doc)
-    assert '<p class="mkapi-section"><span class="mkapi-section-name">Methods</span></p>' in m
+    assert (
+        '<p class="mkapi-section"><span class="mkapi-section-name">Methods</span></p>'
+        in m
+    )
     assert "&mdash;\nClass methods are similar to regular functions.\n</li>" in m
 
     obj = get_object_from_module("examples.styles.google")

@@ -10,13 +10,7 @@ from typing import TYPE_CHECKING
 from mkdocs.config import Config, config_options
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel, get_files
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-)
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn
 
 import mkapi
 import mkapi.nav
@@ -169,9 +163,6 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     #     if len(nav.items):
     #         nav.items.pop()
     #     return context
-
-    # def on_serve(self, server: LiveReloadServer, *args, **kwargs) -> None:
-    #     self.server = server
 
 
 def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:

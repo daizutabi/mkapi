@@ -1,8 +1,10 @@
 import ast
 
+import pytest
+
 
 def test_iter_imports():
-    from mkapi.nodes import _iter_imports
+    from mkapi.node import _iter_imports
 
     src = "import matplotlib.pyplot"
     node = ast.parse(src).body[0]
@@ -22,7 +24,7 @@ def test_iter_imports():
 
 
 def test_iter_imports_from():
-    from mkapi.nodes import _iter_imports_from
+    from mkapi.node import _iter_imports_from
 
     src = "from matplotlib import pyplot as plt"
     node = ast.parse(src).body[0]
@@ -34,7 +36,7 @@ def test_iter_imports_from():
 
 
 def test_parse_import():
-    from mkapi.nodes import Import, parse_node
+    from mkapi.node import Import, parse_node
 
     name = "test_parse_import"
     src = f"import {name}.b.c"
@@ -48,7 +50,7 @@ def test_parse_import():
 
 
 def test_parse_import_as():
-    from mkapi.nodes import Import, parse_node
+    from mkapi.node import Import, parse_node
 
     src = "import a.b.c as d"
     node = ast.parse(src)
@@ -59,7 +61,7 @@ def test_parse_import_as():
 
 
 def test_parse_import_from():
-    from mkapi.nodes import Import, parse_node
+    from mkapi.node import Import, parse_node
 
     src = "from x import a, b, c as C"
     node = ast.parse(src)
@@ -72,3 +74,17 @@ def test_parse_import_from():
             assert x[k][0] == "C"
         else:
             assert x[k][0] == n
+
+
+@pytest.mark.parametrize("name", ["mkapi.nodes", "mkapi.renderers"])
+def test_get_node_module(name: str):
+    from mkapi.node import Module, get_node
+
+    assert isinstance(get_node(name), Module)
+
+
+@pytest.mark.parametrize("name", ["jinja2.Template", "mkapi.docs.Item"])
+def test_get_node_class(name: str):
+    from mkapi.node import Definition, get_node
+
+    assert isinstance(get_node(name), Definition)

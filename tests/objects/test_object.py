@@ -163,7 +163,7 @@ def mkapiplugin():
     return cls
 
 
-@pytest.mark.parametrize("name", ["api_dirs", "on_config", "on_serve", "dirty"])
+@pytest.mark.parametrize("name", ["on_config", "dirty"])
 def test_is_child(mkapiplugin, name):
     from mkapi.objects import is_child
 
@@ -317,13 +317,3 @@ def test_get_members_asname(name):
     module = create_module("examples.styles")
     assert module
     assert name in get_members(module)
-
-
-def test_iter_members_module():
-    from mkapi.objects import Module, get_object, iter_members
-
-    obj = get_object("examples.styles")
-    assert isinstance(obj, Module)
-    x = list(iter_members(obj, 1))
-    assert x[0][0] == "ExampleClassGoogle"
-    assert x[-1][0] == "__all__"

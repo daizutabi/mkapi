@@ -482,6 +482,24 @@ def parse_module(
     return parse_node(node, module)
 
 
+def get_node(
+    name: str, module: str | None = None
+) -> Module | Definition | Assign | Import | None:
+    if not module:
+        if not (name_module := split_module_name(name)):
+            return None
+
+        name, module = name_module
+
+    if not module:
+        if node := get_module_node(name):
+            return Module(name, node)
+
+        return None
+
+    return dict(parse_module(module)).get(name)
+
+
 def iter_module_members(
     module: str,
     private: bool = False,

@@ -12,7 +12,7 @@ def get(src: str) -> Function:
 
 
 def test_iter_signature_return():
-    from mkapi.converters import _iter_signature
+    from mkapi.parsers import _iter_signature
 
     obj = get("def f(): pass")
     x = list(_iter_signature(obj))
@@ -27,7 +27,7 @@ def test_iter_signature_return():
 
 
 def sig(src: str) -> str:
-    from mkapi.converters import _iter_signature
+    from mkapi.parsers import _iter_signature
 
     obj = get(f"def f({src}): pass")
     return "".join(str(x[0]).replace(" ", "") for x in _iter_signature(obj))
@@ -45,7 +45,7 @@ def test_iter_signature_kind():
 
 
 def test_get_signature():
-    from mkapi.converters import get_signature
+    from mkapi.parsers import get_signature
 
     obj = get("def f(x_:str='s',/,*y_,z_=1,**kwargs)->int: pass")
     s = get_signature(obj)
@@ -59,8 +59,8 @@ def test_get_signature():
 
 
 def test_get_signature_attribute():
-    from mkapi.converters import get_signature
     from mkapi.objects import Attribute, create_attribute
+    from mkapi.parsers import get_signature
 
     src = """x:int"""
     node = ast.parse(src).body[0]

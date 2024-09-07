@@ -81,7 +81,7 @@ def cd(args: list[str], current: str) -> str | None:
 
 
 def ls(cmd: str, args: list[str], current: str) -> None:
-    from mkapi.nodes import parse_module
+    from mkapi.node import parse_module
     from mkapi.objects import get_object
 
     if not args:

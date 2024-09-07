@@ -2,74 +2,74 @@ import pytest
 
 
 def test_resolve_module():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     x = resolve("examples.styles.google")
     assert x == ("examples.styles.google", None)
 
 
 def test_resolve_class():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     x = resolve("examples.styles.google.ExampleClass")
     assert x == ("ExampleClass", "examples.styles.google")
 
 
 def test_resolve_asname():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     x = resolve("examples.styles.ExampleClassGoogle")
     assert x == ("ExampleClass", "examples.styles.google")
 
 
 def test_resolve_attribute():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     assert not resolve("examples.styles.ExampleClassGoogle.attr1")
 
 
 def test_resolve_unknown():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     assert not resolve("examples.styles.ExampleClassGoogle.attrX")
 
 
 def test_resolve_none():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     assert not resolve("x")
 
 
 def test_resolve_tqdm():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     x = resolve("tqdm.tqdm")
     assert x == ("tqdm", "tqdm.std")
 
 
 def test_resolve_jinja2():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     x = resolve("jinja2.Template")
     assert x == ("Template", "jinja2.environment")
 
 
 def test_resolve_mkdocs():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     x = resolve("mkdocs.config.Config")
     assert x == ("Config", "mkdocs.config.base")
 
 
 def test_resolve_mkapi():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     x = resolve("mkapi.objects.ast")
     assert x == ("ast", None)
 
 
 def test_resolve_mkapi_class():
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     x = resolve("mkapi.objects.ast.ClassDef")
     assert x == ("ClassDef", "ast")
@@ -77,7 +77,7 @@ def test_resolve_mkapi_class():
 
 def test_resolve_mkapi_module():
     import mkapi.plugins
-    from mkapi.nodes import resolve
+    from mkapi.node import resolve
 
     module = "mkapi.plugins"
     x = resolve("MkAPIPlugin", module)
@@ -96,7 +96,7 @@ def test_resolve_mkapi_module():
     "name", ["mkapi", "mkapi.ast", "mkapi.ast.AST", "mkapi.ast.XXX"]
 )
 def test_get_fullname_module(name):
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     x = get_fullname(name, "mkapi.nodes")
     if "AST" in name:
@@ -108,7 +108,7 @@ def test_get_fullname_module(name):
 
 
 def test_get_fullname_class():
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     x = get_fullname("Class", "mkapi.objects")
     assert x == "mkapi.objects.Class"
@@ -118,7 +118,7 @@ def test_get_fullname_class():
 
 
 def test_get_fullname_jinja2():
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     x = get_fullname("jinja2.Template", "mkdocs.plugins")
     assert x == "jinja2.environment.Template"
@@ -130,7 +130,7 @@ def attr(request):
 
 
 def test_get_fullname_qualname(attr):
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     module = "examples.styles.google"
     name = f"ExampleClass{attr}"
@@ -138,7 +138,7 @@ def test_get_fullname_qualname(attr):
 
 
 def test_get_fullname_qualname_alias(attr):
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     module = "examples.styles"
     name = f"ExampleClassGoogle{attr}"
@@ -147,7 +147,7 @@ def test_get_fullname_qualname_alias(attr):
 
 
 def test_get_fullname_self():
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     name = "MkAPIPlugin"
     module = "mkapi.plugins"
@@ -155,14 +155,14 @@ def test_get_fullname_self():
 
 
 def test_get_fullname_unknown():
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     assert not get_fullname("xxx", "mkapi.plugins")
     assert not get_fullname("jinja2.xxx", "mkdocs.plugins")
 
 
 def test_get_fullname_other():
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     module = "mkapi.plugins"
     x = get_fullname("MkDocsConfig", module)
@@ -178,7 +178,7 @@ def test_get_fullname_other():
 
 
 def test_get_fullname_nested():
-    from mkapi.nodes import get_fullname
+    from mkapi.node import get_fullname
 
     assert get_fullname("mkapi.docs.Item.name") == "mkapi.docs.Item.name"
     assert not get_fullname("mkapi.docs.Item.mkapi")
