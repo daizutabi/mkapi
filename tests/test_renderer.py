@@ -59,7 +59,7 @@ def test_render_object_class():
     assert obj
     set_markdown(obj)
     x = render_object(obj)
-    assert 'base">[Callable][__mkapi__.mkapi.objects.Callable]</span></p>' in x
+    assert 'base">[Callable][__mkapi__.mkapi.object.Callable]</span></p>' in x
 
 
 def test_render_object_module():

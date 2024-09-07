@@ -6,25 +6,24 @@ import ast
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import Enum
 from inspect import _ParameterKind as P
 from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
 import mkapi.object
-from mkapi.doc import Item, Section, create_summary_item, is_empty
+from mkapi.doc import Doc, Item, Section, create_summary_item
 from mkapi.node import get_fullname
 from mkapi.object import (
     Attribute,
     Class,
     Function,
-    Object,
-    Parent,
+    Module,
     Type,
     get_fullname_from_object,
     get_object,
     get_object_type,
-    is_child,
 )
 from mkapi.utils import (
     find_item_by_name,
@@ -36,16 +35,22 @@ from mkapi.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import Any
 
     from mkapi.object import Parameter
+
+
+@dataclass
+class Name:
+    id: str
+    fullname: str
+    names: list[str]
 
 
 @dataclass
 class Parser:
     name: str
     module: str | None
-    obj: Object
+    obj: Attribute | Class | Function | Module
 
     @staticmethod
     def create(name: str) -> Parser | None:
@@ -53,8 +58,9 @@ class Parser:
             return None
 
         name, module = name_module
+        obj = get_object(name, module)
 
-        if not (obj := get_object(name, module)):
+        if not isinstance(obj, (Attribute, Class, Function, Module)):
             return None
 
         return Parser(name, module, obj)
@@ -68,20 +74,66 @@ class Parser:
     def replace_from_object(self, name: str) -> str | None:
         return get_fullname_from_object(name, self.obj)
 
-    def parse_name(self) -> dict[str, Any]:
+    def parse_name(self) -> Name:
         id_ = f"{self.module}.{self.name}" if self.module else self.name
         names = [x.replace("_", "\\_") for x in self.name.split(".")]
         fullname = get_markdown_name(id_)
 
-        return {"id": id_, "fullname": fullname, "names": names}
+        return Name(id_, fullname, names)
+
+    def parse_signature(self) -> list[tuple[str, str]]:
+        if isinstance(self.obj, Module):
+            return []
+
+        signatures = []
+        for name, kind in get_signature(self.obj):
+            if isinstance(name, ast.expr):
+                name = get_markdown_expr(name, self.replace_from_module)
+
+            elif kind in [PartKind.ANN, PartKind.RETURN]:
+                name = get_markdown_str(name, self.replace_from_module)
+
+            signatures.append((name, kind.value))
+
+        return signatures
+
+    def parse_doc(self) -> Doc:
+        doc = self.obj.doc.clone()
+
+        if isinstance(self.obj, Module | Class):
+            attrs = [x for _, x in self.obj.get_children(Type)]
+            merge_attributes(doc.sections, attrs)
+
+        if isinstance(self.obj, Function | Class):
+            merge_parameters(doc.sections, self.obj.parameters)
+            merge_raises(doc.sections, self.obj.raises)
+
+        if isinstance(self.obj, Function):
+            merge_returns(doc.sections, self.obj.node.returns)
+
+        doc.text = get_markdown_text(doc.text, self.replace_from_object)
+        doc.type = get_markdown_type(doc.type, self.replace_from_object)
+
+        for section in doc.sections:
+            section.text = get_markdown_text(section.text, self.replace_from_object)
+            section.type = get_markdown_type(section.type, self.replace_from_object)
+
+            for item in section.items:
+                item.text = get_markdown_text(item.text, self.replace_from_object)
+                item.type = get_markdown_type(item.type, self.replace_from_object)
+
+        return doc
 
 
 PREFIX = "__mkapi__."
 LINK_PATTERN = re.compile(r"(?<!\])\[(?P<name>[^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
 
 
-def get_markdown_link(name: str, ref: str | None) -> str:
+def get_markdown_link(name: str, ref: str | None, *, in_code: bool = False) -> str:
     name = name.replace("_", "\\_")
+    if in_code:
+        return f"[`{name}`][{PREFIX}{ref}]" if ref else f"`{name}`"
+
     return f"[{name}][{PREFIX}{ref}]" if ref else name
 
 
@@ -126,11 +178,27 @@ def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
         return ast.unparse(expr)
 
 
+def get_markdown_type(type_: str | ast.expr | None, replace: Replace) -> str:
+    if type_ is None:
+        return ""
+
+    if isinstance(type_, str):
+        return get_markdown_str(type_, replace)
+
+    return get_markdown_expr(type_, replace)
+
+
 def get_markdown_text(text: str, replace: Replace) -> str:
     """Return markdown links from docstring text."""
 
     def _replace(match: re.Match) -> str:
         name = match.group("name")
+
+        if name.startswith("`") and name.endswith("`"):
+            name = name[1:-1]
+            in_code = True
+        else:
+            in_code = False
 
         if name.startswith("__mkapi__."):
             from_mkapi = True
@@ -139,7 +207,7 @@ def get_markdown_text(text: str, replace: Replace) -> str:
             from_mkapi = False
 
         if is_identifier(name) and replace and (ref := replace(name)):
-            return get_markdown_link(name, ref)
+            return get_markdown_link(name, ref, in_code=in_code)
 
         if from_mkapi:
             return name
@@ -149,21 +217,61 @@ def get_markdown_text(text: str, replace: Replace) -> str:
     return mkapi.markdown.sub(LINK_PATTERN, _replace, text)
 
 
-def get_signature(
-    obj: Class | Function | Attribute,
-) -> list[tuple[ast.expr | str, str]]:
+@dataclass
+class Signature:
+    parts: list[Part]
+
+    def __getitem__(self, index: int) -> Part:
+        return self.parts[index]
+
+    def __len__(self) -> int:
+        return len(self.parts)
+
+    def __iter__(self) -> Iterator[Part]:
+        return iter(self.parts)
+
+
+@dataclass
+class Part:
+    value: ast.expr | str
+    _kind: PartKind
+
+    @property
+    def kind(self) -> str:
+        return self._kind.value
+
+
+class PartKind(Enum):
+    ANN = "ann"
+    ARG = "arg"
+    ARROW = "arrow"
+    COLON = "colon"
+    COMMA = "comma"
+    DEFAULT = "default"
+    EQUAL = "equal"
+    PAREN = "paren"
+    RETURN = "return"
+    SLASH = "slash"
+    STAR = "star"
+
+
+def get_signature(obj: Class | Function | Attribute) -> Signature:
     """Return signature."""
     if isinstance(obj, Class | Function):
-        return list(_iter_signature(obj))
+        parts = [Part(value, kind) for value, kind in _iter_signature(obj)]
+        return Signature(parts)
 
     if obj.type:
-        return [(": ", "colon"), (obj.type, "return")]
+        parts = [Part(": ", PartKind.COLON), Part(obj.type, PartKind.RETURN)]
+        return Signature(parts)
 
-    return []
+    return Signature([])
 
 
-def _iter_signature(obj: Class | Function) -> Iterator[tuple[ast.expr | str, str]]:
-    yield "(", "paren"
+def _iter_signature(
+    obj: Class | Function,
+) -> Iterator[tuple[ast.expr | str, PartKind]]:
+    yield "(", PartKind.PAREN
     n = len(obj.parameters)
     prev_kind = None
 
@@ -173,52 +281,52 @@ def _iter_signature(obj: Class | Function) -> Iterator[tuple[ast.expr | str, str
 
         yield from _iter_sep(param.kind, prev_kind)
 
-        yield param.name.replace("_", "\\_"), "arg"
+        yield param.name.replace("_", "\\_"), PartKind.ARG
         yield from _iter_param(param)
 
         if k < n - 1:
-            yield ", ", "comma"
+            yield ", ", PartKind.COMMA
 
         prev_kind = param.kind
 
     if prev_kind is P.POSITIONAL_ONLY:
-        yield ", ", "comma"
-        yield "/", "slash"
+        yield ", ", PartKind.COMMA
+        yield "/", PartKind.SLASH
 
-    yield ")", "paren"
+    yield ")", PartKind.PAREN
 
     if isinstance(obj, Class) or not obj.node.returns:
         return
 
-    yield " → ", "arrow"
-    yield obj.node.returns, "return"
+    yield " → ", PartKind.ARROW
+    yield obj.node.returns, PartKind.RETURN
 
 
-def _iter_sep(kind: P | None, prev_kind: P | None) -> Iterator[tuple[str, str]]:
+def _iter_sep(kind: P | None, prev_kind: P | None) -> Iterator[tuple[str, PartKind]]:
     if prev_kind is P.POSITIONAL_ONLY and kind != prev_kind:
-        yield "/", "slash"
-        yield ", ", "comma"
+        yield "/", PartKind.SLASH
+        yield ", ", PartKind.COMMA
 
     if kind is P.KEYWORD_ONLY and prev_kind not in [kind, P.VAR_POSITIONAL]:
-        yield r"\*", "star"
-        yield ", ", "comma"
+        yield r"\*", PartKind.STAR
+        yield ", ", PartKind.COMMA
 
     if kind is P.VAR_POSITIONAL:
-        yield r"\*", "star"
+        yield r"\*", PartKind.STAR
 
     if kind is P.VAR_KEYWORD:
-        yield r"\*\*", "star"
+        yield r"\*\*", PartKind.STAR
 
 
-def _iter_param(param: Parameter) -> Iterator[tuple[ast.expr | str, str]]:
+def _iter_param(param: Parameter) -> Iterator[tuple[ast.expr | str, PartKind]]:
     if param.type:
-        yield ": ", "colon"
-        yield param.type, "ann"
+        yield ": ", PartKind.COLON
+        yield param.type, PartKind.ANN
 
     if param.default:
         eq = " = " if param.type else "="
-        yield eq, "equal"
-        yield param.default, "default"
+        yield eq, PartKind.EQUAL
+        yield param.default, PartKind.DEFAULT
 
 
 def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:

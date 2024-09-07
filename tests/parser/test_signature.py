@@ -16,14 +16,22 @@ def test_iter_signature_return():
 
     obj = get("def f(): pass")
     x = list(_iter_signature(obj))
-    assert x == [("(", "paren"), (")", "paren")]
+    assert x[0][0] == "("
+    assert x[0][1].value == "paren"
+    assert x[-1][0] == ")"
+    assert x[-1][1].value == "paren"
     obj = get("def f()->bool: pass")
     x = list(_iter_signature(obj))
-    assert x[:3] == [("(", "paren"), (")", "paren"), (" → ", "arrow")]
+    assert x[0][0] == "("
+    assert x[0][1].value == "paren"
+    assert x[1][0] == ")"
+    assert x[1][1].value == "paren"
+    assert x[2][0] == " → "
+    assert x[2][1].value == "arrow"
     r = x[-1][0]
     assert isinstance(r, ast.expr)
     assert ast.unparse(r) == "bool"
-    assert x[-1][1] == "return"
+    assert x[-1][1].value == "return"
 
 
 def sig(src: str) -> str:
@@ -50,12 +58,12 @@ def test_get_signature():
     obj = get("def f(x_:str='s',/,*y_,z_=1,**kwargs)->int: pass")
     s = get_signature(obj)
     assert s[0][0] == "("
-    assert s[0][1] == "paren"
+    assert s[0][1].value == "paren"
     assert s[1][0] == "x\\_"
-    assert s[1][1] == "arg"
+    assert s[1][1].value == "arg"
     assert isinstance(s[-1][0], ast.expr)
     assert ast.unparse(s[-1][0]) == "int"
-    assert s[-1][1] == "return"
+    assert s[-1][1].value == "return"
 
 
 def test_get_signature_attribute():
@@ -69,7 +77,7 @@ def test_get_signature_attribute():
     assert isinstance(attr, Attribute)
     s = get_signature(attr)
     assert s[0][0] == ": "
-    assert s[0][1] == "colon"
+    assert s[0][1].value == "colon"
     assert isinstance(s[-1][0], ast.expr)
     assert ast.unparse(s[-1][0]) == "int"
-    assert s[1][1] == "return"
+    assert s[-1][1].value == "return"

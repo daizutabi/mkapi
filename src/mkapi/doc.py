@@ -235,6 +235,9 @@ class Item:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r})"
 
+    def clone(self) -> Item:
+        return self.__class__(self.name, self.type, self.text)
+
 
 TYPE_STRING_PATTERN = re.compile(r"\[__mkapi__.(\S+?)\]\[\]")
 
@@ -609,6 +612,10 @@ class Section(Item):
     """A list of Item instances that belong to this section,
     representing individual parameters, return values, or exceptions."""
 
+    def clone(self) -> Section:
+        items = [x.clone() for x in self.items]
+        return Section(self.name, self.type, self.text, items)
+
 
 def _create_admonition(name: str, text: str) -> str:
     """Create an admonition block based on the provided name and text.
@@ -761,6 +768,10 @@ class Doc(Item):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
+
+    def clone(self) -> Doc:
+        sections = [x.clone() for x in self.sections]
+        return Doc(self.name, self.type, self.text, sections)
 
 
 def create_doc(text: str | None, style: Style | None = None) -> Doc:

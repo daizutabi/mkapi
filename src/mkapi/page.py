@@ -20,7 +20,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-PageKind = Enum("PageKind", ["OBJECT", "SOURCE", "DOCUMENTATION"])
+class PageKind(Enum):
+    OBJECT = "object"
+    SOURCE = "source"
+    DOCUMENTATION = "documentation"
+
 
 URIS: dict[str, dict[str, str]] = {}
 

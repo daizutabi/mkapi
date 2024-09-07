@@ -45,9 +45,9 @@ def test_get_markdown_name():
         return get_fullname(name, "mkapi.object")
 
     x = get_markdown_name("Object", replace)
-    assert x == "[Object][__mkapi__.mkapi.objects.Object]"
+    assert x == "[Object][__mkapi__.mkapi.object.Object]"
     x = get_markdown_name("Object.__repr__", replace)
-    assert r".[\_\_repr\_\_][__mkapi__.mkapi.objects.Object.__repr__]" in x
+    assert r".[\_\_repr\_\_][__mkapi__.mkapi.object.Object.__repr__]" in x
 
     def replace(name: str) -> str | None:  # type: ignore
         return get_fullname(name, "mkapi.plugin")
@@ -76,8 +76,8 @@ def test_get_markdown_str():
 
     type_string = "1 Object or Class."
     x = get_markdown_str(type_string, replace)
-    assert "1 [Object][__mkapi__.mkapi.objects.Object] " in x
-    assert "or [Class][__mkapi__.mkapi.objects.Class]." in x
+    assert "1 [Object][__mkapi__.mkapi.object.Object] " in x
+    assert "or [Class][__mkapi__.mkapi.object.Class]." in x
 
 
 def test_get_markdown_expr():
@@ -123,9 +123,9 @@ def test_get_markdown_text_module_objects():
     x = get_markdown_text("Class", replace)
     assert x == "Class"
     x = get_markdown_text("a [Class] b", replace)
-    assert x == "a [Class][__mkapi__.mkapi.objects.Class] b"
+    assert x == "a [Class][__mkapi__.mkapi.object.Class] b"
     x = get_markdown_text("a [Class][] b", replace)
-    assert x == "a [Class][__mkapi__.mkapi.objects.Class] b"
+    assert x == "a [Class][__mkapi__.mkapi.object.Class] b"
     x = get_markdown_text("a [Class][a] b", replace)
     assert x == "a [Class][a] b"
     m = "a \n```\n[Class][a]\n```\n b"
@@ -140,7 +140,7 @@ def test_get_markdown_text_module_plugins():
         return get_fullname(name, "mkapi.plugin")
 
     x = get_markdown_text("a [MkAPIPlugin][] b", replace)
-    assert x == "a [MkAPIPlugin][__mkapi__.mkapi.plugins.MkAPIPlugin] b"
+    assert x == "a [MkAPIPlugin][__mkapi__.mkapi.plugin.MkAPIPlugin] b"
     x = get_markdown_text("a [BasePlugin][] b", replace)
     assert x == "a [BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin] b"
     x = get_markdown_text("a [MkDocsConfig][] b", replace)
