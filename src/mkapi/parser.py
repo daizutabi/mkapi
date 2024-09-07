@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING, TypeAlias
 
 import mkapi.ast
 import mkapi.markdown
-import mkapi.objects
+import mkapi.object
 from mkapi.doc import Item, Section, create_summary_item, is_empty
 from mkapi.node import get_fullname
-from mkapi.objects import (
+from mkapi.object import (
     Attribute,
     Class,
     Function,
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from typing import Any
 
-    from mkapi.objects import Parameter
+    from mkapi.object import Parameter
 
 
 @dataclass

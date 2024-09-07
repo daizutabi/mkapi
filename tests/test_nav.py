@@ -140,5 +140,5 @@ def test_update_nav():
 
     nav = yaml.safe_load(src)
     update_nav(nav, create_page, page_title=page_title)
-    assert "MKAPI.OBJECTS.0" in nav[1]
-    assert nav[1]["MKAPI.OBJECTS.0"] == "api1/mkapi.objects.f1.md"
+    assert "mkapi.object.0" in nav[1]
+    assert nav[1]["mkapi.object.0"] == "api1/mkapi.objects.f1.md"

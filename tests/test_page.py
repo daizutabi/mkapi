@@ -2,15 +2,15 @@ from pathlib import Path
 
 import markdown
 
-import mkapi.renderers
-from mkapi.pages import (
+import mkapi.renderer
+from mkapi.page import (
     convert_html,
     convert_markdown,
     create_markdown,
 )
 from mkapi.utils import cache_clear
 
-mkapi.renderers.load_templates()
+mkapi.renderer.load_templates()
 
 
 def test_create_markdown_markdown():
@@ -63,18 +63,18 @@ def test_create_markdown_markdown():
 #     source = "## ::: mkapi.objects.Object\n"
 #     path = Path("/root/a/b/c.md")
 #     paths = {}
-#     paths["object"] = {"mkapi.objects.Object": Path("/root/api/x.md")}
-#     paths["source"] = {"mkapi.objects.Object": Path("/root/src/x.md")}
+#     paths["object"] = {"mkapi.object.Object": Path("/root/api/x.md")}
+#     paths["source"] = {"mkapi.object.Object": Path("/root/src/x.md")}
 #     namespaces = ("object", "source")
 #     anchors = {"object": "docs", "source": "source"}
 #     m = convert_markdown(source, path, namespaces, paths, anchors)
 #     assert '<span class="mkapi-tooltip" title="mkapi">' in m
-#     assert '</span>.[Object](../../api/x.md#mkapi.objects.Object "mkapi.objects.Object")' in m
-#     assert 'link">[[source]](../../src/x.md#mkapi.objects.Object "mkapi.objects.Object")' in m
+#     assert '</span>.[Object](../../api/x.md#mkapi.objects.Object "mkapi.object.Object")' in m
+#     assert 'link">[[source]](../../src/x.md#mkapi.objects.Object "mkapi.object.Object")' in m
 #     namespaces = ("source", "object")
 #     m = convert_markdown(source, path, namespaces, paths, anchors)
-#     assert '</span>.[Object](../../src/x.md#mkapi.objects.Object "mkapi.objects.Object")' in m
-#     assert 'link">[[docs]](../../api/x.md#mkapi.objects.Object "mkapi.objects.Object")' in m
+#     assert '</span>.[Object](../../src/x.md#mkapi.objects.Object "mkapi.object.Object")' in m
+#     assert 'link">[[docs]](../../api/x.md#mkapi.objects.Object "mkapi.object.Object")' in m
 
 
 # def test_convert_html():
@@ -82,9 +82,9 @@ def test_create_markdown_markdown():
 #     source = "## ::: mkapi.objects.Object\n"
 #     path = Path("/root/a/b/c.md")
 #     paths = {}
-#     paths["object"] = {"mkapi.objects.Object": Path("/root/api/x.md")}
-#     paths["source"] = {"mkapi.objects.Object": Path("/root/src/x.md")}
-#     paths["object"]["mkapi.objects.Object.__repr__"] = Path("/root/X/x.md")
+#     paths["object"] = {"mkapi.object.Object": Path("/root/api/x.md")}
+#     paths["source"] = {"mkapi.object.Object": Path("/root/src/x.md")}
+#     paths["object"]["mkapi.object.Object.__repr__"] = Path("/root/X/x.md")
 #     namespaces = ("object", "source")
 #     anchors = {"object": "docs", "source": "source"}
 #     m = convert_markdown(source, path, namespaces, paths, anchors)

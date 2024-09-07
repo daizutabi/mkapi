@@ -13,7 +13,7 @@ from mkdocs.structure.files import Files
 from mkdocs.theme import Theme
 
 import mkapi
-from mkapi.plugins import (
+from mkapi.plugin import (
     MkAPIConfig,
     MkAPIPlugin,
     _build_apinav,
@@ -23,7 +23,7 @@ from mkapi.plugins import (
     _update_nav,
     _update_templates,
 )
-from mkapi.renderers import templates
+from mkapi.renderer import templates
 from mkapi.utils import get_module_path, module_cache
 
 

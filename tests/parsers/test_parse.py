@@ -3,7 +3,7 @@ import pytest
 
 def test_node_object():
     from mkapi.node import Definition, get_node
-    from mkapi.objects import Class, get_object
+    from mkapi.object import Class, get_object
 
     name = "jinja2.Template"
     obj = get_object(name)
@@ -21,7 +21,7 @@ def test_node_object():
 
 
 def test_parser_module():
-    from mkapi.parsers import Parser
+    from mkapi.parser import Parser
 
     name = "mkapi.node"
     parser = Parser.create(name)
@@ -32,7 +32,7 @@ def test_parser_module():
 
 
 def test_parser_class():
-    from mkapi.parsers import Parser
+    from mkapi.parser import Parser
 
     name = "mkapi.node.Module"
     parser = Parser.create(name)
@@ -43,7 +43,7 @@ def test_parser_class():
 
 
 def test_parser_class_alias():
-    from mkapi.parsers import Parser
+    from mkapi.parser import Parser
 
     name = "jinja2.Template"
     parser = Parser.create(name)
@@ -54,7 +54,7 @@ def test_parser_class_alias():
 
 
 def test_parser_function():
-    from mkapi.parsers import Parser
+    from mkapi.parser import Parser
 
     name = "mkapi.node.get_node"
     parser = Parser.create(name)
@@ -65,7 +65,7 @@ def test_parser_function():
 
 
 def test_parser_method():
-    from mkapi.parsers import Parser
+    from mkapi.parser import Parser
 
     name = "mkapi.parsers.Parser.create"
     parser = Parser.create(name)
@@ -76,7 +76,7 @@ def test_parser_method():
 
 
 def test_parser_method_alias():
-    from mkapi.parsers import Parser
+    from mkapi.parser import Parser
 
     name = "jinja2.Template.render"
     parser = Parser.create(name)

@@ -1,10 +1,10 @@
 import ast
 
-from mkapi.objects import Function
+from mkapi.object import Function
 
 
 def get(src: str) -> Function:
-    from mkapi.objects import create_function
+    from mkapi.object import create_function
 
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.FunctionDef)
@@ -12,7 +12,7 @@ def get(src: str) -> Function:
 
 
 def test_iter_signature_return():
-    from mkapi.parsers import _iter_signature
+    from mkapi.parser import _iter_signature
 
     obj = get("def f(): pass")
     x = list(_iter_signature(obj))
@@ -27,7 +27,7 @@ def test_iter_signature_return():
 
 
 def sig(src: str) -> str:
-    from mkapi.parsers import _iter_signature
+    from mkapi.parser import _iter_signature
 
     obj = get(f"def f({src}): pass")
     return "".join(str(x[0]).replace(" ", "") for x in _iter_signature(obj))
@@ -45,7 +45,7 @@ def test_iter_signature_kind():
 
 
 def test_get_signature():
-    from mkapi.parsers import get_signature
+    from mkapi.parser import get_signature
 
     obj = get("def f(x_:str='s',/,*y_,z_=1,**kwargs)->int: pass")
     s = get_signature(obj)
@@ -59,8 +59,8 @@ def test_get_signature():
 
 
 def test_get_signature_attribute():
-    from mkapi.objects import Attribute, create_attribute
-    from mkapi.parsers import get_signature
+    from mkapi.object import Attribute, create_attribute
+    from mkapi.parser import get_signature
 
     src = """x:int"""
     node = ast.parse(src).body[0]

@@ -3,7 +3,7 @@ import inspect
 
 
 def test_create_class_nested():
-    from mkapi.objects import Class, create_class
+    from mkapi.object import Class, create_class
 
     src = """
     class A:
@@ -23,7 +23,7 @@ def test_create_class_nested():
 
 
 def test_create_class(get):
-    from mkapi.objects import Class, Function, Property, create_class
+    from mkapi.object import Class, Function, Property, create_class
 
     node = get("ExampleClass")
     assert isinstance(node, ast.ClassDef)
@@ -38,9 +38,9 @@ def test_create_class(get):
 
 
 def test_inherit():
-    from mkapi.objects import Class, Function, create_module
+    from mkapi.object import Class, Function, create_module
 
-    module = create_module("mkapi.objects")
+    module = create_module("mkapi.object")
     assert module
     cls = module.get("Class")
     assert isinstance(cls, Class)
@@ -50,7 +50,7 @@ def test_inherit():
 
 
 def test_class_parameters():
-    from mkapi.objects import Class, create_module
+    from mkapi.object import Class, create_module
     from mkapi.utils import find_item_by_name
 
     module = create_module("examples.styles.google")
@@ -58,7 +58,7 @@ def test_class_parameters():
     cls = module.get("ExampleClass")
     assert isinstance(cls, Class)
     assert len(cls.parameters) == 3
-    module = create_module("mkapi.objects")
+    module = create_module("mkapi.object")
     assert module
     cls = module.get("Class")
     assert isinstance(cls, Class)
@@ -69,9 +69,9 @@ def test_class_parameters():
 
 
 def test_inherit_base_classes():
-    from mkapi.objects import Class, create_module
+    from mkapi.object import Class, create_module
 
-    module = create_module("mkapi.plugins")
+    module = create_module("mkapi.plugin")
     assert module
     cls = module.get("MkAPIConfig")
     assert isinstance(cls, Class)
@@ -89,7 +89,7 @@ def test_inherit_base_classes():
 
 
 def test_iter_dataclass_parameters():
-    from mkapi.objects import Class, create_module
+    from mkapi.object import Class, create_module
 
     module = create_module("mkapi.ast")
     assert module
@@ -103,7 +103,7 @@ def test_iter_dataclass_parameters():
 
 
 def test_iter_attributes_from_function():
-    from mkapi.objects import Class, create_module
+    from mkapi.object import Class, create_module
 
     module = create_module("examples.styles.google")
     assert module
@@ -114,7 +114,7 @@ def test_iter_attributes_from_function():
 
 
 def test_type():
-    from mkapi.objects import Attribute, Class, Property, create_module
+    from mkapi.object import Attribute, Class, Property, create_module
 
     module = create_module("examples.styles.google")
     assert module
@@ -131,7 +131,7 @@ def test_type():
 
 
 def test_merge_init_doc():
-    from mkapi.objects import Class, create_module
+    from mkapi.object import Class, create_module
 
     module = create_module("examples.styles.google")
     assert module

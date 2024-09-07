@@ -76,14 +76,14 @@ def test_parse_import_from():
             assert x[k][0] == n
 
 
-@pytest.mark.parametrize("name", ["mkapi.node", "mkapi.renderers"])
+@pytest.mark.parametrize("name", ["mkapi.node", "mkapi.renderer"])
 def test_get_node_module(name: str):
     from mkapi.node import Module, get_node
 
     assert isinstance(get_node(name), Module)
 
 
-@pytest.mark.parametrize("name", ["jinja2.Template", "mkapi.docs.Item"])
+@pytest.mark.parametrize("name", ["jinja2.Template", "mkapi.doc.Item"])
 def test_get_node_class(name: str):
     from mkapi.node import Definition, get_node
 

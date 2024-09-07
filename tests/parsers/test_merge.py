@@ -2,7 +2,7 @@ import ast
 
 
 def _get_func_type_annotations():
-    from mkapi.objects import Function, create_module
+    from mkapi.object import Function, create_module
 
     module = create_module("examples.styles.google")
     assert module
@@ -12,7 +12,7 @@ def _get_func_type_annotations():
 
 
 def test_merge_parameters_type_annotations():
-    from mkapi.parsers import merge_parameters
+    from mkapi.parser import merge_parameters
     from mkapi.utils import find_item_by_name
 
     func = _get_func_type_annotations()
@@ -28,7 +28,7 @@ def test_merge_parameters_type_annotations():
 
 
 def test_merge_returns_type_annotations():
-    from mkapi.parsers import merge_returns
+    from mkapi.parser import merge_returns
     from mkapi.utils import find_item_by_name
 
     func = _get_func_type_annotations()
@@ -42,7 +42,7 @@ def test_merge_returns_type_annotations():
 
 def test_merge_raises():
     from mkapi.doc import Section
-    from mkapi.parsers import merge_raises
+    from mkapi.parser import merge_raises
     from mkapi.utils import find_item_by_name
 
     sections = []
@@ -58,8 +58,8 @@ def test_merge_raises():
 
 def test_merge_attribute_module():
     from mkapi.doc import Section
-    from mkapi.objects import Type, create_module
-    from mkapi.parsers import merge_attributes
+    from mkapi.object import Type, create_module
+    from mkapi.parser import merge_attributes
     from mkapi.utils import find_item_by_name
 
     module = create_module("examples.styles.google")
@@ -75,8 +75,8 @@ def test_merge_attribute_module():
 
 def test_merge_attribute_class():
     from mkapi.doc import Section
-    from mkapi.objects import Class, Type, create_module
-    from mkapi.parsers import merge_attributes
+    from mkapi.object import Class, Type, create_module
+    from mkapi.parser import merge_attributes
     from mkapi.utils import find_item_by_name
 
     module = create_module("examples.styles.google")

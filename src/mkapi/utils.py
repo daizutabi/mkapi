@@ -978,7 +978,7 @@ def is_dataclass(name: str, module: str) -> bool:
 
     Example:
         >>> from mkapi.docs import Item
-        >>> is_dataclass("Item", "mkapi.docs")
+        >>> is_dataclass("Item", "mkapi.doc")
         True
 
         >>> is_dataclass("is_dataclass", "mkapi.utils")
@@ -1011,7 +1011,7 @@ def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
         or is not a class, an empty list is returned.
 
     Example:
-        >>> base_classes = get_base_classes("Doc", "mkapi.docs")
+        >>> base_classes = get_base_classes("Doc", "mkapi.doc")
         >>> base_classes
         [('Item', 'mkapi.docs')]
 
@@ -1061,12 +1061,12 @@ def split_module_name(name: str) -> tuple[str, str | None] | None:
     Example:
         'Section' is a member of 'mkapi.docs'
 
-        >>> split_module_name("mkapi.docs.Section")
+        >>> split_module_name("mkapi.doc.Section")
         ('Section', 'mkapi.docs')
 
         Entire name is a valid module
 
-        >>> split_module_name("mkapi.docs")
+        >>> split_module_name("mkapi.doc")
         ('mkapi.docs', None)
 
         >>> split_module_name("invalid.module") is None

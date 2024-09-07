@@ -64,22 +64,22 @@ def test_resolve_mkdocs():
 def test_resolve_mkapi():
     from mkapi.node import resolve
 
-    x = resolve("mkapi.objects.ast")
+    x = resolve("mkapi.object.ast")
     assert x == ("ast", None)
 
 
 def test_resolve_mkapi_class():
     from mkapi.node import resolve
 
-    x = resolve("mkapi.objects.ast.ClassDef")
+    x = resolve("mkapi.object.ast.ClassDef")
     assert x == ("ClassDef", "ast")
 
 
 def test_resolve_mkapi_module():
-    import mkapi.plugins
+    import mkapi.plugin
     from mkapi.node import resolve
 
-    module = "mkapi.plugins"
+    module = "mkapi.plugin"
     x = resolve("MkAPIPlugin", module)
     assert x == ("MkAPIPlugin", module)
     x = resolve("MkDocsConfig", module)
@@ -89,7 +89,7 @@ def test_resolve_mkapi_module():
     x = resolve("config_options", module)
     assert x == ("mkdocs.config.config_options", None)
     assert x
-    assert x[0] == mkapi.plugins.config_options.__name__
+    assert x[0] == mkapi.plugin.config_options.__name__
 
 
 @pytest.mark.parametrize(
@@ -110,10 +110,10 @@ def test_get_fullname_module(name):
 def test_get_fullname_class():
     from mkapi.node import get_fullname
 
-    x = get_fullname("Class", "mkapi.objects")
-    assert x == "mkapi.objects.Class"
-    assert get_fullname("ast", "mkapi.objects") == "ast"
-    x = get_fullname("ast.ClassDef", "mkapi.objects")
+    x = get_fullname("Class", "mkapi.object")
+    assert x == "mkapi.object.Class"
+    assert get_fullname("ast", "mkapi.object") == "ast"
+    x = get_fullname("ast.ClassDef", "mkapi.object")
     assert x == "ast.ClassDef"
 
 
@@ -150,21 +150,21 @@ def test_get_fullname_self():
     from mkapi.node import get_fullname
 
     name = "MkAPIPlugin"
-    module = "mkapi.plugins"
+    module = "mkapi.plugin"
     assert get_fullname(name, module) == f"{module}.{name}"
 
 
 def test_get_fullname_unknown():
     from mkapi.node import get_fullname
 
-    assert not get_fullname("xxx", "mkapi.plugins")
+    assert not get_fullname("xxx", "mkapi.plugin")
     assert not get_fullname("jinja2.xxx", "mkdocs.plugins")
 
 
 def test_get_fullname_other():
     from mkapi.node import get_fullname
 
-    module = "mkapi.plugins"
+    module = "mkapi.plugin"
     x = get_fullname("MkDocsConfig", module)
     assert x == "mkdocs.config.defaults.MkDocsConfig"
     x = get_fullname("Config", module)
@@ -180,5 +180,5 @@ def test_get_fullname_other():
 def test_get_fullname_nested():
     from mkapi.node import get_fullname
 
-    assert get_fullname("mkapi.docs.Item.name") == "mkapi.docs.Item.name"
-    assert not get_fullname("mkapi.docs.Item.mkapi")
+    assert get_fullname("mkapi.doc.Item.name") == "mkapi.doc.Item.name"
+    assert not get_fullname("mkapi.doc.Item.mkapi")

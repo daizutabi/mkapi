@@ -55,7 +55,7 @@ def test_get_module_name():
 def test_is_module():
     from mkapi.utils import _is_module, get_module_path
 
-    path = get_module_path("mkapi.objects")
+    path = get_module_path("mkapi.object")
     assert path
     assert not _is_module(path, r"^mkapi\..+")
 
@@ -65,7 +65,7 @@ def test_is_package():
 
     assert is_package("mkdocs")
     assert is_package("mkapi")
-    assert not is_package("mkapi.objects")
+    assert not is_package("mkapi.object")
     assert not is_package("sys")
     assert not is_package("a.b")
 
@@ -262,8 +262,8 @@ def test_get_object_asname():
 def test_get_base_classes():
     from mkapi.utils import get_base_classes
 
-    x = get_base_classes("Class", "mkapi.objects")
-    assert x == [("Definition", "mkapi.objects")]
+    x = get_base_classes("Class", "mkapi.object")
+    assert x == [("Definition", "mkapi.object")]
 
 
 def test_split_module_name_module():
@@ -281,7 +281,7 @@ def test_split_module_name_submodule():
 def test_split_module_name_module_imported():
     from mkapi.utils import split_module_name
 
-    assert split_module_name("mkapi.objects.ast") == ("ast", "mkapi.objects")
+    assert split_module_name("mkapi.object.ast") == ("ast", "mkapi.object")
 
 
 def test_split_module_name_class():

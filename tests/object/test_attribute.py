@@ -3,7 +3,7 @@ import inspect
 
 
 def test_merge_attributes_comment():
-    from mkapi.objects import Attribute, create_module, iter_objects
+    from mkapi.object import Attribute, create_module, iter_objects
 
     src = '''
     """Module.
@@ -38,7 +38,7 @@ def test_merge_attributes_comment():
 
 
 def test_create_attribute_module():
-    from mkapi.objects import Attribute, create_module
+    from mkapi.object import Attribute, create_module
 
     module = create_module("examples.styles.google")
     assert module
@@ -51,7 +51,12 @@ def test_create_attribute_module():
 
 
 def test_iter_init_attributes(get):
-    from mkapi.objects import Class, Function, create_class, iter_attributes_from_function
+    from mkapi.object import (
+        Class,
+        Function,
+        create_class,
+        iter_attributes_from_function,
+    )
 
     node = get("ExampleClass")
     assert isinstance(node, ast.ClassDef)
@@ -66,7 +71,7 @@ def test_iter_init_attributes(get):
 
 
 def test_attribute_doc():
-    from mkapi.objects import Class, create_module
+    from mkapi.object import Class, create_module
 
     module = create_module("examples.styles.google")
     assert module

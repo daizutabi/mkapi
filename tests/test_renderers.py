@@ -1,6 +1,6 @@
-from mkapi.objects import Class, Function, Module, get_object_from_module
-from mkapi.parsers import set_markdown
-from mkapi.renderers import (
+from mkapi.object import Class, Function, Module, get_object_from_module
+from mkapi.parser import set_markdown
+from mkapi.renderer import (
     _create_summary_docstring,
     _get_source,
     load_templates,
@@ -55,7 +55,7 @@ def test_render_object_function():
 
 
 def test_render_object_class():
-    obj = get_object_from_module("mkapi.objects.Class")
+    obj = get_object_from_module("mkapi.object.Class")
     assert obj
     set_markdown(obj)
     x = render_object(obj)

@@ -5,7 +5,7 @@ import pytest
 
 
 def test_create_module():
-    from mkapi.objects import create_module
+    from mkapi.object import create_module
 
     module = create_module("examples.styles.google")
     assert module
@@ -13,7 +13,7 @@ def test_create_module():
 
 
 def test_create_function():
-    from mkapi.objects import Function, create_module
+    from mkapi.object import Function, create_module
     from mkapi.utils import find_item_by_name
 
     module = create_module("examples.styles.google")
@@ -31,7 +31,7 @@ def test_create_function():
 
 
 def test_iter_objects():
-    from mkapi.objects import create_module, iter_objects
+    from mkapi.object import create_module, iter_objects
 
     src = """'''test module.'''
     m: str
@@ -66,7 +66,7 @@ def test_iter_objects():
 
 
 def test_get_object_type_package():
-    from mkapi.objects import create_module, get_object_type
+    from mkapi.object import create_module, get_object_type
 
     module = create_module("mkapi")
     assert module
@@ -75,35 +75,35 @@ def test_get_object_type_package():
 
 @pytest.fixture
 def mkapi_objects():
-    from mkapi.objects import create_module
+    from mkapi.object import create_module
 
-    module = create_module("mkapi.objects")
+    module = create_module("mkapi.object")
     assert module
     return module
 
 
 def test_get_object_type_module(mkapi_objects):
-    from mkapi.objects import get_object_type
+    from mkapi.object import get_object_type
 
     assert get_object_type(mkapi_objects) == "module"
 
 
 def test_get_object_type_dataclass(mkapi_objects):
-    from mkapi.objects import get_object_type
+    from mkapi.object import get_object_type
 
     cls = mkapi_objects.get("Object")
     assert get_object_type(cls) == "dataclass"
 
 
 def test_get_object_type_function(mkapi_objects):
-    from mkapi.objects import get_object_type
+    from mkapi.object import get_object_type
 
     func = mkapi_objects.get("create_function")
     assert get_object_type(func) == "function"
 
 
 def test_get_object_type_method(mkapi_objects):
-    from mkapi.objects import get_object_type
+    from mkapi.object import get_object_type
 
     cls = mkapi_objects.get("Object")
     method = cls.get("__post_init__")
@@ -111,7 +111,7 @@ def test_get_object_type_method(mkapi_objects):
 
 
 def test_get_object_type_attribute(mkapi_objects):
-    from mkapi.objects import get_object_type
+    from mkapi.object import get_object_type
 
     cls = mkapi_objects.get("Object")
     attribute = cls.get("node")
@@ -119,7 +119,7 @@ def test_get_object_type_attribute(mkapi_objects):
 
 
 def test_get_source_module(mkapi_objects):
-    from mkapi.objects import get_source
+    from mkapi.object import get_source
 
     s = get_source(mkapi_objects)
     assert s
@@ -127,7 +127,7 @@ def test_get_source_module(mkapi_objects):
 
 
 def test_get_source_function(mkapi_objects):
-    from mkapi.objects import get_source
+    from mkapi.object import get_source
 
     func = mkapi_objects.get("create_module")
     s = get_source(func)
@@ -136,7 +136,7 @@ def test_get_source_function(mkapi_objects):
 
 
 def test_get_source_examples():
-    from mkapi.objects import create_module, get_source
+    from mkapi.object import create_module, get_source
 
     module = create_module("examples.styles.google")
     assert module
@@ -154,9 +154,9 @@ def test_get_source_examples():
 
 @pytest.fixture
 def mkapiplugin():
-    from mkapi.objects import Class, create_module
+    from mkapi.object import Class, create_module
 
-    module = create_module("mkapi.plugins")
+    module = create_module("mkapi.plugin")
     assert module
     cls = module.get("MkAPIPlugin")
     assert isinstance(cls, Class)
@@ -165,7 +165,7 @@ def mkapiplugin():
 
 @pytest.mark.parametrize("name", ["on_config", "dirty"])
 def test_is_child(mkapiplugin, name):
-    from mkapi.objects import is_child
+    from mkapi.object import is_child
 
     for name_, obj in mkapiplugin.children.items():
         if name_ == name:
@@ -176,7 +176,7 @@ def test_is_child(mkapiplugin, name):
     "name", ["config_class", "config", "on_post_build", "_is_protocol"]
 )
 def test_is_not_child(mkapiplugin, name):
-    from mkapi.objects import is_child
+    from mkapi.object import is_child
 
     for name_, obj in mkapiplugin.children.items():
         if name_ == name:
@@ -185,7 +185,7 @@ def test_is_not_child(mkapiplugin, name):
 
 @pytest.mark.parametrize("attr", ["", ".example_method"])
 def test_get_object_class(attr):
-    from mkapi.objects import get_object
+    from mkapi.object import get_object
 
     module = "examples.styles.google"
     qualname = f"ExampleClass{attr}"
@@ -203,47 +203,47 @@ def test_get_object_class(attr):
 
 
 def test_get_object_cache():
-    from mkapi.objects import Class, Function, create_module, get_object
+    from mkapi.object import Class, Function, create_module, get_object
 
-    module = create_module("mkapi.objects")
-    a = get_object("mkapi.objects")
+    module = create_module("mkapi.object")
+    a = get_object("mkapi.object")
     assert module is a
-    c = get_object("mkapi.objects.Object")
-    f = get_object("mkapi.objects.Module.__post_init__")
+    c = get_object("mkapi.object.Object")
+    f = get_object("mkapi.object.Module.__post_init__")
     assert isinstance(c, Class)
-    assert c.module == "mkapi.objects"
+    assert c.module == "mkapi.object"
     assert isinstance(f, Function)
-    assert f.module == "mkapi.objects"
-    c2 = get_object("mkapi.objects.Object")
-    f2 = get_object("mkapi.objects.Module.__post_init__")
+    assert f.module == "mkapi.object"
+    c2 = get_object("mkapi.object.Object")
+    f2 = get_object("mkapi.object.Module.__post_init__")
     assert c is c2
     assert f is f2
 
 
 def test_get_fullname_from_object():
-    from mkapi.objects import get_fullname_from_object, get_object
+    from mkapi.object import get_fullname_from_object, get_object
 
-    x = get_object("mkapi.objects")
+    x = get_object("mkapi.object")
     assert x
     r = get_fullname_from_object("Object", x)
-    assert r == "mkapi.objects.Object"
+    assert r == "mkapi.object.Object"
     x = get_object(r)
     assert x
     r = get_fullname_from_object("__repr__", x)
-    assert r == "mkapi.objects.Object.__repr__"
+    assert r == "mkapi.object.Object.__repr__"
     x = get_object(r)
     assert x
     r = get_fullname_from_object("__post_init__", x)
-    assert r == "mkapi.objects.Object.__post_init__"
+    assert r == "mkapi.object.Object.__post_init__"
     x = get_object(r)
     assert x
     r = get_fullname_from_object("Object", x)
-    assert r == "mkapi.objects.Object"
+    assert r == "mkapi.object.Object"
 
 
 @pytest.fixture
 def google():
-    from mkapi.objects import Module, get_object
+    from mkapi.object import Module, get_object
 
     module = get_object("examples.styles.google")
     assert isinstance(module, Module)
@@ -258,13 +258,13 @@ def name(request):
 
 
 def test_get_members_examples(google, name):
-    from mkapi.objects import get_members
+    from mkapi.object import get_members
 
     assert name in get_members(google)
 
 
 def test_get_members_examples_class(google, name):
-    from mkapi.objects import Class, get_members
+    from mkapi.object import Class, get_members
 
     m = get_members(google, lambda x: isinstance(x, Class))
     if "Class" in name:
@@ -274,7 +274,7 @@ def test_get_members_examples_class(google, name):
 
 
 def test_get_members_examples_function(google, name):
-    from mkapi.objects import Function, get_members
+    from mkapi.object import Function, get_members
 
     m = get_members(google, lambda x: isinstance(x, Function))
     if "function" in name:
@@ -284,7 +284,7 @@ def test_get_members_examples_function(google, name):
 
 
 def test_get_members_examples_attribute(google, name):
-    from mkapi.objects import Attribute, get_members
+    from mkapi.object import Attribute, get_members
 
     m = get_members(google, lambda x: isinstance(x, Attribute))
     if "variable" in name:
@@ -295,7 +295,7 @@ def test_get_members_examples_attribute(google, name):
 
 @pytest.mark.parametrize("name", ["attr1", "__init__"])
 def test_get_members_name(google, name):
-    from mkapi.objects import Class, get_members
+    from mkapi.object import Class, get_members
 
     cls = google.get("ExampleClass")
     assert isinstance(cls, Class)
@@ -312,7 +312,7 @@ def test_get_members_name(google, name):
 
 @pytest.mark.parametrize("name", ["__all__", "ExampleClassGoogle", "ExampleClassNumPy"])
 def test_get_members_asname(name):
-    from mkapi.objects import create_module, get_members
+    from mkapi.object import create_module, get_members
 
     module = create_module("examples.styles")
     assert module

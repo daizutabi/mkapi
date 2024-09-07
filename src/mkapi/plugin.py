@@ -14,9 +14,9 @@ from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn
 
 import mkapi
 import mkapi.nav
-from mkapi import renderers
+from mkapi import renderer
 from mkapi.nav import _split_name_depth
-from mkapi.pages import Page
+from mkapi.page import Page
 from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
 
-    from mkapi.pages import Page
+    from mkapi.page import Page
     # from mkdocs.livereload import LiveReloadServer
     # from mkdocs.structure.nav import Navigation
     # from mkdocs.utils.templates import TemplateContext
@@ -185,7 +185,7 @@ def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
 
 
 def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
-    renderers.load_templates()
+    renderer.load_templates()
 
 
 def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:

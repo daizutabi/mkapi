@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
 from mkapi.doc import Doc, create_summary_item
-from mkapi.objects import Attribute, Class, Function, Module, get_source
+from mkapi.object import Attribute, Class, Function, Module, get_source
 
 # from mkapi.parsers import create_converter
 
@@ -21,7 +21,7 @@ from mkapi.objects import Attribute, Class, Function, Module, get_source
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
-    from mkapi.objects import Object
+    from mkapi.object import Object
 
 templates: dict[str, Template] = {}
 

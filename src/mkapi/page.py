@@ -11,9 +11,9 @@ from pathlib import Path, PurePath
 from typing import TYPE_CHECKING
 
 import mkapi.markdown
-import mkapi.renderers
+import mkapi.renderer
 from mkapi.node import iter_module_members, iter_nodes
-from mkapi.objects import get_object
+from mkapi.object import get_object
 from mkapi.utils import get_module_node, split_filters
 
 if TYPE_CHECKING:
@@ -155,7 +155,7 @@ def _render(
     if not (obj := get_object(name)):
         return f"!!! failure\n\n    {name!r} not found."
 
-    return mkapi.renderers.render(obj, level, namespace, filters, predicate)
+    return mkapi.renderer.render(obj, level, namespace, filters, predicate)
 
 
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")

@@ -43,7 +43,7 @@ Issues = "https://github.com/daizutabi/mkapi/issues"
 mkapi = "mkapi.cli.main:app"
 
 [project.entry-points."mkdocs.plugins"]
-mkapi = "mkapi.plugins:MkAPIPlugin"
+mkapi = "mkapi.plugin:MkAPIPlugin"
 
 [tool.hatch.build.targets.sdist]
 exclude = ["/.github", "/docs"]
