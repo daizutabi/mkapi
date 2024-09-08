@@ -568,23 +568,33 @@ class StringTransformer(Transformer):
     string values by renaming them according to the rules defined in the
     parent class.
 
-    Methods:
-        visit_Constant(node: Constant) -> Constant | Name:
-            Visits a `Constant` node and renames it if its value is a string.
-            If the value is not a string, it returns the node unchanged.
-
-    Examples:
-        >>> transformer = StringTransformer()
-        >>> node = ast.parse('"hello"')
-        >>> transformer.unparse(node)
-        '__mkapi__.hello'
-
     This transformer is useful for code analysis and manipulation tasks,
     particularly when there is a need to systematically modify string
     constants in the AST.
     """
 
     def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802
+        """
+        Visit a `Constant` node and rename it if its value is a string.
+
+        This method overrides the `visit_Constant` method from the `Transformer`
+        class. It checks if the value of the `Constant` node is a string, and if
+        so, it renames the string using the `_rename` method. If the value is not
+        a string, it returns the node unchanged.
+
+        Args:
+            node (Constant): The `Constant` node to be visited and potentially renamed.
+
+        Returns:
+            Constant | Name: The renamed `Constant` node if its value is a string,
+            otherwise the original `Constant` node.
+
+        Examples:
+            >>> transformer = StringTransformer()
+            >>> node = ast.parse('"hello"')
+            >>> transformer.unparse(node)
+            '__mkapi__.hello'
+        """
         if isinstance(node.value, str):
             return self._rename(node.value)
 

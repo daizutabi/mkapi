@@ -95,13 +95,13 @@ class Page:
             if kind == TemplateKind.HEADING:
                 return True
 
-            if kind == TemplateKind.OBJECT and parser.name == self.name:
-                return False
-
             if self.is_source_page():
                 if self.name == parser.name and kind == TemplateKind.SOURCE:
                     return True
 
+                return False
+
+            if kind == TemplateKind.OBJECT and parser.name == self.name:
                 return False
 
             return kind != TemplateKind.SOURCE
@@ -149,8 +149,8 @@ def convert_markdown(
     render = partial(_render, namespace=namespaces[1], predicate=predicate)
     markdown = mkapi.markdown.sub(OBJECT_PATTERN, render, markdown)
 
-    linker = partial(_linker, src_uri=src_uri, namespace=namespaces[0], anchors=anchors)
-    return mkapi.markdown.sub(LINK_PATTERN, linker, markdown)
+    link = partial(_link, src_uri=src_uri, namespace=namespaces[0], anchors=anchors)
+    return mkapi.markdown.sub(LINK_PATTERN, link, markdown)
 
 
 def _render(
@@ -170,11 +170,8 @@ def _render(
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
 
 
-def _linker(
-    match: re.Match,
-    src_uri: str,
-    namespace: str,
-    anchors: dict[str, str],
+def _link(
+    match: re.Match, src_uri: str, namespace: str, anchors: dict[str, str]
 ) -> str:
     name, fullname = match.groups()
     asname = ""
@@ -190,23 +187,11 @@ def _linker(
     else:
         asname = match.group()
 
-    return _link_from_uris(name, fullname, src_uri, namespace) or asname
-
-
-# cache?
-def _link_from_uris(
-    name: str,
-    fullname: str,
-    src_uri: str,
-    namespace: str,
-) -> str | None:
     if fullname.startswith("__mkapi__."):
         from_mkapi = True
         fullname = fullname[10:]
     else:
         from_mkapi = False
-
-    # fullname = iter_nodes(fullname) or fullname
 
     if uri := URIS[namespace].get(fullname):
         uri = os.path.relpath(uri, PurePath(src_uri).parent)
@@ -215,35 +200,45 @@ def _link_from_uris(
     if from_mkapi:
         return f'<span class="mkapi-tooltip" title="{fullname}">{name}</span>'
 
-    return None
+    return asname
 
 
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
-HEADING_PATTERN = re.compile(r"<h\d.+?mkapi-heading.+?</h\d>\n?")
+HEADING_PATTERN = re.compile(r"<h(\d).+?mkapi-heading.+?</h\d>\n?")
 
 
 def convert_html(html: str, src_uri: str, namespace: str, anchor: str) -> str:
     """Convert HTML for source pages."""
 
-    def replace(match: re.Match) -> str:
-        open_tag, name, close_tag = match.groups()
+    link = partial(_link_source, src_uri=src_uri, namespace=namespace, anchor=anchor)
+    html = SOURCE_LINK_PATTERN.sub(link, html)
 
-        if uri := URIS[namespace].get(name):
-            uri = os.path.relpath(uri, src_uri)
-            uri = uri[:-3]  # Remove `.md`
-            uri = uri.replace("/README", "")  # Remove `/README`
+    return HEADING_PATTERN.sub(_heading, html)
 
-            href = f"{uri}/#{name}"
-            link = f'<a href="{href}">[{anchor}]</a>'
-            link = f'<div class="mkapi-source-link" id="{name}">{link}</div>'
-            # https://github.com/daizutabi/mkapi/issues/123: span -> div
-        else:
-            link = ""
 
-        if open_tag.endswith(">"):
-            return link
+def _link_source(match: re.Match, src_uri: str, namespace: str, anchor: str) -> str:
+    open_tag, name, close_tag = match.groups()
 
-        return f"{open_tag}{close_tag}{link}"
+    if uri := URIS[namespace].get(name):
+        uri = os.path.relpath(uri, src_uri)
+        uri = uri[:-3]  # Remove `.md`
+        uri = uri.replace("/README", "")  # Remove `/README`
 
-    html = SOURCE_LINK_PATTERN.sub(replace, html)
-    return HEADING_PATTERN.sub("", html)
+        href = f"{uri}/#{name}"
+        link = f'<a href="{href}">[{anchor}]</a>'
+        link = f'<div class="mkapi-source-link" id="{name}">{link}</div>'
+        # https://github.com/daizutabi/mkapi/issues/123: span -> div
+    else:
+        link = ""
+
+    if open_tag.endswith(">"):
+        return link
+
+    return f"{open_tag}{close_tag}{link}"
+
+
+def _heading(match: re.Match) -> str:
+    # if match.group(1) == "1":
+    #     return match.group()
+
+    return ""

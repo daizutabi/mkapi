@@ -63,8 +63,8 @@ nav:
       - $api:src/mkapi.***
   - Examples:
       - $api:src/examples.**
-  - Schemdraw:
-      - $api/schemdraw.***
+  # - Schemdraw:
+  #     - $api/schemdraw.***
   # - Jinja2:
   #     - $api:src/jinja2.***
   # - Polars: $api/polars.***

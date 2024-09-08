@@ -84,11 +84,23 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
 
 
 FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)\n?", re.M | re.S)
-INLINE_CODE = re.compile(r"(?P<pre>`+).+?(?P=pre)")
+INLINE_CODE = re.compile(r"(?P<pre>`+)[^`]+?(?P=pre)_?")
 
 
 def _iter_fenced_codes(text: str) -> Iterator[re.Match | str]:
     return _iter(FENCED_CODE, text)
+
+
+def _iter_inline_codes(text: str) -> Iterator[re.Match | str]:
+    for match in _iter(INLINE_CODE, text):
+        if isinstance(match, re.Match):
+            if match.group().endswith("_"):
+                yield match.group()
+            else:
+                yield match
+
+        else:
+            yield match
 
 
 DOCTEST = re.compile(r" *#+ *doctest:.*$", re.M)
@@ -565,10 +577,10 @@ def _replace_directive(match: re.Match) -> str:
             return match.group()
 
 
-INTERNAL_LINK = re.compile(r":\w+?:`(?P<name>.+?)\s+?<(?P<href>\S+?)>`")
-INTERNAL_LINK_WITHOUT_HREF = re.compile(r":\w+?:`(?P<name>\S+?)`")
-LINK = re.compile(r"`(?P<name>[^<].+?)\s+?<(?P<href>\S+?)>`_+", re.S)
-LINK_WITHOUT_HREF = re.compile(r"`(?P<name>.+?)`_+", re.S)
+INTERNAL_LINK = re.compile(r":\w+?:`(?P<name>.+?)\s+?<(?P<href>[^`\s]+?)>`")
+INTERNAL_LINK_WITHOUT_HREF = re.compile(r":\w+?:`(?P<name>[^`\s]+?)`")
+LINK = re.compile(r"`(?P<name>[^<`]+?)\s+?<(?P<href>[^`\s]+?)>`_+", re.S)
+LINK_WITHOUT_HREF = re.compile(r"`(?P<name>[^`]+?)`_+", re.S)
 REFERENCE = re.compile(r"\.\.\s+_(?P<name>.+?)(?P<sep>:\s+)(?P<href>\S+?)", re.S)
 
 
@@ -606,7 +618,12 @@ def _convert(text: str) -> Iterator[str]:
             yield match.group()
 
         else:
-            yield _replace(match)
+            for match in _iter_inline_codes(match):
+                if isinstance(match, re.Match):
+                    yield match.group()
+
+                else:
+                    yield _replace(match)
 
 
 def convert(text: str) -> str:
