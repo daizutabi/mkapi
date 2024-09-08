@@ -63,7 +63,7 @@ def _iter_items(text: str) -> Iterator[str]:
         str: Each item found in the text, stripped of leading
         and trailing whitespace.
 
-    Example:
+    Examples:
         >>> text = "Item 1\\n a\\nItem 2\\n b\\nItem 3\\n c"
         >>> items = list(_iter_items(text))
         >>> items
@@ -136,7 +136,7 @@ def split_item(text: str, style: Style) -> tuple[str, str, str]:
         tuple[str, str, str]: A tuple containing the name, type, and
         text description of the item.
 
-    Example:
+    Examples:
         >>> text = "param1 (int): The first parameter."
         >>> split_item(text, "google")
         ('param1', 'int', 'The first parameter.')
@@ -169,7 +169,7 @@ def split_item_without_name(text: str, style: str) -> tuple[str, str]:
         tuple[str, str]: A tuple containing the type and the text description.
         If the type cannot be determined, an empty string is returned as the type.
 
-    Example:
+    Examples:
         >>> text = "int: The return value."
         >>> split_item_without_name(text, "google")
         ('int', 'The return value.')
@@ -205,7 +205,7 @@ class Item:
     exception. It stores the name, type, and description of the item,
     providing a structured way to manage and access this information.
 
-    Example:
+    Examples:
         >>> item = Item(name="param1", type="int", text="The first parameter.")
         >>> item.name
         'param1'
@@ -259,7 +259,7 @@ def iter_items(text: str, style: Style) -> Iterator[Item]:
         Iterator[Item]: Each Item instance created from the extracted components
         of the items found in the text.
 
-    Example:
+    Examples:
         >>> text = "param1 (int): The first.\\nparam2 (str): The second."
         >>> items = list(iter_items(text, "google"))
         >>> len(items)
@@ -298,7 +298,7 @@ def iter_items_without_name(text: str, style: Style) -> Iterator[Item]:
         Iterator[Item]: Each Item instance created from the extracted components
         of the items found in the text, without a name.
 
-    Example:
+    Examples:
         >>> text = "int: The return value."
         >>> items = list(iter_items_without_name(text, "google"))
         >>> len(items)
@@ -345,7 +345,7 @@ def _split_sections(text: str, style: Style) -> Iterator[str]:
         str: Each section found in the text, stripped of leading and
         trailing whitespace.
 
-    Example:
+    Examples:
         >>> text = "Section 1\\nContent of section 1.\\n\\nSection 2\\nContent of section 2."
         >>> sections = list(_split_sections(text, "google"))
         >>> len(sections)
@@ -419,7 +419,7 @@ def get_style(text: str) -> Style:
     Returns:
         Style: The determined style of the docstring, either "google" or "numpy".
 
-    Example:
+    Examples:
         >>> text = "Parameters:\\n    param1 (int): The first parameter."
         >>> get_style(text)
         'google'
@@ -460,7 +460,7 @@ def _rename_section(section_name: str) -> str:
         str: The renamed section name if a match is found; otherwise, the
         original section name.
 
-    Example:
+    Examples:
         >>> _rename_section("Parameters")
         'Parameters'
         >>> _rename_section("Args")
@@ -497,7 +497,7 @@ def split_section(text: str, style: Style) -> tuple[str, str]:
         associated with that section. If the section name cannot be determined,
         an empty string is returned as the name.
 
-    Example:
+    Examples:
         >>> text = "Args:\\n    param1 (int): The first parameter."
         >>> split_section(text, "google")
         ('Args', 'param1 (int): The first parameter.')
@@ -540,7 +540,7 @@ def _iter_sections(text: str, style: Style) -> Iterator[tuple[str, str]]:
         Iterator[tuple[str, str]]: Each tuple contains the section name and the text
         associated with that section. If a section has no name, an empty string is returned as the name.
 
-    Example:
+    Examples:
         >>> text = "Args:\\n    param1 (int): The first parameter.\\n\\n"
         >>> text += "Returns:\\n    str: The output string."
         >>> sections = list(_iter_sections(text, "google"))
@@ -597,7 +597,7 @@ class Section(Item):
         items (list[Item]): A list of Item instances that belong to this section,
             representing individual parameters, return values, or exceptions.
 
-    Example:
+    Examples:
         >>> section = Section(name="Parameters", type="", text="The parameters for the function.", items=[])
         >>> section.name
         'Parameters'
@@ -637,7 +637,7 @@ def _create_admonition(name: str, text: str) -> str:
         NotImplementedError: If the provided name does not match any known
         admonition types.
 
-    Example:
+    Examples:
         >>> note_admonition = _create_admonition("Note", "This is a note.")
         >>> print(note_admonition)
         !!! note "Note"
@@ -685,7 +685,7 @@ def iter_sections(text: str, style: Style) -> Iterator[Section]:
         Section: Each Section instance created from the extracted components
         of the sections found in the text.
 
-    Example:
+    Examples:
         >>> text = "Parameters:\\n    param1 (int): The first parameter.\\n\\n"
         >>> text += "Returns:\\n    str: The output string."
         >>> sections = list(iter_sections(text, "google"))
@@ -746,7 +746,7 @@ class Doc(Item):
             the structured sections within the documentation, such as parameters,
             return values, and examples.
 
-    Example:
+    Examples:
         >>> doc = Doc(name="Doc", type="Function", text="This is a sample function.", sections=[])
         >>> doc.name
         'Doc'
@@ -792,7 +792,7 @@ def create_doc(text: str | None, style: Style | None = None) -> Doc:
     Returns:
         Doc: A Doc instance containing the structured documentation information.
 
-    Example:
+    Examples:
         >>> text = "Parameters:\\n    param1 (int): The first parameter.\\n\\n"
         >>> text += "Returns:\\n    str: The output string."
         >>> doc = create_doc(text, "google")
@@ -842,7 +842,7 @@ def create_doc_comment(text: str) -> Doc:
         Doc: A Doc instance containing the type and text extracted from
         the input comment, with an empty list of sections.
 
-    Example:
+    Examples:
         >>> doc_comment = create_doc_comment("str: The output string.")
         >>> doc_comment.name
         'Doc'
@@ -874,7 +874,7 @@ def split_type(doc: Doc) -> None:
     Returns:
         None: This function modifies the Doc instance in place and does not return a value.
 
-    Example:
+    Examples:
         >>> doc = Doc(name="Doc", type="", text="str: The output string.", sections=[])
         >>> split_type(doc)
         >>> doc.type
@@ -906,7 +906,7 @@ def create_summary_item(name: str, text: str, type_: str | ast.expr | None = Non
         Item: An Item instance containing the provided name, type, and the
         extracted summary line from the text.
 
-    Example:
+    Examples:
         >>> text = "This is a parameter.\\n\\nIt has multiple lines."
         >>> item = create_summary_item("param1", text, "str")
         >>> item.name
@@ -938,7 +938,7 @@ def merge_items(a: Item, b: Item) -> Item:
         Item: A new Item instance containing the merged attributes from both
         input items.
 
-    Example:
+    Examples:
         >>> item1 = Item(name="param1", type="int", text="The first parameter.")
         >>> item2 = Item(name="param2", type="str", text="The second parameter.")
         >>> merged_item = merge_items(item1, item2)
@@ -974,7 +974,7 @@ def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
         Iterator[Item]: Each merged Item instance or an Item from one of the lists
         if it does not have a counterpart in the other list.
 
-    Example:
+    Examples:
         >>> item1 = Item(name="param1", type="int", text="The first parameter.")
         >>> item2 = Item(name="param2", type="str", text="The second parameter.")
         >>> item3 = Item(name="param1", type="float", text="Updated first parameter.")
@@ -1122,7 +1122,7 @@ def is_empty(doc: Doc) -> bool:
     Returns:
         bool: True if the Doc instance is empty; otherwise, False.
 
-    Example:
+    Examples:
         >>> empty_doc = Doc("EmptyDoc", type="", text="", sections=[])
         >>> is_empty(empty_doc)
         True

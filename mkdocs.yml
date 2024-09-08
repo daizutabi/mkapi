@@ -61,11 +61,12 @@ nav:
   #     - usage/config.md
   - Reference:
       - $api:src/mkapi.***
-  # - Examples:
-  #     - $api:src/examples.**
+  - Examples:
+      - $api:src/examples.**
+  # - Schemdraw:
+  #     - $api/schemdraw.***
   # - Jinja2:
   #     - $api:src/jinja2.***
-  # - Schemdraw: $api/schemdraw.***
   # - Polars: $api/polars.***
   # - Altair: $api/altair.***
 extra_css:

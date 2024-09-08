@@ -47,7 +47,7 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
         are the parts of the text that are not matched by the pattern, and the
         matches are the regex match objects.
 
-    Example:
+    Examples:
         >>> import re
         >>> pattern = re.compile(r'\\d+')
         >>> text = "There are 2 apples and 3 oranges."
@@ -84,11 +84,23 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
 
 
 FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)\n?", re.M | re.S)
-INLINE_CODE = re.compile(r"(?P<pre>`+).+?(?P=pre)")
+INLINE_CODE = re.compile(r"(?P<pre>`+)[^`]+?(?P=pre)_?")
 
 
 def _iter_fenced_codes(text: str) -> Iterator[re.Match | str]:
     return _iter(FENCED_CODE, text)
+
+
+def _iter_inline_codes(text: str) -> Iterator[re.Match | str]:
+    for match in _iter(INLINE_CODE, text):
+        if isinstance(match, re.Match):
+            if match.group().endswith("_"):
+                yield match.group()
+            else:
+                yield match
+
+        else:
+            yield match
 
 
 DOCTEST = re.compile(r" *#+ *doctest:.*$", re.M)
@@ -110,7 +122,7 @@ def _add_example_escape(text: str) -> str:
     Returns:
         str: The modified text with escaped patterns.
 
-    Example:
+    Examples:
         >>> text = ">>>\\n>>> print('Hello, World!')\\n>>> # This is a comment\\n"
         >>> x = _add_example_escape(text).splitlines()
         >>> x[0]
@@ -142,7 +154,7 @@ def _delete_example_escape(text: str) -> str:
         Returns:
             str: The modified text with escaped patterns removed.
 
-        Example:
+        Examples:
             >>> text = " MKAPI_BLANK_LINE\\n__mkapi__# This is a comment\\n"
             >>> _delete_example_escape(text)
             ' \\n# This is a comment\\n'
@@ -171,7 +183,7 @@ def _iter_examples(text: str) -> Iterator[doctest.Example | str]:
         doctest.Example or str: Each example found in the text, or
         segments of text that are not part of any example.
 
-    Example:
+    Examples:
         >>> text = ">>> print('Hello')\\n'Hello'\\n>>> print('World')\\n'World'\\n"
         >>> examples = list(_iter_examples(text))
         >>> len(examples)
@@ -233,7 +245,7 @@ def _iter_example_lists(text: str) -> Iterator[list[doctest.Example] | str]:
         list[doctest.Example] | str: A list of examples found in the text,
         or segments of text that are not part of any example.
 
-    Example:
+    Examples:
         >>> text = ">>> print('Hello')\\n'Hello'\\n>>> print('World')\\n'World'\\n"
         >>> example_lists = list(_iter_example_lists(text))
         >>> len(example_lists)
@@ -329,7 +341,7 @@ def _iter_literal_block(text: str) -> Iterator[str]:
         str: Each literal block formatted as a Markdown code block,
         or segments of text that are not part of any literal block.
 
-    Example:
+    Examples:
         >>> text = " x\\n a\\n\\n\\n     b\\n\\n     c\\n\\nd\\n"
         >>> blocks = list(_iter_literal_block(text))
         >>> len(blocks)
@@ -459,7 +471,7 @@ def _get_indent(line: str) -> int:
         int: The number of leading spaces in the line, or -1 if the line
         is empty or contains only spaces.
 
-    Example:
+    Examples:
         >>> _get_indent("    code block")
         4
         >>> _get_indent("no indent")
@@ -496,7 +508,7 @@ def _iter_code_blocks(text: str) -> Iterator[str]:
         Iterator[str]: Each code block found in the text, formatted as a
         Markdown code block.
 
-    Example:
+    Examples:
         >>> text = "```\\nprint('Hello')\\n```\\n>>> print('World')\\n'World'\\n"
         >>> code_blocks = list(_iter_code_blocks(text))
         >>> len(code_blocks)
@@ -565,10 +577,10 @@ def _replace_directive(match: re.Match) -> str:
             return match.group()
 
 
-INTERNAL_LINK = re.compile(r":\w+?:`(?P<name>.+?)\s+?<(?P<href>\S+?)>`")
-INTERNAL_LINK_WITHOUT_HREF = re.compile(r":\w+?:`(?P<name>\S+?)`")
-LINK = re.compile(r"`(?P<name>[^<].+?)\s+?<(?P<href>\S+?)>`_+", re.S)
-LINK_WITHOUT_HREF = re.compile(r"`(?P<name>.+?)`_+", re.S)
+INTERNAL_LINK = re.compile(r":\w+?:`(?P<name>.+?)\s+?<(?P<href>[^`\s]+?)>`")
+INTERNAL_LINK_WITHOUT_HREF = re.compile(r":\w+?:`(?P<name>[^`\s]+?)`")
+LINK = re.compile(r"`(?P<name>[^<`]+?)\s+?<(?P<href>[^`\s]+?)>`_+", re.S)
+LINK_WITHOUT_HREF = re.compile(r"`(?P<name>[^`]+?)`_+", re.S)
 REFERENCE = re.compile(r"\.\.\s+_(?P<name>.+?)(?P<sep>:\s+)(?P<href>\S+?)", re.S)
 
 
@@ -606,7 +618,12 @@ def _convert(text: str) -> Iterator[str]:
             yield match.group()
 
         else:
-            yield _replace(match)
+            for match in _iter_inline_codes(match):
+                if isinstance(match, re.Match):
+                    yield match.group()
+
+                else:
+                    yield _replace(match)
 
 
 def convert(text: str) -> str:
@@ -768,7 +785,7 @@ def get_admonition(name: str, title: str, text: str) -> str:
     Returns:
         str: A formatted string representing the admonition block in Markdown.
 
-    Example:
+    Examples:
         >>> name = "warning"
         >>> title = "Caution"
         >>> text = "This is a warning message."

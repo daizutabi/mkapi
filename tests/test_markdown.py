@@ -117,6 +117,20 @@ def test_iter_fenced_codes():
     assert x == ["abc\n"]
 
 
+def test_iter_inline_codes():
+    from mkapi.markdown import _iter_inline_codes
+
+    text = "abc`x`def`y`_g`z`"
+    x = list(_iter_inline_codes(text))
+    assert len(x) == 6
+    assert x[0] == "abc"
+    assert x[1].group() == "`x`"  # type: ignore
+    assert x[2] == "def"
+    assert x[3] == "`y`_"
+    assert x[4] == "g"
+    assert x[5].group() == "`z`"  # type: ignore
+
+
 def test_iter_examples():
     from mkapi.markdown import _iter_example_lists, _iter_examples
 
@@ -320,6 +334,14 @@ def test_convert_example_new_line():
     src1 = inspect.cleandoc(src1)
     src2 = inspect.cleandoc(src2)
     assert convert(src1) == convert(src2)
+
+
+def test_convert_link():
+    from mkapi.markdown import convert
+
+    src = "`abc <def>`_ `ghi <jkl>` `_abc`"
+    m = convert(src)
+    assert m == "[abc](def) `ghi <jkl>` `_abc`"
 
 
 def test_finditer():

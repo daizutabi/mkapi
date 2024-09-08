@@ -88,3 +88,38 @@ def test_get_node_class(name: str):
     from mkapi.node import Definition, get_node
 
     assert isinstance(get_node(name), Definition)
+
+
+@pytest.mark.parametrize(
+    "name, expected_repr",
+    [
+        ("mkapi.node", "Module('mkapi.node')"),
+        ("mkapi.renderer", "Module('mkapi.renderer')"),
+        ("jinja2.Template", "Definition('Template', 'jinja2.environment')"),
+        ("mkapi.doc.Item", "Definition('Item', 'mkapi.doc')"),
+        ("mkapi.plugin.sys", "Import('sys')"),
+    ],
+)
+def test_node_repr(name: str, expected_repr: str):
+    from mkapi.node import get_node
+
+    node = get_node(name)
+    assert repr(node) == expected_repr
+
+
+def test_parse_module_invalid():
+    from mkapi.node import parse_module
+
+    assert parse_module("invalid") == []
+
+
+def test_get_node_invalid_module():
+    from mkapi.node import get_node
+
+    assert get_node("invalid") is None
+
+
+def test_get_node_invalid_name():
+    from mkapi.node import get_node
+
+    assert get_node("invalid", "mkapi") is None

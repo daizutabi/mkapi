@@ -70,7 +70,7 @@ def iter_child_nodes(node: AST) -> Iterator[AST]:
     Yields:
         AST: The child nodes of the specified AST node.
 
-    Example:
+    Examples:
         >>> import ast
         >>> tree = ast.parse("def foo(): pass")
         >>> for child in iter_child_nodes(tree):
@@ -171,7 +171,7 @@ def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type
     Returns:
         str | None: The name of the assignment node if found, otherwise None.
 
-    Example:
+    Examples:
         >>> import ast
         >>> node = ast.parse("x = 1").body[0]
         >>> get_assign_name(node)
@@ -215,7 +215,7 @@ def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:  #
         ast.expr | None: The type annotation of the assignment node if found,
             otherwise None.
 
-    Example:
+    Examples:
         >>> import ast
         >>> node = ast.parse("x: int = 1").body[0]
         >>> get_assign_type(node)  # doctest: +ELLIPSIS
@@ -254,7 +254,7 @@ def _iter_parameters(
         parameter name, its type annotation (if any), and its kind (e.g.,
         positional-only, positional-or-keyword, keyword-only, or variable).
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "def func(a, b: int, *args, c: str, d=5, **kwargs): pass"
         >>> node = ast.parse(src).body[0]
@@ -299,7 +299,7 @@ def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | 
         ast.expr | None: The default values for the parameters, or None
         for parameters that do not have a default value.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "def func(a, b=2, c=3): pass"
         >>> node = ast.parse(src).body[0]
@@ -333,7 +333,7 @@ class Parameter:
         kind (_ParameterKind): The kind of the parameter, indicating whether it is
             positional-only, positional-or-keyword, keyword-only, or variable.
 
-    Example:
+    Examples:
         >>> from mkapi.ast import FunctionDef
         >>> param = Parameter(name="arg1", type=None, default=None, kind=P.POSITIONAL_OR_KEYWORD)
         >>> param.name
@@ -378,7 +378,7 @@ def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]
         defined in the function, containing the name, type annotation, default
         value (if any), and kind.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "def func(a, b: int, *args, c: str, d=5, **kwargs): pass"
         >>> node = ast.parse(src).body[0]
@@ -419,7 +419,7 @@ def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr]:
     Yields:
         ast.expr: The unique exception types raised within the function.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "def func(): raise ValueError('error')"
         >>> node = ast.parse(src).body[0]
@@ -475,7 +475,7 @@ def create_ast_expr(name: str) -> ast.expr:
         ast.expr: An AST expression representing the name, or a Constant
         expression if the name is invalid or cannot be parsed.
 
-    Example:
+    Examples:
         >>> create_ast_expr("x").id
         'x'
         >>> create_ast_expr("invalid name").value
@@ -511,7 +511,7 @@ class Transformer(NodeTransformer):
     the specified prefix (`__mkapi__.`) to the names of nodes, allowing
     for systematic renaming during AST transformations.
 
-    Example:
+    Examples:
         >>> transformer = Transformer()
         >>> node = ast.parse("x = 1")
         >>> transformer.unparse(node)
@@ -544,7 +544,7 @@ class Transformer(NodeTransformer):
         Returns:
             str: The source code representation of the transformed AST node.
 
-        Example:
+        Examples:
             >>> transformer = Transformer()
             >>> node = ast.parse("a.b.c")
             >>> transformer.unparse(node)
@@ -568,23 +568,33 @@ class StringTransformer(Transformer):
     string values by renaming them according to the rules defined in the
     parent class.
 
-    Methods:
-        visit_Constant(node: Constant) -> Constant | Name:
-            Visits a `Constant` node and renames it if its value is a string.
-            If the value is not a string, it returns the node unchanged.
-
-    Example:
-        >>> transformer = StringTransformer()
-        >>> node = ast.parse('"hello"')
-        >>> transformer.unparse(node)
-        '__mkapi__.hello'
-
     This transformer is useful for code analysis and manipulation tasks,
     particularly when there is a need to systematically modify string
     constants in the AST.
     """
 
     def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802
+        """
+        Visit a `Constant` node and rename it if its value is a string.
+
+        This method overrides the `visit_Constant` method from the `Transformer`
+        class. It checks if the value of the `Constant` node is a string, and if
+        so, it renames the string using the `_rename` method. If the value is not
+        a string, it returns the node unchanged.
+
+        Args:
+            node (Constant): The `Constant` node to be visited and potentially renamed.
+
+        Returns:
+            Constant | Name: The renamed `Constant` node if its value is a string,
+            otherwise the original `Constant` node.
+
+        Examples:
+            >>> transformer = StringTransformer()
+            >>> node = ast.parse('"hello"')
+            >>> transformer.unparse(node)
+            '__mkapi__.hello'
+        """
         if isinstance(node.value, str):
             return self._rename(node.value)
 
@@ -610,7 +620,7 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
         and the second element is a boolean indicating if the segment is a
         valid Python identifier.
 
-    Example:
+    Examples:
         >>> x = list(_iter_identifiers("x, __mkapi__.a.b0[__mkapi__.c], y"))
         >>> x[0]
         ('x, ', False)
@@ -666,7 +676,7 @@ def iter_identifiers(node: AST) -> Iterator[str]:
     Yields:
         str: Each valid identifier found in the AST node's source code.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "'a[b]'"
         >>> node = ast.parse(src)
@@ -717,7 +727,7 @@ def unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) 
     Returns:
         str: The source code representation of the unparsed AST node.
 
-    Example:
+    Examples:
         >>> def transform(identifier: str) -> str:
         ...     return f"<{identifier}>"
         >>> src = "a + b"
@@ -752,7 +762,7 @@ def has_decorator(node: AST, name: str, index: int = 0) -> bool:
         bool: True if the specified decorator is found at the given index,
         False otherwise.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "@my_decorator\\ndef func():\\n pass"
         >>> node = ast.parse(src).body[0]
@@ -791,7 +801,7 @@ def is_function_def(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     Returns:
         bool: True if the node is a function definition, otherwise False.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "def func(): pass"
         >>> node = ast.parse(src).body[0]
@@ -815,7 +825,7 @@ def is_property(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     Returns:
         bool: True if the node is a property, otherwise False.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "@property\\ndef func(self): pass"
         >>> node = ast.parse(src).body[0]
@@ -839,7 +849,7 @@ def is_setter(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     Returns:
         bool: True if the node is a setter, otherwise False.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "@func.setter\\ndef func(self, value): pass"
         >>> node = ast.parse(src).body[0]
@@ -863,7 +873,7 @@ def has_overload(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     Returns:
         bool: True if the node has an overload decorator, otherwise False.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "@overload\\ndef func(self): pass"
         >>> node = ast.parse(src).body[0]
@@ -887,7 +897,7 @@ def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     Returns:
         bool: True if the node is a regular function definition, otherwise False.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "def func(): pass"
         >>> node = ast.parse(src).body[0]
@@ -914,7 +924,7 @@ def is_classmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     Returns:
         bool: True if the node is a class method, otherwise False.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "@classmethod\\ndef func(cls): pass"
         >>> node = ast.parse(src).body[0]
@@ -938,7 +948,7 @@ def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     Returns:
         bool: True if the node is a static method, otherwise False.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "@staticmethod\\ndef func(): pass"
         >>> node = ast.parse(src).body[0]
@@ -961,7 +971,7 @@ def is_assign(node: AST) -> TypeGuard[ast.AnnAssign | ast.Assign | TypeAlias]:  
     Returns:
         bool: True if the node is an assignment, otherwise False.
 
-    Example:
+    Examples:
         >>> import ast
         >>> src = "x: int = 5"
         >>> node = ast.parse(src).body[0]

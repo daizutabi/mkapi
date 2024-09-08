@@ -532,13 +532,20 @@ def _iter_module_members(module: str) -> Iterator[str]:
 
             elif isinstance(obj, Definition) and obj.module.startswith(module):
                 yield name
+                yield from _iter_children_from_definition(obj, name)
 
         elif isinstance(obj, Definition) and obj.module == module:
             yield name
+            yield from _iter_children_from_definition(obj, name)
 
-            for child in get_child_nodes(obj.node, obj.module):
-                if isinstance(child, Definition):
-                    yield f"{name}.{child.name}"
+
+def _iter_children_from_definition(
+    obj: Definition | Assign,
+    parent: str,
+) -> Iterator[str]:
+    for child in get_child_nodes(obj.node, obj.module):
+        if isinstance(child, Definition):
+            yield f"{parent}.{child.name}"
 
 
 @cache

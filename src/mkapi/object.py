@@ -910,18 +910,6 @@ def is_child(obj: Object, parent: Object | None) -> bool:
     return obj.parent is parent
 
 
-# def is_member(
-#     obj: Module | Class | Function | Attribute,
-#     parent: Module | Class | Function | None,
-# ) -> bool:
-#     """Return True if obj is a member of parent."""
-#     if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
-#         return True
-#     if obj.parent is not parent:
-#         return False
-#     return obj.module is parent.module
-
-
 @cache
 def get_object(name: str, module: str | None = None) -> Object | None:
     """Retrieve an object by its name and optional module.
@@ -1056,48 +1044,3 @@ def get_members(
                 members[name] = child
 
     return members
-
-
-# def is_member(
-#     obj: Module | Class | Function | Attribute,
-#     parent: Module | Class | Function | None,
-# ) -> bool:
-#     """Return True if obj is a member of parent."""
-#     if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
-#         return True
-#     if obj.parent is not parent:
-#         return False
-#     return obj.module is parent.module
-
-
-# def iter_objects_with_depth(
-#     obj: Module | Class | Function | Attribute,
-#     maxdepth: int = -1,
-#     predicate: Predicate = None,
-#     depth: int = 0,
-# ) -> Iterator[tuple[Module | Class | Function | Attribute, int]]:
-#     """Yield [Object] instances and depth."""
-#     if not predicate or predicate(obj, None):
-#         yield obj, depth
-
-#     if depth == maxdepth or isinstance(obj, Attribute):
-#         return
-
-#     for child in itertools.chain(obj.classes, obj.functions):
-#         if not predicate or predicate(child, obj):
-#             yield from iter_objects_with_depth(child, maxdepth, predicate, depth + 1)
-
-#     if isinstance(obj, Module | Class):
-#         for attr in obj.attributes:
-#             if not predicate or predicate(attr, obj):
-#                 yield attr, depth + 1
-
-
-# def iter_objects(
-#     obj: Module | Class | Function | Attribute,
-#     maxdepth: int = -1,
-#     predicate: Predicate = None,
-# ) -> Iterator[Module | Class | Function | Attribute]:
-#     """Yield [Object] instances."""
-#     for child, _ in iter_objects_with_depth(obj, maxdepth, predicate, 0):
-#         yield child

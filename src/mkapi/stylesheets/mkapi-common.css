@@ -5,7 +5,7 @@
 
 .mkapi-object-kind {
   color: var(--mkapi-object-kind-color);
-  font-size: 0.9em;
+  font-size: 0.85em;
   font-style: italic;
 }
 
@@ -86,7 +86,6 @@
 .mkapi-section-name {
   color: var(--mkapi-section-name-color);
   border-bottom: thin solid var(--mkapi-section-border-color);
-  font-size: 1.05em;
 }
 
 .mkapi-item-name {
@@ -110,12 +109,10 @@
 }
 
 .mkapi-example-input code {
-  font-size: 0.85em;
   background-color: var(--mkapi-example-bg-color);
 }
 
 .mkapi-example-output code {
-  font-size: 0.85em;
   border: solid var(--mkapi-example-bg-color);
   background-color: transparent;
 }
@@ -130,4 +127,5 @@
 .mkapi-object-link {
   font-size: 0.85em;
   margin-left: 1.2em;
+  vertical-align: baseline;
 }
