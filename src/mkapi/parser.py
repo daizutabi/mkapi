@@ -24,7 +24,6 @@ from mkapi.object import (
     Type,
     get_fullname_from_object,
     get_object,
-    get_object_kind,
 )
 from mkapi.utils import (
     find_item_by_name,

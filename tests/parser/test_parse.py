@@ -136,6 +136,22 @@ def test_parse_name_method():
     assert name.names == ["Parser", "create"]
 
 
+def test_parse_name_export():
+    from mkapi.parser import Parser
+
+    name = "jinja2.Template.render"
+    parser = Parser.create(name)
+    assert parser
+    name = parser.parse_name()
+    assert name.id == "jinja2.Template.render"
+
+    names = name.fullname.split("].[")
+    assert names[0] == "[jinja2][__mkapi__.jinja2"
+    assert names[1] == "Template][__mkapi__.jinja2.Template"
+    assert names[2] == "render][__mkapi__.jinja2.Template.render]"
+    assert name.names == ["Template", "render"]
+
+
 def test_parse_signature():
     from mkapi.parser import Parser
 
