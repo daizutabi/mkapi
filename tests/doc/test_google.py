@@ -36,7 +36,7 @@ def test_iter_sections(google):
     assert len(sections) == 6
     assert sections[0][1].startswith("Example Google")
     assert sections[0][1].endswith("indented text.")
-    assert sections[1][0] == "Example"
+    assert sections[1][0] == "Examples"
     assert sections[1][1].startswith("Examples can be")
     assert sections[1][1].endswith("google.py")
     assert sections[2][1].startswith("Section breaks")
@@ -121,7 +121,7 @@ def test_parse(google):
 
     doc = create_doc(ast.get_docstring(google), "google")  # type: ignore
     assert doc.text.startswith("Example Google style docstrings.")
-    assert doc.sections[0].name == "Example"
+    assert doc.sections[0].name == "Examples"
 
 
 def test_merge(google, get, get_node):

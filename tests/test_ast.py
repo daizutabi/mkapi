@@ -213,3 +213,42 @@ def test_iter_child_nodes_import():
     assert len(children) == 2
     assert isinstance(children[0], ast.Import)
     assert isinstance(children[1], ast.ClassDef)
+
+
+def test_get_assign_name_invalid():
+    from mkapi.ast import get_assign_name
+
+    src = "def func(): x = 1"
+    node = ast.parse(src).body[0]
+    assert get_assign_name(node) is None
+
+
+def test_get_assign_type_type_alias():
+    from mkapi.ast import TypeAlias, get_assign_type
+
+    if not TypeAlias:
+        return
+
+    src = "type Vector = list[float]"
+    node = ast.parse(src).body[0]
+    assert isinstance(node, TypeAlias)
+    type_ = get_assign_type(node)
+    assert isinstance(type_, ast.Subscript)
+    assert ast.unparse(type_) == "list[float]"
+
+
+def test_parameter_repr():
+    from mkapi.ast import Parameter
+
+    param = Parameter(
+        name="arg1", type=None, default=None, kind=_ParameterKind.POSITIONAL_OR_KEYWORD
+    )
+    assert repr(param) == "Parameter('arg1')"
+
+
+def test_has_decorator_invalid():
+    from mkapi.ast import has_decorator
+
+    src = "x=1"
+    node = ast.parse(src).body[0]
+    assert not has_decorator(node, "my_decorator", 0)

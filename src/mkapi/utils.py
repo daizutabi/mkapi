@@ -77,7 +77,7 @@ def cache(obj: Callable[..., T] | dict | list) -> Callable[..., T] | dict | list
         Callable[..., T] | dict | list: The cached object, which is either the cached
         function or the original dictionary/list.
 
-    Example:
+    Examples:
         >>> @cache
         ... def my_function(x):
         ...     return x * 2
@@ -139,7 +139,7 @@ def get_module_path(name: str) -> Path | None:
         Path | None: The source path of the module as a Path object, or None
         if the module does not exist or is not a valid Python file.
 
-    Example:
+    Examples:
         >>> path = get_module_path("collections")
         >>> path.exists()
         True
@@ -182,7 +182,7 @@ def get_module_name(module: str) -> str:
         str: The name of the imported module, or the original module name
         if the import fails or if the input is empty.
 
-    Example:
+    Examples:
         >>> get_module_name("os")
         'os'
 
@@ -378,7 +378,7 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
         source code of the module, or None if the module cannot be found or
         the source code cannot be retrieved.
 
-    Example:
+    Examples:
         >>> node, source = get_module_node_source("os")
         >>> isinstance(node, ast.Module)
         True
@@ -429,7 +429,7 @@ def get_module_node(name: str) -> ast.Module | None:
         ast.Module | None: The AST node of the module, or None if the module
         cannot be found.
 
-    Example:
+    Examples:
         >>> node = get_module_node("collections")
         >>> isinstance(node, ast.Module)
         True
@@ -461,7 +461,7 @@ def get_module_source(name: str) -> str | None:
         str | None: The source code of the module as a string, or None if
         the module cannot be found.
 
-    Example:
+    Examples:
         >>> source = get_module_source("tempfile")
         >>> isinstance(source, str)
         True
@@ -895,7 +895,7 @@ def list_exported_names(module: str) -> list[str]:
         list[str]: A list of exported names from the module, or an
         empty list if the module does not exist or has no exported names.
 
-    Example:
+    Examples:
         >>> names = list_exported_names("pathlib")
         >>> all(x in names for x in ["PurePath", "Path", "PosixPath", "WindowsPath"])
         True
@@ -937,7 +937,7 @@ def get_object_from_module(name: str, module: str) -> object | None:
         object | None: The requested object if found, or None if the module
         does not exist or the object cannot be found.
 
-    Example:
+    Examples:
         >>> obj = get_object_from_module("Template", "jinja2")
         >>> obj.__module__, obj.__name__
         ('jinja2.environment', 'Template')
@@ -976,7 +976,7 @@ def is_dataclass(name: str, module: str) -> bool:
     Returns:
         bool: True if the object is a dataclass, otherwise False.
 
-    Example:
+    Examples:
         >>> from mkapi.doc import Item
         >>> is_dataclass("Item", "mkapi.doc")
         True
@@ -1010,7 +1010,7 @@ def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
         name and module of a base class. If the specified class does not exist
         or is not a class, an empty list is returned.
 
-    Example:
+    Examples:
         >>> base_classes = get_base_classes("Doc", "mkapi.doc")
         >>> base_classes
         [('Item', 'mkapi.doc')]
@@ -1058,7 +1058,7 @@ def split_module_name(name: str) -> tuple[str, str | None] | None:
         If no valid module is found and no previous module was identified,
         None is returned.
 
-    Example:
+    Examples:
         'Section' is a member of 'mkapi.doc'
 
         >>> split_module_name("mkapi.doc.Section")

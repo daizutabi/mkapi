@@ -86,6 +86,7 @@ def test_get_object_kind_module(mkapi_objects):
     from mkapi.object import get_object_kind
 
     assert get_object_kind(mkapi_objects) == "module"
+    assert mkapi_objects.kind == "module"
 
 
 def test_get_object_kind_dataclass(mkapi_objects):
@@ -93,6 +94,7 @@ def test_get_object_kind_dataclass(mkapi_objects):
 
     cls = mkapi_objects.get("Object")
     assert get_object_kind(cls) == "dataclass"
+    assert cls.kind == "dataclass"
 
 
 def test_get_object_kind_function(mkapi_objects):
@@ -100,6 +102,7 @@ def test_get_object_kind_function(mkapi_objects):
 
     func = mkapi_objects.get("create_function")
     assert get_object_kind(func) == "function"
+    assert func.kind == "function"
 
 
 def test_get_object_kind_method(mkapi_objects):
@@ -108,6 +111,7 @@ def test_get_object_kind_method(mkapi_objects):
     cls = mkapi_objects.get("Object")
     method = cls.get("__post_init__")
     assert get_object_kind(method) == "method"
+    assert method.kind == "method"
 
 
 def test_get_object_kind_attribute(mkapi_objects):
@@ -116,6 +120,7 @@ def test_get_object_kind_attribute(mkapi_objects):
     cls = mkapi_objects.get("Object")
     attribute = cls.get("node")
     assert get_object_kind(attribute) == "attribute"
+    assert attribute.kind == "attribute"
 
 
 def test_get_source_module(mkapi_objects):
@@ -317,3 +322,25 @@ def test_get_members_asname(name):
     module = create_module("examples.styles")
     assert module
     assert name in get_members(module)
+
+
+def test_get_object_asname():
+    from mkapi.object import get_object
+
+    name = "examples.styles.ExampleClassGoogle.example_method"
+    obj = get_object(name)
+    assert obj
+    assert obj.name == "example_method"
+    assert obj.module == "examples.styles.google"
+    assert obj.fullname == "examples.styles.google.ExampleClass.example_method"
+
+
+def test_get_object_export():
+    from mkapi.object import get_object
+
+    name = "jinja2.Environment.compile"
+    obj = get_object(name)
+    assert obj
+    assert obj.name == "compile"
+    assert obj.module == "jinja2.environment"
+    assert obj.fullname == "jinja2.environment.Environment.compile"

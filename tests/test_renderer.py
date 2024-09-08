@@ -1,31 +1,68 @@
-# from mkapi.object import Class, Function, Module, get_object_from_module
-# from mkapi.parser import set_markdown
-# from mkapi.renderer import (
-#     _create_summary_docstring,
-#     _get_source,
-#     load_templates,
-#     render_document,
-#     render_header,
-#     render_heading,
-#     render_object,
-#     render_source,
-#     templates,
-# )
+import pytest
+
+from mkapi.object import get_object
+from mkapi.parser import Parser
 
 
-# def test_load_templates():
-#     load_templates()
+@pytest.fixture(autouse=True)
+def _load_templates():
+    from mkapi.renderer import load_templates
 
-#     assert "heading" in templates
-#     assert "header" in templates
-#     assert "object" in templates
-#     assert "document" in templates
-#     assert "source" in templates
+    load_templates()
 
 
-# def test_render_heading():
-#     obj = get_object_from_module("examples.styles.google.module_level_function")
-#     assert obj
+def test_load_templates():
+    from mkapi.renderer import templates
+
+    assert "heading" in templates
+    assert "object" in templates
+    assert "document" in templates
+    assert "source" in templates
+
+
+def test_render_heading_module():
+    from mkapi.renderer import render_heading
+
+    parser = Parser.create("examples.styles.google")
+    assert parser
+    name = parser.parse_name()
+    m = render_heading(name.id, name.fullname, 1)
+    assert '<h1 class="mkapi-heading" id="examples.styles.google" markdown="1">' in m
+    assert "[examples][__mkapi__.examples].[styles][__mkapi__.examples.styles]" in m
+
+
+def test_render_heading_export():
+    from mkapi.renderer import render_heading
+
+    parser = Parser.create("jinja2.Template")
+    assert parser
+    name = parser.parse_name()
+    m = render_heading(name.id, name.fullname, 1)
+    assert '<h1 class="mkapi-heading" id="jinja2.Template" markdown="1">' in m
+
+
+def test_render_heading_alias():
+    from mkapi.renderer import render_heading
+
+    parser = Parser.create("examples.styles.ExampleClassGoogle")
+    assert parser
+    name = parser.parse_name()
+    m = render_heading(name.id, name.fullname, 1)
+    assert 'id="examples.styles.ExampleClassGoogle"' in m
+    assert "[ExampleClassGoogle][__mkapi__.examples.styles.ExampleClassGoogle]" in m
+
+
+# def test_render_object_module():
+#     from mkapi.renderer import render_object
+
+#     obj = get_object("examples.styles.google")
+#     parser = Parser.create("examples.styles.google")
+#     assert parser
+#     signature = parser.parse_signature()
+#     assert not signature
+#     m = render_object(obj, name, namespace, signature)
+
+
 #     set_markdown(obj)
 #     x = render_heading(obj.fullname.str, 2)
 #     assert (

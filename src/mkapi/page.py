@@ -121,7 +121,7 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     if not get_module_node(module):
         return f"!!! failure\n\n    module {module!r} not found.\n", []
 
-    names = []
+    names = [module]
     markdowns = [f"# ::: {module}"]
 
     for name in iter_module_members(module, private=False, special=False):

@@ -1,3 +1,26 @@
+def test_generate_module_markdown():
+    from mkapi.page import generate_module_markdown
+
+    m, names = generate_module_markdown("mkapi.doc")
+    assert m.startswith("# ::: mkapi.doc\n")
+    assert "\n## ::: mkapi.doc.Item\n" in m
+    assert "\n### ::: mkapi.doc.Item.clone\n" in m
+    assert "\n## ::: mkapi.doc.merge\n" in m
+
+    assert "mkapi.doc" in names
+    assert "mkapi.doc.Item" in names
+    assert "mkapi.doc.Item.clone" in names
+    assert "mkapi.doc.merge" in names
+
+
+# def test_generate_module_markdown_export():
+#     from mkapi.page import generate_module_markdown
+
+#     m, names = generate_module_markdown("jinja2")
+#     assert "# ::: mkapi.doc.Item" in m
+#     assert "## ::: mkapi.doc.Item.clone" in m
+#     assert "## ::: mkapi.doc.merge" in m
+
 # from pathlib import Path
 
 # import markdown

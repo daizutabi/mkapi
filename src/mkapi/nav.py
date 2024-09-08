@@ -185,7 +185,7 @@ def update_apinav(
         StopIteration: If the generator completes without yielding any
             further values.
 
-    Example:
+    Examples:
         >>> def page_title(name: str, depth: int) -> str:
         ...     return f"{name.upper()}.{depth}"
         >>> def section_title(name: str, depth: int) -> str:
@@ -234,7 +234,7 @@ def build_apinav(
         list: A list representing the updated navigation structure, which
             includes the processed API entries and any nested structures.
 
-    Example:
+    Examples:
         >>> def create_apinav(name: str, path: str) -> list:
         ...     return [f"{name}.md"]
         >>> nav_structure = ["$api/module1", {"section1": ["$api/module2"]}]
