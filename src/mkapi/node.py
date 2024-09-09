@@ -56,7 +56,7 @@ class Node:
     is characterized by its name and the corresponding AST node.
 
     This class is intended to be subclassed by more specific node types
-    (e.g., [`Import`], [`Definition`], [`Assign`]) that require additional attributes
+    (e.g., `Import`, `Definition`, `Assign`) that require additional attributes
     or behaviors specific to their context within the AST.
     """
 
@@ -70,13 +70,13 @@ class Node:
         return f"{self.__class__.__name__}({self.name!r})"
 
 
-@dataclass(repr=False)
+@dataclass
 class Import(Node):
     """Represent an import statement in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of an import statement,
     which can either be a standard import or an import from a specific
-    module. It inherits from the [`Node`] class and includes additional
+    module. It inherits from the `Node` class and includes additional
     attributes specific to import statements.
 
     This class is intended to encapsulate the details of import statements
@@ -86,8 +86,8 @@ class Import(Node):
 
     node: ast.Import | ast.ImportFrom
     """The actual AST node associated with this import statement,
-    which can be either an [`ast.Import`] or [`ast.ImportFrom`] node
-    from the [`ast`] module.
+    which can be either an `ast.Import` or `ast.ImportFrom` node
+    from the `ast` module.
     """
 
     fullname: str
@@ -98,34 +98,13 @@ class Import(Node):
         return f"{self.__class__.__name__}({self.fullname!r})"
 
 
-@dataclass(repr=False)
-class Object(Node):
-    """Represent an object (e.g., class, function, method) in the Abstract Syntax Tree (AST).
-
-    This class is a specialized representation of an object, such as a class,
-    function, or method, within the AST. It inherits from the [`Node`] class
-    and includes additional attributes specific to object representations.
-
-    This class is intended to be subclassed by more specific object types
-    (e.g., [`Definition`], [`Assign`]) that require additional attributes
-    or behaviors specific to their context within the AST.
-    """
-
-    module: str
-    """The module in which the object is defined."""
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
-
-
-@dataclass(repr=False)
-class Definition(Object):
+@dataclass
+class Definition(Node):
     """Represent a definition (e.g., class, function) in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of a definition, such as a class
-    or function, within the AST. It inherits from the [`Object`] class
+    or function, within the AST. It inherits from the `Node` class
     and includes additional attributes specific to definition representations.
-    or behaviors specific to their context within the AST.
     """
 
     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
@@ -133,14 +112,20 @@ class Definition(Object):
     which can be a class definition, a function definition,
     or an asynchronous function definition from the `ast` module."""
 
+    module: str
+    """The module in which the definition is defined."""
 
-@dataclass(repr=False)
-class Assign(Object):
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
+
+
+@dataclass
+class Assign(Node):
     """Represent an assignment statement in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of an assignment statement,
     which can be either an annotated assignment or a simple assignment.
-    It inherits from the [`Object`] class and includes additional attributes
+    It inherits from the `Node` class and includes additional attributes
     specific to assignment representations.
 
     This class is intended to encapsulate the details of assignment statements
@@ -153,13 +138,19 @@ class Assign(Object):
     which can be an annotated assignment,
     a simple assignment, or a type alias from the `ast` module."""
 
+    module: str
+    """The module in which the assignment is defined."""
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
+
 
 @dataclass(repr=False)
 class Module(Node):
     """Represent a module in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of a module within the AST.
-    It inherits from the [`Node`] class and includes additional attributes
+    It inherits from the `Node` class and includes additional attributes
     specific to module representations.
     """
 
@@ -173,8 +164,8 @@ def iter_child_nodes(node: AST, module: str) -> Iterator[Definition | Assign | I
     """Iterate over the child nodes of the given AST node.
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
-    yield child nodes that are instances of [`Definition`], [`Assign`],
-    or [`Import`]. It uses the `mkapi.ast` module to iterate over the child
+    yield child nodes that are instances of `Definition`, `Assign`,
+    or `Import`. It uses the `mkapi.ast` module to iterate over the child
     nodes of the provided AST node.
 
     Args:
@@ -186,7 +177,7 @@ def iter_child_nodes(node: AST, module: str) -> Iterator[Definition | Assign | I
 
     This function is intended to be used for traversing the AST and processing
     child nodes of the given root node. It ensures that only relevant nodes
-    (i.e., [`Definition`], [`Assign`], or [`Import`]) are yielded, allowing for
+    (i.e., `Definition`, `Assign`, or `Import`) are yielded, allowing for
     further analysis or manipulation of the AST.
     """
 
@@ -322,7 +313,7 @@ def _iter_imports_from_star(
 
     This function is intended to be used for traversing the AST and processing
     child nodes of the given root node. It ensures that only relevant nodes
-    (i.e., [`Object`] or [`Import`]) are yielded, allowing for further analysis
+    (i.e., `Object` or `Import`) are yielded, allowing for further analysis
     or manipulation of the AST.
     """
     module = extract_import_module_name(node, module)
@@ -357,7 +348,7 @@ def get_child_nodes(node: AST, module: str) -> list[Definition | Assign | Import
 
     This function is intended to be used for collecting child nodes of the
     given root node, allowing for further analysis or manipulation of the
-    AST. It ensures that only relevant nodes (i.e., [`Object`] or [`Import`])
+    AST. It ensures that only relevant nodes (i.e., `Object` or `Import`)
     are collected, allowing for easier access to the relevant information
     in the AST.
     """
@@ -396,8 +387,8 @@ def iter_nodes(fullname: str) -> Iterator[Module | Definition | Assign | Import]
 
     This function is intended to be used for traversing the AST and processing
     nodes of the given full name, allowing for further analysis or manipulation
-    of the AST. It ensures that only relevant nodes (i.e., [`Module`], [`Object`],
-    or [`Import`]) are yielded, allowing for easier access to the relevant
+    of the AST. It ensures that only relevant nodes (i.e., `Module`, `Object`,
+    or `Import`) are yielded, allowing for easier access to the relevant
     information in the AST.
     """
     if node := get_module_node(fullname):
@@ -429,8 +420,8 @@ def parse_node(
 
     This function is designed to traverse the Abstract Syntax Tree (AST) and
     return a list of tuples containing the name and the corresponding node.
-    It uses the [`get_child_nodes`] function to get the child nodes of the
-    provided AST node and the [`iter_nodes`] function to iterate over the nodes
+    It uses the `get_child_nodes` function to get the child nodes of the
+    provided AST node and the `iter_nodes` function to iterate over the nodes
     in the given full name.
 
     Args:
@@ -443,7 +434,7 @@ def parse_node(
 
     This function is intended to be used for parsing the AST and collecting
     relevant information about the nodes in the given full name. It ensures
-    that only relevant nodes (i.e., [`Module`], [`Object`], or [`Import`]) are
+    that only relevant nodes (i.e., `Module`, `Object`, or `Import`) are
     collected, allowing for easier access to the relevant information in
     the AST.
     """
@@ -467,7 +458,7 @@ def parse_module(
 
     This function is designed to parse the given module and return a list of
     tuples containing the name and the corresponding node. It uses the
-    [`get_module_node`] function to get the module node and the [`parse_node`]
+    `get_module_node` function to get the module node and the `parse_node`
     function to iterate over the nodes in the given module.
 
     Args:
@@ -555,8 +546,8 @@ def resolve(
     """Resolve the given name and return a tuple of the name and module.
 
     This function is designed to resolve the given name and return a tuple
-    containing the name and module. It uses the [`get_module_node`] function
-    to get the module node and the [`parse_node`] function to iterate over the nodes
+    containing the name and module. It uses the `get_module_node` function
+    to get the module node and the `parse_node` function to iterate over the nodes
     in the given full name.
 
     Args:
@@ -593,7 +584,7 @@ def resolve(
             if isinstance(obj, Module):
                 return resolve(qualname)
 
-            if isinstance(obj, Object):
+            if isinstance(obj, Definition | Assign):
                 if len(names) == 1:
                     return qualname, obj.module
 
@@ -614,7 +605,7 @@ def get_fullname(name: str, module: str | None = None) -> str | None:
     """Get the full name of the given name and module.
 
     This function is designed to get the full name of the given name and module.
-    It uses the [`resolve`] function to resolve the given name and module.
+    It uses the `resolve` function to resolve the given name and module.
 
     Args:
         name (str): The name to get the full name of.

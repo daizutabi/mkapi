@@ -117,18 +117,20 @@ def test_iter_fenced_codes():
     assert x == ["abc\n"]
 
 
-def test_iter_inline_codes():
-    from mkapi.markdown import _iter_inline_codes
+def test_iter_brackets():
+    from mkapi.markdown import _iter_brackets
 
-    text = "abc`x`def`y`_g`z`"
-    x = list(_iter_inline_codes(text))
-    assert len(x) == 6
-    assert x[0] == "abc"
-    assert x[1].group() == "`x`"  # type: ignore
-    assert x[2] == "def"
-    assert x[3] == "`y`_"
-    assert x[4] == "g"
-    assert x[5].group() == "`z`"  # type: ignore
+    text = "a[b]c[d[e]]f[g\nh]i[j k]"
+    x = list(_iter_brackets(text))
+    assert len(x) == 8
+    assert x[0] == "a"
+    assert x[1].group() == "[b]"  # type: ignore
+    assert x[2] == "c"
+    assert x[3].group() == "[d[e]]"  # type: ignore
+    assert x[4] == "f"
+    assert x[5].group() == "[g\nh]"  # type: ignore
+    assert x[6] == "i"
+    assert x[7].group() == "[j k]"  # type: ignore
 
 
 def test_iter_examples():
@@ -240,7 +242,7 @@ def test_iter_literal_block():
 
 
 def test_convert_code_block():
-    from mkapi.markdown import _convert_code_block
+    from mkapi.markdown import convert_code_block
 
     src = """
     ```
@@ -259,14 +261,14 @@ def test_convert_code_block():
       1
     """
     src = inspect.cleandoc(src)
-    m = _convert_code_block(src)
+    m = convert_code_block(src)
     assert "```\nab\n\n    d\nx\n```\n" in m
     assert "  x\n\n  ```\n  x\n\n  y\n  ```\n" in m
     assert "\n  ```{.python" in m
 
 
 def test_convert_literal_block_with_directive():
-    from mkapi.markdown import _convert_code_block
+    from mkapi.markdown import convert_code_block
 
     src = """
     a
@@ -282,39 +284,14 @@ def test_convert_literal_block_with_directive():
           b
     """
     src = inspect.cleandoc(src)
-    m = _convert_code_block(src)
+    m = convert_code_block(src)
     assert m.startswith("a\n  ```python\n  a\n  ```\n  d\n")
     assert "  .. note::\n\n      a" in m
     assert m.endswith("  d\n\n  ```\n  b\n  ```\n")
 
 
-def test_convert():
-    from mkapi.markdown import convert
-
-    src = """
-    ```
-    .. note::
-    ```
-    .. note::
-        abc
-
-            d
-        .. note::
-
-            def
-    .. note::
-        x
-    """
-    src = inspect.cleandoc(src)
-    m = convert(src)
-    h = c(m)
-    assert "<p><code>.. note::</code></p>" in h
-    assert "Note</p>\n<p>abc</p>\n<p><code>d</code></p>" in h
-    assert "<p>def</p>\n</div>\n</div>" in h
-
-
 def test_convert_example_new_line():
-    from mkapi.markdown import convert
+    from mkapi.markdown import convert_code_block
 
     src1 = """
     a
@@ -333,19 +310,11 @@ def test_convert_example_new_line():
     """
     src1 = inspect.cleandoc(src1)
     src2 = inspect.cleandoc(src2)
-    assert convert(src1) == convert(src2)
-
-
-def test_convert_link():
-    from mkapi.markdown import convert
-
-    src = "`abc <def>`_ `ghi <jkl>` `_abc`"
-    m = convert(src)
-    assert m == "[abc](def) `ghi <jkl>` `_abc`"
+    assert convert_code_block(src1) == convert_code_block(src2)
 
 
 def test_finditer():
-    from mkapi.markdown import convert, finditer
+    from mkapi.markdown import convert_code_block, finditer
 
     pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.M)
     src = """
@@ -363,14 +332,14 @@ def test_finditer():
     f
     """
     src = inspect.cleandoc(src)
-    src = convert(src)
+    src = convert_code_block(src)
     x = list(finditer(pattern, src))
     assert isinstance(x[1], re.Match)
     assert isinstance(x[3], re.Match)
 
 
 def test_sub():
-    from mkapi.markdown import convert, sub
+    from mkapi.markdown import convert_code_block, sub
 
     pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.M)
     src = """
@@ -386,7 +355,7 @@ def test_sub():
     f
     """
     src = inspect.cleandoc(src)
-    src = convert(src)
+    src = convert_code_block(src)
 
     def rel(m: re.Match):
         name = m.group("name")
@@ -395,59 +364,3 @@ def test_sub():
     m = sub(pattern, rel, src)
     assert m.startswith("```\n# ::: a\n```\nxxx::: bxxx\nxxx::: cxxx\n```{.python")
     assert m.endswith("output}\n::: d\n```\n\nxxx::: exxx\nf")
-
-
-def test_replace():
-    from mkapi.markdown import _replace
-
-    src = """
-    `abc <def>`_
-    :func:`ghi <jkl>`
-    :func:`mno`
-    `xxx`_ `yy
-    y`_
-    .. _xxx:
-    XXX
-    zzz
-    .. _yyy: YYY
-    """
-    src = inspect.cleandoc(src)
-    text = _replace(src)
-    lines = text.splitlines()
-    assert lines[0] == "[abc](def)"
-    assert lines[1] == "[ghi][__mkapi__.jkl]"
-    assert lines[2] == "[__mkapi__.mno][]"
-    assert lines[3] == "[xxx][] [yy"
-    assert lines[4] == "y][]"
-    assert "[xxx]:\nXXX\nzzz\n[yyy]: YYY" in text
-
-
-def test_get_see_also():
-    from mkapi.markdown import get_see_also
-
-    src = """
-    abc, def
-    ghi: jkl
-    """
-    src = inspect.cleandoc(src)
-    text = get_see_also(src)
-    assert text
-    assert "[__mkapi__.abc][], [__mkapi__.def][]\n" in text
-    assert "[__mkapi__.ghi][]: jkl" in text
-
-
-def test_get_see_also_items():
-    from mkapi.markdown import get_see_also
-
-    src = """
-    abc: def
-    ghi: jkl
-        mno
-    pqr: stu
-    """
-    src = inspect.cleandoc(src)
-    text = get_see_also(src)
-    lines = text.splitlines()
-    assert lines[0] == "* [__mkapi__.abc][]: def"
-    assert lines[1] == "* [__mkapi__.ghi][]: jkl mno"
-    assert lines[2] == "* [__mkapi__.pqr][]: stu"

@@ -65,6 +65,7 @@ def convert_markdown():
 def test_convert_markdown_module(convert_markdown):
     m = "# ::: mkapi.doc"
     m = convert_markdown(m, TemplateKind.HEADING)
+    assert isinstance(m, str)
     assert m.startswith('<h1 class="mkapi-heading" id="mkapi.doc" markdown="1">')
 
     # markdown = convert_markdown("## ::: mkapi.ast.Transformer", "/root/a/b/c.md")

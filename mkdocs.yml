@@ -41,8 +41,7 @@ plugins:
       enabled: true
       config: config.py
       exclude:
-        - altair.vegalite
-        - polars._reexport
+        - examples.usage
       debug: true
 markdown_extensions:
   - pymdownx.magiclink
@@ -61,8 +60,8 @@ nav:
   #     - usage/config.md
   - Reference:
       - $api:src/mkapi.***
-  - Examples:
-      - $api:src/examples.**
+  # - Examples:
+  #     - $api:src/examples.**
   # - Schemdraw:
   #     - $api/schemdraw.***
   # - Jinja2:

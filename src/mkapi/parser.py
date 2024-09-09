@@ -24,7 +24,6 @@ from mkapi.object import (
     Type,
     get_fullname_from_object,
     get_object,
-    get_object_kind,
 )
 from mkapi.utils import (
     find_item_by_name,
@@ -130,7 +129,6 @@ class Parser:
 
 
 PREFIX = "__mkapi__."
-LINK_PATTERN = re.compile(r"(?<!\])\[(?P<name>[^[\]\s\(\)]+?)\](\[\])?(?![\[\(])")
 
 
 def get_markdown_link(name: str, ref: str | None, *, in_code: bool = False) -> str:
@@ -194,33 +192,24 @@ def get_markdown_type(type_: str | ast.expr | None, replace: Replace) -> str:
     return get_markdown_expr(type_, replace)
 
 
+CODE_PATTERN = re.compile(r"(?P<pre>`+)(?P<name>.+?)(?P=pre)")
+
+
 def get_markdown_text(text: str, replace: Replace) -> str:
     """Return markdown links from docstring text."""
 
     def _replace(match: re.Match) -> str:
+        if len(match.group("pre")) != 1:
+            return match.group()
+
         name = match.group("name")
 
-        if name.startswith("`") and name.endswith("`"):
-            name = name[1:-1]
-            in_code = True
-        else:
-            in_code = False
-
-        if name.startswith("__mkapi__."):
-            from_mkapi = True
-            name = name[10:]
-        else:
-            from_mkapi = False
-
         if is_identifier(name) and replace and (ref := replace(name)):
-            return get_markdown_link(name, ref, in_code=in_code)
-
-        if from_mkapi:
-            return name
+            return get_markdown_link(name, ref, in_code=True)
 
         return match.group()
 
-    return mkapi.markdown.sub(LINK_PATTERN, _replace, text)
+    return mkapi.markdown.sub(CODE_PATTERN, _replace, text)
 
 
 @dataclass

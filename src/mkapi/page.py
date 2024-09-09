@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING
 import mkapi.markdown
 import mkapi.renderer
 from mkapi.node import iter_module_members
-from mkapi.object import get_object
 from mkapi.renderer import TemplateKind
 from mkapi.utils import get_module_node
 
@@ -134,7 +133,7 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     return "\n".join(markdowns), names
 
 
-OBJECT_PATTERN = re.compile(r"^(?P<heading>#*) *?::: (?P<name>.+?)$", re.M)
+OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.M)
 LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
 
 
@@ -160,13 +159,10 @@ def _render(
 ) -> str:
     heading, name = match.groups()
     level = len(heading)
-
-    if not (obj := get_object(name)):
-        return f"!!! failure\n\n    {name!r} not found."
-
-    return mkapi.renderer.render(obj, level, namespace, predicate)
+    return mkapi.renderer.render(name, level, namespace, predicate)
 
 
+# Link for [source] or [docs]
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
 
 
@@ -226,8 +222,8 @@ def _link_source(match: re.Match, src_uri: str, namespace: str, anchor: str) -> 
 
         href = f"{uri}/#{name}"
         link = f'<a href="{href}">[{anchor}]</a>'
+        # https://github.com/daizutabi/mkapi/issues/123: <span> -> <div>
         link = f'<div class="mkapi-source-link" id="{name}">{link}</div>'
-        # https://github.com/daizutabi/mkapi/issues/123: span -> div
     else:
         link = ""
 

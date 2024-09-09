@@ -5,11 +5,11 @@ from mkapi.object import Object
 
 def func(a: Object, b) -> I:
     """
-    Docstring [D].
+    Docstring `D`.
 
     Args:
         a: A.
-        b (D): B [I] [`Object`].
+        b (D): B `I` `Object`.
 
     Returns:
         C.
@@ -19,8 +19,8 @@ def func(a: Object, b) -> I:
 
 class A:
     """
-    Docstring [I].
+    Docstring `I`.
     """
 
     x: D
-    """Attribute [`D`]."""
+    """Attribute `D`."""
