@@ -139,5 +139,8 @@ def test_merge(google, get, get_node):
 def test_repr(google):
     from mkapi.doc import create_doc
 
-    r = repr(create_doc(ast.get_docstring(google), "google"))  # type: ignore
+    doc = create_doc(ast.get_docstring(google), "google")
+    doc.sections[0].text.endswith(".py\n```\n")
+    doc.sections[1].text.startswith("Section breaks")
+    r = repr(doc)
     assert r == "Doc(sections=5)"

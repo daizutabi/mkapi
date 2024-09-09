@@ -84,19 +84,41 @@ def test_iter():
     pattern = re.compile("X")
     text = "abcXdef"
     x = list(_iter(pattern, text))
-    assert x[0] == "abc"
-    assert x[2] == "def"
+    assert x[0] == (0, 3)
+    assert x[2] == (4, 7)
     text = "XabcXdefX"
     x = list(_iter(pattern, text))
     assert len(x) == 5
-    assert x[1] == "abc"
-    assert x[3] == "def"
+    assert x[1] == (1, 4)
+    assert x[3] == (5, 8)
     text = "abc\n"
     x = list(_iter(pattern, text))
-    assert x == ["abc\n"]
+    assert x == [(0, 4)]
+
+
+def test_iter_pos():
+    from mkapi.markdown import _iter
+
+    pattern = re.compile("X")
+    text = "abcXdef"
+    x = list(_iter(pattern, text, pos=1))
+    assert x[0] == (1, 3)
+    assert x[2] == (4, 7)
+    text = "XabcXdefX"
+    x = list(_iter(pattern, text, pos=2))
+    assert len(x) == 4
+    assert x[0] == (2, 4)
+    assert x[2] == (5, 8)
+
+
+def test_iter_match_only():
+    from mkapi.markdown import _iter
+
+    pattern = re.compile("X")
     text = "X"
     x = list(_iter(pattern, text))
     assert len(x) == 1
+    assert isinstance(x[0], re.Match)
 
 
 def test_iter_fenced_codes():
@@ -105,16 +127,16 @@ def test_iter_fenced_codes():
     text = "abc\n~~~~x\n```\nx\n```\n~~~~\ndef\n"
     x = list(_iter_fenced_codes(text))
     assert len(x) == 3
-    assert x[0] == "abc\n"
-    assert x[2] == "def\n"
+    assert text[x[0][0] : x[0][1]] == "abc\n"
+    assert text[x[2][0] : x[2][1]] == "\ndef\n"
     for y in ["", "\n"]:
         text = f"abc\n~~~~x\n```\nx\n```\n~~~~{y}"
         x = list(_iter_fenced_codes(text))
-        assert len(x) == 2
-        assert x[0] == "abc\n"
+        assert len(x) == 2 if y == "" else 3
+        assert text[x[0][0] : x[0][1]] == "abc\n"
     text = "abc\n"
     x = list(_iter_fenced_codes(text))
-    assert x == ["abc\n"]
+    assert x == [(0, 4)]
 
 
 def test_iter_examples():
@@ -335,8 +357,9 @@ def test_finditer():
     src = inspect.cleandoc(src)
     src = convert_code_block(src)
     x = list(_finditer(pattern, src))
-    assert isinstance(x[1], re.Match)
-    assert isinstance(x[3], re.Match)
+    print(x)
+    assert isinstance(x[2], re.Match)
+    assert isinstance(x[4], re.Match)
 
 
 def test_sub():
@@ -365,3 +388,49 @@ def test_sub():
     m = sub(pattern, rel, src)
     assert m.startswith("```\n# ::: a\n```\nxxx::: bxxx\nxxx::: cxxx\n```{.python")
     assert m.endswith("output}\n::: d\n```\n\nxxx::: exxx\nf")
+
+
+def test_sub_match():
+    from mkapi.markdown import sub
+
+    pattern = re.compile("X")
+    src = "aXb"
+
+    def rel(m: re.Match):
+        name = m.group()
+        return f"_{name}_"
+
+    m = sub(pattern, rel, src)
+    assert m == "a_X_b"
+
+
+def test_find_iter():
+    from mkapi.markdown import _finditer
+
+    pattern = re.compile("X")
+    src = "a\n```\nX\n```\nb"
+
+    x = list(_finditer(pattern, src))
+    assert x == [(0, 2), (2, 11), (11, 13)]
+
+
+def test_find_iter_section():
+    from mkapi.markdown import _finditer
+
+    pattern = re.compile(r"\n\n\S")
+    src = "a\n\nb\n\n ```\n X\n ```\n\nc"
+    x = [m for m in _finditer(pattern, src) if isinstance(m, re.Match)]
+    assert len(x) == 2
+
+
+def test_sub_not_match():
+    from mkapi.markdown import sub
+
+    pattern = re.compile("X")
+    src = "a\n```\nX\n```\nb"
+
+    def rel(m: re.Match):
+        name = m.group()
+        return f"_{name}_"
+
+    assert sub(pattern, rel, src) == src
