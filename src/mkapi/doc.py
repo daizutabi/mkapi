@@ -357,7 +357,7 @@ def _split_sections(text: str, style: Style) -> Iterator[str]:
     start = m.end()
     yield text[:start].strip()
 
-    for m in pattern.finditer(text, start):
+    for m in mkapi.markdown.finditer(pattern, text, start):
         yield from _subsplit(text[start : m.start()].strip(), style)
         start = m.start()
 

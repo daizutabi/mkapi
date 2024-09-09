@@ -127,5 +127,14 @@ def test_create_doc_code_block():
     """
     src = inspect.cleandoc(src)
     doc = create_doc(src)
-    print(doc.text)
-    # assert 0
+    d = """
+    docstring.
+
+    ```
+    import a
+
+    def f():
+        pass
+    ```
+    """
+    assert doc.text == inspect.cleandoc(d)

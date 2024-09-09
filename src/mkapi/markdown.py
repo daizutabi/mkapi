@@ -23,7 +23,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
 
-def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match[str] | str]:
+def _iter(
+    pattern: re.Pattern, text: str, pos: int = 0, endpos: int | None = None
+) -> Iterator[re.Match[str] | tuple[int, int]]:
     """Iterate over matches of a regex pattern in the given text.
 
     Search for all occurrences of the specified regex pattern
@@ -36,7 +38,7 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match[str] | str]:
         text (str): The text to search for matches.
 
     Yields:
-        re.Match | str: Segments of text and match objects. The segments
+        re.Match | tuple[int, int]: Segments of text and match objects. The segments
         are the parts of the text that are not matched by the pattern, and the
         matches are the regex match objects.
 
@@ -46,37 +48,42 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match[str] | str]:
         >>> text = "There are 2 apples and 3 oranges."
         >>> matches = list(_iter(pattern, text))
         >>> matches[0]
-        'There are '
+        (0, 10)
         >>> matches[1]
         <re.Match object; span=(10, 11), match='2'>
         >>> matches[2]
-        ' apples and '
+        (11, 23)
         >>> matches[3]
         <re.Match object; span=(23, 24), match='3'>
         >>> matches[4]
-        ' oranges.'
+        (24, 33)
     """
-    cursor = 0
+    if endpos is None:
+        endpos = len(text)
 
-    for match in pattern.finditer(text):
+    cursor = pos
+
+    for match in pattern.finditer(text, pos, endpos=endpos):
         start, end = match.start(), match.end()
 
         if cursor < start:
-            yield text[cursor:start]
+            yield cursor, start
 
         yield match
 
         cursor = end
 
-    if cursor < len(text):
-        yield text[cursor:]
+    if cursor < endpos:
+        yield cursor, endpos
 
 
-FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)\n?", re.M | re.S)
+FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)", re.M | re.S)
 
 
-def _iter_fenced_codes(text: str) -> Iterator[re.Match[str] | str]:
-    return _iter(FENCED_CODE, text)
+def _iter_fenced_codes(
+    text: str, pos: int = 0, endpos: int | None = None
+) -> Iterator[re.Match[str] | tuple[int, int]]:
+    return _iter(FENCED_CODE, text, pos, endpos)
 
 
 DOCTEST = re.compile(r" *#+ *doctest:.*$", re.M)
@@ -451,7 +458,7 @@ def _iter_code_blocks(text: str) -> Iterator[str]:
         >>> text = "```\\nprint('Hello')\\n```\\n>>> print('World')\\n'World'\\n"
         >>> code_blocks = list(_iter_code_blocks(text))
         >>> len(code_blocks)
-        2
+        3
     """
     for match in _iter_fenced_codes(text):
         if isinstance(match, re.Match):
@@ -459,8 +466,8 @@ def _iter_code_blocks(text: str) -> Iterator[str]:
 
         else:
             prev_type = str
-
-            for examples in _iter_example_lists(match):
+            sub = text[match[0] : match[1]]
+            for examples in _iter_example_lists(sub):
                 if isinstance(examples, list):
                     if prev_type is list:
                         yield "\n"
@@ -477,23 +484,36 @@ def convert_code_block(text: str) -> str:
     return "".join(_iter_code_blocks(text))
 
 
-def _finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match[str] | str]:
-    for match in _iter_fenced_codes(text):
+def _finditer(
+    pattern: re.Pattern, text: str, pos: int = 0, endpos: int | None = None
+) -> Iterator[re.Match[str] | tuple[int, int]]:
+    for match in _iter_fenced_codes(text, pos, endpos):
         if isinstance(match, re.Match):
-            yield match.group()
+            yield match.start(), match.end()
 
         else:
-            yield from _iter(pattern, match)
+            yield from _iter(pattern, text, match[0], match[1])
 
 
-def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match[str]]:
-    for match in _finditer(pattern, text):
+def finditer(
+    pattern: re.Pattern, text: str, pos: int = 0, endpos: int | None = None
+) -> Iterator[re.Match[str]]:
+    for match in _finditer(pattern, text, pos, endpos):
         if isinstance(match, re.Match):
             yield match
 
 
-def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:
-    subs = (m if isinstance(m, str) else rel(m) for m in _finditer(pattern, text))
+def sub(
+    pattern: re.Pattern,
+    rel: Callable[[re.Match], str],
+    text: str,
+    pos: int = 0,
+    endpos: int | None = None,
+) -> str:
+    subs = (
+        text[m[0] : m[1]] if isinstance(m, tuple) else rel(m)
+        for m in _finditer(pattern, text, pos, endpos)
+    )
     return "".join(subs)
 
 
