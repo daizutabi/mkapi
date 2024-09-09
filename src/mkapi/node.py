@@ -70,7 +70,7 @@ class Node:
         return f"{self.__class__.__name__}({self.name!r})"
 
 
-@dataclass(repr=False)
+@dataclass
 class Import(Node):
     """Represent an import statement in the Abstract Syntax Tree (AST).
 
@@ -98,34 +98,13 @@ class Import(Node):
         return f"{self.__class__.__name__}({self.fullname!r})"
 
 
-@dataclass(repr=False)
-class Object(Node):
-    """Represent an object (e.g., class, function, method) in the Abstract Syntax Tree (AST).
-
-    This class is a specialized representation of an object, such as a class,
-    function, or method, within the AST. It inherits from the [`Node`] class
-    and includes additional attributes specific to object representations.
-
-    This class is intended to be subclassed by more specific object types
-    (e.g., [`Definition`], [`Assign`]) that require additional attributes
-    or behaviors specific to their context within the AST.
-    """
-
-    module: str
-    """The module in which the object is defined."""
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
-
-
-@dataclass(repr=False)
-class Definition(Object):
+@dataclass
+class Definition(Node):
     """Represent a definition (e.g., class, function) in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of a definition, such as a class
-    or function, within the AST. It inherits from the [`Object`] class
+    or function, within the AST. It inherits from the [`Node`] class
     and includes additional attributes specific to definition representations.
-    or behaviors specific to their context within the AST.
     """
 
     node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
@@ -133,14 +112,20 @@ class Definition(Object):
     which can be a class definition, a function definition,
     or an asynchronous function definition from the `ast` module."""
 
+    module: str
+    """The module in which the definition is defined."""
 
-@dataclass(repr=False)
-class Assign(Object):
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
+
+
+@dataclass
+class Assign(Node):
     """Represent an assignment statement in the Abstract Syntax Tree (AST).
 
     This class is a specialized representation of an assignment statement,
     which can be either an annotated assignment or a simple assignment.
-    It inherits from the [`Object`] class and includes additional attributes
+    It inherits from the [`Node`] class and includes additional attributes
     specific to assignment representations.
 
     This class is intended to encapsulate the details of assignment statements
@@ -152,6 +137,12 @@ class Assign(Object):
     """The actual AST node associated with this assignment statement,
     which can be an annotated assignment,
     a simple assignment, or a type alias from the `ast` module."""
+
+    module: str
+    """The module in which the assignment is defined."""
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
 
 
 @dataclass(repr=False)
@@ -593,7 +584,7 @@ def resolve(
             if isinstance(obj, Module):
                 return resolve(qualname)
 
-            if isinstance(obj, Object):
+            if isinstance(obj, Definition | Assign):
                 if len(names) == 1:
                     return qualname, obj.module
 

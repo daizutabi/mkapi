@@ -1,7 +1,7 @@
 """
 Module for processing and managing documentation strings.
 
-This module provides functionality for parsing, organizing, and manipulating
+Provide functionality for parsing, organizing, and manipulating
 documentation strings in various formats, specifically Google and NumPy styles.
 It defines data structures and utility functions to facilitate the extraction
 of structured information from docstrings, including parameters, return values,
@@ -14,16 +14,6 @@ Key Classes:
   type, description, and a list of associated items.
 - Doc: Represents a complete documentation string, including its type, main
   text content, and sections.
-
-Key Functions:
-- _iter_items: Iterates over items in a given text based on a specific pattern.
-- split_item: Splits a text item into its components based on the specified style.
-- merge: Merges two Doc instances into one, consolidating their attributes and sections.
-- is_empty: Checks if a Doc instance is empty, meaning it contains no text or sections.
-
-This module is useful for developers and tools that need to process and generate
-documentation from code, ensuring that the documentation is structured and
-easily accessible for rendering or analysis.
 """
 
 from __future__ import annotations
@@ -659,12 +649,11 @@ def _create_admonition(name: str, text: str) -> str:
 
     elif name.startswith("See Also"):
         kind = "info"
-        text = mkapi.markdown.get_see_also(text)
 
     else:
         raise NotImplementedError
 
-    return mkapi.markdown.get_admonition(kind, name, text)
+    return mkapi.markdown.create_admonition(kind, name, text)
 
 
 def iter_sections(text: str, style: Style) -> Iterator[Section]:
@@ -809,8 +798,8 @@ def create_doc(text: str | None, style: Style | None = None) -> Doc:
 
     style = style or get_style(text)
 
-    text = mkapi.markdown.convert(text)
-    text = mkapi.markdown.replace(text, ["<", ">"], ["&lt;", "&gt;"])
+    text = mkapi.markdown.convert_code_block(text)
+    # text = mkapi.markdown.replace(text, ["<", ">"], ["&lt;", "&gt;"])
 
     sections = list(iter_sections(text, style))
 

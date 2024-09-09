@@ -44,7 +44,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.doc import create_doc, create_doc_comment, is_empty, merge, split_type
-from mkapi.node import get_fullname, parse_node
+from mkapi.node import get_fullname
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -53,13 +53,12 @@ from mkapi.utils import (
     get_object_from_module,
     is_dataclass,
     is_package,
-    list_exported_names,
     split_module_name,
 )
 
 if TYPE_CHECKING:
     from ast import AST
-    from collections.abc import Callable, Iterator
+    from collections.abc import Iterator
 
     from mkapi.doc import Doc
 
@@ -567,25 +566,21 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
 
 
 def create_class_by_name(name: str, module: str, parent: Parent | None) -> Class | None:
-    """Create a Class object from the given parameters.
+    """Create a [`Class`] object from the given parameters.
 
-    This function constructs an instance of the Class class, which represents
-    a class definition in the Abstract Syntax Tree (AST). It extracts relevant
-    information from the provided AST node and associates it with the class.
+    Construct an instance of the [`Class`] class representing
+    a class definition in the Abstract Syntax Tree (AST). Extract relevant
+    information from the provided AST node and associate it with the class.
 
     Args:
-        name (str): The name of the class to create.
-        module (str): The name of the module in which the class is defined.
-        parent (Parent | None): The parent object of this class, if any.
+        name (str): Name of the class to create.
+        module (str): Name of the module in which the class is defined.
+        parent (Parent | None): Parent object of this class, if any.
 
     Returns:
-        Class | None: An instance of the Class class representing the specified
+        Class | None: Instance of the [`Class`] class representing the specified
         class, including its name, node, module, parent, and any associated
-        attributes.
-
-    This function is useful for dynamically creating class objects within
-    the AST, allowing for flexible and dynamic manipulation of class
-    definitions in Python code.
+        attributes, or `None` if the class cannot be created.
     """
     if node := get_module_node(module):
         for child in ast.iter_child_nodes(node):
@@ -976,7 +971,7 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
     if isinstance(obj, Module):
         return get_fullname(name, obj.name)
 
-    if isinstance(obj, Parent):  # noqa: SIM102
+    if isinstance(obj, Parent):
         if child := obj.get(name):
             return child.fullname
 
@@ -995,52 +990,3 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
         return get_fullname_from_object(name_, obj)
 
     return get_fullname(name)
-
-
-def get_members(
-    obj: Parent,
-    predicate: Callable[[Object], bool] | None = None,
-) -> dict[str, Object]:
-    """Retrieve members of the specified Parent object.
-
-    This function collects and returns a dictionary of members (children)
-    associated with the given Parent object. It can filter members based on
-    an optional predicate function that determines which members to include.
-
-    Args:
-        obj (Parent): The Parent object whose members are to be retrieved.
-        predicate (Callable[[Object], bool] | None): An optional function that
-            takes an Object as input and returns a boolean indicating whether
-            the member should be included in the result. If None, all members
-            are included.
-
-    Returns:
-        dict[str, Object]: A dictionary where the keys are the names of the
-        members and the values are the corresponding Object instances.
-
-    This function is useful for accessing and processing the members of
-    a Parent object within the Abstract Syntax Tree (AST) structure,
-    allowing for flexible manipulation of the object's children.
-    """
-    members: dict[str, Object] = {}
-
-    for name, child in obj.children.items():
-        if name not in members and (not predicate or predicate(child)):
-            members[name] = child
-
-    if not isinstance(obj, Module) or not is_package(obj.name):
-        return members
-
-    if not (names := list_exported_names(obj.name)):
-        return members
-
-    for name, node in parse_node(obj.node, obj.name):
-        if name not in names or name in members:
-            continue
-
-        if isinstance(node, mkapi.node.Object):
-            child = get_object(node.name, node.module)
-            if child and (not predicate or predicate(child)):
-                members[name] = child
-
-    return members

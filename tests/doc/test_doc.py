@@ -77,8 +77,8 @@ def test_iter_sections_invalid():
 def test_create_admonition_see_also():
     from mkapi.doc import _create_admonition
 
-    admonition = _create_admonition("See Also", "mkapi")
-    assert admonition == '!!! info "See Also"\n    [__mkapi__.mkapi][]'
+    admonition = _create_admonition("See Also", "`mkapi`")
+    assert admonition == '!!! info "See Also"\n    `mkapi`'
 
 
 def test_iter_merged_items():
