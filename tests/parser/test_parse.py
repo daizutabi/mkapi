@@ -182,7 +182,7 @@ def doc_func():
 
 
 def test_parse_doc_function_text(doc_func: Doc):
-    assert doc_func.text == "Docstring [D][__mkapi__.mkapi.node.Definition]."
+    assert doc_func.text == "Docstring [`D`][__mkapi__.mkapi.node.Definition]."
 
 
 def test_parse_doc_function_args(doc_func: Doc):
@@ -192,7 +192,7 @@ def test_parse_doc_function_args(doc_func: Doc):
     assert items[0].type == "[Object][__mkapi__.mkapi.object.Object]"
     assert items[0].text == "A."
     assert items[1].name == "b"
-    assert items[1].text.startswith("B [I][__mkapi__.mkapi.doc.Item]")
+    assert items[1].text.startswith("B [`I`][__mkapi__.mkapi.doc.Item]")
     assert items[1].text.endswith(" [`Object`][__mkapi__.mkapi.object.Object].")
 
 
@@ -215,7 +215,7 @@ def doc_class():
 
 
 def test_parse_doc_class_text(doc_class: Doc):
-    assert doc_class.text == "Docstring [I][__mkapi__.mkapi.doc.Item]."
+    assert doc_class.text == "Docstring [`I`][__mkapi__.mkapi.doc.Item]."
 
 
 def test_parse_doc_class_attrs(doc_class: Doc):

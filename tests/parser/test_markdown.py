@@ -1,29 +1,23 @@
 import ast
-import re
+
+import pytest
 
 
-def test_link_pattern():
-    from mkapi.parser import LINK_PATTERN
+@pytest.mark.parametrize(
+    "text",
+    [
+        "`abc`",
+        "`abc[abc]`",
+        "```abc```",
+        "`` `abc` ``",
+    ],
+)
+def test_code_pattern_match(text):
+    from mkapi.parser import CODE_PATTERN
 
-    def f(m: re.Match) -> str:
-        name = m.group(1)
-        if name == "abc":
-            return f"[{name}][_{name}]"
-        return m.group()
-
-    assert re.search(LINK_PATTERN, "X[abc]Y")
-    assert not re.search(LINK_PATTERN, "X[ab c]Y")
-    assert re.search(LINK_PATTERN, "X[abc][]Y")
-    assert not re.search(LINK_PATTERN, "X[abc](xyz)Y")
-    assert not re.search(LINK_PATTERN, "X[abc][xyz]Y")
-    assert re.sub(LINK_PATTERN, f, "X[abc]Y") == "X[abc][_abc]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc[abc]]Y") == "X[abc[abc][_abc]]Y"
-    assert re.sub(LINK_PATTERN, f, "X[ab]Y") == "X[ab]Y"
-    assert re.sub(LINK_PATTERN, f, "X[ab c]Y") == "X[ab c]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc] c]Y") == "X[abc][_abc] c]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc][]Y") == "X[abc][_abc]Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc](xyz)Y") == "X[abc](xyz)Y"
-    assert re.sub(LINK_PATTERN, f, "X[abc][xyz]Y") == "X[abc][xyz]Y"
+    m = CODE_PATTERN.match(text)
+    assert m
+    assert m.group() == text
 
 
 def test_get_markdown_name_noreplace():
@@ -87,11 +81,12 @@ def test_get_markdown_expr():
     def replace(name: str) -> str | None:
         return get_fullname(name, "mkapi.markdown")
 
-    expr = ast.parse("re.Match[convert](sub)").body[0].value  # type: ignore
+    expr = ast.parse("re.Match[finditer](sub)").body[0].value  # type: ignore
     assert isinstance(expr, ast.expr)
     x = get_markdown_expr(expr, replace)
     assert x.startswith("[re][__mkapi__.re].[Match][__mkapi__.re.Match]")
-    assert "[[convert][__mkapi__.mkapi.markdown.convert]]" in x
+    print(x)
+    assert "[[finditer][__mkapi__.mkapi.markdown.finditer]]" in x
     assert x.endswith("([sub][__mkapi__.mkapi.markdown.sub])")
 
 
@@ -122,13 +117,15 @@ def test_get_markdown_text_module_objects():
 
     x = get_markdown_text("Class", replace)
     assert x == "Class"
-    x = get_markdown_text("a [Class] b", replace)
-    assert x == "a [Class][__mkapi__.mkapi.object.Class] b"
-    x = get_markdown_text("a [Class][] b", replace)
-    assert x == "a [Class][__mkapi__.mkapi.object.Class] b"
-    x = get_markdown_text("a [Class][a] b", replace)
-    assert x == "a [Class][a] b"
-    m = "a \n```\n[Class][a]\n```\n b"
+    x = get_markdown_text("a `Class` b", replace)
+    assert x == "a [`Class`][__mkapi__.mkapi.object.Class] b"
+    x = get_markdown_text("a `Class ` b", replace)
+    assert x == "a `Class ` b"
+    x = get_markdown_text("a `invalid` b", replace)
+    assert x == "a `invalid` b"
+    x = get_markdown_text("a `` `Class` `` b", replace)
+    assert x == "a `` `Class` `` b"
+    m = "a \n```\n`Class`\n```\n b"
     assert get_markdown_text(m, replace) == m
 
 
@@ -139,14 +136,11 @@ def test_get_markdown_text_module_plugins():
     def replace(name: str) -> str | None:
         return get_fullname(name, "mkapi.plugin")
 
-    x = get_markdown_text("a [MkAPIPlugin][] b", replace)
-    assert x == "a [MkAPIPlugin][__mkapi__.mkapi.plugin.MkAPIPlugin] b"
-    x = get_markdown_text("a [BasePlugin][] b", replace)
-    assert x == "a [BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin] b"
-    x = get_markdown_text("a [MkDocsConfig][] b", replace)
-    assert x == "a [MkDocsConfig][__mkapi__.mkdocs.config.defaults.MkDocsConfig] b"
-
-    x = get_markdown_text("a [__mkapi__.b] c", replace)
-    assert x == "a b c"
+    x = get_markdown_text("a `MkAPIPlugin` b", replace)
+    assert x == "a [`MkAPIPlugin`][__mkapi__.mkapi.plugin.MkAPIPlugin] b"
+    x = get_markdown_text("a `BasePlugin` b", replace)
+    assert x == "a [`BasePlugin`][__mkapi__.mkdocs.plugins.BasePlugin] b"
+    x = get_markdown_text("a `MkDocsConfig` b", replace)
+    assert x == "a [`MkDocsConfig`][__mkapi__.mkdocs.config.defaults.MkDocsConfig] b"
     x = get_markdown_text("a [b] c", replace)
     assert x == "a [b] c"
