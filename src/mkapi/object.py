@@ -566,9 +566,9 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
 
 
 def create_class_by_name(name: str, module: str, parent: Parent | None) -> Class | None:
-    """Create a [`Class`] object from the given parameters.
+    """Create a `Class` object from the given parameters.
 
-    Construct an instance of the [`Class`] class representing
+    Construct an instance of the `Class` class representing
     a class definition in the Abstract Syntax Tree (AST). Extract relevant
     information from the provided AST node and associate it with the class.
 
@@ -578,7 +578,7 @@ def create_class_by_name(name: str, module: str, parent: Parent | None) -> Class
         parent (Parent | None): Parent object of this class, if any.
 
     Returns:
-        Class | None: Instance of the [`Class`] class representing the specified
+        Class | None: Instance of the `Class` class representing the specified
         class, including its name, node, module, parent, and any associated
         attributes, or `None` if the class cannot be created.
     """

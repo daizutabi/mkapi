@@ -53,31 +53,31 @@ class TemplateKind(Enum):
 
 
 def render(
-    obj: Object,
+    name: str,
     level: int,
     namespace: str,
     predicate: Callable[[Parser, TemplateKind], bool] | None = None,
 ) -> str:
     """Return a rendered Markdown."""
-    if not (parser := Parser.create(obj.fullname)):
-        return f"!!! failure\n\n    {obj.fullname!r} not found."
+    if not (parser := Parser.create(name)):
+        return f"!!! failure\n\n    {name!r} not found."
 
     markdowns = []
 
-    name = parser.parse_name()
+    name_ = parser.parse_name()
     if level and (not predicate or predicate(parser, TemplateKind.HEADING)):
-        markdowns.append(render_heading(name.id, name.fullname, level))
+        markdowns.append(render_heading(name_.id, name_.fullname, level))
 
     if not predicate or predicate(parser, TemplateKind.OBJECT):
         signature = parser.parse_signature()
-        markdowns.append(render_object(obj, name, namespace, signature))
+        markdowns.append(render_object(parser.obj, name_, namespace, signature))
 
     if not predicate or predicate(parser, TemplateKind.DOCUMENT):
         doc = parser.parse_doc()
         markdowns.append(render_document(doc))
 
     if not predicate or predicate(parser, TemplateKind.SOURCE):
-        markdowns.append(render_source(obj))
+        markdowns.append(render_source(parser.obj))
 
     return "\n\n".join(markdowns)
 

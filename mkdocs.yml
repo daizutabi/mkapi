@@ -60,10 +60,10 @@ nav:
   #     - usage/config.md
   - Reference:
       - $api:src/mkapi.***
-  - Examples:
-      - $api:src/examples.**
-  - Schemdraw:
-      - $api/schemdraw.***
+  # - Examples:
+  #     - $api:src/examples.**
+  # - Schemdraw:
+  #     - $api/schemdraw.***
   # - Jinja2:
   #     - $api:src/jinja2.***
   # - Polars: $api/polars.***

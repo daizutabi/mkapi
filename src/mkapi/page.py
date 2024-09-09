@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING
 import mkapi.markdown
 import mkapi.renderer
 from mkapi.node import iter_module_members
-from mkapi.object import get_object
 from mkapi.renderer import TemplateKind
 from mkapi.utils import get_module_node
 

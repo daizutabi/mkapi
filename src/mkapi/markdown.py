@@ -488,12 +488,7 @@ def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
             yield match.group()
 
         else:
-            for match in _iter_brackets(match):
-                if isinstance(match, re.Match):
-                    yield match.group()
-
-                else:
-                    yield from _iter(pattern, match)
+            yield from _iter(pattern, match)
 
 
 def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:
