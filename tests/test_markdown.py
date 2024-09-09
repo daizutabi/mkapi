@@ -117,22 +117,6 @@ def test_iter_fenced_codes():
     assert x == ["abc\n"]
 
 
-def test_iter_brackets():
-    from mkapi.markdown import _iter_brackets
-
-    text = "a[b]c[d[e]]f[g\nh]i[j k]"
-    x = list(_iter_brackets(text))
-    assert len(x) == 8
-    assert x[0] == "a"
-    assert x[1].group() == "[b]"  # type: ignore
-    assert x[2] == "c"
-    assert x[3].group() == "[d[e]]"  # type: ignore
-    assert x[4] == "f"
-    assert x[5].group() == "[g\nh]"  # type: ignore
-    assert x[6] == "i"
-    assert x[7].group() == "[j k]"  # type: ignore
-
-
 def test_iter_examples():
     from mkapi.markdown import _iter_example_lists, _iter_examples
 
@@ -241,6 +225,23 @@ def test_iter_literal_block():
     assert x == " x\n a\n\n\n ```\n b\n\n c\n ```\n\nd\n"
 
 
+def test_iter_literal_block_indent():
+    from mkapi.markdown import _iter_literal_block
+
+    src = """
+    docstring.
+
+        import a
+
+        def f():
+            pass
+    """
+    src = inspect.cleandoc(src)
+    x = "".join(list(_iter_literal_block(src)))
+    assert "```\nimport a\n" in x
+    assert "    pass\n```" in x
+
+
 def test_convert_code_block():
     from mkapi.markdown import convert_code_block
 
@@ -314,7 +315,7 @@ def test_convert_example_new_line():
 
 
 def test_finditer():
-    from mkapi.markdown import convert_code_block, finditer
+    from mkapi.markdown import _finditer, convert_code_block
 
     pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.M)
     src = """
@@ -333,7 +334,7 @@ def test_finditer():
     """
     src = inspect.cleandoc(src)
     src = convert_code_block(src)
-    x = list(finditer(pattern, src))
+    x = list(_finditer(pattern, src))
     assert isinstance(x[1], re.Match)
     assert isinstance(x[3], re.Match)
 

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from mkapi.object import Object
-    from mkapi.parser import Name
+    from mkapi.parser import NameSet
 
 templates: dict[str, Template] = {}
 
@@ -64,13 +64,15 @@ def render(
 
     markdowns = []
 
-    name_ = parser.parse_name()
+    name_set = parser.parse_name()
     if level and (not predicate or predicate(parser, TemplateKind.HEADING)):
-        markdowns.append(render_heading(name_.id, name_.fullname, level))
+        markdowns.append(
+            render_heading(name_set.node.id, name_set.node.fullname, level)
+        )
 
     if not predicate or predicate(parser, TemplateKind.OBJECT):
         signature = parser.parse_signature()
-        markdowns.append(render_object(parser.obj, name_, namespace, signature))
+        markdowns.append(render_object(parser.obj, name_set, namespace, signature))
 
     if not predicate or predicate(parser, TemplateKind.DOCUMENT):
         doc = parser.parse_doc()
@@ -88,19 +90,20 @@ def render_heading(id_: str, fullname: str, level: int) -> str:
 
 def render_object(
     obj: Object,
-    name: Name,
+    name_set: NameSet,
     namespace: str,
     signature: list[tuple[str, str]],
 ) -> str:
     if isinstance(obj, Module):
-        names = [[x, "name"] for x in name.names]
+        names = [[x, "name"] for x in name_set.node.names]
     else:
-        names = [[x, "prefix"] for x in name.names]
+        names = [[x, "prefix"] for x in name_set.node.names]
         names[-1][1] = "name"
 
     return templates["object"].render(
         obj=obj,
-        id=name.id,
+        obj_id=name_set.obj.id,
+        node_id=name_set.node.id,
         namespace=namespace,
         names=names,
         signature=signature,

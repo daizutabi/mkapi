@@ -95,12 +95,13 @@ def test_parse_name_module():
     parser = Parser.create(name)
     assert parser
     name = parser.parse_name()
-    assert name.id == "mkapi.ast"
+    assert name.node.id == "mkapi.ast"
+    assert name.obj.id == "mkapi.ast"
 
-    names = name.fullname.split("].[")
+    names = name.node.fullname.split("].[")
     assert names[0] == "[mkapi][__mkapi__.mkapi"
     assert names[1] == "ast][__mkapi__.mkapi.ast]"
-    assert name.names == ["mkapi", "ast"]
+    assert name.node.names == ["mkapi", "ast"]
 
 
 def test_parse_name_function():
@@ -110,13 +111,13 @@ def test_parse_name_function():
     parser = Parser.create(name)
     assert parser
     name = parser.parse_name()
-    assert name.id == "mkapi.ast.get_assign_name"
+    assert name.node.id == "mkapi.ast.get_assign_name"
 
-    names = name.fullname.split("].[")
+    names = name.node.fullname.split("].[")
     assert names[0] == "[mkapi][__mkapi__.mkapi"
     assert names[1] == "ast][__mkapi__.mkapi.ast"
     assert names[2] == "get\\_assign\\_name][__mkapi__.mkapi.ast.get_assign_name]"
-    assert name.names == ["get\\_assign\\_name"]
+    assert name.node.names == ["get\\_assign\\_name"]
 
 
 def test_parse_name_method():
@@ -126,14 +127,14 @@ def test_parse_name_method():
     parser = Parser.create(name)
     assert parser
     name = parser.parse_name()
-    assert name.id == "mkapi.parser.Parser.create"
+    assert name.node.id == "mkapi.parser.Parser.create"
 
-    names = name.fullname.split("].[")
+    names = name.node.fullname.split("].[")
     assert names[0] == "[mkapi][__mkapi__.mkapi"
     assert names[1] == "parser][__mkapi__.mkapi.parser"
     assert names[2] == "Parser][__mkapi__.mkapi.parser.Parser"
     assert names[3] == "create][__mkapi__.mkapi.parser.Parser.create]"
-    assert name.names == ["Parser", "create"]
+    assert name.node.names == ["Parser", "create"]
 
 
 def test_parse_name_export():
@@ -143,13 +144,46 @@ def test_parse_name_export():
     parser = Parser.create(name)
     assert parser
     name = parser.parse_name()
-    assert name.id == "jinja2.Template.render"
+    assert name.node.id == "jinja2.Template.render"
+    assert name.obj.id == "jinja2.environment.Template.render"
 
-    names = name.fullname.split("].[")
+    names = name.node.fullname.split("].[")
     assert names[0] == "[jinja2][__mkapi__.jinja2"
     assert names[1] == "Template][__mkapi__.jinja2.Template"
     assert names[2] == "render][__mkapi__.jinja2.Template.render]"
-    assert name.names == ["Template", "render"]
+    assert name.node.names == ["Template", "render"]
+
+    names = name.obj.fullname.split("].[")
+    assert names[0] == "[jinja2][__mkapi__.jinja2"
+    assert names[1] == "environment][__mkapi__.jinja2.environment"
+    assert names[2] == "Template][__mkapi__.jinja2.environment.Template"
+    assert names[3] == "render][__mkapi__.jinja2.environment.Template.render]"
+    assert name.node.names == ["Template", "render"]
+    assert name.obj.names == ["Template", "render"]
+
+
+def test_parse_name_alias():
+    from mkapi.parser import Parser
+
+    name = "examples.styles.ExampleClassGoogle"
+    parser = Parser.create(name)
+    assert parser
+    name = parser.parse_name()
+    assert name.node.id == "examples.styles.ExampleClassGoogle"
+    assert name.obj.id == "examples.styles.google.ExampleClass"
+
+    names = name.node.fullname.split("].[")
+    assert names[0] == "[examples][__mkapi__.examples"
+    assert names[1] == "styles][__mkapi__.examples.styles"
+    assert names[2].endswith("Google][__mkapi__.examples.styles.ExampleClassGoogle]")
+    assert name.node.names == ["ExampleClassGoogle"]
+
+    names = name.obj.fullname.split("].[")
+    assert names[0] == "[examples][__mkapi__.examples"
+    assert names[1] == "styles][__mkapi__.examples.styles"
+    assert names[2] == "google][__mkapi__.examples.styles.google"
+    assert names[3] == "ExampleClass][__mkapi__.examples.styles.google.ExampleClass]"
+    assert name.obj.names == ["ExampleClass"]
 
 
 def test_parse_signature():

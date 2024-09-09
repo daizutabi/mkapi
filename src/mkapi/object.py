@@ -976,17 +976,17 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
             return child.fullname
 
     if "." not in name:
-        if obj.parent:
+        if obj.parent and obj.parent != obj:
             return get_fullname_from_object(name, obj.parent)
 
         return get_fullname(name, obj.module)
 
     parent, name_ = name.rsplit(".", maxsplit=1)
 
-    if obj_ := objects.get(parent):
+    if (obj_ := objects.get(parent)) and obj_ != obj:
         return get_fullname_from_object(name, obj_)
 
-    if obj.name == parent:
+    if (obj.name == parent) and name_ != name:
         return get_fullname_from_object(name_, obj)
 
     return get_fullname(name)
