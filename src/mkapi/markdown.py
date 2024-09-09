@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
 
-def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
+def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match[str] | str]:
     """Iterate over matches of a regex pattern in the given text.
 
     Search for all occurrences of the specified regex pattern
@@ -73,15 +73,10 @@ def _iter(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
 
 
 FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)\n?", re.M | re.S)
-BRACKET = re.compile(r"\[(?:[^\[\]]|(?P<inner>\[.*?\]))*\]")
 
 
-def _iter_fenced_codes(text: str) -> Iterator[re.Match | str]:
+def _iter_fenced_codes(text: str) -> Iterator[re.Match[str] | str]:
     return _iter(FENCED_CODE, text)
-
-
-def _iter_brackets(text: str) -> Iterator[re.Match | str]:
-    return _iter(BRACKET, text)
 
 
 DOCTEST = re.compile(r" *#+ *doctest:.*$", re.M)
@@ -482,7 +477,7 @@ def convert_code_block(text: str) -> str:
     return "".join(_iter_code_blocks(text))
 
 
-def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
+def _finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match[str] | str]:
     for match in _iter_fenced_codes(text):
         if isinstance(match, re.Match):
             yield match.group()
@@ -491,8 +486,14 @@ def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match | str]:
             yield from _iter(pattern, match)
 
 
+def finditer(pattern: re.Pattern, text: str) -> Iterator[re.Match[str]]:
+    for match in _finditer(pattern, text):
+        if isinstance(match, re.Match):
+            yield match
+
+
 def sub(pattern: re.Pattern, rel: Callable[[re.Match], str], text: str) -> str:
-    subs = (m if isinstance(m, str) else rel(m) for m in finditer(pattern, text))
+    subs = (m if isinstance(m, str) else rel(m) for m in _finditer(pattern, text))
     return "".join(subs)
 
 

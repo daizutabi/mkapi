@@ -1,3 +1,6 @@
+import inspect
+
+
 def test_create_doc():
     from mkapi.doc import create_doc
 
@@ -109,3 +112,20 @@ def test_iter_merged_sections_without_name():
 
     merged_sections = list(iter_merged_sections([s1], [s2, s3]))
     assert len(merged_sections) == 3
+
+
+def test_create_doc_code_block():
+    from mkapi.doc import create_doc
+
+    src = """
+    docstring.
+
+        import a
+
+        def f():
+            pass
+    """
+    src = inspect.cleandoc(src)
+    doc = create_doc(src)
+    print(doc.text)
+    # assert 0

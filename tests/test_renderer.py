@@ -1,6 +1,5 @@
 import pytest
 
-from mkapi.object import get_object
 from mkapi.parser import Parser
 
 
@@ -25,8 +24,8 @@ def test_render_heading_module():
 
     parser = Parser.create("examples.styles.google")
     assert parser
-    name = parser.parse_name()
-    m = render_heading(name.id, name.fullname, 1)
+    name_set = parser.parse_name()
+    m = render_heading(name_set.node.id, name_set.node.fullname, 1)
     assert '<h1 class="mkapi-heading" id="examples.styles.google" markdown="1">' in m
     assert "[examples][__mkapi__.examples].[styles][__mkapi__.examples.styles]" in m
 
@@ -36,8 +35,8 @@ def test_render_heading_export():
 
     parser = Parser.create("jinja2.Template")
     assert parser
-    name = parser.parse_name()
-    m = render_heading(name.id, name.fullname, 1)
+    name_set = parser.parse_name()
+    m = render_heading(name_set.node.id, name_set.node.fullname, 1)
     assert '<h1 class="mkapi-heading" id="jinja2.Template" markdown="1">' in m
 
 
@@ -46,8 +45,8 @@ def test_render_heading_alias():
 
     parser = Parser.create("examples.styles.ExampleClassGoogle")
     assert parser
-    name = parser.parse_name()
-    m = render_heading(name.id, name.fullname, 1)
+    name_set = parser.parse_name()
+    m = render_heading(name_set.node.id, name_set.node.fullname, 1)
     assert 'id="examples.styles.ExampleClassGoogle"' in m
     assert "[ExampleClassGoogle][__mkapi__.examples.styles.ExampleClassGoogle]" in m
 

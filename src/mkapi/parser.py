@@ -47,6 +47,12 @@ class Name:
 
 
 @dataclass
+class NameSet:
+    node: Name
+    obj: Name
+
+
+@dataclass
 class Parser:
     name: str
     module: str | None
@@ -74,12 +80,18 @@ class Parser:
     def replace_from_object(self, name: str) -> str | None:
         return get_fullname_from_object(name, self.obj)
 
-    def parse_name(self) -> Name:
+    def parse_name(self) -> NameSet:
         id_ = f"{self.module}.{self.name}" if self.module else self.name
         names = [x.replace("_", "\\_") for x in self.name.split(".")]
         fullname = get_markdown_name(id_)
+        node = Name(id_, fullname, names)
 
-        return Name(id_, fullname, names)
+        id_ = self.obj.fullname
+        names = [x.replace("_", "\\_") for x in self.obj.qualname.split(".")]
+        fullname = get_markdown_name(id_)
+        obj = Name(id_, fullname, names)
+
+        return NameSet(node, obj)
 
     def parse_signature(self) -> list[tuple[str, str]]:
         if isinstance(self.obj, Module):

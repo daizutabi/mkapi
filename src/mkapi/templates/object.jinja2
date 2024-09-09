@@ -1,9 +1,9 @@
-<p class="mkapi-object" id="{{ id }}" markdown="1">
-<span class="mkapi-object-link">[{{ namespace }}][__mkapi__.__{{ namespace }}__.{{ id }}]</span>
+<p class="mkapi-object" id="{{ node_id }}" markdown="1">
+<span class="mkapi-object-link">[{{ namespace }}][__mkapi__.__{{ namespace }}__.{{ obj_id }}]</span>
 {%- if obj.kind not in ("function") -%}
 <span class="mkapi-object-kind">{{ obj.kind }}</span>
 {%- endif %}
-<span class="mkapi-object-name" title="{{ id }}">
+<span class="mkapi-object-name" title="{{ obj_id }}">
 {%- if obj.kind in ("module", "package") -%}
 {%- for name, kind in names -%}
 <span class="mkapi-{{ kind }}">{{ name }}</span>
@@ -11,7 +11,7 @@
 {%- endfor -%}
 {% else %}
 {%- for name, kind in names[-1:] -%}
-<span class="mkapi-{{ kind }}">[{{ name }}][{{ id }}]</span>
+<span class="mkapi-{{ kind }}">[{{ name }}][{{ obj_id }}]</span>
 {%- endfor -%}
 {%- endif -%}
 </span>
