@@ -132,7 +132,7 @@ def get_module_path(name: str) -> Path | None:
     """
     try:
         spec = find_spec(name)
-    except (ModuleNotFoundError, ValueError):
+    except (ImportError, ModuleNotFoundError, ValueError):
         return None
 
     if not (spec and spec.origin):
@@ -180,7 +180,7 @@ def get_module_name(module: str) -> str:
 
     try:
         return importlib.import_module(module).__name__
-    except ModuleNotFoundError:
+    except (ModuleNotFoundError, ImportError):
         return module
 
 
@@ -378,7 +378,7 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
     else:
         try:
             module = importlib.import_module(name)
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, ImportError):
             return None
 
         try:
@@ -926,7 +926,7 @@ def get_object_from_module(name: str, module: str) -> object | None:
     """
     try:
         obj = importlib.import_module(module or name)
-    except ModuleNotFoundError:
+    except (ModuleNotFoundError, ImportError):
         return None
 
     for name_ in name.split("."):
