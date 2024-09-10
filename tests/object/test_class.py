@@ -73,10 +73,10 @@ def test_inherit_base_classes():
 
     module = create_module("mkapi.plugin")
     assert module
-    cls = module.get("MkAPIConfig")
+    cls = module.get("MkApiConfig")
     assert isinstance(cls, Class)
     assert cls.get("config_file_path")
-    cls = module.get("MkAPIPlugin")
+    cls = module.get("MkApiPlugin")
     assert isinstance(cls, Class)
     assert cls.get("on_page_read_source")
     module = create_module("mkapi.ast")

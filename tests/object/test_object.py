@@ -163,7 +163,7 @@ def mkapiplugin():
 
     module = create_module("mkapi.plugin")
     assert module
-    cls = module.get("MkAPIPlugin")
+    cls = module.get("MkApiPlugin")
     assert isinstance(cls, Class)
     return cls
 

@@ -263,14 +263,14 @@ def test_parse_doc_class_attrs(doc_class: Doc):
 def test_parse_bases():
     from mkapi.parser import Parser
 
-    name = "mkapi.plugin.MkAPIPlugin"
+    name = "mkapi.plugin.MkApiPlugin"
     parser = Parser.create(name)
     assert parser
     bases = parser.parse_bases()
     assert len(bases) == 1
     base = bases[0]
     assert base.startswith("[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]")
-    assert base.endswith("[[MkAPIConfig][__mkapi__.mkapi.plugin.MkAPIConfig]]")
+    assert base.endswith("[[MkApiConfig][__mkapi__.mkapi.plugin.MkApiConfig]]")
 
 
 def test_parse_bases_empty():

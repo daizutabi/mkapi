@@ -33,7 +33,7 @@ URIS: dict[str, dict[str, str]] = {}
 
 @dataclass
 class Page:
-    """Page class."""
+    """Page class"""
 
     src_uri: str
     name: str
@@ -52,9 +52,6 @@ class Page:
     def create_documentation(src_uri: str, content: str) -> Page:
         return Page(src_uri, "", content, PageKind.DOCUMENTATION)
 
-    def __post_init__(self) -> None:
-        self.generate_markdown()
-
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.src_uri!r})"
 
@@ -71,9 +68,6 @@ class Page:
         return not self.is_api_page()
 
     def generate_markdown(self) -> None:
-        if self.is_documentation_page():
-            return
-
         self.markdown, names = generate_module_markdown(self.name)
         namespace = "source" if self.is_source_page() else "object"
         uris = URIS.setdefault(namespace, {})

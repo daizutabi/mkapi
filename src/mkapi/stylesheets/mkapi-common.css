@@ -69,17 +69,22 @@
   color: var(--mkapi-object-bases-color);
   font-size: 0.85em;
   margin-block-start: 0px;
+  margin-left: 20px;
 }
 
 .mkapi-document {
-  margin-left: 1.5em;
+  margin-left: 20px;
+}
+
+h1 + .mkapi-document {
+  margin-left: 0px;
 }
 
 .mkapi-section {
   margin-block-end: 0px;
 }
 
-.mkapi-section ~ ul {
+.mkapi-section + ul {
   margin-block-start: 0px;
 }
 

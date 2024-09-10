@@ -21,8 +21,9 @@ from rich.progress import (
 import mkapi
 import mkapi.nav
 from mkapi import renderer
+from mkapi.file import generate_file
 from mkapi.page import Page
-from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
+from mkapi.utils import cache_clear, get_module_path, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -39,7 +40,7 @@ if TYPE_CHECKING:
 logger = get_plugin_logger("MkAPI")
 
 
-class MkAPIConfig(Config):
+class MkApiConfig(Config):
     config = config_options.Type(str, default="")
     exclude = config_options.Type(list, default=[])
     src_dir = config_options.Type(str, default="src")
@@ -48,29 +49,16 @@ class MkAPIConfig(Config):
     debug = config_options.Type(bool, default=False)
 
 
-class MkAPIPlugin(BasePlugin[MkAPIConfig]):
+class MkApiPlugin(BasePlugin[MkApiConfig]):
     pages: dict[str, Page]
 
     def __init__(self) -> None:
-        self.dirty = False
         self.pages = {}
         self.progress = None
         self.task_id = None
 
-    def on_startup(self, *, command: str, dirty: bool) -> None:
-        self.dirty = dirty
-
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         cache_clear()
-
-        if self.dirty:
-            pages: list[Page] = []
-            for page in self.pages.values():
-                if page.name and is_module_cache_dirty(page.name):
-                    pages.append(page)
-
-            for page in pages:
-                page.generate_markdown()
 
         self.page_title = _get_function("page_title", self)
         self.section_title = _get_function("section_title", self)
@@ -92,7 +80,10 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         for src_uri, page in self.pages.items():
             if page.is_api_page() and src_uri not in files.src_uris:
-                files.append(File.generated(config, src_uri, content=page.markdown))
+                file = generate_file(config, src_uri, page.name)
+                files.append(file)
+                if file.is_modified():
+                    page.generate_markdown()
 
         for file in files:
             if page := self.pages.get(file.src_uri):
@@ -163,7 +154,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             self.progress.stop()
 
 
-def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
+def _get_function(name: str, plugin: MkApiPlugin) -> Callable | None:
     if not (path_str := plugin.config.config):
         return None
 
@@ -182,17 +173,17 @@ def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
     return getattr(module, name, None)
 
 
-def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _update_templates(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     renderer.load_templates()
 
 
-def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _update_extensions(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     for name in ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]:
         if name not in config.markdown_extensions:
             config.markdown_extensions.append(name)
 
 
-def _build_apinav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _build_apinav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     if not config.nav:
         return
 
@@ -208,7 +199,7 @@ def _build_apinav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     mkapi.nav.build_apinav(config.nav, watch_directory)
 
 
-def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     if not (nav := config.nav):
         return
 
@@ -241,11 +232,13 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
             suffix = "/README.md" if is_package(name) else ".md"
             object_uri = f"{object_path}/{uri}{suffix}"
-            plugin.pages.setdefault(object_uri, Page.create_object(object_uri, name))
+            if object_uri not in plugin.pages:
+                plugin.pages[object_uri] = Page.create_object(object_uri, name)
             progress.update(task_id, description=object_uri, advance=1)
 
             source_uri = f"{source_path}/{uri}.md"
-            plugin.pages.setdefault(source_uri, Page.create_source(source_uri, name))
+            if source_uri not in plugin.pages:
+                plugin.pages[source_uri] = Page.create_source(source_uri, name)
             progress.update(task_id, description=source_uri, advance=1)
 
             return object_uri
@@ -253,7 +246,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
 
 
-def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:
+def _collect_stylesheets(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]:
     root = Path(mkapi.__file__).parent / "stylesheets"
 
     docs_dir = config.docs_dir

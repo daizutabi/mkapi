@@ -1,31 +1,10 @@
 """
-Utility Functions Module
+Utility Functions Module.
 
-This module contains a collection of utility functions that provide various
+Contain a collection of utility functions that provide various
 helper functionalities for the application. These functions are designed to
 be reusable and facilitate common tasks such as module introspection,
 caching, and object retrieval.
-
-The functions in this module are organized to enhance code readability and
-maintainability, allowing developers to easily access and utilize common
-operations without the need to rewrite code.
-
-Key Features:
-- Caching: Functions to cache results of expensive operations and clear
-  the cache when necessary.
-- Module Management: Functions to retrieve module paths, names, and
-  check if a module is a package or a valid module.
-- Object Retrieval: Functions to dynamically retrieve objects from
-  specified modules, including support for nested objects.
-- Identifier Validation: Functions to validate and iterate over
-  identifiers in source code.
-- Submodule Discovery: Functions to find and iterate over submodules
-  within a package.
-
-This module is intended for internal use within the application and may
-be subject to changes as the application evolves. Developers are encouraged
-to refer to the function docstrings for detailed information on each
-function's purpose, parameters, and return values.
 """
 
 from __future__ import annotations
@@ -325,36 +304,36 @@ def find_submodule_names(
     return names
 
 
-module_cache: dict[str, float] = {}
+# module_cache: dict[str, float] = {}
 
 
-def is_module_cache_dirty(name: str) -> bool:
-    """Return True if the module cache is dirty.
+# def is_module_cache_dirty(name: str) -> bool:
+#     """Return True if the module cache is dirty.
 
-    This function checks if the cache for the specified module is outdated
-    by comparing the last modified time of the module's source file with
-    the cached modification time stored in `module_cache`. If the module
-    cannot be found or if there is no cached modification time, it determines
-    whether the cache is considered dirty.
+#     This function checks if the cache for the specified module is outdated
+#     by comparing the last modified time of the module's source file with
+#     the cached modification time stored in `module_cache`. If the module
+#     cannot be found or if there is no cached modification time, it determines
+#     whether the cache is considered dirty.
 
-    Args:
-        name (str): The name of the module to check for cache status.
+#     Args:
+#         name (str): The name of the module to check for cache status.
 
-    Returns:
-        bool: True if the module cache is dirty (i.e., the module has been modified
-        since it was last cached), otherwise False.
+#     Returns:
+#         bool: True if the module cache is dirty (i.e., the module has been modified
+#         since it was last cached), otherwise False.
 
-    This function is useful for ensuring that the cached data for a module
-    is up-to-date, which can help prevent stale data from being used in
-    applications that rely on dynamic module loading.
-    """
-    if not (path := get_module_path(name)):
-        return False
+#     This function is useful for ensuring that the cached data for a module
+#     is up-to-date, which can help prevent stale data from being used in
+#     applications that rely on dynamic module loading.
+#     """
+#     if not (path := get_module_path(name)):
+#         return False
 
-    if not (mtime := module_cache.get(name)):
-        return True
+#     if not (mtime := module_cache.get(name)):
+#         return True
 
-    return mtime != path.stat().st_mtime
+#     return mtime != path.stat().st_mtime
 
 
 @cache
@@ -407,11 +386,7 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
         except (OSError, TypeError):
             return None
 
-    node = ast.parse(source)
-    mtime = path.stat().st_mtime if path else 0
-    module_cache[name] = mtime
-
-    return node, source
+    return ast.parse(source), source
 
 
 def get_module_node(name: str) -> ast.Module | None:
