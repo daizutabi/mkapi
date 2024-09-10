@@ -66,7 +66,7 @@ nav:
   #     - $api:src/jinja2.***
   # - Schemdraw:
   #     - $api/schemdraw.***
-  - Polars: $api/polars.***
+  # - Polars: $api/polars.***
   # - Altair: $api/altair.***
 extra_css:
   - stylesheets/extra.css

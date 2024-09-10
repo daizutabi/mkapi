@@ -7,7 +7,7 @@
 {%- endif %}
 {{ section.text|safe }}
 {% if section.items -%}
-<ul markdown="1">
+<ul class="mkapi-item-list" markdown="1">
 {% for item in section.items -%}
 <li markdown="block">
 {% if item.name -%}

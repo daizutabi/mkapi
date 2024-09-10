@@ -1,23 +1,10 @@
-"""Module for handling objects in the Abstract Syntax Tree (AST).
+"""Handle objects in the Abstract Syntax Tree (AST).
 
-This module provides classes and functions for representing and manipulating
+Provide classes and functions for representing and manipulating
 various types of objects within the Abstract Syntax Tree (AST) of Python code.
-It includes representations for modules, classes, functions, attributes, and
+Include representations for modules, classes, functions, attributes, and
 properties, allowing for detailed analysis and processing of Python code
 structures.
-
-Key Features:
-- Representation of AST nodes as Python objects, including their attributes
-  and relationships.
-- Functions to create, retrieve, and manipulate objects based on their
-  definitions in the source code.
-- Iteration utilities for traversing child objects and members within the
-  AST structure.
-- Support for type annotations and documentation extraction from AST nodes.
-
-This module is intended for use in tools and libraries that analyze or
-transform Python code, providing a structured way to work with the
-components of the AST.
 """
 
 from __future__ import annotations
@@ -76,7 +63,7 @@ def _fullname(name: str, module: str | None, parent: Parent | None) -> str:
 class Object:
     """Represents a generic object in the Abstract Syntax Tree (AST).
 
-    This class serves as a base representation for various types of objects
+    Serve as a base representation for various types of objects
     in the AST, encapsulating common attributes and behaviors. Each object
     is characterized by its name, the corresponding AST node, the module
     it belongs to, its parent object, and its fully qualified name.
@@ -88,17 +75,14 @@ class Object:
             providing access to the underlying structure of the code.
         module (str): The name of the module in which the object is defined.
         parent (Parent | None): The parent object of this object, if any.
-        qualname (str): The qualified name of the object, combining its
-            name and the parent's qualified name.
+        qualname (str): The qualified name of the object, combining
+            the parent's qualified name and its name.
         fullname (str): The fully qualified name of the object, which may
             include module or package information, allowing for unique
             identification within the codebase.
-        doc (Doc): The documentation associated with the object, extracted
-            from the AST node or the object's docstring.
-
-    This class is intended to be subclassed by more specific object types
-    (e.g., Class, Function, Attribute) that require additional attributes
-    or behaviors specific to their context within the AST.
+        doc (Doc): The `Doc` instance of documentation associated with
+            the object, extracted from the AST node or the object's
+            docstring.
     """
 
     name: str
@@ -152,11 +136,11 @@ def iter_child_objects(
 ) -> Iterator[Object]:
     """Iterate over child objects of a given AST node.
 
-    This function traverses the child nodes of the specified Abstract
-    Syntax Tree (AST) node and yields instances of Object for each
-    recognized child node type. It identifies classes, functions,
-    properties, and attributes within the AST structure, allowing for
-    easy access to the components of the code.
+    Traverse the child nodes of the specified Abstract Syntax Tree
+    (AST) node and yield instances of `Object` for each recognized
+    child node type. Identify classes, functions, properties, and
+    attributes within the AST structure, allowing for easy access
+    to the components of the code.
 
     Args:
         node (AST): The AST node from which to iterate child objects.
@@ -166,12 +150,8 @@ def iter_child_objects(
             objects.
 
     Yields:
-        Object: An instance of Object representing each recognized child
+        Object: The instances of `Object` representing each recognized child
         node, such as a class, function, property, or attribute.
-
-    This function is useful for analyzing and processing the structure
-    of Python code by providing a way to access and manipulate the
-    components defined within a given AST node.
     """
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
@@ -191,9 +171,9 @@ def iter_child_objects(
 class Type(Object):
     """Represents a type in the Abstract Syntax Tree (AST).
 
-    This class is a specialized representation of a type, which can be
-    associated with variables, function parameters, return values, and
-    other constructs in Python code. It inherits from the `Object` class
+    Specialized representation of a type, which can be
+    associated with variables, function parameters, and
+    other constructs in Python code. Inherit from the `Object` class
     and includes additional attributes specific to type information.
 
     Attributes:
@@ -201,10 +181,6 @@ class Type(Object):
             or None if the type is not specified. This can include type
             annotations, type hints, or other expressions that define the
             type of an object.
-
-    This class is intended to encapsulate type-related information within
-    the AST, allowing for easier manipulation and analysis of type
-    annotations and type hints in Python code.
     """
 
     type: ast.expr | None
@@ -218,11 +194,9 @@ class Type(Object):
 
 @dataclass(repr=False)
 class Attribute(Type):
-    """Represents an attribute in the Abstract Syntax Tree (AST).
+    """Represent an attribute in the Abstract Syntax Tree (AST).
 
-    This class is a specialized representation of an attribute, which can
-    be associated with variables, function parameters, return values, and
-    other constructs in Python code. It inherits from the `Type` class
+    Specialized representation of an attribute. Inherit from the `Type` class
     and includes additional attributes specific to attribute information.
 
     Attributes:
@@ -234,10 +208,6 @@ class Attribute(Type):
         type (ast.expr | None): The AST expression representing the type,
             or None if the type is not specified.
         default (ast.expr | None): The default value of the attribute, if any.
-
-    This class is intended to encapsulate attribute-related information
-    within the AST, allowing for easier manipulation and analysis of
-    attribute annotations and hints in Python code.
     """
 
     node: ast.AnnAssign | ast.Assign | TypeAlias
@@ -249,11 +219,9 @@ class Attribute(Type):
 
 @dataclass(repr=False)
 class Property(Type):
-    """Represents a property in the Abstract Syntax Tree (AST).
+    """Represent a property in the Abstract Syntax Tree (AST).
 
-    This class is a specialized representation of a property, which can
-    be associated with variables, function parameters, return values, and
-    other constructs in Python code. It inherits from the `Type` class
+    Specialized representation of a property. Inherit from the `Type` class
     and includes additional attributes specific to property information.
 
     Attributes:
@@ -264,10 +232,6 @@ class Property(Type):
         parent (Parent | None): The parent object of this property, if any.
         type (ast.expr | None): The AST expression representing the type,
             or None if the type is not specified.
-
-    This class is intended to encapsulate property-related information
-    within the AST, allowing for easier manipulation and analysis of
-    property annotations and hints in Python code.
     """
 
     node: ast.FunctionDef | ast.AsyncFunctionDef
@@ -280,31 +244,24 @@ def create_attribute(
     module: str,
     parent: Parent | None,
 ) -> Attribute:
-    """Create an Attribute object from the given parameters.
+    """Create an `Attribute` object from the given parameters.
 
-    This function constructs an instance of the Attribute class, which
-    represents an attribute in the Abstract Syntax Tree (AST). It extracts
-    relevant information from the provided AST node and associates it with
+    Construct an instance of the `Attribute` class, which
+    represents an attribute in the Abstract Syntax Tree (AST). Extract
+    relevant information from the provided AST node and associate it with
     the attribute.
 
     Args:
-        name (str): The name of the attribute, typically representing the
-            identifier in the source code.
+        name (str): The name of the attribute.
         node (ast.AnnAssign | ast.Assign | TypeAlias): The AST node
-            associated with this attribute, which can be an assignment
-            statement or a type alias.
+            associated with this attribute.
         module (str): The name of the module in which the attribute is defined.
         parent (Parent | None): The parent object of this attribute, if any.
-            This is used to maintain the hierarchy of objects.
 
     Returns:
-        Attribute: An instance of the Attribute class representing the
+        Attribute: An instance of the `Attribute` class representing the
         specified attribute, including its name, node, module, parent, and
         any associated type information.
-
-    This function is useful for analyzing and processing attributes within
-    the AST, allowing for easy access to their properties and relationships
-    within the code structure.
     """
     type_ = get_assign_type(node)
     default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
@@ -319,27 +276,21 @@ def create_property(
 ) -> Property:
     """Create a Property object from the given parameters.
 
-    This function constructs an instance of the Property class, which
-    represents a property in the Abstract Syntax Tree (AST). It extracts
-    relevant information from the provided AST node and associates it with
+    Construct an instance of the `Property` class, which
+    represents a property in the Abstract Syntax Tree (AST). Extract
+    relevant information from the provided AST node and associate it with
     the property.
 
     Args:
         node (ast.FunctionDef | ast.AsyncFunctionDef): The AST node
-            associated with this property, which can be a function definition
-            for a property.
+            associated with this property.
         module (str): The name of the module in which the property is defined.
         parent (Parent | None): The parent object of this property, if any.
-            This is used to maintain the hierarchy of objects.
 
     Returns:
-        Property: An instance of the Property class representing the
+        Property: An instance of the `Property` class representing the
         specified property, including its name, node, module, parent, and
         any associated type information.
-
-    This function is useful for analyzing and processing properties within
-    the AST, allowing for easy access to their properties and relationships
-    within the code structure.
     """
     return Property(node.name, node, module, parent, node.returns)
 
@@ -349,24 +300,18 @@ T = TypeVar("T")
 
 @dataclass(repr=False)
 class Parent(Object):
-    """Represents a parent node in the Abstract Syntax Tree (AST).
+    """Represent a parent node in the Abstract Syntax Tree (AST).
 
-    This class is a specialized subclass of the `Object` class that
+    Specialized subclass of the `Object` class that
     manages child objects, allowing for hierarchical relationships
-    between objects in the AST structure. It provides methods to
+    between objects in the AST structure. Provide methods to
     retrieve child objects by name or type, facilitating the
     organization and manipulation of AST nodes.
 
     Attributes:
         children (dict[str, Object]): A dictionary that stores child
             objects, where the keys are the names of the children and
-            the values are instances of `Object`. This attribute is
-            initialized with an empty dictionary and is not intended to
-            be set during initialization.
-
-    This class is intended to be subclassed by more specific object types
-    that require additional attributes or behaviors specific to their
-    context within the AST.
+            the values are instances of `Object`.
     """
 
     children: dict[str, Object] = field(default_factory=dict, init=False)
@@ -389,7 +334,7 @@ class Parent(Object):
         return child if isinstance(child, type_) else None
 
     def get_children(self, type_: type[T] = Object) -> list[tuple[str, T]]:
-        """Retrieve a list of child objects of the specified type.
+        """Retrieve a list of the child objects of the specified type.
 
         Args:
             type_ (type[T]): The type of the child objects to retrieve.
@@ -404,23 +349,20 @@ class Parent(Object):
 
 
 def iter_objects(obj: Object, type_: type[T] = Object) -> Iterator[T]:
-    """Iterate over child objects of a given object, ensuring they are of the specified type.
+    """Iterate over the child objects of the given object,
+    ensuring they are of the specified type.
 
-    This function recursively traverses the children of the provided
-    object and yields objects that match the specified type. It ensures that
-    all objects in the hierarchy are of the desired type, allowing for
-    consistent processing and analysis of the AST structure.
+    Recursively traverse the children of the provided
+    object and yields objects that match the specified type.
+    Ensure that all objects in the hierarchy are of the desired type,
+    allowing for consistent processing and analysis of the AST structure.
 
     Args:
         obj (Object): The object whose children are to be iterated over.
         type_ (type[T]): The type of the child objects to ensure.
 
     Yields:
-        T: An object that is a child of the object and matches the specified type.
-
-    This function is useful for filtering and processing specific types of
-    objects within the AST, providing a way to access and manipulate the
-    components defined within a given object.
+        T: The objects that are children of the object and matches the specified type.
     """
     if not isinstance(obj, Parent):
         return
@@ -435,10 +377,10 @@ def iter_objects(obj: Object, type_: type[T] = Object) -> Iterator[T]:
 
 @dataclass(repr=False)
 class Definition(Parent):
-    """Represents a definition in the Abstract Syntax Tree (AST).
+    """Represent a definition in the Abstract Syntax Tree (AST).
 
-    This class is a specialized representation of a definition, such as
-    a class or function, within the AST. It inherits from the `Parent`
+    Specialized representation of a definition, such as
+    a class or function, within the AST. Inherit from the `Parent`
     class and includes additional attributes specific to definitions,
     such as parameters and exceptions that may be raised.
 
@@ -448,10 +390,6 @@ class Definition(Parent):
             functions or methods.
         raises (list[ast.expr]): A list of expressions representing
             the exceptions that may be raised by the definition.
-
-    This class is intended to encapsulate the details of definitions
-    within the AST, allowing for easier manipulation and analysis of
-    function and class definitions in Python code.
     """
 
     parameters: list[Parameter]
@@ -471,20 +409,16 @@ class Definition(Parent):
 
 @dataclass(repr=False)
 class Class(Definition):
-    """Represents a class definition in the Abstract Syntax Tree (AST).
+    """Represent a class definition in the Abstract Syntax Tree (AST).
 
-    This class is a specialized representation of a class within the AST.
-    It inherits from the `Definition` class and includes additional attributes
+    Specialized representation of a class within the AST.
+    Inherit from the `Definition` class and includes additional attributes
     specific to class definitions.
 
     Attributes:
         node (ast.ClassDef): The actual AST node associated with this class
             definition, which contains the structure and properties of the
             class as defined in the source code.
-
-    This class is intended to encapsulate the details of class definitions
-    within the AST, allowing for easier manipulation and analysis of class
-    structures in Python code.
     """
 
     node: ast.ClassDef
@@ -493,20 +427,16 @@ class Class(Definition):
 
 @dataclass(repr=False)
 class Function(Definition):
-    """Represents a function definition in the Abstract Syntax Tree (AST).
+    """Represent a function definition in the Abstract Syntax Tree (AST).
 
-    This class is a specialized representation of a function within the AST.
-    It inherits from the `Definition` class and includes additional attributes
+    Specialized representation of a function within the AST.
+    Inherit from the `Definition` class and includes additional attributes
     specific to function definitions.
 
     Attributes:
         node (ast.FunctionDef | ast.AsyncFunctionDef): The actual AST node
             associated with this function definition, which contains the structure
             and properties of the function as defined in the source code.
-
-    This class is intended to encapsulate the details of function definitions
-    within the AST, allowing for easier manipulation and analysis of function
-    structures in Python code.
     """
 
     node: ast.FunctionDef | ast.AsyncFunctionDef
@@ -514,10 +444,10 @@ class Function(Definition):
 
 
 def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Class:
-    """Create a Class object from the given parameters.
+    """Create a `Class` object from the given parameters.
 
-    This function constructs an instance of the Class class, which represents
-    a class definition in the Abstract Syntax Tree (AST). It extracts relevant
+    Construct an instance of the `Class` class, which represents
+    a class definition in the Abstract Syntax Tree (AST). Extract relevant
     information from the provided AST node and associates it with the class.
 
     Args:
@@ -526,12 +456,8 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
         parent (Parent | None): The parent object of this class, if any.
 
     Returns:
-        Class: An instance of the Class class representing the specified class,
+        Class: An instance of the `Class` class representing the specified class,
         including its name, node, module, parent, and any associated attributes.
-
-    This function is useful for analyzing and processing class definitions
-    within the AST, allowing for easy access to their properties and
-    relationships within the code structure.
     """
     fullname = _fullname(node.name, module, parent)
     if (cls := objects.get(fullname)) and isinstance(cls, Class):
@@ -573,14 +499,14 @@ def create_class_by_name(name: str, module: str, parent: Parent | None) -> Class
     information from the provided AST node and associate it with the class.
 
     Args:
-        name (str): Name of the class to create.
-        module (str): Name of the module in which the class is defined.
-        parent (Parent | None): Parent object of this class, if any.
+        name (str): The name of the class to create.
+        module (str): The name of the module in which the class is defined.
+        parent (Parent | None): The `Parent` object of this class, if any.
 
     Returns:
-        Class | None: Instance of the `Class` class representing the specified
+        Class | None: An instance of the `Class` class representing the specified
         class, including its name, node, module, parent, and any associated
-        attributes, or `None` if the class cannot be created.
+        attributes, or None if the class cannot be created.
     """
     if node := get_module_node(module):
         for child in ast.iter_child_nodes(node):
@@ -594,23 +520,19 @@ def create_class_by_name(name: str, module: str, parent: Parent | None) -> Class
 def get_base_classes(name: str, module: str) -> list[Class]:
     """Get the base classes of a class.
 
-    This function retrieves the base classes of a class by searching for
-    the class definition in the module and its base classes. It uses the
+    Retrieve the base classes of a class by searching for
+    the class definition in the module and its base classes. Use the
     `get_base_classes` utility function to get the base class names and
-    modules, and then retrieves the corresponding Class objects from the
-    `objects` dictionary.
+    modules, and then retrieve the corresponding `Class` objects from the
+    cached `objects` dictionary.
 
     Args:
         name (str): The name of the class to get the base classes for.
         module (str): The name of the module in which the class is defined.
 
     Returns:
-        list[Class]: A list of Class objects representing the base classes
+        list[Class]: A list of the `Class` instances representing the base classes
         of the specified class.
-
-    This function is useful for analyzing and processing class inheritance
-    structures within the AST, allowing for easy access to the base classes
-    of a class and their associated information.
     """
     bases = []
 
@@ -630,21 +552,17 @@ def iter_attributes_from_function(
 ) -> Iterator[Attribute]:
     """Iterate over attributes from a function.
 
-    This function iterates over the attributes of a function, creating
-    Attribute objects for each attribute found. It uses the `get_children`
-    method to retrieve the attributes and ensures that the attributes are
+    Iterate over the attributes of a function, creating
+    `Attribute` objects for each attribute found. Use the `get_children`
+    method to retrieve the attributes and ensure that the attributes are
     associated with the correct parent object.
 
     Args:
         func (Function): The function object containing the attributes.
         parent (Parent): The parent object to which the attributes belong.
 
-    Returns:
-        Iterator[Attribute]: An iterator over the attributes of the function.
-
-    This function is useful for analyzing and processing attributes within
-    the AST, allowing for easy access to the attributes defined within a
-    function and their associated information.
+    Yields:
+        Attribute: `Attribute` instances of the function.
     """
     self = func.parameters[0].name
 
@@ -666,12 +584,8 @@ def iter_parameters_from_dataclass(cls: Class) -> Iterator[Parameter]:
     Args:
         cls (Class): The dataclass object containing the parameters.
 
-    Returns:
-        Iterator[Parameter]: An iterator over the parameters of the dataclass.
-
-    This function is useful for analyzing and processing parameters within
-    the AST, allowing for easy access to the parameters defined within a
-    dataclass and their associated information.
+    Yields:
+        Parameter: `Parameter` instances of the dataclass.
     """
     obj = get_object_from_module(cls.name, cls.module)
 
@@ -690,10 +604,10 @@ def create_function(
     module: str,
     parent: Parent | None,
 ) -> Function:
-    """Create a Function object from the given parameters.
+    """Create a `Function` instance from the given parameters.
 
-    This function constructs an instance of the Function class, which represents
-    a function definition in the Abstract Syntax Tree (AST). It extracts relevant
+    Construct an instance of the `Function` class, which represents
+    a function definition in the Abstract Syntax Tree (AST). Extract relevant
     information from the provided AST node and associates it with the function.
 
     Args:
@@ -704,13 +618,9 @@ def create_function(
         parent (Parent | None): The parent object of this function, if any.
 
     Returns:
-        Function: An instance of the Function class representing the specified
+        Function: An instance of the `Function` class representing the specified
         function, including its name, node, module, parent, and any associated
         attributes.
-
-    This function is useful for analyzing and processing function definitions
-    within the AST, allowing for easy access to their properties and
-    relationships within the code structure.
     """
     params = list(iter_parameters(node))
     raises = list(iter_raises(node))
@@ -720,25 +630,17 @@ def create_function(
 
 @dataclass(repr=False)
 class Module(Parent):
-    """Represents a module in the Abstract Syntax Tree (AST).
+    """Represent a module in the Abstract Syntax Tree (AST).
 
-    This class is a specialized representation of a module within the AST,
-    inheriting from the `Parent` class. It encapsulates the structure and
+    Specialized representation of a module within the AST,
+    inheriting from the `Parent` class. Encapsulate the structure and
     properties of a Python module, including its child objects, which can
     be classes, functions, and other attributes defined within the module.
 
     Attributes:
-        node (ast.Module): The actual AST node associated with this module,
-            which contains the structure and properties of the module as
-            defined in the source code.
+        node (ast.Module): The actual AST node associated with this module.
         module (None): A placeholder for the module name, initialized to None.
         parent (None): A placeholder for the parent object, initialized to None.
-
-    This class is intended to facilitate the analysis and manipulation of
-    modules within the AST, allowing for easy access to the components
-    defined within a given module and their relationships to one another.
-    It provides methods to retrieve child objects and manage the hierarchy
-    of objects within the module.
     """
 
     node: ast.Module
@@ -763,30 +665,24 @@ def create_module(
     node: ast.Module | None = None,
     source: str | None = None,
 ) -> Module | None:
-    """Create a Module object from the given parameters.
+    """Create a `Module` instance from the given parameters.
 
-    This function constructs an instance of the Module class, which represents
-    a module in the Abstract Syntax Tree (AST). It extracts relevant information
+    Construct an instance of the `Module` class, which represents
+    a module in the Abstract Syntax Tree (AST). Extract relevant information
     from the provided AST node and associates it with the module.
 
     Args:
         name (str): The name of the module to create.
-        node (ast.Module | None): The AST node associated with this module,
-            which contains the structure and properties of the module as defined
-            in the source code. If None, the function attempts to retrieve the
-            node from the module name.
+        node (ast.Module | None): The AST node associated with this module.
+            If None, the function attempts to retrieve the node from the module name.
         source (str | None): The source code of the module as a string. If provided,
             it is used to extract documentation comments for attributes within the
             module.
 
     Returns:
-        Module | None: An instance of the Module class representing the specified
+        Module | None: An instance of the `Module` class representing the specified
         module, including its name, node, and any associated attributes. Returns
         None if the module cannot be created.
-
-    This function is useful for analyzing and processing modules within the AST,
-    allowing for easy access to the components defined within a given module and
-    their relationships to one another.
     """
     if not node:
         if node_source := get_module_node_source(name):
@@ -825,9 +721,8 @@ def _create_doc_comment(node: AST, lines: list[str]) -> Doc | None:
 def get_object_kind(obj: Object) -> str:
     """Return the kind of the given object.
 
-    This function determines the kind of the provided object, which can be
-    a Module, Class, or Function, and returns a string representation of
-    its kind. The function checks the specific type of the object and
+    Determine the kind of the provided object and return a string representation
+    of its kind. The function checks the specific type of the object and
     returns a corresponding label.
 
     Args:
@@ -838,9 +733,6 @@ def get_object_kind(obj: Object) -> str:
         values include "package", "module", "dataclass", "class", "function",
         "method", "classmethod", or "staticmethod", depending on the object's
         characteristics.
-
-    This function is useful for categorizing and processing different types
-    of objects within the Abstract Syntax Tree (AST) structure.
     """
     if isinstance(obj, Module):
         return "package" if is_package(obj.name) else "module"
@@ -863,10 +755,10 @@ def get_object_kind(obj: Object) -> str:
 def get_source(obj: Object) -> str | None:
     """Return the source code of an object.
 
-    This function retrieves the source code associated with the given object,
-    which can be a Module or any other object that has a corresponding
-    Abstract Syntax Tree (AST) node. It checks the type of the object and
-    uses appropriate methods to obtain the source code.
+    Retrieve the source code associated with the given object,
+    which can be a `Module` or any other object that has a corresponding
+    Abstract Syntax Tree (AST) node. Check the type of the object and
+    use appropriate methods to obtain the source code.
 
     Args:
         obj (Object): The object whose source code is to be retrieved. This
@@ -875,9 +767,6 @@ def get_source(obj: Object) -> str | None:
     Returns:
         str | None: The source code of the object as a string if available,
         or None if the source code cannot be retrieved.
-
-    This function is useful for analyzing and processing the source code
-    of Python objects within the Abstract Syntax Tree (AST) structure.
     """
     if isinstance(obj, Module):
         return get_module_source(obj.name)
@@ -889,11 +778,11 @@ def get_source(obj: Object) -> str | None:
 
 
 def is_child(obj: Object, parent: Object | None) -> bool:
-    """Return True if obj is a child of parent.
+    """Return True if `obj` is a child of `parent`.
 
-    This function checks if the given object (obj) is a child of the specified
-    parent object. It performs this check by comparing the parent attribute
-    of the object and the provided parent argument.
+    Check if the given object (`obj`) is a child of the specified
+    parent object. Compare the parent attribute of the object
+    and the provided parent argument.
 
     Args:
         obj (Object): The object to check if it is a child.
@@ -909,25 +798,21 @@ def is_child(obj: Object, parent: Object | None) -> bool:
 def get_object(name: str, module: str | None = None) -> Object | None:
     """Retrieve an object by its name and optional module.
 
-    This function attempts to find and return an object based on the provided
-    name and module. It first constructs the full name of the object and checks
-    if it exists in the cached objects. If the object is not found, it attempts
-    to split the full name into its component parts and create the module if
-    necessary.
+    Attempt to find and return an object based on the provided
+    name and module. First construct the full name of the object
+    and check if it exists in the cached objects. If the object
+    is not found, attempt to split the full name into its component
+    parts and create the module if necessary. The function will
+    attempt to create a `Module` instance based on the object's name.
 
     Args:
         name (str): The name of the object to retrieve.
         module (str | None): The name of the module in which the object is defined.
-            If None, the function will attempt to create the module based on the
-            object's name.
+            If None, a module name will be extracted from the name.
 
     Returns:
-        Object | None: The object corresponding to the specified name and module,
-        or None if the object cannot be found or created.
-
-    This function is useful for dynamically retrieving objects within the
-    Abstract Syntax Tree (AST) structure, allowing for flexible access to
-    components defined in Python code.
+        Object | None: The `Object` instance corresponding to the specified name
+        and module, or None if the object cannot be found or created.
     """
     if not (fullname := get_fullname(name, module)):
         return None
@@ -950,11 +835,11 @@ def get_object(name: str, module: str | None = None) -> Object | None:
 
 
 def get_fullname_from_object(name: str, obj: Object) -> str | None:
-    """Return the full name of `name` relative to the given Object instance.
+    """Return the fully qualified name for `name` relative to the given `Object` instance.
 
-    This function constructs the fully qualified name for a given name based
-    on the context of the provided object. It checks the type of the object
-    and determines how to resolve the full name accordingly.
+    Construct the fully qualified name for `name` based
+    on the context of the provided `Object` instance.
+    Check the type of the object and resolve the fullname accordingly.
 
     Args:
         name (str): The name for which to retrieve the full name.
@@ -962,11 +847,7 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
 
     Returns:
         str | None: The fully qualified name of the specified name relative
-        to the object, or None if the full name cannot be determined.
-
-    This function is useful for resolving names within the context of
-    modules and parent objects in the Abstract Syntax Tree (AST) structure,
-    allowing for accurate identification of objects in the codebase.
+        to the object, or None if the fullname cannot be determined.
     """
     if isinstance(obj, Module):
         return get_fullname(name, obj.name)
