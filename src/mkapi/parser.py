@@ -112,6 +112,17 @@ class Parser:
 
         return signatures
 
+    def parse_bases(self) -> list[str]:
+        if not isinstance(self.obj, Class):
+            return []
+
+        bases = []
+        for base in self.obj.node.bases:
+            name = get_markdown_expr(base, self.replace_from_module)
+            bases.append(name)
+
+        return bases
+
     def parse_doc(self) -> Doc:
         doc = self.obj.doc.clone()
 
