@@ -177,9 +177,7 @@ def test_is_child(mkapiplugin, name):
             assert is_child(obj, mkapiplugin)
 
 
-@pytest.mark.parametrize(
-    "name", ["config_class", "config", "on_post_build", "_is_protocol"]
-)
+@pytest.mark.parametrize("name", ["config_class", "config", "on_serve", "_is_protocol"])
 def test_is_not_child(mkapiplugin, name):
     from mkapi.object import is_child
 
