@@ -1,21 +1,9 @@
 """Navigation Module for API Documentation.
 
-This module provides utility functions for managing and updating the
-navigation structure of API documentation. It includes functions to
+Provide utility functions for managing and updating the
+navigation structure of API documentation. Include functions to
 retrieve module names, build navigation trees, and update navigation
-entries dynamically based on specified criteria.
-
-Key Functions:
-- get_apinav: Retrieve a list of module names based on the specified
-  module name and depth.
-- update_apinav: Update the API navigation structure by generating
-  page and section titles based on provided callable functions.
-- build_apinav: Construct a navigation structure for the API
-  documentation by processing the provided navigation list.
-
-This module is designed to facilitate the organization and
-presentation of API documentation, making it easier for users to
-navigate through modules and their respective sections.
+entries dynamically.
 """
 
 from __future__ import annotations
@@ -38,18 +26,18 @@ def get_apinav(
 ) -> list:
     """Retrieve a list of module names based on the specified module name and depth.
 
-    This function checks if the given module name corresponds to a valid module
-    path. If the module is not a package, it returns a list containing only the
-    module name. If the module is a package, it retrieves submodule names based
-    on the specified depth.
+    Check if the given module name corresponds to a valid module path.
+    If the module is not a package, return a list containing only the
+    module name. If the module is a package, retrieve submodule names
+    based on the specified depth.
 
     Args:
         name (str): The name of the module for which to retrieve the navigation.
         depth (int): The depth level for retrieving submodules:
-            - 1: Returns the module name and its immediate submodules.
-            - 2: Returns a flat list of the module and its submodules,
+            - 1: Return the module name and its immediate submodules.
+            - 2: Return a flat list of the module and its submodules,
               including deeper levels.
-            - 3: Returns a nested dictionary structure representing the module
+            - 3: Return a nested dictionary structure representing the module
               and its submodules.
         predicate (Callable[[str], bool], optional): An optional predicate
             function to filter submodule names. If provided, only submodules
@@ -57,8 +45,8 @@ def get_apinav(
 
     Returns:
         list: A list of module names or a nested structure of module names
-            based on the specified depth. Returns an empty list if the module
-            path is invalid.
+        based on the specified depth. Return an empty list if the module
+        path is invalid.
     """
     if not get_module_path(name):
         return []
@@ -106,12 +94,11 @@ def gen_apinav(
 ) -> Generator[tuple[str, bool, int], Any, None]:
     """Yield tuples of (module name, is_section, depth).
 
-    This function iterates over the provided navigation list and yields
-    tuples containing the name of each module or section, a boolean
-    indicating whether the item is a section, and the depth of the
-    item in the navigation hierarchy. It allows for dynamic modification
-    of section names or navigation items based on the values sent back
-    during iteration.
+    Iterate over the provided navigation list and yield tuples containing
+    the name of each module or section, a boolean indicating whether the
+    item is a section, and the depth of the item in the navigation
+    hierarchy. Allow for dynamic modification of section names or
+    navigation items based on the values sent back during iteration.
 
     Args:
         nav (list): A list representing the navigation structure,
@@ -122,9 +109,10 @@ def gen_apinav(
 
     Yields:
         tuple[str, bool, int]: A tuple containing:
-            - module name (str): The name of the module or section.
-            - is_section (bool): True if the item is a section, False otherwise.
-            - depth (int): The depth of the item in the navigation hierarchy.
+
+        - module name (str): The name of the module or section.
+        - is_section (bool): True if the item is a section, False otherwise.
+        - depth (int): The depth of the item in the navigation hierarchy.
 
     Examples:
         >>> nav_structure = ['module1', {'section1': ['module2', 'module3']}]
@@ -163,11 +151,10 @@ def update_apinav(
 ) -> None:
     """Update the API navigation structure.
 
-    This function iterates over the provided navigation list and updates
-    it by generating page and section titles based on the provided
-    callable functions. It utilizes a generator to traverse the navigation
-    structure, allowing for dynamic modification of section names and
-    page titles.
+    Iterate over the provided navigation list and update it by generating
+    page and section titles based on the provided callable functions.
+    Utilize a generator to traverse the navigation structure, allowing for
+    dynamic modification of section names and page titles.
 
     Args:
         nav (list): A list representing the navigation structure, which can
@@ -217,8 +204,8 @@ def build_apinav(
 ) -> list:
     """Build the API navigation structure.
 
-    This function constructs a navigation structure for the API documentation
-    by iterating over the provided navigation list. It processes each item,
+    Construct a navigation structure for the API documentation by
+    iterating over the provided navigation list. Process each item,
     checking for API entries and creating corresponding navigation entries
     using the provided `create_apinav` function. The resulting navigation
     structure can include both flat and nested entries based on the input.
@@ -226,13 +213,13 @@ def build_apinav(
     Args:
         nav (list): A list representing the initial navigation structure,
             which can contain module names, sections, and nested pages.
-        create_apinav (Callable[[str, str], list]): A callable
-            function that takes a module name and `src_uri` as arguments
-            and returns a list of navigation entries for that module.
+        create_apinav (Callable[[str, str], list]): A callable function
+            that takes a module name and `src_uri` as arguments and returns
+            a list of navigation entries for that module.
 
     Returns:
         list: A list representing the updated navigation structure, which
-            includes the processed API entries and any nested structures.
+        includes the processed API entries and any nested structures.
 
     Examples:
         >>> def create_apinav(name: str, path: str) -> list:
@@ -303,11 +290,10 @@ def update_nav(
 ) -> None:
     """Update the navigation structure.
 
-    This function updates the provided navigation list by constructing
-    API entries and section titles based on the specified callable
-    functions. It processes each entry in the navigation list, creating
-    pages and sections as needed, and modifies the navigation structure
-    in place.
+    Update the provided navigation list by constructing API entries and
+    section titles based on the specified callable functions. Process
+    each entry in the navigation list, creating pages and sections as
+    needed, and modify the navigation structure in place.
 
     Args:
         nav (list): A list representing the navigation structure, which can

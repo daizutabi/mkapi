@@ -53,25 +53,12 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
     pages: dict[str, Page]
 
     def __init__(self) -> None:
-        # self.dirty = False
         self.pages = {}
         self.progress = None
         self.task_id = None
 
-    # def on_startup(self, *, command: str, dirty: bool) -> None:
-    #     self.dirty = dirty
-
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         cache_clear()
-
-        # if self.dirty:
-        #     pages: list[Page] = []
-        #     for page in self.pages.values():
-        #         if page.name and is_module_cache_dirty(page.name):
-        #             pages.append(page)
-
-        #     for page in pages:
-        #         page.generate_markdown()
 
         self.page_title = _get_function("page_title", self)
         self.section_title = _get_function("section_title", self)

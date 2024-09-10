@@ -1,7 +1,6 @@
 import ast
 import datetime
 import importlib
-import sys
 import time
 from collections import namedtuple
 from pathlib import Path
