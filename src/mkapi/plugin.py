@@ -241,11 +241,13 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
 
             suffix = "/README.md" if is_package(name) else ".md"
             object_uri = f"{object_path}/{uri}{suffix}"
-            plugin.pages.setdefault(object_uri, Page.create_object(object_uri, name))
+            if object_uri not in plugin.pages:
+                plugin.pages[object_uri] = Page.create_object(object_uri, name)
             progress.update(task_id, description=object_uri, advance=1)
 
             source_uri = f"{source_path}/{uri}.md"
-            plugin.pages.setdefault(source_uri, Page.create_source(source_uri, name))
+            if source_uri not in plugin.pages:
+                plugin.pages[source_uri] = Page.create_source(source_uri, name)
             progress.update(task_id, description=source_uri, advance=1)
 
             return object_uri
