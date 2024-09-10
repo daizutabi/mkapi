@@ -481,6 +481,18 @@ def _iter_code_blocks(text: str) -> Iterator[str]:
 
 
 def convert_code_block(text: str) -> str:
+    """Convert code blocks in the provided text to Markdown format.
+
+    Process the input text to identify and convert code blocks
+    into Markdown format. Handle both fenced code blocks and
+    example lists, ensuring they are processed correctly.
+
+    Args:
+        text (str): The input text containing code blocks to be converted.
+
+    Returns:
+        str: The modified text with code blocks converted to Markdown format.
+    """
     return "".join(_iter_code_blocks(text))
 
 
@@ -498,6 +510,20 @@ def _finditer(
 def finditer(
     pattern: re.Pattern, text: str, pos: int = 0, endpos: int | None = None
 ) -> Iterator[re.Match[str]]:
+    """Find all matches of a regex pattern in the provided text.
+
+    Search for all occurrences of the specified regex pattern
+    in the provided text. The markdown code blocks are not processed.
+
+    Args:
+        pattern (re.Pattern): The compiled regex pattern to search for in the text.
+        text (str): The text to search for matches.
+        pos (int): The starting position in the text to search for matches.
+        endpos (int | None): The ending position in the text to search for matches.
+
+    Yields:
+        re.Match: Each match found in the text.
+    """
     for match in _finditer(pattern, text, pos, endpos):
         if isinstance(match, re.Match):
             yield match
@@ -510,6 +536,24 @@ def sub(
     pos: int = 0,
     endpos: int | None = None,
 ) -> str:
+    """Substitute all matches of a regex pattern in the provided text.
+
+    Replace all occurrences of the specified regex pattern in the provided
+    text with the result of the provided callable. The markdown code blocks
+    are not processed.
+
+    Args:
+        pattern (re.Pattern): The compiled regex pattern to search for in the text.
+        rel (Callable[[re.Match], str]): A callable that takes a match object
+            and returns a string.
+        text (str): The text to search for matches and perform substitutions.
+        pos (int): The starting position in the text to search for matches.
+        endpos (int | None): The ending position in the text to search for matches.
+
+    Returns:
+        str: The modified text with all matches of the pattern replaced by the
+        result of the callable.
+    """
     subs = (
         text[m[0] : m[1]] if isinstance(m, tuple) else rel(m)
         for m in _finditer(pattern, text, pos, endpos)
@@ -542,38 +586,3 @@ def create_admonition(name: str, title: str, text: str) -> str:
     lines = [f'!!! {name} "{title}"']
     lines.extend("    " + line if line else "" for line in text.splitlines())
     return "\n".join(lines)
-
-
-# def replace(text: str, olds: list[str], news: list[str]) -> str:
-#     """Replace occurrences of specified substrings in the text.
-
-#     This function takes an input text and replaces occurrences of specified
-#     old substrings with new substrings. It processes the text by iterating
-#     over fenced code blocks and applying the replacements only to the non-code
-#     segments.
-
-#     Args:
-#         text (str): The input text in which to perform the replacements.
-#         olds (list[str]): A list of substrings to be replaced.
-#         news (list[str]): A list of substrings to replace the old substrings with.
-
-#     Returns:
-#         str: The modified text with specified substrings replaced.
-
-#     This function is useful for performing batch replacements in text, particularly
-#     in scenarios where certain patterns need to be updated or modified.
-#     """
-
-#     def _replace() -> Iterator[str]:
-#         for match in _iter_fenced_codes(text):
-#             if isinstance(match, re.Match):
-#                 yield match.group()
-
-#             else:
-#                 text_ = match
-#                 for old, new in zip(olds, news, strict=True):
-#                     text_ = text_.replace(old, new)
-
-#                 yield text_
-
-#     return "".join(_replace())
