@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 
 from mkdocs.config import Config, config_options
 from mkdocs.plugins import BasePlugin, get_plugin_logger
-from mkdocs.structure.files import File, InclusionLevel, get_files
+from mkdocs.structure.files import File as MkDocsFile
+from mkdocs.structure.files import InclusionLevel, get_files
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
@@ -39,7 +40,7 @@ if TYPE_CHECKING:
 logger = get_plugin_logger("MkAPI")
 
 
-class MkAPIConfig(Config):
+class MkApiConfig(Config):
     config = config_options.Type(str, default="")
     exclude = config_options.Type(list, default=[])
     src_dir = config_options.Type(str, default="src")
@@ -48,7 +49,7 @@ class MkAPIConfig(Config):
     debug = config_options.Type(bool, default=False)
 
 
-class MkAPIPlugin(BasePlugin[MkAPIConfig]):
+class MkApiPlugin(BasePlugin[MkApiConfig]):
     pages: dict[str, Page]
 
     def __init__(self) -> None:
@@ -92,7 +93,8 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         for src_uri, page in self.pages.items():
             if page.is_api_page() and src_uri not in files.src_uris:
-                files.append(File.generated(config, src_uri, content=page.markdown))
+                file = MkDocsFile.generated(config, src_uri, content=page.markdown)
+                files.append(file)
 
         for file in files:
             if page := self.pages.get(file.src_uri):
@@ -163,7 +165,7 @@ class MkAPIPlugin(BasePlugin[MkAPIConfig]):
             self.progress.stop()
 
 
-def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
+def _get_function(name: str, plugin: MkApiPlugin) -> Callable | None:
     if not (path_str := plugin.config.config):
         return None
 
@@ -182,17 +184,17 @@ def _get_function(name: str, plugin: MkAPIPlugin) -> Callable | None:
     return getattr(module, name, None)
 
 
-def _update_templates(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _update_templates(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     renderer.load_templates()
 
 
-def _update_extensions(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _update_extensions(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     for name in ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]:
         if name not in config.markdown_extensions:
             config.markdown_extensions.append(name)
 
 
-def _build_apinav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _build_apinav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     if not config.nav:
         return
 
@@ -208,7 +210,7 @@ def _build_apinav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
     mkapi.nav.build_apinav(config.nav, watch_directory)
 
 
-def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
+def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     if not (nav := config.nav):
         return
 
@@ -255,7 +257,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkAPIPlugin) -> None:
         mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
 
 
-def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File]:
+def _collect_stylesheets(config: MkDocsConfig, plugin: MkApiPlugin) -> list[MkDocsFile]:
     root = Path(mkapi.__file__).parent / "stylesheets"
 
     docs_dir = config.docs_dir
@@ -265,7 +267,7 @@ def _collect_stylesheets(config: MkDocsConfig, plugin: MkAPIPlugin) -> list[File
 
     theme_name = config.theme.name or "mkdocs"
 
-    files: list[File] = []
+    files: list[MkDocsFile] = []
     css: list[str] = []
     for file in stylesheet_files:
         path = Path(file.src_path).as_posix()

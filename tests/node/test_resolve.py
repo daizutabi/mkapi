@@ -73,8 +73,8 @@ def test_resolve_mkapi_module():
     from mkapi.node import resolve
 
     module = "mkapi.plugin"
-    x = resolve("MkAPIPlugin", module)
-    assert x == ("MkAPIPlugin", module)
+    x = resolve("MkApiPlugin", module)
+    assert x == ("MkApiPlugin", module)
     x = resolve("MkDocsConfig", module)
     assert x == ("MkDocsConfig", "mkdocs.config.defaults")
     x = resolve("Config", module)
@@ -142,7 +142,7 @@ def test_get_fullname_qualname_alias(attr):
 def test_get_fullname_self():
     from mkapi.node import get_fullname
 
-    name = "MkAPIPlugin"
+    name = "MkApiPlugin"
     module = "mkapi.plugin"
     assert get_fullname(name, module) == f"{module}.{name}"
 

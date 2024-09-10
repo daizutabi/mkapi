@@ -136,8 +136,8 @@ def test_get_markdown_text_module_plugins():
     def replace(name: str) -> str | None:
         return get_fullname(name, "mkapi.plugin")
 
-    x = get_markdown_text("a `MkAPIPlugin` b", replace)
-    assert x == "a [`MkAPIPlugin`][__mkapi__.mkapi.plugin.MkAPIPlugin] b"
+    x = get_markdown_text("a `MkApiPlugin` b", replace)
+    assert x == "a [`MkApiPlugin`][__mkapi__.mkapi.plugin.MkApiPlugin] b"
     x = get_markdown_text("a `BasePlugin` b", replace)
     assert x == "a [`BasePlugin`][__mkapi__.mkdocs.plugins.BasePlugin] b"
     x = get_markdown_text("a `MkDocsConfig` b", replace)
