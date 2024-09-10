@@ -66,13 +66,14 @@ def render(
 
     name_set = parser.parse_name()
     if level and (not predicate or predicate(parser, TemplateKind.HEADING)):
-        markdowns.append(
-            render_heading(name_set.node.id, name_set.node.fullname, level)
-        )
+        node = name_set.node
+        markdowns.append(render_heading(node.id, node.fullname, level))
 
     if not predicate or predicate(parser, TemplateKind.OBJECT):
+        obj = parser.obj
         signature = parser.parse_signature()
-        markdowns.append(render_object(parser.obj, name_set, namespace, signature))
+        bases = parser.parse_bases()
+        markdowns.append(render_object(obj, name_set, namespace, signature, bases))
 
     if not predicate or predicate(parser, TemplateKind.DOCUMENT):
         doc = parser.parse_doc()
@@ -93,6 +94,7 @@ def render_object(
     name_set: NameSet,
     namespace: str,
     signature: list[tuple[str, str]],
+    bases: list[str],
 ) -> str:
     if isinstance(obj, Module):
         names = [[x, "name"] for x in name_set.node.names]
@@ -107,6 +109,7 @@ def render_object(
         namespace=namespace,
         names=names,
         signature=signature,
+        bases=bases,
     )
 
 

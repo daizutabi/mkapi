@@ -258,3 +258,34 @@ def test_parse_doc_class_attrs(doc_class: Doc):
     assert items[0].name == "x"
     assert items[0].type == "[D][__mkapi__.mkapi.node.Definition]"
     assert items[0].text == "Attribute [`D`][__mkapi__.mkapi.node.Definition]."
+
+
+def test_parse_bases():
+    from mkapi.parser import Parser
+
+    name = "mkapi.plugin.MkAPIPlugin"
+    parser = Parser.create(name)
+    assert parser
+    bases = parser.parse_bases()
+    assert len(bases) == 1
+    base = bases[0]
+    assert base.startswith("[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]")
+    assert base.endswith("[[MkAPIConfig][__mkapi__.mkapi.plugin.MkAPIConfig]]")
+
+
+def test_parse_bases_empty():
+    from mkapi.parser import Parser
+
+    name = "mkapi.plugin"
+    parser = Parser.create(name)
+    assert parser
+    assert parser.parse_bases() == []
+
+
+def test_parse_signature_empty():
+    from mkapi.parser import Parser
+
+    name = "mkapi.plugin"
+    parser = Parser.create(name)
+    assert parser
+    assert parser.parse_signature() == []
