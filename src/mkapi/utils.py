@@ -325,36 +325,36 @@ def find_submodule_names(
     return names
 
 
-module_cache: dict[str, float] = {}
+# module_cache: dict[str, float] = {}
 
 
-def is_module_cache_dirty(name: str) -> bool:
-    """Return True if the module cache is dirty.
+# def is_module_cache_dirty(name: str) -> bool:
+#     """Return True if the module cache is dirty.
 
-    This function checks if the cache for the specified module is outdated
-    by comparing the last modified time of the module's source file with
-    the cached modification time stored in `module_cache`. If the module
-    cannot be found or if there is no cached modification time, it determines
-    whether the cache is considered dirty.
+#     This function checks if the cache for the specified module is outdated
+#     by comparing the last modified time of the module's source file with
+#     the cached modification time stored in `module_cache`. If the module
+#     cannot be found or if there is no cached modification time, it determines
+#     whether the cache is considered dirty.
 
-    Args:
-        name (str): The name of the module to check for cache status.
+#     Args:
+#         name (str): The name of the module to check for cache status.
 
-    Returns:
-        bool: True if the module cache is dirty (i.e., the module has been modified
-        since it was last cached), otherwise False.
+#     Returns:
+#         bool: True if the module cache is dirty (i.e., the module has been modified
+#         since it was last cached), otherwise False.
 
-    This function is useful for ensuring that the cached data for a module
-    is up-to-date, which can help prevent stale data from being used in
-    applications that rely on dynamic module loading.
-    """
-    if not (path := get_module_path(name)):
-        return False
+#     This function is useful for ensuring that the cached data for a module
+#     is up-to-date, which can help prevent stale data from being used in
+#     applications that rely on dynamic module loading.
+#     """
+#     if not (path := get_module_path(name)):
+#         return False
 
-    if not (mtime := module_cache.get(name)):
-        return True
+#     if not (mtime := module_cache.get(name)):
+#         return True
 
-    return mtime != path.stat().st_mtime
+#     return mtime != path.stat().st_mtime
 
 
 @cache
@@ -408,8 +408,8 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
             return None
 
     node = ast.parse(source)
-    mtime = path.stat().st_mtime if path else 0
-    module_cache[name] = mtime
+    # mtime = path.stat().st_mtime if path else 0
+    # module_cache[name] = mtime
 
     return node, source
 

@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING
 
 from mkdocs.config import Config, config_options
 from mkdocs.plugins import BasePlugin, get_plugin_logger
-from mkdocs.structure.files import File as MkDocsFile
-from mkdocs.structure.files import InclusionLevel, get_files
+from mkdocs.structure.files import File, InclusionLevel, get_files
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
@@ -22,8 +21,9 @@ from rich.progress import (
 import mkapi
 import mkapi.nav
 from mkapi import renderer
+from mkapi.file import generate_file
 from mkapi.page import Page
-from mkapi.utils import cache_clear, get_module_path, is_module_cache_dirty, is_package
+from mkapi.utils import cache_clear, get_module_path, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -53,25 +53,25 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
     pages: dict[str, Page]
 
     def __init__(self) -> None:
-        self.dirty = False
+        # self.dirty = False
         self.pages = {}
         self.progress = None
         self.task_id = None
 
-    def on_startup(self, *, command: str, dirty: bool) -> None:
-        self.dirty = dirty
+    # def on_startup(self, *, command: str, dirty: bool) -> None:
+    #     self.dirty = dirty
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         cache_clear()
 
-        if self.dirty:
-            pages: list[Page] = []
-            for page in self.pages.values():
-                if page.name and is_module_cache_dirty(page.name):
-                    pages.append(page)
+        # if self.dirty:
+        #     pages: list[Page] = []
+        #     for page in self.pages.values():
+        #         if page.name and is_module_cache_dirty(page.name):
+        #             pages.append(page)
 
-            for page in pages:
-                page.generate_markdown()
+        #     for page in pages:
+        #         page.generate_markdown()
 
         self.page_title = _get_function("page_title", self)
         self.section_title = _get_function("section_title", self)
@@ -93,8 +93,10 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
         for src_uri, page in self.pages.items():
             if page.is_api_page() and src_uri not in files.src_uris:
-                file = MkDocsFile.generated(config, src_uri, content=page.markdown)
+                file = generate_file(config, src_uri, page.name)
                 files.append(file)
+                if file.is_modified():
+                    page.generate_markdown()
 
         for file in files:
             if page := self.pages.get(file.src_uri):
@@ -257,7 +259,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
         mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
 
 
-def _collect_stylesheets(config: MkDocsConfig, plugin: MkApiPlugin) -> list[MkDocsFile]:
+def _collect_stylesheets(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]:
     root = Path(mkapi.__file__).parent / "stylesheets"
 
     docs_dir = config.docs_dir
@@ -267,7 +269,7 @@ def _collect_stylesheets(config: MkDocsConfig, plugin: MkApiPlugin) -> list[MkDo
 
     theme_name = config.theme.name or "mkdocs"
 
-    files: list[MkDocsFile] = []
+    files: list[File] = []
     css: list[str] = []
     for file in stylesheet_files:
         path = Path(file.src_path).as_posix()
