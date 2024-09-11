@@ -818,40 +818,6 @@ def split_type(doc: Doc) -> None:
         doc.type, doc.text = split_item_without_name(doc.text, "google")
 
 
-def create_summary_item(name: str, text: str, type_: str | ast.expr | None = None):
-    """Create a summary item from the provided name, text, and type.
-
-    Generate an `Item` instance that represents a summary
-    line extracted from the provided text. Take the first paragraph
-    of the text as the summary and associate it with the given name
-    and type.
-
-    Args:
-        name (str): The name of the item, typically representing a parameter,
-            return value, or other documentation element.
-        text (str): The input text from which to extract the summary line.
-        type_ (str | ast.expr | None): The type of the item, which can provide
-            additional context about the item. This can be a string or an AST
-            expression.
-
-    Returns:
-        Item: An `Item` instance containing the provided name, type, and the
-        extracted summary line from the text.
-
-    Examples:
-        >>> text = "This is a parameter.\\n\\nIt has multiple lines."
-        >>> item = create_summary_item("param1", text, "str")
-        >>> item.name
-        'param1'
-        >>> item.type
-        'str'
-        >>> item.text
-        'This is a parameter.'
-    """
-    text = text.split("\n\n")[0]  # summary line
-    return Item(name, type_, text)
-
-
 def merge_items(a: Item, b: Item) -> Item:
     """Merge two `Item` instances into one `Item` instance.
 

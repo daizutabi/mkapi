@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from mkdocs.config import Config, config_options
+from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel, get_files
 from rich.progress import (
@@ -21,7 +22,6 @@ from rich.progress import (
 import mkapi
 import mkapi.nav
 from mkapi import renderer
-from mkapi.file import generate_file
 from mkapi.page import Page
 from mkapi.utils import cache_clear, get_module_path, is_package
 
@@ -284,3 +284,35 @@ def _replace_toc(
             link.title = link.title.split(".")[-1]  # Remove prefix.
 
         _replace_toc(link.children, title, depth + 1)
+
+
+def generate_file(config: MkDocsConfig, src_uri: str, name: str) -> File:
+    """Generate a `File` instance for a given source URI and object name.
+
+    Create a `File` instance representing a generated file with the specified
+    source URI and object name. The `is_modified` method is set to check if the
+    destination file exists and if it is older than the module path.
+    This is used to determine if the file needs to be rebuilt in dirty mode.
+
+    Args:
+        config (MkDocsConfig): The MkDocs configuration object.
+        src_uri (str): The source URI of the file.
+        name (str): The object name corresponding to the `src_uri`.
+
+    Returns:
+        File: A `File` instance representing the generated file.
+    """
+    file = File.generated(config, src_uri, content=name)
+
+    def is_modified() -> bool:
+        dest_path = Path(file.abs_dest_path)
+        if not dest_path.exists():
+            return True
+
+        if not (module_path := get_module_path(name)):
+            return True
+
+        return dest_path.stat().st_mtime < module_path.stat().st_mtime
+
+    file.is_modified = is_modified
+    return file

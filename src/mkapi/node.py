@@ -400,6 +400,7 @@ def parse_module(
     return parse_node(node, module)
 
 
+@cache
 def get_node(
     name: str, module: str | None = None
 ) -> Module | Definition | Assign | Import | None:
@@ -437,11 +438,13 @@ def iter_module_members(
     module: str,
     private: bool = False,
     special: bool = False,
-) -> Iterator[str]:
+    *,
+    child_only: bool = False,
+) -> Iterator[tuple[str, Module | Definition]]:
     """Iterate over the members of the given module.
 
-    Traverse the Abstract Syntax Tree (AST) and yield the names of the
-    members of the given module.
+    Traverse the Abstract Syntax Tree (AST) and yield the names and objects of
+    the members of the given module.
 
     Args:
         module (str): The name of the module to iterate over.
@@ -449,10 +452,11 @@ def iter_module_members(
         special (bool): Whether to include special members.
 
     Yields:
-        str: The names of the members of the given module.
+        tuple[str, Module | Definition]: The names and objects of the members of
+        the given module.
     """
     names = set()
-    for name in _iter_module_members(module):
+    for name, obj in _iter_module_members(module, child_only):
         last = name.split(".")[-1]
         if not private and last.startswith("_") and not last.startswith("__"):
             continue
@@ -464,33 +468,114 @@ def iter_module_members(
             continue
 
         names.add(name)
-        yield name
+        yield name, obj
 
 
-def _iter_module_members(module: str) -> Iterator[str]:
+def _iter_module_members(
+    module: str, child_only: bool = False
+) -> Iterator[tuple[str, Module | Definition]]:
     members = parse_module(module)
 
     for name, obj in members:
         if is_package(module):
             if isinstance(obj, Module) and obj.name.startswith(module):
-                yield name
+                yield name, obj
 
             elif isinstance(obj, Definition) and obj.module.startswith(module):
-                yield name
-                yield from _iter_children_from_definition(obj, name)
+                yield name, obj
+                if not child_only:
+                    yield from _iter_children_from_definition(obj, name)
 
         elif isinstance(obj, Definition) and obj.module == module:
-            yield name
-            yield from _iter_children_from_definition(obj, name)
+            yield name, obj
+            if not child_only:
+                yield from _iter_children_from_definition(obj, name)
 
 
 def _iter_children_from_definition(
     obj: Definition | Assign,
     parent: str,
-) -> Iterator[str]:
+) -> Iterator[tuple[str, Definition]]:
     for child in get_child_nodes(obj.node, obj.module):
         if isinstance(child, Definition):
-            yield f"{parent}.{child.name}"
+            yield f"{parent}.{child.name}", child
+
+
+def iter_classes_from_module(
+    module: str, private: bool = False, special: bool = False
+) -> Iterator[str]:
+    """Iterate over the classes in the given module.
+
+    Traverse the Abstract Syntax Tree (AST) and yield the names of the
+    classes in the given module.
+
+    Args:
+        module (str): The name of the module to iterate over.
+
+    Yields:
+        str: The names of the classes in the given module.
+    """
+    for name, obj in iter_module_members(module, private, special, child_only=True):
+        if isinstance(obj, Definition):
+            if isinstance(obj.node, ast.ClassDef):
+                yield name
+
+
+def iter_functions_from_module(
+    module: str, private: bool = False, special: bool = False
+) -> Iterator[str]:
+    """Iterate over the functions in the given module.
+
+    Traverse the Abstract Syntax Tree (AST) and yield the names of the
+    functions in the given module.
+
+    Args:
+        module (str): The name of the module to iterate over.
+
+    Yields:
+        str: The names of the functions in the given module.
+    """
+    for name, obj in iter_module_members(module, private, special, child_only=True):
+        if isinstance(obj, Definition) and obj.module == module:
+            if isinstance(obj.node, ast.FunctionDef | ast.AsyncFunctionDef):
+                yield name
+
+
+def iter_methods_from_class(
+    name: str, module: str, private: bool = False, special: bool = False
+) -> Iterator[str]:
+    """Iterate over the methods in the given class.
+
+    Traverse the Abstract Syntax Tree (AST) and yield the names of the
+    methods in the given class.
+
+    Args:
+        name (str): The name of the class to iterate over.
+        module (str): The name of the module to iterate over.
+
+    Yields:
+        str: The names of the methods in the given class.
+    """
+    cls = get_node(name, module)
+    if not isinstance(cls, Definition) or not isinstance(cls.node, ast.ClassDef):
+        return
+
+    names = set()
+    for child in get_child_nodes(cls.node, module):
+        name = child.name
+        if name in names:
+            continue
+
+        if isinstance(child, Definition):
+            if isinstance(child.node, ast.FunctionDef | ast.AsyncFunctionDef):
+                if not private and name.startswith("_") and not name.startswith("__"):
+                    continue
+
+                if not special and name.startswith("__"):
+                    continue
+
+                names.add(name)
+                yield name
 
 
 @cache
