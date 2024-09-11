@@ -126,48 +126,29 @@ class Parser:
 
         return bases
 
-    def parse_doc(self) -> Doc:
-        doc = self.obj.doc.clone()
-
-        if isinstance(self.obj, Module | Class):
-            attrs = [x for _, x in self.obj.get_children(Type)]
-            merge_attributes(doc.sections, attrs)
-
-        if isinstance(self.obj, Function | Class):
-            merge_parameters(doc.sections, self.obj.parameters)
-            merge_raises(doc.sections, self.obj.raises)
-
-        if isinstance(self.obj, Function | Property):
-            merge_returns(doc.sections, self.obj.node.returns)
-
-        doc.text = get_markdown_text(doc.text, self.replace_from_object)
-        doc.type = get_markdown_type(doc.type, self.replace_from_object)
-
-        for section in doc.sections:
-            section.text = get_markdown_text(section.text, self.replace_from_object)
-            section.type = get_markdown_type(section.type, self.replace_from_object)
-
-            for item in section.items:
-                item.text = get_markdown_text(item.text, self.replace_from_object)
-                item.type = get_markdown_type(item.type, self.replace_from_object)
-
-        if isinstance(self.obj, Module):
-            if section := create_classes_from_module(self.name):
-                doc.sections.append(section)
-
-        if isinstance(self.obj, Module):
-            if section := create_functions_from_module(self.name):
-                doc.sections.append(section)
-
-        if isinstance(self.obj, Class) and self.module:
-            if section := create_methods_from_class(self.name, self.module):
-                doc.sections.append(section)
-
-        return doc
-
     def parse_first_paragraph(self) -> str:
         first_paragraph = self.obj.doc.text.split("\n\n", maxsplit=1)[0]
         return get_markdown_text(first_paragraph, self.replace_from_object)
+
+    def parse_doc(self) -> Doc:
+        doc = self.obj.doc.clone()
+        merge_sections(doc.sections, self.obj)
+        set_markdown_doc(doc, self.replace_from_object)
+        doc.sections.extend(self._iter_summary_sections())
+        return doc
+
+    def _iter_summary_sections(self) -> Iterator[Section]:
+        if isinstance(self.obj, Module):
+            if section := create_classes_from_module(self.name):
+                yield section
+
+        if isinstance(self.obj, Module):
+            if section := create_functions_from_module(self.name):
+                yield section
+
+        if isinstance(self.obj, Class) and self.module:
+            if section := create_methods_from_class(self.name, self.module):
+                yield section
 
 
 PREFIX = "__mkapi__."
@@ -252,6 +233,19 @@ def get_markdown_text(text: str, replace: Replace) -> str:
         return match.group()
 
     return mkapi.markdown.sub(CODE_PATTERN, _replace, text)
+
+
+def set_markdown_doc(doc: Doc, replace: Replace) -> None:
+    doc.text = get_markdown_text(doc.text, replace)
+    doc.type = get_markdown_type(doc.type, replace)
+
+    for section in doc.sections:
+        section.text = get_markdown_text(section.text, replace)
+        section.type = get_markdown_type(section.type, replace)
+
+        for item in section.items:
+            item.text = get_markdown_text(item.text, replace)
+            item.type = get_markdown_type(item.type, replace)
 
 
 @dataclass
@@ -452,6 +446,21 @@ def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
 
     if items and created:
         sections.append(section)
+
+
+def merge_sections(
+    sections: list[Section], obj: Attribute | Class | Function | Module | Property
+) -> None:
+    if isinstance(obj, Module | Class):
+        attrs = [x for _, x in obj.get_children(Type)]
+        merge_attributes(sections, attrs)
+
+    if isinstance(obj, Function | Class):
+        merge_parameters(sections, obj.parameters)
+        merge_raises(sections, obj.raises)
+
+    if isinstance(obj, Function | Property):
+        merge_returns(sections, obj.node.returns)
 
 
 def create_summary_item(name: str) -> Item | None:

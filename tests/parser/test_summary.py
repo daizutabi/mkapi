@@ -39,3 +39,9 @@ def test_methods_from_class():
     assert section.name == "Methods"
     it = (i.name for i in section.items)
     assert any(r"[on\_nav][mkapi.plugin.MkApiPlugin.on_nav]" in n for n in it)
+
+
+def test_methods_from_class_property():
+    from mkapi.parser import create_methods_from_class
+
+    assert not create_methods_from_class("Object", "mkapi.object")

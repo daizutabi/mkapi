@@ -131,3 +131,10 @@ def test_iter_methods_from_class():
     assert "on_page_markdown" in methods
     assert "on_page_content" in methods
     assert "__init__" not in methods
+
+
+def test_iter_methods_from_class_property():
+    from mkapi.node import iter_methods_from_class
+
+    methods = list(iter_methods_from_class("Object", "mkapi.object"))
+    assert not methods
