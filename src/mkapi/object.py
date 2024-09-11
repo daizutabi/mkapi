@@ -424,6 +424,10 @@ class Class(Definition):
     node: ast.ClassDef
     """The actual AST node associated with this class definition."""
 
+    @property
+    def attributes(self) -> list[Type]:
+        return [x for _, x in self.get_children(Type)]
+
 
 @dataclass(repr=False)
 class Function(Definition):
@@ -476,9 +480,10 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
 
         cls.doc = merge(cls.doc, init.doc)
 
+    children: dict[str, Object] = {}
     for base in get_base_classes(node.name, module):
-        for name, obj in base.get_children():
-            cls.children.setdefault(name, obj)
+        children |= base.children
+    cls.children = children | cls.children
 
     if is_dataclass(node.name, module):
         params = iter_parameters_from_dataclass(cls)

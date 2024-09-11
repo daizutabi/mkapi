@@ -139,3 +139,15 @@ def test_merge_init_doc():
     assert isinstance(cls, Class)
     assert cls.doc.text
     assert len(cls.doc.sections) == 2
+
+
+def test_children_order():
+    from mkapi.object import Class, get_object
+
+    cls = get_object("mkapi.node.Import")
+    assert isinstance(cls, Class)
+    names = list(cls.children.keys())
+    print(names)
+    assert names[0] == "name"
+    assert names[1] == "node"
+    assert names[-1] == "fullname"
