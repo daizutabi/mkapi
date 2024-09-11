@@ -551,7 +551,7 @@ def resolve(
 
 
 @cache
-def get_fullname(name: str, module: str | None = None) -> str | None:
+def get_fullname_from_module(name: str, module: str | None = None) -> str | None:
     """Get the fully qualified name of the given name and module.
 
     Resolve the given name and return a tuple containing the name

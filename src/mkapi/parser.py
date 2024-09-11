@@ -14,7 +14,7 @@ import mkapi.ast
 import mkapi.markdown
 import mkapi.object
 from mkapi.doc import Doc, Item, Section, create_summary_item
-from mkapi.node import get_fullname
+from mkapi.node import get_fullname_from_module
 from mkapi.object import (
     Attribute,
     Class,
@@ -75,7 +75,7 @@ class Parser:
         return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
 
     def replace_from_module(self, name: str) -> str | None:
-        return get_fullname(name, self.module or self.name)
+        return get_fullname_from_module(name, self.module or self.name)
 
     def replace_from_object(self, name: str) -> str | None:
         return get_fullname_from_object(name, self.obj)
@@ -149,6 +149,10 @@ class Parser:
                 item.type = get_markdown_type(item.type, self.replace_from_object)
 
         return doc
+
+    def parse_first_paragraph(self) -> str:
+        first_paragraph = self.obj.doc.text.split("\n\n", maxsplit=1)[0]
+        return get_markdown_text(first_paragraph, self.replace_from_object)
 
 
 PREFIX = "__mkapi__."

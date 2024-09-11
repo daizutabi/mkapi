@@ -31,7 +31,7 @@ from mkapi.ast import (
     iter_raises,
 )
 from mkapi.doc import create_doc, create_doc_comment, is_empty, merge, split_type
-from mkapi.node import get_fullname
+from mkapi.node import get_fullname_from_module
 from mkapi.utils import (
     cache,
     get_module_node,
@@ -814,7 +814,7 @@ def get_object(name: str, module: str | None = None) -> Object | None:
         Object | None: The `Object` instance corresponding to the specified name
         and module, or None if the object cannot be found or created.
     """
-    if not (fullname := get_fullname(name, module)):
+    if not (fullname := get_fullname_from_module(name, module)):
         return None
 
     if obj := objects.get(fullname):
@@ -850,7 +850,7 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
         to the object, or None if the fullname cannot be determined.
     """
     if isinstance(obj, Module):
-        return get_fullname(name, obj.name)
+        return get_fullname_from_module(name, obj.name)
 
     if isinstance(obj, Parent):
         if child := obj.get(name):
@@ -860,7 +860,7 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
         if obj.parent and obj.parent != obj:
             return get_fullname_from_object(name, obj.parent)
 
-        return get_fullname(name, obj.module)
+        return get_fullname_from_module(name, obj.module)
 
     parent, name_ = name.rsplit(".", maxsplit=1)
 
@@ -870,4 +870,4 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
     if (obj.name == parent) and name_ != name:
         return get_fullname_from_object(name_, obj)
 
-    return get_fullname(name)
+    return get_fullname_from_module(name)
