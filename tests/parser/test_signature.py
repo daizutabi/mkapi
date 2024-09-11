@@ -61,6 +61,7 @@ def test_get_signature():
     assert s[0].kind == "paren"
     assert s[1].name == "x\\_"
     assert s[1].kind == "arg"
+    assert s[5].name == "'s'"
     v = s[-1].name
     assert isinstance(v, ast.expr)
     assert ast.unparse(v) == "int"
