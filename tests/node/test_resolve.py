@@ -89,9 +89,9 @@ def test_resolve_mkapi_module():
     "name", ["mkapi", "mkapi.ast", "mkapi.ast.AST", "mkapi.ast.XXX"]
 )
 def test_get_fullname_module(name):
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
-    x = get_fullname(name, "mkapi.node")
+    x = get_fullname_from_module(name, "mkapi.node")
     if "AST" in name:
         assert x == "ast.AST"
     elif "XXX" in name:
@@ -101,19 +101,19 @@ def test_get_fullname_module(name):
 
 
 def test_get_fullname_class():
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
-    x = get_fullname("Class", "mkapi.object")
+    x = get_fullname_from_module("Class", "mkapi.object")
     assert x == "mkapi.object.Class"
-    assert get_fullname("ast", "mkapi.object") == "ast"
-    x = get_fullname("ast.ClassDef", "mkapi.object")
+    assert get_fullname_from_module("ast", "mkapi.object") == "ast"
+    x = get_fullname_from_module("ast.ClassDef", "mkapi.object")
     assert x == "ast.ClassDef"
 
 
 def test_get_fullname_jinja2():
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
-    x = get_fullname("jinja2.Template", "mkdocs.plugins")
+    x = get_fullname_from_module("jinja2.Template", "mkdocs.plugins")
     assert x == "jinja2.environment.Template"
 
 
@@ -123,55 +123,55 @@ def attr(request):
 
 
 def test_get_fullname_qualname(attr):
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
     module = "examples.styles.google"
     name = f"ExampleClass{attr}"
-    assert get_fullname(name, module) == f"{module}.{name}"
+    assert get_fullname_from_module(name, module) == f"{module}.{name}"
 
 
 def test_get_fullname_qualname_alias(attr):
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
     module = "examples.styles"
     name = f"ExampleClassGoogle{attr}"
-    x = get_fullname(name, module)
+    x = get_fullname_from_module(name, module)
     assert x == f"{module}.google.{name}".replace("Google", "")
 
 
 def test_get_fullname_self():
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
     name = "MkApiPlugin"
     module = "mkapi.plugin"
-    assert get_fullname(name, module) == f"{module}.{name}"
+    assert get_fullname_from_module(name, module) == f"{module}.{name}"
 
 
 def test_get_fullname_unknown():
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
-    assert not get_fullname("xxx", "mkapi.plugin")
-    assert not get_fullname("jinja2.xxx", "mkdocs.plugins")
+    assert not get_fullname_from_module("xxx", "mkapi.plugin")
+    assert not get_fullname_from_module("jinja2.xxx", "mkdocs.plugins")
 
 
 def test_get_fullname_other():
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
     module = "mkapi.plugin"
-    x = get_fullname("MkDocsConfig", module)
+    x = get_fullname_from_module("MkDocsConfig", module)
     assert x == "mkdocs.config.defaults.MkDocsConfig"
-    x = get_fullname("Config", module)
+    x = get_fullname_from_module("Config", module)
     assert x == "mkdocs.config.base.Config"
-    x = get_fullname("config_options", module)
+    x = get_fullname_from_module("config_options", module)
     assert x == "mkdocs.config.config_options"
-    x = get_fullname("config_options.Type", module)
+    x = get_fullname_from_module("config_options.Type", module)
     assert x == "mkdocs.config.config_options.Type"
-    x = get_fullname("get_plugin_logger", module)
+    x = get_fullname_from_module("get_plugin_logger", module)
     assert x == "mkdocs.plugins.get_plugin_logger"
 
 
 def test_get_fullname_nested():
-    from mkapi.node import get_fullname
+    from mkapi.node import get_fullname_from_module
 
-    assert get_fullname("mkapi.doc.Item.name") == "mkapi.doc.Item.name"
-    assert not get_fullname("mkapi.doc.Item.mkapi")
+    assert get_fullname_from_module("mkapi.doc.Item.name") == "mkapi.doc.Item.name"
+    assert not get_fullname_from_module("mkapi.doc.Item.mkapi")

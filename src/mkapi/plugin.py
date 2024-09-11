@@ -33,9 +33,6 @@ if TYPE_CHECKING:
     from mkdocs.structure.pages import Page as MkDocsPage
     from mkdocs.structure.toc import AnchorLink, TableOfContents
 
-    # from mkdocs.livereload import LiveReloadServer
-    # from mkdocs.structure.nav import Navigation
-    # from mkdocs.utils.templates import TemplateContext
 
 logger = get_plugin_logger("MkAPI")
 
@@ -149,7 +146,7 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
 
         return html
 
-    def on_page_context(self, *args, **kwargs) -> None:
+    def on_post_build(self, config: MkDocsConfig, **kwargs) -> None:
         if self.progress is not None:
             self.progress.stop()
 

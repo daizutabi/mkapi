@@ -1,5 +1,5 @@
 """
-Utility Functions Module.
+Utility functions.
 
 Contain a collection of utility functions that provide various
 helper functionalities for the application. These functions are designed to
@@ -43,18 +43,18 @@ def cache(obj: list) -> list: ...  # no cov
 def cache(obj: Callable[..., T] | dict | list) -> Callable[..., T] | dict | list:
     """Cache a function or data structure and register it for cache clearing.
 
-    This function accepts a callable (function) or a data structure (dictionary or list)
-    and caches it. If a callable is provided, it wraps it with a caching mechanism
-    and stores it in a global list of cached objects. If a dictionary or list is provided,
-    it is simply added to the cache list.
+    Accept a callable (function) or a data structure (dictionary or list)
+    and caches it. If a callable is provided, it wraps it with a caching
+    mechanism and stores it in a global list of cached objects. If a
+    dictionary or list is provided, it is simply added to the cache list.
 
     Args:
         obj (Callable[..., T] | dict | list): The object to cache, which can be a
             callable function, a dictionary, or a list.
 
     Returns:
-        Callable[..., T] | dict | list: The cached object, which is either the cached
-        function or the original dictionary/list.
+        Callable[..., T] | dict | list: The cached object, which is either the
+        cached function or the original dictionary/list.
 
     Examples:
         >>> @cache
@@ -68,9 +68,6 @@ def cache(obj: Callable[..., T] | dict | list) -> Callable[..., T] | dict | list
         >>> cached_dict = cache(my_dict)
         >>> cached_dict['key']
         'value'
-
-    This function is useful for optimizing performance by caching results of expensive
-    function calls or storing frequently used data structures for quick access.
     """
     if callable(obj):
         cached = functools.cache(obj)
@@ -83,16 +80,13 @@ def cache(obj: Callable[..., T] | dict | list) -> Callable[..., T] | dict | list
 def cache_clear() -> None:
     """Clear the cache of all cached objects.
 
-    This function iterates through the global list of cached objects and clears
-    the cache for each object. If the object is callable (a function), it calls
-    the `cache_clear` method on that function to clear its cache. If the object
-    is a dictionary or list, it clears the contents of that object.
+    Iterate through the global list of cached objects and clear the cache
+    for each object. If the object is callable (a function), call its
+    `cache_clear` method. If the object is a dictionary or list, clear its
+    contents.
 
     Returns:
         None: This function does not return any value.
-
-    This function is useful for managing memory and ensuring that cached data
-    is up-to-date, especially in scenarios where the underlying data may change.
     """
     for obj in cached_objects:
         if callable(obj):
@@ -105,11 +99,11 @@ def cache_clear() -> None:
 def get_module_path(name: str) -> Path | None:
     """Return the source path of the specified module name.
 
-    This function attempts to find the source path of a module given its name.
-    It uses the `find_spec` function to retrieve the module specification and
-    checks if the module has a valid origin. If the module is found and is a
-    Python file, the function returns its path. If the module cannot be found
-    or is not a valid Python file, it returns None.
+    Attempt to find the source path of a module given its name.
+    Use `find_spec` to retrieve the module specification and
+    check if the module has a valid origin. If the module is found and is
+    a Python file, return its path. If the module cannot be found or is not
+    a valid Python file, return None.
 
     Args:
         name (str): The name of the module whose source path is to be retrieved.
@@ -126,13 +120,10 @@ def get_module_path(name: str) -> Path | None:
         >>> path = get_module_path("non_existent_module")
         >>> path is None
         True
-
-    This function is useful for dynamically locating the source files of modules,
-    which can be helpful for introspection, documentation generation, or analysis.
     """
     try:
         spec = find_spec(name)
-    except (ModuleNotFoundError, ValueError):
+    except (ImportError, ModuleNotFoundError, ValueError):
         return None
 
     if not (spec and spec.origin):
@@ -149,10 +140,9 @@ def get_module_path(name: str) -> Path | None:
 def get_module_name(module: str) -> str:
     """Return the name of the specified module.
 
-    This function attempts to import a module given its name and returns
-    the module's name as a string. If the module name is empty, it returns
-    an empty string. If the module cannot be found, it returns the original
-    module name provided.
+    Attempt to import a module given its name and return its name as a string.
+    If the module name is empty, return an empty string. If the module cannot
+    be found, return the original module name provided.
 
     Args:
         module (str): The name of the module to import.
@@ -170,25 +160,21 @@ def get_module_name(module: str) -> str:
 
         >>> get_module_name("")
         ''
-
-    This function is useful for dynamically retrieving the name of a module,
-    especially in scenarios where the module name may be provided as a string
-    and needs to be validated or processed.
     """
     if not module:
         return ""
 
     try:
         return importlib.import_module(module).__name__
-    except ModuleNotFoundError:
+    except (ModuleNotFoundError, ImportError):
         return module
 
 
 def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
     """Determine if the given path is a module.
 
-    This function checks whether the specified path represents a Python module.
-    It considers both directories and files. A directory is considered a module
+    Check if the specified path represents a Python module.
+    Considers both directories and files. A directory is considered a module
     if it contains an `__init__.py` file. A file is considered a module if it
     has a `.py` extension and does not start with a double underscore.
 
@@ -200,9 +186,6 @@ def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
 
     Returns:
         bool: True if the path is a module; otherwise, False.
-
-    This function is useful for identifying Python modules in a directory structure,
-    which can be helpful for module discovery and introspection.
     """
     path_str = path.as_posix()
     for pattern in exclude_patterns:
@@ -222,7 +205,7 @@ def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
 def is_package(name: str) -> bool:
     """Return True if the specified name is a package.
 
-    This function checks if the given name corresponds to a Python package.
+    Check if the given name corresponds to a Python package.
     A package is identified by the presence of an `__init__.py` file in its
     directory. The function attempts to find the module specification using
     `find_spec` and checks if the module's origin is the `__init__.py` file.
@@ -232,10 +215,6 @@ def is_package(name: str) -> bool:
 
     Returns:
         bool: True if the name is a package; otherwise, False.
-
-    This function is useful for determining whether a given module name
-    corresponds to a package, which can be important for module discovery
-    and organization in Python projects.
     """
     try:
         spec = find_spec(name)
@@ -251,19 +230,16 @@ def is_package(name: str) -> bool:
 def iter_submodule_names(name: str) -> Iterator[str]:
     """Yield the names of submodules for the specified module.
 
-    This function retrieves the submodule names associated with a given
-    module name. It uses the `find_spec` function to obtain the module
-    specification and checks for submodule search locations. For each
-    valid submodule path, it yields the full name of the submodule.
+    Retrieve the submodule names associated with a given module name.
+    Use the `find_spec` function to obtain the module specification and
+    check for submodule search locations. For each valid submodule path,
+    yield the full name of the submodule.
 
     Args:
         name (str): The name of the module for which to yield submodule names.
 
     Yields:
         str: The full names of the submodules found under the specified module.
-
-    This function is useful for dynamically discovering submodules within
-    a package, which can be helpful for module introspection and organization.
     """
     spec = find_spec(name)
     if not spec or not spec.submodule_search_locations:
@@ -280,10 +256,9 @@ def find_submodule_names(
 ) -> list[str]:
     """Return a list of submodule names.
 
-    This function retrieves the names of submodules associated with a given
-    module name. It optionally filters the submodule names based on a
-    provided predicate function. If no predicate is provided, all submodule
-    names are returned.
+    Retrieve the names of submodules associated with a given module name.
+    Optionally filter the submodule names based on a provided predicate function.
+    If no predicate is provided, all submodule names are returned.
 
     Args:
         name (str): The name of the module for which to find submodule names.
@@ -292,11 +267,8 @@ def find_submodule_names(
             be included in the result. Defaults to None, which includes all submodules.
 
     Returns:
-        list[str]: A list of submodule names that satisfy the predicate, or all
+        list[str]: A list of the submodule names that satisfy the predicate, or all
         submodule names if no predicate is provided.
-
-    This function is useful for dynamically discovering submodules within
-    a package, allowing for filtering based on specific criteria.
     """
     predicate = predicate or (lambda _: True)
     names = [name for name in iter_submodule_names(name) if predicate(name)]
@@ -304,44 +276,12 @@ def find_submodule_names(
     return names
 
 
-# module_cache: dict[str, float] = {}
-
-
-# def is_module_cache_dirty(name: str) -> bool:
-#     """Return True if the module cache is dirty.
-
-#     This function checks if the cache for the specified module is outdated
-#     by comparing the last modified time of the module's source file with
-#     the cached modification time stored in `module_cache`. If the module
-#     cannot be found or if there is no cached modification time, it determines
-#     whether the cache is considered dirty.
-
-#     Args:
-#         name (str): The name of the module to check for cache status.
-
-#     Returns:
-#         bool: True if the module cache is dirty (i.e., the module has been modified
-#         since it was last cached), otherwise False.
-
-#     This function is useful for ensuring that the cached data for a module
-#     is up-to-date, which can help prevent stale data from being used in
-#     applications that rely on dynamic module loading.
-#     """
-#     if not (path := get_module_path(name)):
-#         return False
-
-#     if not (mtime := module_cache.get(name)):
-#         return True
-
-#     return mtime != path.stat().st_mtime
-
-
 @cache
 def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
     """Return the AST node and source code of the specified module.
 
-    This function attempts to retrieve the source code of a module given its
-    name. If the module is found on the filesystem, it reads the source code
+    Attempt to retrieve the source code of a module given its name.
+    If the module is found on the filesystem, read the source code
     directly from the file. If the module is not found, it tries to import the
     module and retrieve the source code using the `inspect` module. The function
     returns a tuple containing the parsed Abstract Syntax Tree (AST) node and
@@ -366,10 +306,6 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
 
         >>> get_module_node_source("non_existent_module") is None
         True
-
-    This function is useful for dynamically analyzing the structure of modules
-    and their source code, which can be helpful for documentation generation,
-    code analysis, or introspection.
     """
     if path := get_module_path(name):
         with path.open("r", encoding="utf-8") as f:
@@ -378,7 +314,7 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
     else:
         try:
             module = importlib.import_module(name)
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, ImportError):
             return None
 
         try:
@@ -392,10 +328,10 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
 def get_module_node(name: str) -> ast.Module | None:
     """Return the AST node of the specified module.
 
-    This function retrieves the Abstract Syntax Tree (AST) node for a module
-    given its name. It calls the `get_module_node_source` function to obtain
-    the AST node and source code. If the module is found, it returns the AST
-    node; otherwise, it returns None.
+    Retrieve the Abstract Syntax Tree (AST) node for a module
+    given its name. Call `get_module_node_source` to obtain
+    the AST node and source code. If the module is found, return the AST
+    node; otherwise, return None.
 
     Args:
         name (str): The name of the module whose AST node is to be retrieved.
@@ -411,9 +347,6 @@ def get_module_node(name: str) -> ast.Module | None:
 
         >>> get_module_node("non_existent_module") is None
         True
-
-    This function is useful for obtaining the structure of a module for
-    analysis, documentation generation, or introspection.
     """
     if node_source := get_module_node_source(name):
         return node_source[0]
@@ -424,10 +357,10 @@ def get_module_node(name: str) -> ast.Module | None:
 def get_module_source(name: str) -> str | None:
     """Return the source code of the specified module.
 
-    This function retrieves the source code of a module given its name.
-    It calls the `get_module_node_source` function to obtain the Abstract
-    Syntax Tree (AST) node and source code. If the module is found, it returns
-    the source code; otherwise, it returns None.
+    Retrieve the source code of a module given its name.
+    Call `get_module_node_source` to obtain the Abstract
+    Syntax Tree (AST) node and source code. If the module is found, return
+    the source code; otherwise, return None.
 
     Args:
         name (str): The name of the module whose source code is to be retrieved.
@@ -443,10 +376,6 @@ def get_module_source(name: str) -> str | None:
 
         >>> get_module_source("non_existent_module") is None
         True
-
-    This function is useful for dynamically accessing the source code of
-    modules, which can be helpful for documentation generation, code analysis,
-    or introspection.
     """
     if node_source := get_module_node_source(name):
         return node_source[1]
@@ -457,17 +386,17 @@ def get_module_source(name: str) -> str | None:
 def iter_attribute_names(name: str, *, reverse: bool = False) -> Iterator[str]:
     """Yield parent module names in a dot-separated format.
 
-    This function generates the names of parent modules for a given
+    Generate the names of parent modules for a given
     dot-separated module name. It can yield the names in either
     ascending or descending order based on the `reverse` flag. If
-    `reverse` is set to True, it yields from the full name down to
-    the top-level module; otherwise, it yields from the top-level
+    `reverse` is set to True, yield from the full name down to
+    the top-level module; otherwise, yield from the top-level
     module down to the full name.
 
     Args:
         name (str): The dot-separated name of the module for which to yield
         parent module names.
-        reverse (bool, optional): If True, yields names from the full name
+        reverse (bool, optional): If True, yield names from the full name
         to the top-level module. Defaults to False.
 
     Yields:
@@ -478,9 +407,6 @@ def iter_attribute_names(name: str, *, reverse: bool = False) -> Iterator[str]:
         ['a', 'a.b', 'a.b.c', 'a.b.c.d']
         >>> list(iter_attribute_names("a.b.c.d", reverse=True))
         ['a.b.c.d', 'a.b.c', 'a.b', 'a']
-
-    This function is useful for module introspection and for generating
-    hierarchical representations of module names.
     """
     names = name.split(".")
     it = range(len(names), 0, -1) if reverse else range(1, len(names) + 1)
@@ -498,7 +424,7 @@ def _is_equal(item, name: str, attr: str = "name") -> bool:
 def iter_by_name(items: Iterable[T], name: str, attr: str = "name") -> Iterator[T]:
     """Yield items from the iterable that match the specified name.
 
-    This function iterates over a collection of items and yields those
+    Iterate over a collection of items and yield those
     that have a specified attribute equal to the given name. The attribute
     to compare can be specified using the `attr` parameter, which defaults
     to "name".
@@ -511,10 +437,6 @@ def iter_by_name(items: Iterable[T], name: str, attr: str = "name") -> Iterator[
 
     Yields:
         T: The items that match the specified name.
-
-    This function is useful for filtering items based on a specific
-    attribute, allowing for easy retrieval of matching elements from
-    a collection.
     """
     for item in items:
         if _is_equal(item, name, attr):
@@ -526,9 +448,9 @@ def find_item_by_name(
 ) -> T | None:
     """Find the first item with a specified name from an iterable of items.
 
-    This function searches through a collection of items and returns the
+    Search through a collection of items and return the
     first item that matches the specified name. If multiple names are
-    provided, it will return the first matching item found. The attribute
+    provided, return the first matching item found. The attribute
     to compare can be specified using the `attr` parameter, which defaults
     to "name". If the name is not a string, it will iterate through the
     provided names and return the first matching item found.
@@ -543,9 +465,6 @@ def find_item_by_name(
     Returns:
         T | None: The first item that matches the specified name, or None
         if no matching item is found.
-
-    This function is useful for retrieving specific items from a collection
-    based on their attributes, facilitating easier access to desired elements.
     """
     if not isinstance(name, str):
         for name_ in name:
@@ -563,7 +482,7 @@ def find_item_by_name(
 def find_item_by_kind(items: Iterable[T], kind: str) -> T | None:
     """Find the first item of a specified kind from an iterable of items.
 
-    This function searches through a collection of items and returns the
+    Search through a collection of items and return the
     first item that matches the specified kind. It uses the `iter_by_name`
     function to filter items based on the "kind" attribute.
 
@@ -574,9 +493,6 @@ def find_item_by_kind(items: Iterable[T], kind: str) -> T | None:
     Returns:
         T | None: The first item that matches the specified kind, or None
         if no matching item is found.
-
-    This function is useful for retrieving specific items from a collection
-    based on their kind, facilitating easier access to desired elements.
     """
     for item in iter_by_name(items, kind, attr="kind"):
         return item
@@ -587,9 +503,9 @@ def find_item_by_kind(items: Iterable[T], kind: str) -> T | None:
 def find_item_by_type(items: Iterable, type_: type[T]) -> T | None:
     """Find the first item of a specified type from an iterable of items.
 
-    This function searches through a collection of items and returns the
+    Search through a collection of items and return the
     first item that is an instance of the specified type. If no item of
-    the specified type is found, it returns None.
+    the specified type is found, return None.
 
     Args:
         items (Iterable): The collection of items to search through.
@@ -598,9 +514,6 @@ def find_item_by_type(items: Iterable, type_: type[T]) -> T | None:
     Returns:
         T | None: The first item that matches the specified type, or None
         if no matching item is found.
-
-    This function is useful for retrieving specific items from a collection
-    based on their type, facilitating easier access to desired elements.
     """
     for item in items:
         if isinstance(item, type_):
@@ -612,7 +525,7 @@ def find_item_by_type(items: Iterable, type_: type[T]) -> T | None:
 def delete_item_by_name(items: list[T], name: str, attr: str = "name") -> None:
     """Delete the first item with a specified name from a list of items.
 
-    This function iterates through the provided list of items and deletes
+    Iterate through the provided list of items and delete
     the first item that matches the specified name based on the given
     attribute. The deletion is performed in-place, modifying the original
     list.
@@ -625,9 +538,6 @@ def delete_item_by_name(items: list[T], name: str, attr: str = "name") -> None:
 
     Returns:
         None: This function does not return any value.
-
-    This function is useful for removing specific items from a list based
-    on their attributes, facilitating easier management of collections.
     """
     for k, item in enumerate(items):
         if _is_equal(item, name, attr):
@@ -638,7 +548,7 @@ def delete_item_by_name(items: list[T], name: str, attr: str = "name") -> None:
 def merge_unique_names(a: Iterable, b: Iterable, attr: str = "name") -> list[str]:
     """Merge two iterables and return a list of unique names.
 
-    This function takes two iterables and collects the names of their
+    Take two iterables and collect the names of their
     elements, ensuring that the resulting list contains only unique names.
     The names are extracted from the specified attribute of each element,
     which defaults to "name". If an element's name is already in the
@@ -652,9 +562,6 @@ def merge_unique_names(a: Iterable, b: Iterable, attr: str = "name") -> list[str
 
     Returns:
         list[str]: A list of unique names collected from both iterables.
-
-    This function is useful for combining names from different sources while
-    avoiding duplicates, facilitating easier management of collections.
     """
     names = [getattr(x, attr) for x in a]
     for x in b:
@@ -667,9 +574,9 @@ def merge_unique_names(a: Iterable, b: Iterable, attr: str = "name") -> list[str
 def split_filters(name: str) -> tuple[str, list[str]]:
     """Split filters written after `|` in a given string.
 
-    This function takes a string that may contain filters separated by
-    the `|` character and splits it into a base name and a list of filters.
-    If no filters are present, it returns the original string as the base name
+    Take a string that may contain filters separated by
+    the `|` character and split it into a base name and a list of filters.
+    If no filters are present, return the original string as the base name
     and an empty list.
 
     Args:
@@ -688,9 +595,6 @@ def split_filters(name: str) -> tuple[str, list[str]]:
         ('', ['upper', 'strict'])
         >>> split_filters("")
         ('', [])
-
-    This function is useful for parsing strings that include filters, allowing
-    for easy extraction of the main name and associated modifications.
     """
     index = name.find("|")
     if index == -1:
@@ -703,7 +607,7 @@ def split_filters(name: str) -> tuple[str, list[str]]:
 def update_filters(org: list[str], update: list[str]) -> list[str]:
     """Update filters by merging and resolving conflicts.
 
-    This function takes two lists of filters: the original list (`org`) and
+    Take two lists of filters: the original list (`org`) and
     the list of updates (`update`). It merges these lists while ensuring that
     certain conflicting filters are resolved. Specifically, if both a lower
     and upper case filter or both long and short filters are present, the
@@ -726,9 +630,6 @@ def update_filters(org: list[str], update: list[str]) -> list[str]:
         ['short']
         >>> update_filters(["short"], ["long"])
         ['long']
-
-    This function is useful for managing filter lists where certain filters
-    may conflict, allowing for a clean and updated set of filters.
     """
     filters = org + update
     for x, y in [["lower", "upper"], ["long", "short"]]:
@@ -744,7 +645,7 @@ def update_filters(org: list[str], update: list[str]) -> list[str]:
 def is_identifier(name: str) -> bool:
     """Return True if the name is a valid identifier, considering dot-separated parts.
 
-    This function checks if the provided name is a valid Python identifier,
+    Check if the provided name is a valid Python identifier,
     which can include multiple parts separated by dots. Each part must be a
     valid identifier according to Python's naming rules. An identifier is
     a non-empty string that starts with a letter or underscore and can
@@ -771,10 +672,6 @@ def is_identifier(name: str) -> bool:
         False
         >>> is_identifier("valid.identifier.with.dots")
         True
-
-    This function is useful for validating names in contexts where Python
-    identifiers are required, such as variable names, function names, or
-    module names.
     """
     return name != "" and all(x.isidentifier() for x in name.split("."))
 
@@ -782,7 +679,7 @@ def is_identifier(name: str) -> bool:
 def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
     """Yield identifiers and their validity from the given source string.
 
-    This function scans the provided source string and yields tuples of
+    Scan the provided source string and yield tuples of
     identifiers along with a boolean indicating whether each identifier
     is valid according to Python's naming rules. Identifiers can include
     dot-separated parts, and the function also handles quoted strings.
@@ -808,10 +705,6 @@ def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
         [('"quoted string"', False)]
         >>> list(iter_identifiers("a.b.c"))
         [('a.b.c', True)]
-
-    This function is useful for parsing code or text where identifiers
-    need to be validated, such as in code analysis, documentation generation,
-    or syntax highlighting.
     """
     start = stop = 0
     while start < len(source):
@@ -856,7 +749,7 @@ def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
 def list_exported_names(module: str) -> list[str]:
     """Retrieve the list of exported names from a specified module.
 
-    This function attempts to import the given module and access its
+    Attempt to import the given module and access its
     `__all__` attribute, which is a list or tuple of names that should
     be considered public and exported when using `from module import *`.
     If the module cannot be found, or if the `__all__` attribute is not
@@ -877,10 +770,6 @@ def list_exported_names(module: str) -> list[str]:
 
         >>> list_exported_names("non_existent_module")
         []
-
-    This function is useful for dynamically discovering the public API
-    of a module, allowing for better introspection and documentation
-    generation.
     """
     try:
         members = importlib.import_module(module).__dict__
@@ -898,7 +787,7 @@ def list_exported_names(module: str) -> list[str]:
 def get_object_from_module(name: str, module: str) -> object | None:
     """Retrieve an object from a specified module by its name.
 
-    This function attempts to import the given module and then looks for
+    Attempt to import the given module and then look for
     the specified object within that module. The object can be nested,
     indicated by dot notation in the `name` parameter. If the module
     cannot be found or the object does not exist, None is returned.
@@ -920,13 +809,10 @@ def get_object_from_module(name: str, module: str) -> object | None:
         >>> non_existent = get_object_from_module("NonExistent", "my_module")
         >>> non_existent is None
         True
-
-    This function is useful for dynamic object retrieval in scenarios
-    where the module and object names are determined at runtime.
     """
     try:
         obj = importlib.import_module(module or name)
-    except ModuleNotFoundError:
+    except (ModuleNotFoundError, ImportError):
         return None
 
     for name_ in name.split("."):
@@ -940,8 +826,8 @@ def get_object_from_module(name: str, module: str) -> object | None:
 def is_dataclass(name: str, module: str) -> bool:
     """Check if the specified object is a dataclass.
 
-    This function retrieves an object from the specified module using its
-    name and checks if it is a dataclass. A dataclass is a class that is
+    Retrieve an object from the specified module using its
+    name and check if it is a dataclass. A dataclass is a class that is
     decorated with the `@dataclass` decorator from the `dataclasses` module.
 
     Args:
@@ -958,9 +844,6 @@ def is_dataclass(name: str, module: str) -> bool:
 
         >>> is_dataclass("is_dataclass", "mkapi.utils")
         False
-
-    This function is useful for dynamically checking the nature of classes
-    in a module, particularly when working with dataclasses.
     """
     obj = get_object_from_module(name, module)
     return dataclasses.is_dataclass(obj)
@@ -970,9 +853,9 @@ def is_dataclass(name: str, module: str) -> bool:
 def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
     """Retrieve the base classes of a specified class from a module.
 
-    This function attempts to retrieve an object from the specified module
-    using its name and checks if it is a class. If it is a class, the function
-    collects its base classes, excluding those from the built-in module.
+    Retrieve an object from the specified module using its
+    name and check if it is a class. If it is a class, collect its base
+    classes, excluding those from the built-in module.
     Each base class is returned as a tuple containing the base class name
     and its module.
 
@@ -993,9 +876,6 @@ def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
         >>> base_classes = get_base_classes("NonExistentClass", "my_module")
         >>> base_classes
         []
-
-    This function is useful for understanding the inheritance hierarchy of
-    classes in a module, particularly in dynamic analysis or introspection.
     """
     obj = get_object_from_module(name, module)
 
@@ -1014,7 +894,7 @@ def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
 def split_module_name(name: str) -> tuple[str, str | None] | None:
     """Split a dot-separated name into a module name and the remaining part.
 
-    This function takes a dot-separated name and iterates through its
+    Take a dot-separated name and iterate through its
     components to determine the module name and the remaining part of the
     name. If a valid module is found, it returns the remaining name after
     the last valid module name. If the entire name corresponds to a valid
@@ -1029,7 +909,8 @@ def split_module_name(name: str) -> tuple[str, str | None] | None:
         tuple[str, str | None] | None: A tuple containing the remaining part
         of the name and the module name if a valid module is found. If the
         entire name corresponds to a valid module, it returns (module, None).
-        If the name belongs to a member of a module, it returns (member name, module name).
+        If the name belongs to a member of a module,
+        it returns (member name, module name).
         If no valid module is found and no previous module was identified,
         None is returned.
 
@@ -1046,9 +927,6 @@ def split_module_name(name: str) -> tuple[str, str | None] | None:
 
         >>> split_module_name("invalid.module") is None
         True
-
-    This function is useful for parsing names in contexts where modules
-    and their attributes are represented in a dot-separated format.
     """
     modulename = None
     for module in iter_attribute_names(name):

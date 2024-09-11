@@ -1,6 +1,6 @@
-"""
-This module provides utilities for working with Abstract Syntax Trees (AST)
-in Python. It includes functions and classes for analyzing, transforming, and
+"""Provide utilities for working with Abstract Syntax Trees (AST).
+
+Include functions and classes for analyzing, transforming, and
 manipulating AST nodes, which represent the structure of Python code.
 
 Key Features:
@@ -9,15 +9,6 @@ Key Features:
 - Utilities for renaming nodes and transforming AST structures.
 - Functions to extract identifiers and analyze function signatures.
 - Support for decorators, including properties, class methods, and static methods.
-
-Usage:
-This module is intended for use in code analysis, refactoring, and
-metaprogramming tasks. It can be used to programmatically inspect and
-modify Python code by manipulating its AST.
-
-This module is designed to facilitate the analysis and transformation of
-Python code at the syntactic level, enabling developers to create tools
-for code generation, refactoring, and static analysis.
 """
 
 from __future__ import annotations
@@ -59,10 +50,10 @@ if TYPE_CHECKING:
 def iter_child_nodes(node: AST) -> Iterator[AST]:
     """Yield child nodes of the given AST node.
 
-    This function traverses the child nodes of the specified Abstract Syntax
-    Tree (AST) node and yields each child node that is of interest, including
-    import statements, class definitions, and function definitions. It allows
-    for recursive traversal of the AST structure.
+    Traverse the child nodes of the specified Abstract Syntax
+    Tree (AST) node and yield each child node that is of interest, including
+    import statements, class definitions, and function definitions.
+    Allow recursive traversal of the AST structure.
 
     Args:
         node (AST): The AST node from which to yield child nodes.
@@ -95,12 +86,11 @@ def iter_child_nodes(node: AST) -> Iterator[AST]:
 def _get_pseudo_docstring(node: AST) -> str | None:
     """Retrieve the pseudo docstring from an AST node.
 
-    This function checks if the given Abstract Syntax Tree (AST) node is an
+    Check if the given Abstract Syntax Tree (AST) node is an
     expression containing a constant value. If the constant value is a string
-    that starts with the pseudo docstring marker (i.e., '#:'), it returns the
+    that starts with the pseudo docstring marker (i.e., '#:'), return the
     cleaned-up version of the docstring. If the node does not contain a valid
-    version of the docstring. If the node does not contain a valid
-    pseudo docstring, it returns None.
+    pseudo docstring, return None.
 
     Args:
         node (AST): The AST node to inspect for a pseudo docstring.
@@ -121,10 +111,10 @@ def _iter_assign_nodes(
 ) -> Iterator[AST]:
     """Yield assignment nodes from the given AST node.
 
-    This function recursively yields assignment nodes (AnnAssign, Assign,
-    or TypeAlias) from the provided Abstract Syntax Tree (AST) node. It
-    processes the current node and its subsequent nodes in the iterator,
-    yielding each relevant assignment node until a non-assignment node is
+    Recursively yield assignment nodes (AnnAssign, Assign,
+    or TypeAlias) from the provided Abstract Syntax Tree (AST) node.
+    Process the current node and its subsequent nodes in the iterator,
+    yield each relevant assignment node until a non-assignment node is
     encountered.
 
     Args:
@@ -159,10 +149,10 @@ def _iter_assign_nodes(
 def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type: ignore
     """Return the name of the assign node.
 
-    This function retrieves the name associated with an assignment node,
-    which can be of type AnnAssign, Assign, or TypeAlias. It handles
-    different types of assignment nodes and returns the name as a string.
-    If the node does not represent a valid assignment, it returns None.
+    Retrieve the name associated with an assignment node,
+    which can be of type AnnAssign, Assign, or TypeAlias.
+    Handle different types of assignment nodes and return the name as a string.
+    If the node does not represent a valid assignment, return None.
 
     Args:
         node (AnnAssign | Assign | TypeAlias): The assignment node from
@@ -201,11 +191,11 @@ def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type
 def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:  # type: ignore
     """Return the type annotation of the Assign or TypeAlias AST node.
 
-    This function retrieves the type annotation associated with an assignment
-    node, which can be of type AnnAssign, Assign, or TypeAlias. It checks the
-    node type and returns the corresponding type annotation if available.
+    Retrieve the type annotation associated with an assignment
+    node, which can be of type AnnAssign, Assign, or TypeAlias.
+    Check the node type and return the corresponding type annotation if available.
     If the node does not represent a valid assignment or does not have a type
-    annotation, it returns None.
+    annotation, return None.
 
     Args:
         node (AnnAssign | Assign | TypeAlias): The assignment node from which
@@ -238,9 +228,9 @@ def _iter_parameters(
 ) -> Iterator[tuple[str, ast.expr | None, _ParameterKind]]:
     """Yield parameters from a function definition node.
 
-    This function extracts and yields the parameters of a function definition
-    node, which can be either a synchronous or asynchronous function. It
-    processes positional-only arguments, positional-or-keyword arguments,
+    Extract and yield the parameters of a function definition
+    node, which can be either a synchronous or asynchronous function.
+    Process positional-only arguments, positional-or-keyword arguments,
     variable positional arguments, keyword-only arguments, and variable
     keyword arguments, yielding each parameter along with its type annotation
     and kind.
@@ -286,9 +276,9 @@ def _iter_parameters(
 def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | None]:
     """Yield default values for parameters in a function definition node.
 
-    This function extracts and yields the default values for parameters
+    Extract and yield the default values for parameters
     defined in a function definition node, which can be either a synchronous
-    or asynchronous function. It processes both positional and keyword
+    or asynchronous function. Process both positional and keyword
     arguments, yielding the default values in the order they are defined.
 
     Args:
@@ -316,9 +306,9 @@ def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | 
 
 @dataclass
 class Parameter:
-    """Represents a parameter in a function or method.
+    """Represent a parameter in a function or method.
 
-    This class encapsulates the details of a parameter, including its name,
+    Encapsulate the details of a parameter, including its name,
     type annotation, default value, and kind. It is used to provide a structured
     representation of function parameters, making it easier to analyze and manipulate
     function signatures.
@@ -344,10 +334,6 @@ class Parameter:
         True
         >>> param.kind
         <_ParameterKind.POSITIONAL_OR_KEYWORD: 1>
-
-    This class is typically used in conjunction with function analysis and
-    transformation tools, allowing for easy access to parameter information
-    during code inspection or modification.
     """
 
     name: str
@@ -362,10 +348,10 @@ class Parameter:
 def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]:
     """Yield `Parameter` instances from a function node.
 
-    This function extracts parameters from a function definition node, which can
-    be either a synchronous or asynchronous function. It utilizes the helper
+    Extract parameters from a function definition node, which can
+    be either a synchronous or asynchronous function. Utilize the helper
     function `_iter_parameters` to retrieve the parameter names, type annotations,
-    and kinds. Additionally, it uses `_iter_defaults` to obtain the default values
+    and kinds. Additionally, use `_iter_defaults` to obtain the default values
     for parameters that have them. The function yields instances of the `Parameter`
     class, encapsulating the details of each parameter.
 
@@ -391,11 +377,6 @@ def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]
         True
         >>> params[4].default.value
         5
-
-    This function is useful for analyzing function signatures and extracting
-    detailed information about the parameters defined in a function, which can
-    be beneficial for documentation generation, code analysis, and other
-    metaprogramming tasks.
     """
     it = _iter_defaults(node)
     for name, type_, kind in _iter_parameters(node):
@@ -406,9 +387,9 @@ def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]
 def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr]:
     """Yield unique raises from a function node.
 
-    This function traverses the Abstract Syntax Tree (AST) of a function
-    definition node, which can be either synchronous or asynchronous. It
-    identifies and yields unique exception types that are raised within the
+    Traverse the Abstract Syntax Tree (AST) of a function
+    definition node, which can be either synchronous or asynchronous.
+    Identify and yield unique exception types that are raised within the
     function. The function checks for `Raise` statements and extracts the
     exception type, ensuring that each type is yielded only once.
 
@@ -428,10 +409,6 @@ def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr]:
         1
         >>> ast.unparse(raises[0])
         'ValueError'
-
-    This function is useful for analyzing error handling in functions and
-    can assist in generating documentation or performing static analysis
-    on the codebase.
     """
     names = []
     for child in ast.walk(node):
@@ -460,12 +437,12 @@ def _is_identifier(name: str) -> bool:
 def create_ast_expr(name: str) -> ast.expr:
     """Return an [ast.expr] instance of a name.
 
-    This function creates and returns an Abstract Syntax Tree (AST) expression
-    representing the given name. It first checks if the name is a valid
-    identifier. If it is, the function attempts to parse the name into an AST
+    Create and return an Abstract Syntax Tree (AST) expression
+    representing the given name. First, check if the name is a valid
+    identifier. If it is, attempt to parse the name into an AST
     node. If the parsing is successful and the resulting node is an expression,
-    the function returns the value of that expression. If the name is not a
-    valid identifier or if a SyntaxError occurs during parsing, it returns a
+    return the value of that expression. If the name is not a
+    valid identifier or if a SyntaxError occurs during parsing, return a
     Constant expression with an empty string.
 
     Args:
@@ -482,9 +459,6 @@ def create_ast_expr(name: str) -> ast.expr:
         ''
         >>> create_ast_expr("42").value
         '42'
-
-    This function is useful for generating AST nodes dynamically, especially
-    when constructing or manipulating Python code programmatically.
     """
     if _is_identifier(name):
         try:
@@ -504,8 +478,8 @@ PREFIX = "__mkapi__."
 class Transformer(NodeTransformer):
     """AST Transformer for Renaming Nodes.
 
-    This class extends the `NodeTransformer` to provide functionality for
-    renaming Abstract Syntax Tree (AST) nodes. It is designed to traverse the
+    Extend the `NodeTransformer` to provide functionality for
+    renaming Abstract Syntax Tree (AST) nodes. Traverse the
     AST and modify specific nodes according to the renaming rules defined
     within the class. The primary purpose of this transformer is to prepend
     the specified prefix (`__mkapi__.`) to the names of nodes, allowing
@@ -516,10 +490,6 @@ class Transformer(NodeTransformer):
         >>> node = ast.parse("x = 1")
         >>> transformer.unparse(node)
         '__mkapi__.x = 1'
-
-    This transformer is useful for code analysis and manipulation tasks,
-    particularly when there is a need to avoid name collisions or to
-    systematically modify identifiers in the AST.
     """
 
     def _rename(self, name: str) -> Name:
@@ -531,9 +501,9 @@ class Transformer(NodeTransformer):
     def unparse(self, node: AST) -> str:
         """Convert the transformed AST node back into source code.
 
-        This method takes an Abstract Syntax Tree (AST) node, applies the
+        Take an Abstract Syntax Tree (AST) node, apply the
         transformations defined in the `visit` methods of the transformer,
-        and returns the corresponding source code as a string. To avoid
+        and return the corresponding source code as a string. To avoid
         in-place renaming, it first creates a copy of the node by parsing
         the unparsed version of the original node.
 
@@ -549,10 +519,6 @@ class Transformer(NodeTransformer):
             >>> node = ast.parse("a.b.c")
             >>> transformer.unparse(node)
             '__mkapi__.a.b.c'
-
-        This method is essential for generating the final output after
-        performing transformations on the AST, allowing for the modified
-        code to be used in further processing or output.
         """
         # copy node for avoiding in-place rename.
         node_ = ast.parse(ast.unparse(node))
@@ -560,27 +526,23 @@ class Transformer(NodeTransformer):
 
 
 class StringTransformer(Transformer):
-    """AST Transformer for Renaming String Constants.
+    """AST Transformer for renaming string constants.
 
-    This class extends the `Transformer` class to provide functionality for
-    renaming string constant nodes in the Abstract Syntax Tree (AST). It is
-    designed to traverse the AST and modify `Constant` nodes that contain
+    Extend the `Transformer` to provide functionality for
+    renaming string constant nodes in the Abstract Syntax Tree (AST).
+    Traverse the AST and modify `Constant` nodes that contain
     string values by renaming them according to the rules defined in the
     parent class.
-
-    This transformer is useful for code analysis and manipulation tasks,
-    particularly when there is a need to systematically modify string
-    constants in the AST.
     """
 
     def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802
         """
         Visit a `Constant` node and rename it if its value is a string.
 
-        This method overrides the `visit_Constant` method from the `Transformer`
-        class. It checks if the value of the `Constant` node is a string, and if
-        so, it renames the string using the `_rename` method. If the value is not
-        a string, it returns the node unchanged.
+        Override the `visit_Constant` method from the `Transformer`
+        class. Check if the value of the `Constant` node is a string,
+        and if so, rename the string using the `_rename` method. If the
+        value is not a string, return the node unchanged.
 
         Args:
             node (Constant): The `Constant` node to be visited and potentially renamed.
@@ -604,13 +566,12 @@ class StringTransformer(Transformer):
 def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
     """Yield identifiers as a tuple of (code, is_valid_identifier).
 
-    This function scans the provided source string for segments that may
+    Scan the provided source string for segments that may
     represent identifiers, particularly those prefixed with a specific
-    string defined by the `PREFIX` constant. It yields tuples containing
+    string defined by the `PREFIX` constant. Yield tuples containing
     the code segment and a boolean indicating whether the segment is a
-    valid identifier according to Python's identifier rules. The function
-    continues to search through the source string until all segments have
-    been processed.
+    valid identifier according to Python's identifier rules. Continue to
+    search through the source string until all segments have been processed.
 
     Args:
         source (str): The source string to scan for identifiers.
@@ -632,10 +593,6 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
         ('c', True)
         >>> x[4]
         ('], y', False)
-
-    This function is useful for identifying and processing segments of code
-    that may represent identifiers, especially in the context of AST
-    transformations or code analysis.
     """
     start = 0
     while start < len(source):
@@ -665,10 +622,11 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
 def iter_identifiers(node: AST) -> Iterator[str]:
     """Yield identifiers from an AST node.
 
-    This function extracts identifiers from the given Abstract Syntax Tree (AST)
+    Extract identifiers from the given Abstract Syntax Tree (AST)
     node by first converting the node back into source code using the
-    `StringTransformer`. It then scans the resulting source code for segments
-    that may represent valid Python identifiers. Only valid identifiers are yielded.
+    `StringTransformer`. Scan the resulting source code for segments
+    that may represent valid Python identifiers. Only valid identifiers are
+    yielded.
 
     Args:
         node (AST): The AST node from which to extract identifiers.
@@ -683,10 +641,6 @@ def iter_identifiers(node: AST) -> Iterator[str]:
         >>> identifiers = list(iter_identifiers(node))
         >>> identifiers
         ['a']
-
-    This function is useful for analyzing the structure of the code represented
-    by the AST, particularly for tasks involving code analysis, refactoring, or
-    documentation generation.
     """
     source = StringTransformer().unparse(node)
     for code, isidentifier in _iter_identifiers(source):
@@ -710,12 +664,12 @@ def _unparse(
 def unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) -> str:
     """Unparse the AST node with a callback function.
 
-    This function takes an Abstract Syntax Tree (AST) node and a callback
-    function, and converts the AST node back into source code. The callback
-    function is applied to each identifier found in the AST, allowing for
-    custom transformations of the identifiers during the unparse process.
-    The `is_type` parameter determines whether the transformation is for
-    type-related nodes or general nodes.
+    Take an Abstract Syntax Tree (AST) node and a callback
+    function, and convert the AST node back into source code.
+    The callback function is applied to each identifier found in the AST,
+    allowing for custom transformations of the identifiers during the
+    unparse process. The `is_type` parameter determines whether the
+    transformation is for type-related nodes or general nodes.
 
     Args:
         node (AST): The AST node to be converted back into source code.
@@ -734,10 +688,6 @@ def unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) 
         >>> node = ast.parse(src)
         >>> unparse(node, transform)
         '<a> + <b>'
-
-    This function is useful for generating modified source code from an
-    AST, particularly in scenarios where identifiers need to be transformed
-    for purposes such as code generation, analysis, or refactoring.
     """
     return "".join(_unparse(node, callback, is_type=is_type))
 
@@ -745,12 +695,12 @@ def unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) 
 def has_decorator(node: AST, name: str, index: int = 0) -> bool:
     """Check if a class or function has a specific decorator.
 
-    This function checks whether the given Abstract Syntax Tree (AST) node,
+    Check whether the given Abstract Syntax Tree (AST) node,
     which can be a class definition or a function definition (synchronous or
-    asynchronous), has a decorator with the specified name. It traverses the
-    decorator list of the node and compares the names of the decorators to
-    the provided name. The `index` parameter allows for checking decorators
-    at a specific position in the decorator list.
+    asynchronous), has a decorator with the specified name.
+    Traverse the decorator list of the node and compare the names of the
+    decorators to the provided name. The `index` parameter allows for
+    checking decorators at a specific position in the decorator list.
 
     Args:
         node (AST): The AST node to inspect for decorators.
@@ -770,10 +720,6 @@ def has_decorator(node: AST, name: str, index: int = 0) -> bool:
         True
         >>> has_decorator(node, "other_decorator")
         False
-
-    This function is useful for analyzing the presence of decorators in
-    classes and functions, which can be important for understanding
-    behavior modifications applied to these definitions.
     """
     if not isinstance(node, ClassDef | FunctionDef | AsyncFunctionDef):
         return False
@@ -790,10 +736,9 @@ def has_decorator(node: AST, name: str, index: int = 0) -> bool:
 def is_function_def(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Check if the AST node is a function definition.
 
-    This function determines whether the given Abstract Syntax Tree (AST)
+    Determine whether the given Abstract Syntax Tree (AST)
     node is a function definition, which can be either a synchronous or
-    asynchronous function. It uses the `isinstance` function to check
-    the type of the node.
+    asynchronous function.
 
     Args:
         node (AST): The AST node to check.
@@ -814,10 +759,8 @@ def is_function_def(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 def is_property(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Check if the AST node is a property.
 
-    This function checks whether the given AST node is a function definition
-    and has a decorator named "property". It utilizes the `is_function_def`
-    function to confirm the node type and the `has_decorator` function to
-    check for the presence of the decorator.
+    Determine whether the given AST node is a function definition
+    and has a decorator named "property".
 
     Args:
         node (AST): The AST node to check.
@@ -838,10 +781,8 @@ def is_property(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 def is_setter(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Check if the AST node is a setter.
 
-    This function checks whether the given AST node is a function definition
-    and has a decorator named "setter" at the specified index. It uses the
-    `is_function_def` function to confirm the node type and the `has_decorator`
-    function to check for the presence of the decorator.
+    Determine whether the given AST node is a function definition
+    and has a decorator named "setter" at the specified index.
 
     Args:
         node (AST): The AST node to check.
@@ -862,10 +803,8 @@ def is_setter(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 def has_overload(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Check if the AST node has an overload decorator.
 
-    This function checks whether the given Abstract Syntax Tree (AST) node
-    is a function definition and has a decorator named "overload". It uses
-    the `is_function_def` function to confirm the node type and the
-    `has_decorator` function to check for the presence of the decorator.
+    Determine whether the given Abstract Syntax Tree (AST) node
+    is a function definition and has a decorator named "overload".
 
     Args:
         node (AST): The AST node to check.
@@ -886,10 +825,9 @@ def has_overload(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Check if the AST node is a regular function definition.
 
-    This function determines whether the given Abstract Syntax Tree (AST)
+    Determine whether the given Abstract Syntax Tree (AST)
     node is a function definition and ensures that it is not a property,
-    setter, or overload. It uses the `is_function_def` function to confirm
-    the node type.
+    setter, or overload.
 
     Args:
         node (AST): The AST node to check.
@@ -913,10 +851,8 @@ def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 def is_classmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Check if the AST node is a class method.
 
-    This function checks whether the given Abstract Syntax Tree (AST) node
-    is a function definition and has a decorator named "classmethod". It uses
-    the `is_function_def` function to confirm the node type and the
-    `has_decorator` function to check for the presence of the decorator.
+    Determine whether the given Abstract Syntax Tree (AST) node
+    is a function definition and has a decorator named "classmethod".
 
     Args:
         node (AST): The AST node to check.
@@ -937,10 +873,8 @@ def is_classmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
     """Check if the AST node is a static method.
 
-    This function checks whether the given Abstract Syntax Tree (AST) node
-    is a function definition and has a decorator named "staticmethod". It uses
-    the `is_function_def` function to confirm the node type and the
-    `has_decorator` function to check for the presence of the decorator.
+    Determine whether the given Abstract Syntax Tree (AST) node
+    is a function definition and has a decorator named "staticmethod".
 
     Args:
         node (AST): The AST node to check.
@@ -961,7 +895,7 @@ def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 def is_assign(node: AST) -> TypeGuard[ast.AnnAssign | ast.Assign | TypeAlias]:  # type: ignore
     """Check if the AST node is an assignment.
 
-    This function determines whether the given Abstract Syntax Tree (AST)
+    Determine whether the given Abstract Syntax Tree (AST)
     node is an assignment statement, which can be an annotated assignment,
     a regular assignment, or a type alias.
 
