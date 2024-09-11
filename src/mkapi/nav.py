@@ -34,10 +34,11 @@ def get_apinav(
     Args:
         name (str): The name of the module for which to retrieve the navigation.
         depth (int): The depth level for retrieving submodules:
-            - 1: Return the module name and its immediate submodules.
-            - 2: Return a flat list of the module and its submodules,
+
+         - 1: Return the module name and its immediate submodules.
+         - 2: Return a flat list of the module and its submodules,
               including deeper levels.
-            - 3: Return a nested dictionary structure representing the module
+         - 3: Return a nested dictionary structure representing the module
               and its submodules.
         predicate (Callable[[str], bool], optional): An optional predicate
             function to filter submodule names. If provided, only submodules

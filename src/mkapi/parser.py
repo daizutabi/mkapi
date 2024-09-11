@@ -363,7 +363,11 @@ def _iter_param(param: Parameter) -> Iterator[tuple[ast.expr | str, PartKind]]:
     if param.default:
         eq = " = " if param.type else "="
         yield eq, PartKind.EQUAL
-        yield param.default, PartKind.DEFAULT
+
+        default = param.default
+        if isinstance(default, ast.Constant) and isinstance(default.value, str):
+            default = f"{default.value!r}"
+        yield default, PartKind.DEFAULT
 
 
 def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:
