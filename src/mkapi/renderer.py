@@ -64,7 +64,7 @@ def render(
 
     markdowns = []
 
-    name_set = parser.parse_name()
+    name_set = parser.parse_name_set()
     if level and (not predicate or predicate(parser, TemplateKind.HEADING)):
         node = name_set.node
         markdowns.append(render_heading(node.id, node.fullname, level))

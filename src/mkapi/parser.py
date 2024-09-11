@@ -1,5 +1,3 @@
-"""Converter module."""
-
 from __future__ import annotations
 
 import ast
@@ -13,8 +11,13 @@ from typing import TYPE_CHECKING, TypeAlias
 import mkapi.ast
 import mkapi.markdown
 import mkapi.object
-from mkapi.doc import Doc, Item, Section, create_summary_item
-from mkapi.node import get_fullname_from_module
+from mkapi.doc import Doc, Item, Section
+from mkapi.node import (
+    get_fullname_from_module,
+    iter_classes_from_module,
+    iter_functions_from_module,
+    iter_methods_from_class,
+)
 from mkapi.object import (
     Attribute,
     Class,
@@ -80,7 +83,7 @@ class Parser:
     def replace_from_object(self, name: str) -> str | None:
         return get_fullname_from_object(name, self.obj)
 
-    def parse_name(self) -> NameSet:
+    def parse_name_set(self) -> NameSet:
         id_ = f"{self.module}.{self.name}" if self.module else self.name
         names = [x.replace("_", "\\_") for x in self.name.split(".")]
         fullname = get_markdown_name(id_)
@@ -147,6 +150,18 @@ class Parser:
             for item in section.items:
                 item.text = get_markdown_text(item.text, self.replace_from_object)
                 item.type = get_markdown_type(item.type, self.replace_from_object)
+
+        if isinstance(self.obj, Module):
+            if section := create_classes_from_module(self.name):
+                doc.sections.append(section)
+
+        if isinstance(self.obj, Module):
+            if section := create_functions_from_module(self.name):
+                doc.sections.append(section)
+
+        if isinstance(self.obj, Class) and self.module:
+            if section := create_methods_from_class(self.name, self.module):
+                doc.sections.append(section)
 
         return doc
 
@@ -422,8 +437,9 @@ def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
             continue
 
         type_ = attr.type or attr.doc.type
-        if attr.doc.sections:
-            item = create_summary_item(attr.name, attr.doc.text, type_)
+        if attr.doc.sections and attr.doc.text:
+            text = attr.doc.text.split("\n\n")[0]  # summary line
+            item = Item(attr.name, type_, text)
             items.append(item)
 
         elif attr.doc.text:
@@ -432,3 +448,40 @@ def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
 
     if items and created:
         sections.append(section)
+
+
+def create_summary_item(name: str) -> Item | None:
+    if not (parser := Parser.create(name)):
+        return None
+
+    name_set = parser.parse_name_set()
+    summary = parser.parse_first_paragraph()
+    name = f"[{name_set.node.names[-1]}][{name_set.node.id}]"
+    return Item(name, None, summary)
+
+
+def create_classes_from_module(module: str) -> Section | None:
+    items = []
+    for name in iter_classes_from_module(module):
+        if item := create_summary_item(f"{module}.{name}"):
+            items.append(item)
+
+    return Section("Classes", None, "", items) if items else None
+
+
+def create_functions_from_module(module: str) -> Section | None:
+    items = []
+    for name in iter_functions_from_module(module):
+        if item := create_summary_item(f"{module}.{name}"):
+            items.append(item)
+
+    return Section("Functions", None, "", items) if items else None
+
+
+def create_methods_from_class(name: str, module: str) -> Section | None:
+    items = []
+    for method in iter_methods_from_class(name, module):
+        if item := create_summary_item(f"{module}.{name}.{method}"):
+            items.append(item)
+
+    return Section("Methods", None, "", items) if items else None
