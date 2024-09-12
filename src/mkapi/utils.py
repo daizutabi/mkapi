@@ -15,6 +15,7 @@ import functools
 import importlib
 import inspect
 import re
+from enum import Enum
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar, overload
@@ -847,6 +848,26 @@ def is_dataclass(name: str, module: str) -> bool:
     """
     obj = get_object_from_module(name, module)
     return dataclasses.is_dataclass(obj)
+
+
+def is_enum(name: str, module: str) -> bool:
+    """Check if the specified object is an enum.
+
+    Retrieve an object from the specified module using its
+    name and check if it is a class. If it is a class, collect its base
+    classes, excluding those from the built-in module.
+    Each base class is returned as a tuple containing the base class name
+    and its module.
+
+    Args:
+        name (str): The name of the object to check.
+        module (str): The name of the module from which to retrieve the object.
+
+    Returns:
+        bool: True if the object is an enum, otherwise False.
+    """
+    obj = get_object_from_module(name, module)
+    return isinstance(obj, type) and issubclass(obj, Enum)
 
 
 @cache

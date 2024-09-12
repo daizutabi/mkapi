@@ -92,13 +92,11 @@ def test_merge_attribute_module():
 
 def test_merge_attribute_class():
     from mkapi.doc import Section
-    from mkapi.object import Class, Type, create_module
+    from mkapi.object import Class, Type, get_object
     from mkapi.parser import merge_attributes
     from mkapi.utils import find_item_by_name
 
-    module = create_module("examples.styles.google")
-    assert module
-    cls = module.get("ExampleClass")
+    cls = get_object("examples.styles.google.ExampleClass")
     assert isinstance(cls, Class)
     attrs = [x for _, x in cls.get_children(Type)]
     assert len(attrs) == 7
@@ -114,3 +112,22 @@ def test_merge_attribute_class():
     item = find_item_by_name(items, "readwrite_property")
     assert item
     assert item.type == "list(str)"
+
+
+def test_merge_attribute_enum():
+    from mkapi.doc import Section
+    from mkapi.object import Class, Type, get_object
+    from mkapi.parser import merge_attributes
+    from mkapi.utils import find_item_by_name
+
+    cls = get_object("mkapi.page.PageKind")
+    assert isinstance(cls, Class)
+    attrs = [x for _, x in cls.get_children(Type)]
+    assert len(attrs) == 5
+    sections = cls.doc.sections
+    names = ["name", "value"]
+    merge_attributes(sections, attrs, ignore_names=names, include_empty=True)
+    section = find_item_by_name(sections, "Attributes")
+    assert isinstance(section, Section)
+    items = section.items
+    assert len(items) == 3
