@@ -1,4 +1,4 @@
-# Object mode
+# Object Mode
 
 MkAPI offers an Object mode that allows you to seamlessly
 embed object documentation within your Markdown source.
@@ -127,12 +127,10 @@ MkAPI automatically adds a list of members.
 !!! warning
     MkAPI does not support reStructuredText directives.
 
-## Module members
+## Class
 
-The final section of this page covers module members.
+The final two sections of this page cover module members.
 The syntax to embed these objects is the same as for packages or modules.
-
-### Class
 
 The `examples.styles.google` module contains a class
 named `ExampleClass`. You can write it like this:
@@ -160,7 +158,7 @@ class name `ExampleClass` as shown below.
     which results in it being emphasized in Markdown.
 
 
-### Function
+## Function
 
 Functions can also be embedded in a Markdown source
 in the same way as described above.

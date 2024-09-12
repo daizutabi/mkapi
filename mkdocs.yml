@@ -56,7 +56,7 @@ markdown_extensions:
 nav:
   - MkAPI: index.md
   - Usage:
-      - Writing docstrings: usage/writing.md
+      - Writing Docstrings: usage/writing.md
       - usage/object.md
       - usage/page.md
       - usage/config.md
