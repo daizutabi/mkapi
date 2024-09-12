@@ -26,11 +26,12 @@ plugins:
 In the example above, the `package.module_to_exclude` module
 is excluded from the documentation generation.
 
+The `exclude` setting supports the use of shell-style wildcards
+for package/module names. For example, you can exclude all modules
+starting with `test_` by using the pattern `package.subpackage.test_*`.
+
 !!! note
-    - The `exclude` setting supports the use of shell-style wildcards
-      for package/module names. For example, you can exclude all modules
-      starting with `test_` by using the pattern `package.subpackage.test_*`.
-    - Module names starting with `_` are always excluded.
+    Module names starting with `_` are always excluded.
 
 
 <!--
