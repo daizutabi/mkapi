@@ -56,6 +56,23 @@ def test_merge_raises():
     assert ast.unparse(items[0].type) == "ValueError"
 
 
+def test_merge_raises_duplicate():
+    from mkapi.doc import Item, Section
+    from mkapi.parser import merge_raises
+    from mkapi.utils import find_item_by_name
+
+    sections = [Section("Raises", None, "", [Item("ValueError", None, "")])]
+    expr = ast.parse("ValueError").body[0]
+    assert isinstance(expr, ast.Expr)
+    merge_raises(sections, [expr.value])
+    section = find_item_by_name(sections, "Raises")
+    assert isinstance(section, Section)
+    items = section.items
+    assert len(items) == 1
+    assert items[0].name == "ValueError"
+    assert not items[0].type
+
+
 def test_merge_attribute_module():
     from mkapi.doc import Section
     from mkapi.object import Type, create_module

@@ -390,6 +390,9 @@ def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
         sections.append(section)
 
     for raise_ in raises:
+        if find_item_by_name(section.items, ast.unparse(raise_)):
+            continue
+
         if find_item_by_name(section.items, ast.unparse(raise_), attr="type"):
             continue
 

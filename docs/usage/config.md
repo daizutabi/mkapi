@@ -2,8 +2,8 @@
 
 Customize the behavior of the MkAPI plugin with the
 configuration settings outlined below.
-This guide will help you tailor the plugin to
-meet your specific documentation needs.
+<!-- This guide will help you tailor the plugin to
+meet your specific documentation needs. -->
 
 ## Excluding Modules
 
@@ -31,6 +31,9 @@ is excluded from the documentation generation.
       for package/module names. For example, you can exclude all modules
       starting with `test_` by using the pattern `package.subpackage.test_*`.
     - Module names starting with `_` are always excluded.
+
+
+<!--
 
 ## Configuration script
 
@@ -181,3 +184,5 @@ Discover more about
 By considering these features, you can create a more intuitive
 and visually appealing documentation experience that encourages
 users to explore and utilize your library effectively.
+
+-->
