@@ -1,6 +1,5 @@
 # Writing Docstrings with MkAPI
 
-MkAPI is a powerful plugin for generating API documentation from Python code.
 Writing clear and informative docstrings is essential for effective documentation.
 This guide explains how to write docstrings using MkAPI's features.
 
