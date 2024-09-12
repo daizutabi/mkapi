@@ -123,7 +123,7 @@ def test_merge_attribute_enum():
     cls = get_object("mkapi.page.PageKind")
     assert isinstance(cls, Class)
     attrs = [x for _, x in cls.get_children(Type)]
-    assert len(attrs) == 5
+    assert len(attrs) >= 3  # 3 for python 3.10, 5 for python >=3.11
     sections = cls.doc.sections
     names = ["name", "value"]
     merge_attributes(sections, attrs, ignore_names=names, include_empty=True)
