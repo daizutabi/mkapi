@@ -1,1 +1,1 @@
-"""Example package for MkAPI test."""
+"""Example package for testing MkAPI."""

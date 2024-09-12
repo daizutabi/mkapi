@@ -1,4 +1,4 @@
-"""Navigation Module for API Documentation.
+"""Navigation module for API documentation.
 
 Provide utility functions for managing and updating the
 navigation structure of API documentation. Include functions to

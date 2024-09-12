@@ -1,4 +1,5 @@
-"""Example module for MkAPI test."""
+"""Example subpackage for testing MkAPI."""
+
 from .google import ExampleClass as ExampleClassGoogle
 from .numpy import ExampleClass as ExampleClassNumPy
 

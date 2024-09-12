@@ -26,8 +26,9 @@ theme:
         icon: material/weather-night
         name: Switch to light mode
   features:
-    - content.tooltips
     - content.code.annotate
+    - content.tooltips
+    - navigation.footer
     - navigation.indexes
     - navigation.instant
     - navigation.sections
@@ -40,8 +41,8 @@ plugins:
   - mkapi:
       enabled: true
       config: config.py
-      # exclude:
-      #   - examples.usage
+      exclude:
+        - examples.usage
       debug: true
 markdown_extensions:
   - pymdownx.magiclink
@@ -53,15 +54,15 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
 nav:
-  - index.md
-  # - Usage:
-  #     - aere: usage/object.md
-  #     - usage/page.md
-  #     - usage/config.md
+  - MkAPI: index.md
+  - Usage:
+      - Writing docstrings: usage/writing.md
+      - usage/object.md
+      - usage/page.md
+      - usage/config.md
   - Reference:
       - $api:src/mkapi.***
-  - Examples:
-      - $api:src/examples.**
+  - Examples: $api:src/examples.***
   # - Jinja2:
   #     - $api:src/jinja2.***
   # - Schemdraw:

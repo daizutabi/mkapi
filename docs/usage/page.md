@@ -1,12 +1,12 @@
 # Page mode
 
-MkAPI provides Page mode to construct a comprehensive
-API documentation for your Python project.
+Unlock the full potential of your Python project with MkAPI's Page mode,
+designed to create comprehensive and user-friendly API documentation.
 
-## Navigation setting
+## Simple navigation setup
 
-Use of the Page mode is very simple.
-Just add a single line to `nav` section in `mkdocs.yml`:
+Getting started with Page mode is a breeze!
+Just add a single line to the `nav` section of your `mkdocs.yml` file:
 
 ```yaml title="mkdocs.yml"
 nav:
@@ -14,51 +14,18 @@ nav:
   - $api/package.module  # MkAPI page with a special syntax.
 ```
 
-Here, a leading `$` is a marker to indicate that
-this page should be processed by MkAPI to generate API
-documentation.
-A text between the leading `$` and the last `/`
-is used as a name of API directory
-as well as the prefix of URI.
-In this case, MkAPI creates two directories
-`api` and `src` in a `docs` directory.
-`api` is for documentation and `src` is for source code.
-Module page(s) will be located under these directories automatically:
+The leading `$` acts as a marker, indicating that this page should be
+processed by MkAPI to generate dynamic API documentation.
+The text between the `$` and the last `/` specifies
+the name of the API path and serves as the URI prefix.
+Module pages will be organized under this path seamlessly.
 
-``` sh
-.
-├─ docs/
-│  ├─ api/
-│  │  └─ package
-│  │     └─ module.md
-│  ├─ src/
-│  │  └─ package
-│  │     └─ module.md
-│  └─ index.md
-└─ mkdocs.yml
-```
-
-You can change the directory name for source code by
-splitting the prefix with a colon:
-
-```yaml title="mkdocs.yml"
-nav:
-  - index.md
-  - $api:src/package.module
-```
-
-!!! note
-    - You can change the names `api` and `src` as long as
-      it is a valid directory name and it does not exist.
-    - Both `api` and `src` directories will be removed after
-      building documentation by MkDocs.
-
-In the above example, just one `api/package/module.md` file
+In the example above, only one `api/package/module.md` file
 for documentation and one `src/package/module.md` file
 for source code will be created.
-In order to obtain a collection of subpackages/submodules,
-you can use `*` symbols.
-Consider next directory structure:
+To gather a collection of subpackages or submodules,
+you can use the `*` symbol.
+Consider the following directory structure:
 
 ```sh
 package/
@@ -75,11 +42,11 @@ package/
 └─ module2.py
 ```
 
-There are three ways to collect modules:
+There are three effective ways to collect modules:
 
 === "package.*"
 
-    - Modules under a `package` directory are collected.
+    - Collects all modules under the `package` directory.
     - The `nav` section is extended *vertically*.
 
     Example:
@@ -91,7 +58,7 @@ There are three ways to collect modules:
       - other.md
     ```
 
-    will be converted into
+    This will be transformed into:
 
     ```yaml
     nav:
@@ -104,11 +71,11 @@ There are three ways to collect modules:
 
 === "package.**"
 
-    - Modules under a `package` directory and its
-    subdirectories are collected, recursively.
-    - The `nav` section is extended *vertically*
-    in flat structure.
-    - Optionally, a section title can be set, for example, `API`.
+    - Collects modules under the `package` directory and
+      its subdirectories recursively.
+    - The `nav` section is extended *vertically* in a flat structure.
+    - Optionally, you can set a section title, such as `API`.
+
 
     Example:
 
@@ -119,7 +86,7 @@ There are three ways to collect modules:
       - other.md
     ```
 
-    will be converted into
+    This will be transformed into:
 
     ```yaml
     nav:
@@ -139,10 +106,12 @@ There are three ways to collect modules:
 
 === "package.***"
 
-    - Modules under a `package` directory and its
-    subdirectories are collected, recursively.
-    - The `nav` section is extended to have the same tree structure as the package.
-    - Optionally, a top section title can be set, for example, `API`.
+    - Collects modules under the `package` directory and
+      its subdirectories recursively.
+    - The `nav` section is extended to maintain the same
+      tree structure as the package.
+    - Optionally, you can set a top section title, such as `API`.
+
 
     Example:
 
@@ -153,7 +122,7 @@ There are three ways to collect modules:
       - other.md
     ```
 
-    will be converted into
+    This will be transformed into:
 
     ```yaml
     nav:
@@ -174,47 +143,7 @@ There are three ways to collect modules:
     ```
 
 !!! note
-    - `README.md` is an index page for packages. It corresponds to `__init__.py`.
-    - Section and page titles can be configured programatically.
+    - `README.md` serves as an index page for packages,
+      corresponding to `__init__.py`.
+    - Section and page titles can be configured programmatically.
       See [Configuration](config.md).
-
-## Example API documentations
-
-To demonstrate the Page mode, try some libraries.
-For example, MkAPI is tested using following libraries:
-
-- [Schemdraw](https://schemdraw.readthedocs.io/en/stable/)
-  － "Schemdraw is a Python package for producing high-quality
-  electrical circuit schematic diagrams."
-- [Polars](https://docs.pola.rs/)
-  － "Polars is a blazingly fast DataFrame library for manipulating
-  structured data."
-- [Altair](https://altair-viz.github.io/)
-  － "Vega-Altair is a declarative visualization library for Python."
-
-Use the following `nav` section in your `mkdocs.yml`
-if you want to check the output of MkAPI.
-
-```yaml title="mkdocs.yml"
-nav:
-  - index.md
-  - API: $api/mkapi.**  # API documentation of MkAPI itself
-  - Schemdraw: $api/schemdraw.***
-  - Polars: $api/polars.***
-  - Altair: $api/altair.***
-```
-
-<!-- Click section tabs at the top bar or buttons below to see the API documentation.
-
-<style type="text/css">
-.mkapi-center {
-  display: flex;
-  justify-content: center;
-}
-</style>
-
-<div class="mkapi-center" markdown="1">
-[Schemdraw][schemdraw]{.md-button .md-button--primary}
-[Polars][polars]{.md-button .md-button--primary}
-[Altair][altair]{.md-button .md-button--primary}
-</div> -->

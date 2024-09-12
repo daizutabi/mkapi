@@ -17,11 +17,12 @@ MkAPI supports two popular styles of documentation:
 and
 [NumPy style](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard),
 allowing developers to choose the format that best fits their project's needs.
+See the [Napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/)
+documentation for details about these two styles.
 
 MkAPI is equipped with several key features that enhance the documentation
 experience:
 
-Key Features:
 - **Type Annotation Support**: Automatically incorporates type annotations from
   function definitions into the documentation, reducing redundancy and
   improving clarity.
@@ -49,6 +50,7 @@ pip install mkapi
 ```
 
 MkAPI requires the following dependencies:
+
 - Python 3.10 or higher
 - MkDocs 1.6 or higher
 
@@ -69,7 +71,8 @@ Object mode and Page mode.
 
 ### Object Mode
 
-To generate the API documentation in a Markdown source, add three colons + object full name. The object can be a function, class, attribute, or module.
+To generate the API documentation in a Markdown source, add three colons + object
+full name. The object can be a function, class, or module.
 
 ```markdown
 ::: package.module.object
