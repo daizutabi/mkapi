@@ -12,7 +12,7 @@ MkAPI streamlines the documentation process by automatically extracting
 docstrings and organizing them into a structured format, making it easier
 for developers to maintain and share their API documentation.
 
-MkAPI supports two popular styles of documentation:
+MkAPI supports two popular styles of docstrings:
 [Google style](http://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
 and
 [NumPy style](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard),
@@ -67,7 +67,6 @@ plugins:
 
 MkAPI provides two modes to generate API documentation:
 Object mode and Page mode.
-
 
 ### Object Mode
 
