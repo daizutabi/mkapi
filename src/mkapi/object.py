@@ -425,9 +425,9 @@ class Class(Definition):
     node: ast.ClassDef
     """The actual AST node associated with this class definition."""
 
-    @property
-    def attributes(self) -> list[Type]:
-        return [x for _, x in self.get_children(Type)]
+    # @property
+    # def attributes(self) -> list[Type]:
+    #     return [x for _, x in self.get_children(Type)]
 
 
 @dataclass(repr=False)
