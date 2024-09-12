@@ -39,6 +39,7 @@ from mkapi.utils import (
     get_module_source,
     get_object_from_module,
     is_dataclass,
+    is_enum,
     is_package,
     split_module_name,
 )
@@ -735,14 +736,20 @@ def get_object_kind(obj: Object) -> str:
 
     Returns:
         str: A string representing the kind of the object. Possible return
-        values include "package", "module", "dataclass", "class", "function",
-        "method", "classmethod", or "staticmethod", depending on the object's
-        characteristics.
+        values include:
+
+        - package, module
+        - class, dataclass, enum
+        - function, method, classmethod, staticmethod
+        - property
     """
     if isinstance(obj, Module):
         return "package" if is_package(obj.name) else "module"
 
     if isinstance(obj, Class):
+        if is_enum(obj.name, obj.module):
+            return "enum"
+
         return "dataclass" if is_dataclass(obj.name, obj.module) else "class"
 
     if isinstance(obj, Function):

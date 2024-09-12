@@ -151,3 +151,16 @@ def test_children_order():
     assert names[0] == "name"
     assert names[1] == "node"
     assert names[-1] == "fullname"
+
+
+def test_enum():
+    from mkapi.object import Class, get_object
+
+    cls = get_object("mkapi.page.PageKind")
+    assert isinstance(cls, Class)
+    names = [name for name, _ in cls.get_children()]
+    assert "name" in names
+    assert "value" in names
+    assert "OBJECT" in names
+    assert "SOURCE" in names
+    assert "DOCUMENTATION" in names

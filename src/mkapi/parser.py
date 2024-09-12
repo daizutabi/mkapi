@@ -30,6 +30,7 @@ from mkapi.object import (
 )
 from mkapi.utils import (
     find_item_by_name,
+    is_enum,
     is_identifier,
     iter_attribute_names,
     iter_identifiers,
@@ -411,7 +412,13 @@ def merge_returns(sections: list[Section], returns: ast.expr | None) -> None:
             item.type = returns
 
 
-def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
+def merge_attributes(
+    sections: list[Section],
+    attrs: list[Type],
+    ignore_names: list[str] | None = None,
+    *,
+    include_empty: bool = False,
+) -> None:
     """Merge attributes."""
     if section := find_item_by_name(sections, "Attributes"):
         items = section.items
@@ -434,6 +441,9 @@ def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
             item.type = attr.type or attr.doc.type
 
     for attr in attrs:
+        if ignore_names and attr.name in ignore_names:
+            continue
+
         if find_item_by_name(items, attr.name):
             continue
 
@@ -443,7 +453,7 @@ def merge_attributes(sections: list[Section], attrs: list[Type]) -> None:
             item = Item(attr.name, type_, text)
             items.append(item)
 
-        elif attr.doc.text:
+        elif attr.doc.text or include_empty:
             item = Item(attr.name, type_, attr.doc.text)
             items.append(item)
 
@@ -455,8 +465,15 @@ def merge_sections(
     sections: list[Section], obj: Attribute | Class | Function | Module | Property
 ) -> None:
     if isinstance(obj, Module | Class):
+        if isinstance(obj, Class) and is_enum(obj.name, obj.module):
+            ignore_names = ["name", "value"]
+            include_empty = True
+        else:
+            ignore_names = None
+            include_empty = False
+
         attrs = [x for _, x in obj.get_children(Type)]
-        merge_attributes(sections, attrs)
+        merge_attributes(sections, attrs, ignore_names, include_empty=include_empty)
 
     if isinstance(obj, Function | Class):
         merge_parameters(sections, obj.parameters)

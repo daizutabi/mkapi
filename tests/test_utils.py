@@ -374,3 +374,10 @@ def test_get_module_node_source():
     assert isinstance(source, str)
 
     assert get_module_node_source("non_existent_module") is None
+
+
+def test_is_enum():
+    from mkapi.utils import is_enum
+
+    assert is_enum("PageKind", "mkapi.page")
+    assert not is_enum("PageKind", "mkapi.object")
