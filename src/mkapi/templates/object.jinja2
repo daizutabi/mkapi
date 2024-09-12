@@ -11,7 +11,7 @@
 {%- endfor -%}
 {% else %}
 {%- for name, kind in names[-1:] -%}
-<span class="mkapi-{{ kind }}">[{{ name }}][{{ obj_id }}]</span>
+<span class="mkapi-{{ kind }}">[{{ name }}][__mkapi__.{{ obj_id }}]</span>
 {%- endfor -%}
 {%- endif -%}
 </span>

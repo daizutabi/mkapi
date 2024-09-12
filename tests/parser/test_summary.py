@@ -5,7 +5,8 @@ def test_classes_fom_module():
     section = create_classes_from_module(name)
     assert section
     assert section.name == "Classes"
-    assert section.items[0].name == "[Node][mkapi.node.Node]"
+    name = "[Node][__mkapi__.mkapi.node.Node]"
+    assert section.items[0].name == name
 
 
 def test_classes_from_module_alias():
@@ -15,7 +16,7 @@ def test_classes_from_module_alias():
     section = create_classes_from_module(name)
     assert section
     assert section.name == "Classes"
-    name = "[ExampleClassGoogle][examples.styles.ExampleClassGoogle]"
+    name = "[ExampleClassGoogle][__mkapi__.examples.styles.ExampleClassGoogle]"
     assert section.items[0].name == name
     assert section.items[0].text.startswith("The summary")
 
@@ -28,7 +29,8 @@ def test_functions_from_module():
     assert section
     assert section.name == "Functions"
     it = (i.name for i in section.items)
-    assert any(r"[iter\_child\_nodes][mkapi.node.iter_child_nodes]" in n for n in it)
+    name = "[iter\\_child\\_nodes][__mkapi__.mkapi.node.iter_child_nodes]"
+    assert any(name in n for n in it)
 
 
 def test_methods_from_class():
@@ -38,7 +40,8 @@ def test_methods_from_class():
     assert section
     assert section.name == "Methods"
     it = (i.name for i in section.items)
-    assert any(r"[on\_nav][mkapi.plugin.MkApiPlugin.on_nav]" in n for n in it)
+    name = "[on\\_nav][__mkapi__.mkapi.plugin.MkApiPlugin.on_nav]"
+    assert any(name in n for n in it)
 
 
 def test_methods_from_class_property():

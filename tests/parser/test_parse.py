@@ -209,7 +209,7 @@ def test_parse_signature():
 def doc_func():
     from mkapi.parser import Parser
 
-    name = "examples.usage.func"
+    name = "examples._usage.func"
     parser = Parser.create(name)
     assert parser
     return parser.parse_doc()
@@ -242,7 +242,7 @@ def test_parse_doc_function_returns(doc_func: Doc):
 def doc_class():
     from mkapi.parser import Parser
 
-    name = "examples.usage.A"
+    name = "examples._usage.A"
     parser = Parser.create(name)
     assert parser
     return parser.parse_doc()
