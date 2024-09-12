@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fnmatch
 import importlib
 import os
 import re
@@ -204,10 +205,13 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     page_title = plugin.page_title
 
     def predicate(name: str) -> bool:
+        if name.split(".")[-1].startswith("_"):
+            return False
+
         if not plugin.config.exclude:
             return True
 
-        return all(ex not in name for ex in plugin.config.exclude)
+        return not any(fnmatch.fnmatch(name, ex) for ex in plugin.config.exclude)
 
     columns = [
         SpinnerColumn(),

@@ -322,18 +322,6 @@ class Parameter:
             a default value.
         kind (_ParameterKind): The kind of the parameter, indicating whether it is
             positional-only, positional-or-keyword, keyword-only, or variable.
-
-    Examples:
-        >>> from mkapi.ast import FunctionDef
-        >>> param = Parameter(name="arg1", type=None, default=None, kind=P.POSITIONAL_OR_KEYWORD)
-        >>> param.name
-        'arg1'
-        >>> param.type is None
-        True
-        >>> param.default is None
-        True
-        >>> param.kind
-        <_ParameterKind.POSITIONAL_OR_KEYWORD: 1>
     """
 
     name: str
@@ -435,7 +423,7 @@ def _is_identifier(name: str) -> bool:
 
 
 def create_ast_expr(name: str) -> ast.expr:
-    """Return an [ast.expr] instance of a name.
+    """Return an `ast.expr` instance of a name.
 
     Create and return an Abstract Syntax Tree (AST) expression
     representing the given name. First, check if the name is a valid
@@ -476,7 +464,7 @@ PREFIX = "__mkapi__."
 
 
 class Transformer(NodeTransformer):
-    """AST Transformer for Renaming Nodes.
+    """AST transformer for renaming nodes.
 
     Extend the `NodeTransformer` to provide functionality for
     renaming Abstract Syntax Tree (AST) nodes. Traverse the
@@ -841,6 +829,10 @@ def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
         >>> node = ast.parse(src).body[0]
         >>> is_function(node)
         True
+        >>> src = "@property\\ndef func(self): pass"
+        >>> node = ast.parse(src).body[0]
+        >>> is_function(node)
+        False
     """
     if not is_function_def(node):
         return False

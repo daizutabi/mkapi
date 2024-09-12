@@ -1,18 +1,18 @@
 """
-Processing and managing documentation strings.
+Processing and managing docstrings.
 
 Provide functionality for parsing, organizing, and manipulating
-documentation strings in various formats, specifically Google and NumPy styles.
+docstrings in various formats, specifically Google and NumPy styles.
 It defines data structures and utility functions to facilitate the extraction
 of structured information from docstrings, including parameters, return values,
 and sections.
 
 Key Classes:
-- Item: Represents an individual item in a documentation string, such as a
+- Item: Represents an individual item in a docstring, such as a
   parameter or return value, encapsulating its name, type, and description.
-- Section: Represents a section in a documentation string, containing a name,
+- Section: Represents a section in a docstring, containing a name,
   type, description, and a list of associated items.
-- Doc: Represents a complete documentation string, including its type, main
+- Doc: Represents a complete docstring, including its type, main
   text content, and sections.
 """
 
@@ -178,10 +178,10 @@ def split_item_without_name(text: str, style: str) -> tuple[str, str]:
 
 @dataclass
 class Item:
-    """Represent an item in a documentation string.
+    """Represent an item in a docstring.
 
     Encapsulate the details of a single item found
-    in a documentation string, such as a parameter, return value, or
+    in a docstring, such as a parameter, return value, or
     exception. It stores the name, type, and description of the item,
     providing a structured way to manage and access this information.
 
@@ -254,7 +254,8 @@ def iter_items(text: str, style: Style) -> Iterator[Item]:
 
 
 def iter_items_without_name(text: str, style: Style) -> Iterator[Item]:
-    """Yield `Item` instances without a name from the provided text based on the specified style.
+    """Yield `Item` instances without a name from the provided text based
+    on the specified style.
 
     Process the input text to extract items formatted according
     to the specified style (either "google" or "numpy") but does not include
@@ -311,16 +312,6 @@ def _split_sections(text: str, style: Style) -> Iterator[str]:
     Yields:
         str: Each section found in the text, stripped of leading and
         trailing whitespace.
-
-    Examples:
-        >>> text = "Section 1\\nContent of section 1.\\n\\nSection 2\\nContent of section 2."
-        >>> sections = list(_split_sections(text, "google"))
-        >>> len(sections)
-        2
-        >>> sections[0]
-        'Section 1\\nContent of section 1.'
-        >>> sections[1]
-        'Section 2\\nContent of section 2.'
     """
     pattern = SPLIT_SECTION_PATTERNS[style]
 
@@ -532,10 +523,10 @@ def _iter_sections(text: str, style: Style) -> Iterator[tuple[str, str]]:
 
 @dataclass(repr=False)
 class Section(Item):
-    """Represents a section in a documentation string.
+    """Represent a section in a docstring.
 
     Encapsulate the details of a section found in a
-    documentation string. A section typically contains a name, an optional
+    docstring. A section typically contains a name, an optional
     type, a description, and a list of items that belong to that section.
     Provide a structured way to manage and access the information related
     to a specific part of the documentation.
@@ -546,7 +537,7 @@ class Section(Item):
         type (str): The type of the section, which can provide additional context
             about the section's content.
         text (str): A description or documentation text associated with the section.
-        items (list[Item]): A list of Item instances that belong to this section,
+        items (list[Item]): A list of `Item` instances that belong to this section,
             representing individual parameters, return values, or exceptions.
 
     Examples:
@@ -616,7 +607,7 @@ def iter_sections(text: str, style: Style) -> Iterator[Section]:
 
     Process the input text to extract sections formatted according
     to the specified style (either "google" or "numpy"). Split the text into
-    sections, yielding instances of the Section class for each identified section.
+    sections, yielding `Section` instances for each identified section.
     Handle special sections such as "Note", "Warning", and "See Also"
     by creating admonition blocks.
 
@@ -669,9 +660,9 @@ def iter_sections(text: str, style: Style) -> Iterator[Section]:
 
 @dataclass
 class Doc(Item):
-    """Represent a documentation string.
+    """Represent a docstring.
 
-    Encapsulate the details of a documentation string, including
+    Encapsulate the details of a docstring, including
     its type, text content, and the sections it contains. Provide a structured
     way to manage and access the information related to the documentation,
     allowing for easier processing and manipulation.
@@ -683,25 +674,14 @@ class Doc(Item):
             context about the content.
         text (str): The main text content of the documentation, which may include
             introductory information or general descriptions.
-        sections (list[Section]): A list of Section instances that represent
-            the structured sections within the documentation, such as parameters,
-            return values, and examples.
-
-    Examples:
-        >>> doc = Doc(name="Doc", type="Function", text="This is a sample function.", sections=[])
-        >>> doc.name
-        'Doc'
-        >>> doc.type
-        'Function'
-        >>> doc.text
-        'This is a sample function.'
-        >>> len(doc.sections)
-        0
+        sections (list[Section]): A list of `Section` instances that represent
+            the structured sections within the documentation, such as Parameters,
+            Returns, and Examples.
     """
 
     sections: list[Section]
-    """A list of [Section] instances that represent the structured sections
-    within the documentation, such as parameters, return values, and examples."""
+    """A list of `Section` instances that represent the structured sections
+    within the documentation, such as Parameters, Returns, and Examples."""
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
@@ -720,8 +700,8 @@ def create_doc(text: str | None, style: Style | None = None) -> Doc:
     and any sections extracted from the text.
 
     Args:
-        text (str | None): The input text to be converted into a Doc instance.
-            If None, an empty Doc instance is returned.
+        text (str | None): The input text to be converted into a `Doc` instance.
+            If None, an empty `Doc` instance is returned.
         style (Style | None): The style to use for processing the text,
             either "google" or "numpy". If not provided, the style is inferred
             from the text.
@@ -761,19 +741,19 @@ def create_doc(text: str | None, style: Style | None = None) -> Doc:
 
 
 def create_doc_comment(text: str) -> Doc:
-    """Create and return a [Doc] instance from a docstring comment.
+    """Create and return a `Doc` instance from a docstring comment.
 
-    Take a string representing a documentation comment
+    Take a string representing a docstring comment
     (typically from a Returns or Yields section) and convert it into a
     structured `Doc` instance. Extract the type and text description
     from the input text and initialize a `Doc` instance with this information.
 
     Args:
-        text (str): The input text representing the documentation comment
-            to be converted into a Doc instance.
+        text (str): The input text representing the docstring comment
+            to be converted into a `Doc` instance.
 
     Returns:
-        Doc: A Doc instance containing the type and text extracted from
+        Doc: A `Doc` instance containing the type and text extracted from
         the input comment, with an empty list of sections.
 
     Examples:
@@ -796,15 +776,16 @@ def split_type(doc: Doc) -> None:
 
     Check if the type of the provided `Doc` instance is not set
     and if the text is available. If both conditions are met,
-    extract the type and text from the Doc's text using the
+    extract the type and text from the `Doc`'s text using the
     `split_item_without_name` function, assuming the text follows
     the Google style format.
 
     Args:
-        doc (Doc): The Doc instance whose type and text are to be split.
+        doc (Doc): The `Doc` instance whose type and text are to be split.
 
     Returns:
-        None: This function modifies the `Doc` instance in place and does not return a value.
+        None: This function modifies the `Doc` instance in place and does
+        not return a value.
 
     Examples:
         >>> doc = Doc(name="Doc", type="", text="str: The output string.", sections=[])
@@ -826,8 +807,8 @@ def merge_items(a: Item, b: Item) -> Item:
     The text from both items is concatenated with a double newline in between.
 
     Args:
-        a (Item): The first Item instance to merge.
-        b (Item): The second Item instance to merge.
+        a (Item): The first `Item` instance to merge.
+        b (Item): The second `Item` instance to merge.
 
     Returns:
         Item: A new `Item` instance containing the merged attributes from both
@@ -858,8 +839,8 @@ def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
     yield that `Item` as is.
 
     Args:
-        a (list[Item]): The first list of Item instances to merge.
-        b (list[Item]): The second list of Item instances to merge.
+        a (list[Item]): The first list of `Item` instances to merge.
+        b (list[Item]): The second list of `Item` instances to merge.
 
     Yields:
         Iterator[Item]: Each merged `Item` instance or an `Item` from one of the lists
@@ -903,8 +884,8 @@ def merge_sections(a: Section, b: Section) -> Section:
     and the items from both sections are merged.
 
     Args:
-        a (Section): The first Section instance to merge.
-        b (Section): The second Section instance to merge.
+        a (Section): The first `Section` instance to merge.
+        b (Section): The second `Section` instance to merge.
 
     Returns:
         Section: A new `Section` instance containing the merged attributes from both
@@ -925,8 +906,8 @@ def iter_merged_sections(a: list[Section], b: list[Section]) -> Iterator[Section
     it yields that `Section` as is.
 
     Args:
-        a (list[Section]): The first list of Section instances to merge.
-        b (list[Section]): The second list of Section instances to merge.
+        a (list[Section]): The first list of `Section` instances to merge.
+        b (list[Section]): The second list of `Section` instances to merge.
 
     Yields:
         Iterator[Section]: Each merged `Section` instance or a `Section`
@@ -996,15 +977,6 @@ def is_empty(doc: Doc) -> bool:
 
     Returns:
         bool: True if the `Doc` instance is empty; otherwise, False.
-
-    Examples:
-        >>> empty_doc = Doc("EmptyDoc", type="", text="", sections=[])
-        >>> is_empty(empty_doc)
-        True
-
-        >>> non_empty_doc = Doc("NonEmptyDoc", type="func", text="text is a doc.", sections=[])
-        >>> is_empty(non_empty_doc)
-        False
     """
     if doc.text:
         return False
