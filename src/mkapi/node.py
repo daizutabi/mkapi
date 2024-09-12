@@ -568,7 +568,7 @@ def iter_methods_from_class(
 
         if isinstance(child, Definition):
             if isinstance(child.node, ast.FunctionDef | ast.AsyncFunctionDef):
-                if mkapi.ast.is_property(child.node):
+                if not mkapi.ast.is_function(child.node):
                     continue
 
                 if not private and name.startswith("_") and not name.startswith("__"):

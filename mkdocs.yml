@@ -41,8 +41,8 @@ plugins:
   - mkapi:
       enabled: true
       config: config.py
-      exclude:
-        - examples.usage
+      # exclude:
+      #   - examples._usage
       debug: true
 markdown_extensions:
   - pymdownx.magiclink
@@ -62,7 +62,8 @@ nav:
       - usage/config.md
   - Reference:
       - $api:src/mkapi.***
-  - Examples: $api:src/examples.***
+  # - Examples:
+  #     - $api:src/examples.***
   # - Jinja2:
   #     - $api:src/jinja2.***
   # - Schemdraw:

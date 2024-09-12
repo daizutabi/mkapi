@@ -13,9 +13,13 @@ two modules: `google.py` and `numpy.py`.
 - `google.py`: [Example Google Style Python Docstrings][google]
 - `numpy.py`: [Example NumPy Style Python Docstrings][numpy]
 
-
 !!! note
-    The style guides in `google.py` and `numpy.py` are directly borrowed from the [Napoleon][napoleon] project. We acknowledge that these modules replicate the original content and respect the copyright of the Napoleon project. For more details, please refer to the official Napoleon project site.
+    The content of `google.py` and `numpy.py` is directly borrowed
+    from the [Napoleon][napoleon] project.
+    We acknowledge that these modules replicate the original content
+    and respect the copyright of the Napoleon project.
+    For more details, please refer to the official
+    [Napoleon project site][napoleon].
 
 [napoleon]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/
 [google]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html
@@ -69,6 +73,10 @@ The content of the `examples` package is simply a one-line summary:
 ```python title="examples/__init__.py"
 --8<-- "tests/examples/__init__.py"
 ```
+
+The `examples` package contains a `examples.styles` submodule.
+A Module section is automatically generated and the `examples.styles` submodule
+is listed in this section.
 
 ## Package with `__all__`
 
@@ -148,7 +156,6 @@ In this case, the full name is:
 You can check this name by hovering your mouse cursor over the
 class name `ExampleClass` as shown below.
 
-
 <div markdown="1" style="border: 3px dashed #22772288;">
 ::: examples.styles.google.ExampleClass
 </div>
@@ -156,7 +163,6 @@ class name `ExampleClass` as shown below.
 !!! note
     In docstrings of `google.py`, the `__init__` method is not enclosed in backticks,
     which results in it being emphasized in Markdown.
-
 
 ## Function
 

@@ -30,8 +30,10 @@ from mkapi.object import (
 )
 from mkapi.utils import (
     find_item_by_name,
+    find_submodule_names,
     is_enum,
     is_identifier,
+    is_package,
     iter_attribute_names,
     iter_identifiers,
     split_module_name,
@@ -141,6 +143,9 @@ class Parser:
     def _iter_summary_sections(self) -> Iterator[Section]:
         if isinstance(self.obj, Module):
             if section := create_classes_from_module(self.name):
+                yield section
+
+            if section := create_modules_from_module(self.name):
                 yield section
 
         if isinstance(self.obj, Module):
@@ -489,7 +494,7 @@ def create_summary_item(name: str) -> Item | None:
 
     name_set = parser.parse_name_set()
     summary = parser.parse_first_paragraph()
-    name = f"[{name_set.node.names[-1]}][{name_set.node.id}]"
+    name = f"[{name_set.node.names[-1]}][{PREFIX}{name_set.node.id}]"
     return Item(name, None, summary)
 
 
@@ -500,6 +505,23 @@ def create_classes_from_module(module: str) -> Section | None:
             items.append(item)
 
     return Section("Classes", None, "", items) if items else None
+
+
+def create_modules_from_module(module: str) -> Section | None:
+    if not is_package(module):
+        return None
+
+    items = []
+    for name in find_submodule_names(module):
+        # skip private submodules
+        # TODO: add config for this
+        if name.split(".")[-1].startswith("_"):
+            continue
+
+        if item := create_summary_item(name):
+            items.append(item)
+
+    return Section("Modules", None, "", items) if items else None
 
 
 def create_functions_from_module(module: str) -> Section | None:
