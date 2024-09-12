@@ -840,7 +840,8 @@ def get_object(name: str, module: str | None = None) -> Object | None:
 
 
 def get_fullname_from_object(name: str, obj: Object) -> str | None:
-    """Return the fully qualified name for `name` relative to the given `Object` instance.
+    """Return the fully qualified name for `name` relative to the
+    given `Object` instance.
 
     Construct the fully qualified name for `name` based
     on the context of the provided `Object` instance.

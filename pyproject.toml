@@ -67,7 +67,8 @@ exclude_lines = [
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-exclude = ["google.py", 'numpy.py']
+exclude = ["google.py", "numpy.py"]
+select = ["E", "W", "F", "I"]
 
 [tool.ruff.lint]
 unfixable = ["F401", "RUF100"]

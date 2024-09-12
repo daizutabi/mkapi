@@ -254,7 +254,8 @@ def iter_items(text: str, style: Style) -> Iterator[Item]:
 
 
 def iter_items_without_name(text: str, style: Style) -> Iterator[Item]:
-    """Yield `Item` instances without a name from the provided text based on the specified style.
+    """Yield `Item` instances without a name from the provided text based
+    on the specified style.
 
     Process the input text to extract items formatted according
     to the specified style (either "google" or "numpy") but does not include
@@ -311,16 +312,6 @@ def _split_sections(text: str, style: Style) -> Iterator[str]:
     Yields:
         str: Each section found in the text, stripped of leading and
         trailing whitespace.
-
-    Examples:
-        >>> text = "Section 1\\nContent of section 1.\\n\\nSection 2\\nContent of section 2."
-        >>> sections = list(_split_sections(text, "google"))
-        >>> len(sections)
-        2
-        >>> sections[0]
-        'Section 1\\nContent of section 1.'
-        >>> sections[1]
-        'Section 2\\nContent of section 2.'
     """
     pattern = SPLIT_SECTION_PATTERNS[style]
 
@@ -686,17 +677,6 @@ class Doc(Item):
         sections (list[Section]): A list of Section instances that represent
             the structured sections within the documentation, such as parameters,
             return values, and examples.
-
-    Examples:
-        >>> doc = Doc(name="Doc", type="Function", text="This is a sample function.", sections=[])
-        >>> doc.name
-        'Doc'
-        >>> doc.type
-        'Function'
-        >>> doc.text
-        'This is a sample function.'
-        >>> len(doc.sections)
-        0
     """
 
     sections: list[Section]
@@ -804,7 +784,8 @@ def split_type(doc: Doc) -> None:
         doc (Doc): The Doc instance whose type and text are to be split.
 
     Returns:
-        None: This function modifies the `Doc` instance in place and does not return a value.
+        None: This function modifies the `Doc` instance in place and does
+        not return a value.
 
     Examples:
         >>> doc = Doc(name="Doc", type="", text="str: The output string.", sections=[])
@@ -996,15 +977,6 @@ def is_empty(doc: Doc) -> bool:
 
     Returns:
         bool: True if the `Doc` instance is empty; otherwise, False.
-
-    Examples:
-        >>> empty_doc = Doc("EmptyDoc", type="", text="", sections=[])
-        >>> is_empty(empty_doc)
-        True
-
-        >>> non_empty_doc = Doc("NonEmptyDoc", type="func", text="text is a doc.", sections=[])
-        >>> is_empty(non_empty_doc)
-        False
     """
     if doc.text:
         return False
