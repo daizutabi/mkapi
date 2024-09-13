@@ -178,6 +178,16 @@ def test_link_without_fullname():
     assert m == '[x.y](a.md#x.y "x.y")'
 
 
+def test_link_without_fullname_backticks():
+    from mkapi.page import LINK_PATTERN, URIS, _link
+
+    URIS["N"] = {"x.y": "q/s/a.md"}
+    m = LINK_PATTERN.match("[`x.y`][]")
+    assert m
+    m = _link(m, "q/r/a.md", "N", {"N": "nn", "source": "S"})
+    assert m == '[`x.y`](../s/a.md#x.y "x.y")'
+
+
 def test_page_convert_object_page():
     from mkapi.page import URIS, Page
     from mkapi.renderer import load_templates

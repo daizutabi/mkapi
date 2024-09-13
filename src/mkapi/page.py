@@ -166,6 +166,8 @@ def _link(
     name, fullname = match.groups()
     if not fullname:
         fullname = name
+        if name.startswith("`") and name.endswith("`"):
+            fullname = name[1:-1]
 
     asname = ""
 
