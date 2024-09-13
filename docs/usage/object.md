@@ -74,8 +74,8 @@ The content of the `examples` package is simply a one-line summary:
 --8<-- "tests/examples/__init__.py"
 ```
 
-The `examples` package contains a `examples._styles` submodule.
-A **Modules** section is automatically generated and the `examples._styles` submodule
+The `examples` package contains a `example._styles` submodule.
+A **Modules** section is automatically generated and the `example._styles` submodule
 is listed in this section.
 
 ## Package with `__all__`
@@ -89,18 +89,18 @@ names should be imported when `from package import *` is used.
 MkAPI recognizes the `__all__` attribute and automatically lists the objects,
 categorizing them by type (*class* or *function*).
 
-In our example, the `examples._styles` package has the `__all__` attribute.
+In our example, the `example._styles` package has the `__all__` attribute.
 Check the output:
 
 ```markdown
-::: examples._styles
+::: example._styles
 ```
 
 <div markdown="1" style="border: 3px dashed #22772288;">
-::: examples._styles
+::: example._styles
 </div>
 
-In the example above, the documentation for the `examples._styles`
+In the example above, the documentation for the `example._styles`
 object includes a **Classes** section featuring two classes:
 `ExampleClassGoogle` and `ExampleClassNumPy`.
 These names link to the object documentation for easy navigation,
@@ -115,7 +115,7 @@ Below is the source code of `examples/styles/__init__.py`.
 
 Both modules (`google` and `numpy`) contain classes with the same name,
 `ExampleClass`.
-The parent package `examples._styles` uses import statements with alias names
+The parent package `example._styles` uses import statements with alias names
 (`ExampleClassGoogle` or `ExampleClassNumPy`) to distinguish between these two classes.
 The **Classes** section displays these alias names.
 
@@ -125,11 +125,11 @@ A Python module consists of classes, functions, or attributes as its members.
 MkAPI automatically adds a list of members.
 
 ```markdown
-::: examples._styles.google
+::: example._styles.google
 ```
 
 <div markdown="1" style="border: 3px dashed #22772288;">
-::: examples._styles.google
+::: example._styles.google
 </div>
 
 !!! warning
@@ -140,24 +140,24 @@ MkAPI automatically adds a list of members.
 The final two sections of this page cover module members.
 The syntax to embed these objects is the same as for packages or modules.
 
-The `examples._styles.google` module contains a class
+The `example._styles.google` module contains a class
 named `ExampleClass`. You can write it like this:
 
 ```markdown
-::: examples._styles.google.ExampleClass
+::: example._styles.google.ExampleClass
 ```
 
 Another useful feature is that the heading of the object documentation
 contains a tooltip that shows the full name of the object.
 In this case, the full name is:
 
-    examples._styles.google.ExampleClass
+    example._styles.google.ExampleClass
 
 You can check this name by hovering your mouse cursor over the
 class name `ExampleClass` as shown below.
 
 <div markdown="1" style="border: 3px dashed #22772288;">
-::: examples._styles.google.ExampleClass
+::: example._styles.google.ExampleClass
 </div>
 
 !!! note
@@ -170,11 +170,11 @@ Functions can also be embedded in a Markdown source
 in the same way as described above.
 
 ```markdown
-::: examples._styles.google.module_level_function
+::: example._styles.google.module_level_function
 ```
 
 <div markdown="1" style="border: 3px dashed #22772288;">
-::: examples._styles.google.module_level_function
+::: example._styles.google.module_level_function
 </div>
 
 Now, you might be wondering if you have to write all of the

@@ -28,6 +28,7 @@ theme:
   features:
     - content.code.annotate
     - content.tooltips
+    - navigation.expand
     - navigation.footer
     - navigation.indexes
     - navigation.instant
@@ -62,8 +63,7 @@ nav:
       - usage/config.md
   - Reference:
       - $api:src/mkapi.***
-  - Examples:
-      - $api:src/examples.***
+  - Examples: $api:src/examples.***
   # - Jinja2:
   #     - $api:src/jinja2.***
   # - Schemdraw:
