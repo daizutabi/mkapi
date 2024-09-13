@@ -144,3 +144,11 @@ def test_get_markdown_text_module_plugins():
     assert x == "a [`MkDocsConfig`][__mkapi__.mkdocs.config.defaults.MkDocsConfig] b"
     x = get_markdown_text("a [b] c", replace)
     assert x == "a [b] c"
+
+
+def test_get_markdown_type_none():
+    from mkapi.parser import get_markdown_type
+
+    x = get_markdown_type(None, None)
+    assert x == ""
+    from mkapi.parser import get_markdown_type
