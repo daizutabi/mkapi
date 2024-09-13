@@ -1,12 +1,12 @@
-"""A module"""
+"""Module B."""
 
 
-class A:
-    """A class."""
+class ClassB:
+    """ClassB."""
 
-    def method(self):
-        """A method."""
+    def method_b(self):
+        """method_b."""
 
 
-def f():
-    """A function."""
+def func_b():
+    """func_b."""

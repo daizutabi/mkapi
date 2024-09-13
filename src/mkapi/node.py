@@ -446,6 +446,9 @@ def iter_module_members(
     Traverse the Abstract Syntax Tree (AST) and yield the names and objects of
     the members of the given module.
 
+    The first element returned in the tuple is the `name`.
+    When `import module`, `eval(f"{module}.{name}")` should be evaluable.
+
     Args:
         module (str): The name of the module to iterate over.
         private (bool): Whether to include private members.
@@ -492,7 +495,7 @@ def _iter_module_members(
     members = parse_module(module)
 
     for name, obj in members:
-        if is_package(module):
+        if is_package(module):  # module?
             if isinstance(obj, Module) and obj.name.startswith(module):
                 yield name, obj
 
