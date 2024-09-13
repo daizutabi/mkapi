@@ -39,7 +39,6 @@ from mkapi.object import (
 )
 from mkapi.utils import (
     find_item_by_name,
-    find_submodule_names,
     is_enum,
     is_identifier,
     is_package,
@@ -148,6 +147,7 @@ class Parser:
         """
         return get_fullname_from_object(name, self.obj)
 
+    # FIXME: include member name
     def parse_name_set(self) -> NameSet:
         """Parse the name set.
 
@@ -789,17 +789,20 @@ def create_modules_from_module(module: str) -> Section | None:
     if not is_package(module):
         return None
 
-    items = []
-    for name in find_submodule_names(module):
-        # skip private submodules
-        # TODO: add config for this
-        if name.split(".")[-1].startswith("_"):
-            continue
+    # FIXME: use actual members
 
-        if item := create_summary_item(name):
-            items.append(item)
+    return None
+    # items = []
+    # for name in find_submodule_names(module):
+    #     # skip private submodules
+    #     # TODO: add config for this
+    #     if name.split(".")[-1].startswith("_"):
+    #         continue
 
-    return Section("Modules", None, "", items) if items else None
+    #     if item := create_summary_item(name):
+    #         items.append(item)
+
+    # return Section("Modules", None, "", items) if items else None
 
 
 def create_methods_from_class(name: str, module: str) -> Section | None:

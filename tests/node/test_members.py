@@ -15,7 +15,7 @@ def test_module_members_package_jinja():
 def test_module_members_package_alias():
     from mkapi.node import iter_module_members
 
-    members = [m for m, _ in iter_module_members("examples.styles")]
+    members = [m for m, _ in iter_module_members("examples._styles")]
     assert "ExampleClassGoogle" in members
     assert "ExampleClassNumPy" in members
     assert "ExampleClassGoogle.readonly_property" in members
@@ -71,8 +71,8 @@ def test_module_members_special(special: bool):
         "mkapi.node",
         "mkapi.object",
         "jinja2",
-        "examples.styles.google",
-        "examples.styles",
+        "examples._styles.google",
+        "examples._styles",
     ],
 )
 def test_module_members_have_objects(module: str):
@@ -107,7 +107,7 @@ def test_iter_classes_from_module_export():
 def test_iter_classes_from_module_alias():
     from mkapi.node import iter_classes_from_module
 
-    classes = list(iter_classes_from_module("examples.styles"))
+    classes = list(iter_classes_from_module("examples._styles"))
     assert len(classes) == 2
     assert "ExampleClassGoogle" in classes
     assert "ExampleClassNumPy" in classes

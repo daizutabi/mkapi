@@ -94,8 +94,8 @@ class Page:
 
                 return False
 
-            if kind == TemplateKind.OBJECT and parser.name == self.name:
-                return False
+            # if kind == TemplateKind.OBJECT and parser.name == self.name:
+            #     return False
 
             return kind != TemplateKind.SOURCE
 
