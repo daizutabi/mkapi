@@ -551,7 +551,7 @@ def iter_functions_from_module(
         str: The names of the functions in the given module.
     """
     for name, obj in iter_module_members(module, private, special, child_only=True):
-        if isinstance(obj, Definition) and obj.module == module:
+        if isinstance(obj, Definition):
             if isinstance(obj.node, ast.FunctionDef | ast.AsyncFunctionDef):
                 yield name
 
