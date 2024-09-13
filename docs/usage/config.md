@@ -116,13 +116,6 @@ def toc_title(name: str, depth: int) -> str:
 ## Features setting
 
 MkAPI can be used with any MkDocs theme.
-However, we highly recommend using the
-[Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)
-theme due to its exceptional navigation features
-and user-friendly design. Below are the recommended settings
-to enhance your documentation experience:
-
-MkAPI can be used with any MkDocs theme.
 However, we suggest considering the
 [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)
 theme as one of the options due to its exceptional
