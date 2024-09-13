@@ -190,6 +190,7 @@ def _link(
 
     if uri := URIS[namespace].get(fullname):
         uri = os.path.relpath(uri, PurePath(src_uri).parent)
+        uri = uri.replace("\\", "/")  # Normalize for Windows
         return f'[{name}]({uri}#{fullname} "{fullname}")'
 
     if from_mkapi:
