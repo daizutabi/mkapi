@@ -128,7 +128,7 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
 
 
 OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.M)
-LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
+LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]*?)\]")
 
 
 def convert_markdown(
@@ -164,6 +164,11 @@ def _link(
     match: re.Match, src_uri: str, namespace: str, anchors: dict[str, str]
 ) -> str:
     name, fullname = match.groups()
+    if not fullname:
+        fullname = name
+        if name.startswith("`") and name.endswith("`"):
+            fullname = name[1:-1]
+
     asname = ""
 
     if m := OBJECT_LINK_PATTERN.match(fullname):
@@ -185,6 +190,7 @@ def _link(
 
     if uri := URIS[namespace].get(fullname):
         uri = os.path.relpath(uri, PurePath(src_uri).parent)
+        uri = uri.replace("\\", "/")  # Normalize for Windows
         return f'[{name}]({uri}#{fullname} "{fullname}")'
 
     if from_mkapi:
