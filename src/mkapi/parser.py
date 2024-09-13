@@ -206,14 +206,14 @@ class Parser:
 
         return bases
 
-    def parse_first_paragraph(self) -> str:
-        """Parse the first paragraph for use as a summary.
+    def parse_summary(self) -> str:
+        """Parse the summary.
 
         Returns:
-            str: The first paragraph.
+            str: The summary.
         """
-        first_paragraph = self.obj.doc.text.split("\n\n", maxsplit=1)[0]
-        return get_markdown_text(first_paragraph, self.replace_from_object)
+        summary = self.obj.doc.text.split("\n\n", maxsplit=1)[0]
+        return get_markdown_text(summary, self.replace_from_object)
 
     def parse_doc(self) -> Doc:
         """Parse the doc.
@@ -238,11 +238,10 @@ class Parser:
             if section := create_classes_from_module(self.name):
                 yield section
 
-            if section := create_modules_from_module(self.name):
+            if section := create_functions_from_module(self.name):
                 yield section
 
-        if isinstance(self.obj, Module):
-            if section := create_functions_from_module(self.name):
+            if section := create_modules_from_module(self.name):
                 yield section
 
         if isinstance(self.obj, Class) and self.module:
@@ -725,7 +724,7 @@ def create_summary_item(name: str) -> Item | None:
         return None
 
     name_set = parser.parse_name_set()
-    summary = parser.parse_first_paragraph()
+    summary = parser.parse_summary()
     name = f"[{name_set.node.names[-1]}][{PREFIX}{name_set.node.id}]"
     return Item(name, None, summary)
 
@@ -750,6 +749,27 @@ def create_classes_from_module(module: str) -> Section | None:
             items.append(item)
 
     return Section("Classes", None, "", items) if items else None
+
+
+def create_functions_from_module(module: str) -> Section | None:
+    """
+    Create a Functions section from the given module.
+
+    Take a module name, and iterate over the functions in the module.
+    For each function, create a summary item and add it to the Functions section.
+
+    Args:
+        module (str): The name of the module.
+
+    Returns:
+        Section | None: The Functions section if created, otherwise None.
+    """
+    items = []
+    for name in iter_functions_from_module(module):
+        if item := create_summary_item(f"{module}.{name}"):
+            items.append(item)
+
+    return Section("Functions", None, "", items) if items else None
 
 
 def create_modules_from_module(module: str) -> Section | None:
@@ -780,27 +800,6 @@ def create_modules_from_module(module: str) -> Section | None:
             items.append(item)
 
     return Section("Modules", None, "", items) if items else None
-
-
-def create_functions_from_module(module: str) -> Section | None:
-    """
-    Create a Functions section from the given module.
-
-    Take a module name, and iterate over the functions in the module.
-    For each function, create a summary item and add it to the Functions section.
-
-    Args:
-        module (str): The name of the module.
-
-    Returns:
-        Section | None: The Functions section if created, otherwise None.
-    """
-    items = []
-    for name in iter_functions_from_module(module):
-        if item := create_summary_item(f"{module}.{name}"):
-            items.append(item)
-
-    return Section("Functions", None, "", items) if items else None
 
 
 def create_methods_from_class(name: str, module: str) -> Section | None:
