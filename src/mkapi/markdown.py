@@ -580,8 +580,9 @@ def create_admonition(name: str, title: str, text: str) -> str:
         >>> name = "warning"
         >>> title = "Caution"
         >>> text = "This is a warning message."
-        >>> create_admonition(name, title, text)
-        '!!! warning "Caution"\\n    This is a warning message.'
+        >>> print(create_admonition(name, title, text))
+        !!! warning "Caution"
+            This is a warning message.
     """
     lines = [f'!!! {name} "{title}"']
     lines.extend("    " + line if line else "" for line in text.splitlines())
