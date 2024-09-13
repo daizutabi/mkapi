@@ -457,11 +457,10 @@ def iter_module_members(
     """
     names = set()
     for name, obj in _iter_module_members(module, child_only):
-        last = name.split(".")[-1]
-        if not private and last.startswith("_") and not last.startswith("__"):
+        if not private and _is_private(name):
             continue
 
-        if not special and last.startswith("__"):
+        if not special and _is_special(name):
             continue
 
         if name in names:
@@ -469,6 +468,22 @@ def iter_module_members(
 
         names.add(name)
         yield name, obj
+
+
+def _is_private(name: str) -> bool:
+    for name_ in name.split("."):
+        if name_.startswith("_") and not name_.startswith("__"):
+            return True
+
+    return False
+
+
+def _is_special(name: str) -> bool:
+    for name_ in name.split("."):
+        if name_.startswith("__"):
+            return True
+
+    return False
 
 
 def _iter_module_members(
@@ -488,7 +503,7 @@ def _iter_module_members(
 
         elif isinstance(obj, Definition) and obj.module == module:
             yield name, obj
-            if not child_only:
+            if not child_only and isinstance(obj.node, ast.ClassDef):
                 yield from _iter_children_from_definition(obj, name)
 
 

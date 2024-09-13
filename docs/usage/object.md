@@ -75,7 +75,7 @@ The content of the `examples` package is simply a one-line summary:
 ```
 
 The `examples` package contains a `examples.styles` submodule.
-A Module section is automatically generated and the `examples.styles` submodule
+A **Modules** section is automatically generated and the `examples.styles` submodule
 is listed in this section.
 
 ## Package with `__all__`
@@ -103,7 +103,8 @@ Check the output:
 In the example above, the documentation for the `examples.styles`
 object includes a **Classes** section featuring two classes:
 `ExampleClassGoogle` and `ExampleClassNumPy`.
-These names link to the object documentation for easy navigation.
+These names link to the object documentation for easy navigation,
+if the objects are defined in the current MkDocs project.
 A summary line for each class is also provided for convenience.
 
 Below is the source code of `examples/styles/__init__.py`.
@@ -121,7 +122,6 @@ The **Classes** section displays these alias names.
 ## Module
 
 A Python module consists of classes, functions, or attributes as its members.
-Module documentation can be a docstring written by the author.
 MkAPI automatically adds a list of members.
 
 ```markdown
