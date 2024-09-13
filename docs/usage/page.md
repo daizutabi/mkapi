@@ -179,7 +179,6 @@ There are three effective ways to collect modules:
     - `README.md` serves as an index page for packages,
       corresponding to `__init__.py`.
 
-
 <!--
 - Section and page titles can be configured programmatically.
       See [Configuration](config.md).

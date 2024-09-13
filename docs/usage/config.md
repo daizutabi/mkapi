@@ -33,7 +33,6 @@ starting with `test_` by using the pattern `package.subpackage.test_*`.
 !!! note
     Module names starting with `_` are always excluded.
 
-
 <!--
 
 ## Configuration script
@@ -93,29 +92,26 @@ if TYPE_CHECKING:
 
     from mkapi.plugins import MkApiPlugin
 
-
 def before_on_config(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     """Called before `on_config` event of MkAPI plugin."""
 
-
 def after_on_config(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     """Called after `on_config` event of MkAPI plugin."""
-
 
 def page_title(name: str, depth: int) -> str:
     """Return a page title."""
     return name
 
-
 def section_title(name: str, depth: int) -> str:
     """Return a section title."""
     return name
-
 
 def toc_title(name: str, depth: int) -> str:
     """Return a toc title."""
     return name.split(".")[-1]  # Remove prefix. Default behavior.
 ```
+
+-->
 
 ## Features setting
 
@@ -185,5 +181,3 @@ Discover more about
 By considering these features, you can create a more intuitive
 and visually appealing documentation experience that encourages
 users to explore and utilize your library effectively.
-
--->
