@@ -141,11 +141,41 @@ def test_link():
 def test_link_not_from_mkapi():
     from mkapi.page import LINK_PATTERN, URIS, _link
 
+    URIS["N"] = {"x.y": "z/a/c.md"}
+    m = LINK_PATTERN.match("[A][x.y]")
+    assert m
+    m = _link(m, "y/a.md", "N", {"N": "nn", "source": "S"})
+    assert m == '[A](../z/a/c.md#x.y "x.y")'
+
+
+def test_link_not_from_mkapi_invalid():
+    from mkapi.page import LINK_PATTERN, URIS, _link
+
     URIS["N"] = {}
     m = LINK_PATTERN.match("[A][x.y]")
     assert m
     m = _link(m, "y/a.md", "N", {"N": "nn", "source": "S"})
     assert m == "[A][x.y]"
+
+
+def test_link_backticks():
+    from mkapi.page import LINK_PATTERN, URIS, _link
+
+    URIS["N"] = {"x.y": "p/B.md"}
+    m = LINK_PATTERN.match("[`A`][x.y]")
+    assert m
+    m = _link(m, "q/r/a.md", "N", {"N": "nn", "source": "S"})
+    assert m == '[`A`](../../p/B.md#x.y "x.y")'
+
+
+def test_link_without_fullname():
+    from mkapi.page import LINK_PATTERN, URIS, _link
+
+    URIS["N"] = {"x.y": "q/r/a.md"}
+    m = LINK_PATTERN.match("[x.y][]")
+    assert m
+    m = _link(m, "q/r/a.md", "N", {"N": "nn", "source": "S"})
+    assert m == '[x.y](a.md#x.y "x.y")'
 
 
 def test_page_convert_object_page():

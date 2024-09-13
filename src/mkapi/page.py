@@ -128,7 +128,7 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
 
 
 OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.M)
-LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]+?)\]")
+LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]*?)\]")
 
 
 def convert_markdown(
@@ -164,6 +164,9 @@ def _link(
     match: re.Match, src_uri: str, namespace: str, anchors: dict[str, str]
 ) -> str:
     name, fullname = match.groups()
+    if not fullname:
+        fullname = name
+
     asname = ""
 
     if m := OBJECT_LINK_PATTERN.match(fullname):
