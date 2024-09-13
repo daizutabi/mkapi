@@ -3,6 +3,51 @@ import pytest
 from mkapi.renderer import TemplateKind
 
 
+def test_page_create_object():
+    from mkapi.page import Page, PageKind
+
+    p = Page.create_object("a/b/c.md", "x")
+    assert p.src_uri == "a/b/c.md"
+    assert p.name == "x"
+    assert p.markdown == ""
+    assert p.kind == PageKind.OBJECT
+    assert p.is_object_page()
+    assert not p.is_source_page()
+    assert p.is_api_page()
+    assert not p.is_documentation_page()
+
+
+def test_page_create_source():
+    from mkapi.page import Page, PageKind
+
+    p = Page.create_source("a/b/c.md", "x")
+    assert p.kind == PageKind.SOURCE
+    assert not p.is_object_page()
+    assert p.is_source_page()
+    assert p.is_api_page()
+    assert not p.is_documentation_page()
+
+
+def test_page_create_documentation():
+    from mkapi.page import Page, PageKind
+
+    p = Page.create_documentation("a/b/c.md", "x")
+    assert p.name == ""
+    assert p.markdown == "x"
+    assert p.kind == PageKind.DOCUMENTATION
+    assert not p.is_object_page()
+    assert not p.is_source_page()
+    assert not p.is_api_page()
+    assert p.is_documentation_page()
+
+
+def test_page_repr():
+    from mkapi.page import Page
+
+    p = Page.create_source("a/b/c.md", "x")
+    assert repr(p) == "Page('a/b/c.md')"
+
+
 def test_generate_module_markdown():
     from mkapi.page import generate_module_markdown
 
@@ -68,112 +113,72 @@ def test_convert_markdown_module(convert_markdown):
     assert isinstance(m, str)
     assert m.startswith('<h1 class="mkapi-heading" id="mkapi.doc" markdown="1">')
 
-    # markdown = convert_markdown("## ::: mkapi.ast.Transformer", "/root/a/b/c.md")
-    # assert markdown.startswith("## ::: mkapi.ast.Transformer")
+
+def test_generate_module_markdown_failure():
+    from mkapi.page import generate_module_markdown
+
+    m, names = generate_module_markdown("invalid")
+    assert m.startswith("!!! failure\n\n    module 'invalid' not found.\n")
+    assert not names
 
 
-# from pathlib import Path
+def test_link():
+    from mkapi.page import LINK_PATTERN, URIS, _link
 
-# import markdown
+    URIS["N"] = {"b.c": "y/B.md"}
 
-# import mkapi.renderer
-# from mkapi.page import (
-#     convert_html,
-#     convert_markdown,
-#     create_markdown,
-# )
-# from mkapi.utils import cache_clear
+    m = LINK_PATTERN.match("[A][__mkapi__.__a__.b.c]")
+    assert m
+    m = _link(m, "x/a.md", "N", {"N": "nn", "source": "S"})
+    assert m == ""
 
-# mkapi.renderer.load_templates()
-
-
-# def test_create_markdown_markdown():
-#     filters = ["a", "b"]
-#     names_predicate = []
-
-#     def predicate(name: str) -> bool:
-#         names_predicate.append(name)
-#         return True
-
-#     name = "mkapi.ast"
-#     m, names = create_markdown(name, filters, predicate)
-#     assert "\n\n## ::: mkapi.ast.Transformer|a|b\n\n" in m
-#     for ns in [names, names_predicate]:
-#         assert "mkapi.ast" in ns
-#         assert "mkapi.ast.unparse" in ns
-#         assert "mkapi.ast.Transformer.visit_Name" in ns
+    m = LINK_PATTERN.match("[A][__mkapi__.__N__.b.c]")
+    assert m
+    m = _link(m, "y/a.md", "N", {"N": "nn", "source": "S"})
+    assert m == '[[nn]](B.md#b.c "b.c")'
 
 
-# def test_create_object_markdown_predicate():
-#     def predicate(name: str) -> bool:
-#         if "unparse" in name:
-#             return False
-#         return True
+def test_link_not_from_mkapi():
+    from mkapi.page import LINK_PATTERN, URIS, _link
 
-#     name = "mkapi.ast"
-
-#     m, names = create_markdown(name, [], predicate)
-#     for ns in [m, names]:
-#         assert "mkapi.ast.is_function" in ns
-#         assert "mkapi.ast.unparse" not in ns
-#         assert "mkapi.ast.Transformer.unparse" not in ns
-#         assert "mkapi.ast.StringTransformer.visit_Constant" in ns
-
-#     m, names = create_markdown(name, [])
-#     for ns in [m, names]:
-#         assert "mkapi.ast.is_function" in ns
-#         assert "mkapi.ast.unparse" in ns
-#         assert "mkapi.ast.Transformer.unparse" in ns
-#         assert "mkapi.ast.StringTransformer.visit_Constant" in ns
+    URIS["N"] = {}
+    m = LINK_PATTERN.match("[A][x.y]")
+    assert m
+    m = _link(m, "y/a.md", "N", {"N": "nn", "source": "S"})
+    assert m == "[A][x.y]"
 
 
-# def test_create_markdown_failure():
-#     m, names = create_markdown("a.b.c", [])
-#     assert "!!! failure" in m
-#     assert not names
+def test_page_convert_object_page():
+    from mkapi.page import URIS, Page
+    from mkapi.renderer import load_templates
+
+    load_templates()
+
+    URIS.clear()
+    p = Page.create_object("a/b.md", "mkapi.page")
+    assert p
+    p.generate_markdown()
+
+    assert p.markdown.startswith("# ::: mkapi.page")
+    assert "## ::: mkapi.page.Page" in p.markdown
+    assert "### ::: mkapi.page.Page.generate_markdown" in p.markdown
+    assert "mkapi.page" in URIS["object"]
+    assert URIS["object"]["mkapi.page.Page"] == "a/b.md"
+
+    m = p.convert_markdown("", {"source": "S", "object": "O"})
+    assert "mkapi.page.Page.is_documentation_page" in m
 
 
-# def test_convert_markdown():
-#     source = "## ::: mkapi.objects.Object\n"
-#     path = Path("/root/a/b/c.md")
-#     paths = {}
-#     paths["object"] = {"mkapi.object.Object": Path("/root/api/x.md")}
-#     paths["source"] = {"mkapi.object.Object": Path("/root/src/x.md")}
-#     namespaces = ("object", "source")
-#     anchors = {"object": "docs", "source": "source"}
-#     m = convert_markdown(source, path, namespaces, paths, anchors)
-#     assert '<span class="mkapi-tooltip" title="mkapi">' in m
-#     assert '</span>.[Object](../../api/x.md#mkapi.objects.Object "mkapi.object.Object")' in m
-#     assert 'link">[[source]](../../src/x.md#mkapi.objects.Object "mkapi.object.Object")' in m
-#     namespaces = ("source", "object")
-#     m = convert_markdown(source, path, namespaces, paths, anchors)
-#     assert '</span>.[Object](../../src/x.md#mkapi.objects.Object "mkapi.object.Object")' in m
-#     assert 'link">[[docs]](../../api/x.md#mkapi.objects.Object "mkapi.object.Object")' in m
+def test_page_convert_source_page():
+    from mkapi.page import URIS, Page
+    from mkapi.renderer import load_templates
 
+    load_templates()
 
-# def test_convert_html():
-#     cache_clear()
-#     source = "## ::: mkapi.objects.Object\n"
-#     path = Path("/root/a/b/c.md")
-#     paths = {}
-#     paths["object"] = {"mkapi.object.Object": Path("/root/api/x.md")}
-#     paths["source"] = {"mkapi.object.Object": Path("/root/src/x.md")}
-#     paths["object"]["mkapi.object.Object.__repr__"] = Path("/root/X/x.md")
-#     namespaces = ("object", "source")
-#     anchors = {"object": "docs", "source": "source"}
-#     m = convert_markdown(source, path, namespaces, paths, anchors)
-
-#     es = ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]
-#     h = markdown.markdown(m, extensions=es)
-#     h = convert_html(h, path, paths["object"], anchors["object"])
-#     assert '<a href="../../../X/x/#mkapi.objects.Object.__repr__">[docs]</a>' in h
-
-
-# def test_create_markdown_alias():
-#     m = create_markdown("examples.styles", [])
-#     assert "# ::: examples.styles\n\n" in m[0]
-#     assert "## ::: examples.styles.ExampleClassGoogle\n\n" in m[0]
-#     assert "## ::: examples.styles.ExampleClassNumPy\n" in m[0]
-#     assert "examples.styles" in m[1]
-#     assert "examples.styles.ExampleClassGoogle" in m[1]
-#     assert "examples.styles.ExampleClassNumPy" in m[1]
+    URIS.clear()
+    p = Page.create_source("a/b.md", "mkapi.page")
+    assert p
+    p.generate_markdown()
+    m = p.convert_markdown("", {"source": "S", "object": "O"})
+    assert '.[page](b.md#mkapi.page "mkapi.page")</h1>' in m
+    assert "class Page:## __mkapi__.mkapi.page.Page" in m

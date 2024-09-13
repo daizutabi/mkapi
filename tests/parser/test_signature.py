@@ -83,3 +83,23 @@ def test_get_signature_attribute():
     assert isinstance(s[-1].name, ast.expr)
     assert ast.unparse(s[-1].name) == "int"
     assert s[-1].kind == "return"
+
+
+def test_signature_len():
+    from mkapi.parser import Part, PartKind, Signature
+
+    s = Signature([Part("(", PartKind.PAREN)])
+    assert len(s) == 1
+    s = Signature([Part("(", PartKind.PAREN), Part(")", PartKind.PAREN)])
+    assert len(s) == 2
+
+
+def test_get_signature_skip_self():
+    from mkapi.object import get_object
+    from mkapi.parser import get_signature
+
+    obj = get_object("mkapi.doc.Item.clone")
+    assert obj
+    s = get_signature(obj)  # type: ignore
+    assert s[0].name == "("  # no self
+    assert s[1].name == ")"

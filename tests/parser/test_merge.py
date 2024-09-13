@@ -126,7 +126,7 @@ def test_merge_attribute_enum():
     assert len(attrs) >= 3  # 3 for python 3.10, 5 for python >=3.11
     sections = cls.doc.sections
     names = ["name", "value"]
-    merge_attributes(sections, attrs, ignore_names=names, include_empty=True)
+    merge_attributes(sections, attrs, ignore_names=names, ignore_empty=False)
     section = find_item_by_name(sections, "Attributes")
     assert isinstance(section, Section)
     items = section.items
