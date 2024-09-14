@@ -233,8 +233,13 @@ def _get_source(
 
     # if isinstance(obj, Module) and "## __mkapi__." not in lines[0]:
     #     lines[0] = f"{lines[0]}## __mkapi__.{module}"
-
+    names = set()
     for child in iter_objects(obj):
+        if child.fullname in names:
+            continue
+
+        names.add(child.fullname)
+
         if not isinstance(child, (Class, Function, Attribute, Property)):
             continue
 

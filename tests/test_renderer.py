@@ -123,3 +123,16 @@ def test_render_module_invalid():
     m = render("mkapi.invalid", None, 1, "object", None)
     assert "!!! failure" in m
     assert "'mkapi.invalid' not found." in m
+
+
+def test_get_source_id_must_be_unique():
+    from mkapi.node import iter_module_members
+    from mkapi.object import Module, get_object
+    from mkapi.renderer import _get_source
+
+    obj = get_object("mkapi.object")
+    assert isinstance(obj, Module)
+    s = _get_source(obj)
+
+    for name, _ in iter_module_members("mkapi.object"):
+        assert s.count(f"## __mkapi__.mkapi.object.{name}\n") == 1
