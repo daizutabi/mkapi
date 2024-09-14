@@ -95,7 +95,7 @@ object includes:
 - A **Classes** section including two classes:
   `ClassA` and `ClassB`.
 - A **Functions** section including two functions:
-  `funcA` and `funcB`.
+  `func_a` and `func_b`.
 
 These names link to the object documentation for easy navigation,
 if the objects are defined in the current MkDocs project.
