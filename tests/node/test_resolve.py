@@ -175,3 +175,14 @@ def test_get_fullname_nested():
 
     assert get_fullname_from_module("mkapi.doc.Item.name") == "mkapi.doc.Item.name"
     assert not get_fullname_from_module("mkapi.doc.Item.mkapi")
+
+
+def test_get_fullname_method():
+    from mkapi.node import get_fullname_from_module
+
+    assert get_fullname_from_module("mkapi.doc.Item.clone") == "mkapi.doc.Item.clone"
+    assert get_fullname_from_module("Item.clone", "mkapi.doc") == "mkapi.doc.Item.clone"
+    assert get_fullname_from_module("Item", "mkapi.parser") == "mkapi.doc.Item"
+    assert (
+        get_fullname_from_module("Item.clone", "mkapi.parser") == "mkapi.doc.Item.clone"
+    )

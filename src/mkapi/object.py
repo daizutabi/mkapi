@@ -883,4 +883,7 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:
     if (obj.name == parent) and name_ != name:
         return get_fullname_from_object(name_, obj)
 
-    return get_fullname_from_module(name)
+    if name_ := get_fullname_from_module(name):
+        return name_
+
+    return get_fullname_from_module(name, obj.module)

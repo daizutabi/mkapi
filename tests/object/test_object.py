@@ -244,6 +244,17 @@ def test_get_fullname_from_object():
     assert r == "mkapi.object.Object"
 
 
+def test_get_fullname_from_object_method():
+    from mkapi.object import get_fullname_from_object, get_object
+
+    x = get_object("mkapi.doc.merge")
+    assert x
+    r = get_fullname_from_object("Item", x)
+    assert r == "mkapi.doc.Item"
+    r = get_fullname_from_object("Item.clone", x)
+    assert r == "mkapi.doc.Item.clone"
+
+
 def test_get_object_asname():
     from mkapi.object import get_object
 

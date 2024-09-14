@@ -40,5 +40,9 @@ def func_a(x: int) -> int:
 
     Returns:
         An integer.
+
+    See Also:
+        - `ClassA.method_a`
+        - [`func_b`][example.sub.mod_b.func_b]
     """
     return 2 * x
