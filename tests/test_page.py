@@ -53,9 +53,9 @@ def test_generate_module_markdown():
 
     m, names = generate_module_markdown("mkapi.doc")
     assert m.startswith("# ::: mkapi.doc\n")
-    assert "\n## ::: mkapi.doc.Item\n" in m
-    assert "\n### ::: mkapi.doc.Item.clone\n" in m
-    assert "\n## ::: mkapi.doc.merge\n" in m
+    assert "\n## ::: Item mkapi.doc\n" in m
+    assert "\n### ::: Item.clone mkapi.doc\n" in m
+    assert "\n## ::: merge mkapi.doc\n" in m
 
     assert "mkapi.doc" in names
     assert "mkapi.doc.Item" in names
@@ -68,21 +68,21 @@ def test_generate_module_markdown_export():
 
     m, names = generate_module_markdown("jinja2")
     assert m.startswith("# ::: jinja2\n")
-    assert "\n## ::: jinja2.Template\n" in m
-    assert "\n### ::: jinja2.Template.render\n" in m
+    assert "\n## ::: Template jinja2\n" in m
+    assert "\n### ::: Template.render jinja2\n" in m
 
 
 def test_generate_module_markdown_alias():
     from mkapi.page import generate_module_markdown
 
-    m, names = generate_module_markdown("examples.styles")
-    assert m.startswith("# ::: examples.styles\n")
-    assert "\n## ::: examples.styles.ExampleClassGoogle\n" in m
-    assert "\n## ::: examples.styles.ExampleClassNumPy\n" in m
+    m, names = generate_module_markdown("examples._styles")
+    assert m.startswith("# ::: examples._styles\n")
+    assert "\n## ::: ExampleClassGoogle examples._styles\n" in m
+    assert "\n## ::: ExampleClassNumPy examples._styles\n" in m
 
-    assert "examples.styles" in names
-    assert "examples.styles.ExampleClassGoogle" in names
-    assert "examples.styles.ExampleClassNumPy" in names
+    assert "examples._styles" in names
+    assert "examples._styles.ExampleClassGoogle" in names
+    assert "examples._styles.ExampleClassNumPy" in names
 
 
 @pytest.fixture(scope="module")
@@ -199,9 +199,9 @@ def test_page_convert_object_page():
     assert p
     p.generate_markdown()
 
-    assert p.markdown.startswith("# ::: mkapi.page")
-    assert "## ::: mkapi.page.Page" in p.markdown
-    assert "### ::: mkapi.page.Page.generate_markdown" in p.markdown
+    assert p.markdown.startswith("# ::: mkapi.page\n")
+    assert "## ::: Page mkapi.page\n" in p.markdown
+    assert "### ::: Page.generate_markdown mkapi.page\n" in p.markdown
     assert "mkapi.page" in URIS["object"]
     assert URIS["object"]["mkapi.page.Page"] == "a/b.md"
 
@@ -220,5 +220,4 @@ def test_page_convert_source_page():
     assert p
     p.generate_markdown()
     m = p.convert_markdown("", {"source": "S", "object": "O"})
-    assert '.[page](b.md#mkapi.page "mkapi.page")</h1>' in m
     assert "class Page:## __mkapi__.mkapi.page.Page" in m

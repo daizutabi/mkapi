@@ -4,7 +4,7 @@ import ast
 def _get_func_type_annotations():
     from mkapi.object import Function, create_module
 
-    module = create_module("examples.styles.google")
+    module = create_module("examples._styles.google")
     assert module
     func = module.get("function_with_pep484_type_annotations")
     assert isinstance(func, Function)
@@ -79,7 +79,7 @@ def test_merge_attribute_module():
     from mkapi.parser import merge_attributes
     from mkapi.utils import find_item_by_name
 
-    module = create_module("examples.styles.google")
+    module = create_module("examples._styles.google")
     assert module
     attrs = [x for _, x in module.get_children(Type)]
     sections = module.doc.sections
@@ -96,7 +96,7 @@ def test_merge_attribute_class():
     from mkapi.parser import merge_attributes
     from mkapi.utils import find_item_by_name
 
-    cls = get_object("examples.styles.google.ExampleClass")
+    cls = get_object("examples._styles.google.ExampleClass")
     assert isinstance(cls, Class)
     attrs = [x for _, x in cls.get_children(Type)]
     assert len(attrs) == 7

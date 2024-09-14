@@ -446,6 +446,9 @@ def iter_module_members(
     Traverse the Abstract Syntax Tree (AST) and yield the names and objects of
     the members of the given module.
 
+    The first element returned in the tuple is the `name`.
+    When `import module`, `eval(f"{module}.{name}")` should be evaluable.
+
     Args:
         module (str): The name of the module to iterate over.
         private (bool): Whether to include private members.
@@ -492,19 +495,40 @@ def _iter_module_members(
     members = parse_module(module)
 
     for name, obj in members:
-        if is_package(module):
-            if isinstance(obj, Module) and obj.name.startswith(module):
-                yield name, obj
+        if isinstance(obj, Module):
+            name_ = _get_module_member_from_module(name, module)
+            if name_ and _is_exported_obj(name_, obj, module):
+                yield name_, obj
 
-            elif isinstance(obj, Definition) and obj.module.startswith(module):
-                yield name, obj
-                if not child_only:
-                    yield from _iter_children_from_definition(obj, name)
-
-        elif isinstance(obj, Definition) and obj.module == module:
+        elif isinstance(obj, Definition) and _is_exported_obj(name, obj, module):
             yield name, obj
             if not child_only and isinstance(obj.node, ast.ClassDef):
                 yield from _iter_children_from_definition(obj, name)
+
+
+def _get_module_member_from_module(name: str, module: str) -> str | None:
+    if name == module:
+        return None
+
+    if name.startswith(f"{module}."):
+        return name.split(".")[1]
+
+    elif "." in name:
+        return None
+
+    return name
+
+
+def _is_exported_obj(name: str, obj: Module | Definition, module: str) -> bool:
+    module_name = obj.name if isinstance(obj, Module) else obj.module
+
+    if is_package(module) and module_name.startswith(module):
+        return True
+
+    if module_name == module:
+        return True
+
+    return name in list_exported_names(module)
 
 
 def _iter_children_from_definition(
@@ -554,6 +578,25 @@ def iter_functions_from_module(
         if isinstance(obj, Definition):
             if isinstance(obj.node, ast.FunctionDef | ast.AsyncFunctionDef):
                 yield name
+
+
+def iter_modules_from_module(
+    module: str, private: bool = False, special: bool = False
+) -> Iterator[str]:
+    """Iterate over the modules in the given module.
+
+    Traverse the Abstract Syntax Tree (AST) and yield the names of the
+    modules in the given module.
+
+    Args:
+        module (str): The name of the module to iterate over.
+
+    Yields:
+        str: The names of the modules in the given module.
+    """
+    for name, obj in iter_module_members(module, private, special, child_only=True):
+        if isinstance(obj, Module):
+            yield name
 
 
 def iter_methods_from_class(

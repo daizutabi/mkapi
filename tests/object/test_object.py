@@ -7,7 +7,7 @@ import pytest
 def test_create_module():
     from mkapi.object import create_module
 
-    module = create_module("examples.styles.google")
+    module = create_module("examples._styles.google")
     assert module
     assert module.get("ExampleClass")
 
@@ -16,7 +16,7 @@ def test_create_function():
     from mkapi.object import Function, create_module
     from mkapi.utils import find_item_by_name
 
-    module = create_module("examples.styles.google")
+    module = create_module("examples._styles.google")
     assert module
     func = module.get("module_level_function")
     assert isinstance(func, Function)
@@ -143,7 +143,7 @@ def test_get_source_function(mkapi_objects):
 def test_get_source_examples():
     from mkapi.object import create_module, get_source
 
-    module = create_module("examples.styles.google")
+    module = create_module("examples._styles.google")
     assert module
     s = get_source(module)
     assert s
@@ -190,15 +190,15 @@ def test_is_not_child(mkapiplugin, name):
 def test_get_object_class(attr):
     from mkapi.object import get_object
 
-    module = "examples.styles.google"
+    module = "examples._styles.google"
     qualname = f"ExampleClass{attr}"
-    x = get_object(f"examples.styles.ExampleClassGoogle{attr}")
+    x = get_object(f"examples._styles.ExampleClassGoogle{attr}")
     assert x
     assert x.module == module
     assert x.qualname == qualname
     assert x.name == qualname.split(".")[-1]
 
-    x = get_object(f"ExampleClassGoogle{attr}", "examples.styles")
+    x = get_object(f"ExampleClassGoogle{attr}", "examples._styles")
     assert x
     assert x.module == module
     assert x.qualname == qualname
@@ -247,12 +247,12 @@ def test_get_fullname_from_object():
 def test_get_object_asname():
     from mkapi.object import get_object
 
-    name = "examples.styles.ExampleClassGoogle.example_method"
+    name = "examples._styles.ExampleClassGoogle.example_method"
     obj = get_object(name)
     assert obj
     assert obj.name == "example_method"
-    assert obj.module == "examples.styles.google"
-    assert obj.fullname == "examples.styles.google.ExampleClass.example_method"
+    assert obj.module == "examples._styles.google"
+    assert obj.fullname == "examples._styles.google.ExampleClass.example_method"
 
 
 def test_get_object_export():

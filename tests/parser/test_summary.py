@@ -12,11 +12,11 @@ def test_classes_fom_module():
 def test_classes_from_module_alias():
     from mkapi.parser import create_classes_from_module
 
-    name = "examples.styles"
+    name = "examples._styles"
     section = create_classes_from_module(name)
     assert section
     assert section.name == "Classes"
-    name = "[ExampleClassGoogle][__mkapi__.examples.styles.ExampleClassGoogle]"
+    name = "[ExampleClassGoogle][__mkapi__.examples._styles.ExampleClassGoogle]"
     assert section.items[0].name == name
     assert section.items[0].text.startswith("The summary")
 

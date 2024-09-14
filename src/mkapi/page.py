@@ -74,6 +74,7 @@ class Page:
 
         for name in names:
             uris[name] = self.src_uri
+            # uris.setdefault(name, self.src_uri)  # overwrite or not?
 
     def convert_markdown(self, markdown: str, anchors: dict[str, str]) -> str:
         if self.is_api_page():
@@ -114,15 +115,14 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     if not get_module_node(module):
         return f"!!! failure\n\n    module {module!r} not found.\n", []
 
-    names = [module]
     markdowns = [f"# ::: {module}"]
+    names = [module]
 
     for name, _ in iter_module_members(module, private=False, special=False):
         level = name.count(".") + 2
-        fullname = f"{module}.{name}"
-        markdown = f"{'#' * level} ::: {fullname}"
-        names.append(fullname)
+        markdown = f"{'#' * level} ::: {name} {module}"
         markdowns.append(markdown)
+        names.append(f"{module}.{name}")
 
     return "\n".join(markdowns), names
 
@@ -152,8 +152,14 @@ def _render(
     predicate: Callable[[Parser, TemplateKind], bool] | None = None,
 ) -> str:
     heading, name = match.groups()
+
+    if " " in name:
+        name, module = name.split(" ", 1)
+    else:
+        module = None
+
     level = len(heading)
-    return mkapi.renderer.render(name, level, namespace, predicate)
+    return mkapi.renderer.render(name, module, level, namespace, predicate)
 
 
 # Link for [source] or [docs]

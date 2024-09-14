@@ -26,6 +26,7 @@ from mkapi.node import (
     iter_classes_from_module,
     iter_functions_from_module,
     iter_methods_from_class,
+    iter_modules_from_module,
 )
 from mkapi.object import (
     Attribute,
@@ -55,28 +56,16 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Name:
-    """Represent a name and its full name."""
-
-    id: str
-    """The id of the name."""
-
-    fullname: str
-    """The full name of the name."""
-
-    names: list[str]
-    """A list of parts of the name split by dots."""
-
-
-@dataclass
 class NameSet:
     """Represent a name set."""
 
-    node: Name
-    """The name of the node."""
-
-    obj: Name
-    """The name of the object."""
+    kind: str
+    name: str
+    qualname: str
+    module: str | None
+    fullname: str
+    id: str
+    obj_id: str
 
 
 @dataclass
@@ -102,7 +91,7 @@ class Parser:
     """The object to parse."""
 
     @staticmethod
-    def create(name: str) -> Parser | None:
+    def create(name: str, module: str | None = None) -> Parser | None:
         """Create a `Parser` instance from a given name.
 
         Args:
@@ -112,10 +101,12 @@ class Parser:
             Parser | None: A `Parser` instance if the object is valid,
             otherwise None.
         """
-        if not (name_module := split_module_name(name)):
-            return None
+        if not module:
+            if not (name_module := split_module_name(name)):
+                return None
 
-        name, module = name_module
+            name, module = name_module
+
         obj = get_object(name, module)
 
         if not isinstance(obj, (Attribute, Class, Function, Module, Property)):
@@ -154,17 +145,20 @@ class Parser:
         Returns:
             NameSet: The name set.
         """
-        id_ = f"{self.module}.{self.name}" if self.module else self.name
-        names = [x.replace("_", "\\_") for x in self.name.split(".")]
-        fullname = get_markdown_name(id_)
-        node = Name(id_, fullname, names)
+        qualname = self.name.replace("_", "\\_")
+        obj_id = self.obj.fullname
 
-        id_ = self.obj.fullname
-        names = [x.replace("_", "\\_") for x in self.obj.qualname.split(".")]
-        fullname = get_markdown_name(id_)
-        obj = Name(id_, fullname, names)
+        if self.module:
+            module = self.module.replace("_", "\\_")
+            name = qualname.split(".")[-1]
+            fullname = f"{module}.{qualname}"
+            id_ = f"{self.module}.{self.name}"
+        else:
+            name = fullname = qualname
+            module = None
+            id_ = self.name
 
-        return NameSet(node, obj)
+        return NameSet(self.obj.kind, name, qualname, module, fullname, id_, obj_id)
 
     def parse_signature(self) -> list[tuple[str, str]]:
         """Parse the signature.
@@ -235,13 +229,23 @@ class Parser:
 
     def _iter_summary_sections(self) -> Iterator[Section]:
         if isinstance(self.obj, Module):
+            created = False
+
             if section := create_classes_from_module(self.name):
+                created = True
                 yield section
 
             if section := create_functions_from_module(self.name):
+                created = True
                 yield section
 
             if section := create_modules_from_module(self.name):
+                created = True
+                yield section
+
+            elif not created and (
+                section := create_modules_from_module_file(self.name)
+            ):
                 yield section
 
         if isinstance(self.obj, Class) and self.module:
@@ -706,9 +710,9 @@ def merge_sections(
         merge_returns(sections, obj.node.returns)
 
 
-def create_summary_item(name: str) -> Item | None:
+def create_summary_item(name: str, module: str | None) -> Item | None:
     """
-    Create a summary item for the given name.
+    Create a summary item for the given name in the given module.
 
     Take a fully qualified name, create a parser for it,
     and extract the name set and summary from the parser.
@@ -716,16 +720,18 @@ def create_summary_item(name: str) -> Item | None:
 
     Args:
         name (str): The fully qualified name of the object.
+        module (str): The name of the module.
 
     Returns:
         Item | None: The summary item if created, otherwise None.
     """
-    if not (parser := Parser.create(name)):
+    if not (parser := Parser.create(name, module)):
         return None
 
     name_set = parser.parse_name_set()
     summary = parser.parse_summary()
-    name = f"[{name_set.node.names[-1]}][{PREFIX}{name_set.node.id}]"
+    # name = f"[{name_set.node.names[-1]}][{PREFIX}{name_set.node.id}]"
+    name = f"[{name_set.name}][{PREFIX}{name_set.id}]"
     return Item(name, None, summary)
 
 
@@ -745,7 +751,7 @@ def create_classes_from_module(module: str) -> Section | None:
     """
     items = []
     for name in iter_classes_from_module(module):
-        if item := create_summary_item(f"{module}.{name}"):
+        if item := create_summary_item(name, module):
             items.append(item)
 
     return Section("Classes", None, "", items) if items else None
@@ -766,13 +772,35 @@ def create_functions_from_module(module: str) -> Section | None:
     """
     items = []
     for name in iter_functions_from_module(module):
-        if item := create_summary_item(f"{module}.{name}"):
+        if item := create_summary_item(name, module):
             items.append(item)
 
     return Section("Functions", None, "", items) if items else None
 
 
 def create_modules_from_module(module: str) -> Section | None:
+    """
+    Create a Modules section from the given module.
+
+    Take a module name, check if it is a package,
+    and iterate over the submodules in the module. For each submodule,
+    create a summary item and add it to the Modules section.
+
+    Args:
+        module (str): The name of the module.
+
+    Returns:
+        Section | None: The Modules section if created, otherwise None.
+    """
+    items = []
+    for name in iter_modules_from_module(module):
+        if item := create_summary_item(name, module):
+            items.append(item)
+
+    return Section("Modules", None, "", items) if items else None
+
+
+def create_modules_from_module_file(module: str) -> Section | None:
     """
     Create a Modules section from the given module.
 
@@ -796,7 +824,7 @@ def create_modules_from_module(module: str) -> Section | None:
         if name.split(".")[-1].startswith("_"):
             continue
 
-        if item := create_summary_item(name):
+        if item := create_summary_item(name, None):
             items.append(item)
 
     return Section("Modules", None, "", items) if items else None
@@ -818,7 +846,7 @@ def create_methods_from_class(name: str, module: str) -> Section | None:
     """
     items = []
     for method in iter_methods_from_class(name, module):
-        if item := create_summary_item(f"{module}.{name}.{method}"):
+        if item := create_summary_item(f"{name}.{method}", module):
             items.append(item)
 
     return Section("Methods", None, "", items) if items else None
