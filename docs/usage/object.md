@@ -99,7 +99,7 @@ object includes:
 
 These names link to the object documentation for easy navigation,
 if the objects are defined in the current MkDocs project.
-A summary line for each class is also provided for convenience.
+A summary line for each class and function is also provided for convenience.
 
 Below is the source code of `example/sub/__init__.py`.
 
@@ -154,10 +154,6 @@ in the same way as described above.
 <div markdown="1" style="border: 3px dashed #22772288;">
 ::: example.mod_a.func_a
 </div>
-
-Now, you might be wondering if you have to write all of the
-module members by yourself.
-The [Page mode](page.md) of MkAPI will assist you.
 
 ## Method
 

@@ -21,10 +21,10 @@ class ClassA:
 
         Args:
             x: An iterable of strings.
-            y: An instance of ClassB.
+            y: An instance of `ClassB`.
 
         Returns:
-            An instance of ClassA.
+            An instance of `ClassA`.
         """
         if not x:
             raise ValueError
