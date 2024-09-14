@@ -42,7 +42,6 @@ from mkapi.utils import (
     find_item_by_name,
     is_enum,
     is_identifier,
-    is_package,
     iter_attribute_names,
     iter_identifiers,
     split_module_name,
@@ -55,28 +54,16 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Name:
-    """Represent a name and its full name."""
-
-    id: str
-    """The id of the name."""
-
-    fullname: str
-    """The full name of the name."""
-
-    names: list[str]
-    """A list of parts of the name split by dots."""
-
-
-@dataclass
 class NameSet:
     """Represent a name set."""
 
-    node: Name
-    """The name of the node."""
-
-    obj: Name
-    """The name of the object."""
+    kind: str
+    name: str
+    qualname: str
+    module: str | None
+    fullname: str
+    id: str
+    obj_id: str
 
 
 @dataclass
@@ -150,24 +137,26 @@ class Parser:
         """
         return get_fullname_from_object(name, self.obj)
 
-    # FIXME: include member name
     def parse_name_set(self) -> NameSet:
         """Parse the name set.
 
         Returns:
             NameSet: The name set.
         """
-        id_ = f"{self.module}.{self.name}" if self.module else self.name
-        names = [x.replace("_", "\\_") for x in self.name.split(".")]
-        fullname = get_markdown_name(id_)
-        node = Name(id_, fullname, names)
+        qualname = self.name.replace("_", "\\_")
+        obj_id = self.obj.fullname
 
-        id_ = self.obj.fullname
-        names = [x.replace("_", "\\_") for x in self.obj.qualname.split(".")]
-        fullname = get_markdown_name(id_)
-        obj = Name(id_, fullname, names)
+        if self.module:
+            module = self.module.replace("_", "\\_")
+            name = qualname.split(".")[-1]
+            fullname = f"{module}.{qualname}"
+            id_ = f"{self.module}.{self.name}"
+        else:
+            name = fullname = qualname
+            module = None
+            id_ = self.name
 
-        return NameSet(node, obj)
+        return NameSet(self.obj.kind, name, qualname, module, fullname, id_, obj_id)
 
     def parse_signature(self) -> list[tuple[str, str]]:
         """Parse the signature.
@@ -729,7 +718,8 @@ def create_summary_item(name: str, module: str) -> Item | None:
 
     name_set = parser.parse_name_set()
     summary = parser.parse_summary()
-    name = f"[{name_set.node.names[-1]}][{PREFIX}{name_set.node.id}]"
+    # name = f"[{name_set.node.names[-1]}][{PREFIX}{name_set.node.id}]"
+    name = f"[{name_set.name}][{PREFIX}{name_set.id}]"
     return Item(name, None, summary)
 
 

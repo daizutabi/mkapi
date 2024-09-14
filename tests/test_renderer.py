@@ -26,9 +26,9 @@ def test_render_heading_module():
     parser = Parser.create("example._styles.google")
     assert parser
     name_set = parser.parse_name_set()
-    m = render_heading(name_set.node.id, name_set.node.fullname, 1)
+    m = render_heading(name_set, 1)
     assert '<h1 class="mkapi-heading" id="example._styles.google" markdown="1">' in m
-    assert "[example][__mkapi__.example].[\\_styles][__mkapi__.example._styles]" in m
+    assert ">example.\\_styles.google</h1>" in m
 
 
 def test_render_heading_export():
@@ -37,7 +37,7 @@ def test_render_heading_export():
     parser = Parser.create("jinja2.Template")
     assert parser
     name_set = parser.parse_name_set()
-    m = render_heading(name_set.node.id, name_set.node.fullname, 1)
+    m = render_heading(name_set, 1)
     assert '<h1 class="mkapi-heading" id="jinja2.Template" markdown="1">' in m
 
 
@@ -47,9 +47,9 @@ def test_render_heading_alias():
     parser = Parser.create("example._styles.ExampleClassGoogle")
     assert parser
     name_set = parser.parse_name_set()
-    m = render_heading(name_set.node.id, name_set.node.fullname, 1)
+    m = render_heading(name_set, 1)
     assert 'id="example._styles.ExampleClassGoogle"' in m
-    assert "[ExampleClassGoogle][__mkapi__.example._styles.ExampleClassGoogle]" in m
+    assert ">example.\\_styles.ExampleClassGoogle</h1>" in m
 
 
 def test_render_object_module():
@@ -58,7 +58,7 @@ def test_render_object_module():
     parser = Parser.create("example._styles")
     assert parser
     name_set = parser.parse_name_set()
-    m = render_object(parser.obj, name_set, "object", [], ["A", "B"])
+    m = render_object(name_set, 1, "object", [], ["A", "B"])
     assert '<p class="mkapi-object" id="example._styles" markdown="1">' in m
     x = 'class="mkapi-object-link">[object][__mkapi__.__object__.example._styles]'
     assert x in m
@@ -72,8 +72,7 @@ def test_render_object_object():
     parser = Parser.create("mkapi.node.Node")
     assert parser
     name_set = parser.parse_name_set()
-    m = render_object(parser.obj, name_set, "source", [], [])
-    print(m)
+    m = render_object(name_set, 1, "source", [], [])
     x = 'class="mkapi-object-link">[source][__mkapi__.__source__.mkapi'
     assert x in m
     assert "[Node][__mkapi__.mkapi.node.Node]" in m

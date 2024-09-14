@@ -220,5 +220,4 @@ def test_page_convert_source_page():
     assert p
     p.generate_markdown()
     m = p.convert_markdown("", {"source": "S", "object": "O"})
-    assert '.[page](b.md#mkapi.page "mkapi.page")</h1>' in m
     assert "class Page:## __mkapi__.mkapi.page.Page" in m

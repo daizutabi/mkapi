@@ -103,14 +103,12 @@ def render(
 
     name_set = parser.parse_name_set()
     if level and (not predicate or predicate(parser, TemplateKind.HEADING)):
-        node = name_set.node
-        markdowns.append(render_heading(node.id, node.fullname, level))
+        markdowns.append(render_heading(name_set, level))
 
     if not predicate or predicate(parser, TemplateKind.OBJECT):
-        obj = parser.obj
         signature = parser.parse_signature()
         bases = parser.parse_bases()
-        markdowns.append(render_object(obj, name_set, namespace, signature, bases))
+        markdowns.append(render_object(name_set, level, namespace, signature, bases))
 
     if not predicate or predicate(parser, TemplateKind.DOCUMENT):
         doc = parser.parse_doc()
@@ -122,7 +120,7 @@ def render(
     return "\n\n".join(markdowns)
 
 
-def render_heading(id_: str, fullname: str, level: int) -> str:
+def render_heading(name_set: NameSet, level: int) -> str:
     """
     Render a heading for the specified object.
 
@@ -137,12 +135,16 @@ def render_heading(id_: str, fullname: str, level: int) -> str:
     Returns:
         str: The rendered heading as a markdown string.
     """
-    return templates["heading"].render(id=id_, fullname=fullname, level=level)
+    return templates["heading"].render(
+        id=name_set.id,
+        fullname=name_set.fullname,
+        level=level,
+    )
 
 
 def render_object(
-    obj: Object,
     name_set: NameSet,
+    level: int,
     namespace: str,
     signature: list[tuple[str, str]],
     bases: list[str],
@@ -163,18 +165,15 @@ def render_object(
     Returns:
         str: The rendered object entry as a markdown string.
     """
-    if isinstance(obj, Module):
-        names = [[x, "name"] for x in name_set.node.names]
-    else:
-        names = [[x, "prefix"] for x in name_set.node.names]
-        names[-1][1] = "name"
-
     return templates["object"].render(
-        obj=obj,
-        obj_id=name_set.obj.id,
-        node_id=name_set.node.id,
+        kind=name_set.kind,
+        name=name_set.name,
+        module=name_set.module,
+        fullname=name_set.fullname,
+        id=name_set.id,
+        obj_id=name_set.obj_id,
+        level=level,
         namespace=namespace,
-        names=names,
         signature=signature,
         bases=bases,
     )

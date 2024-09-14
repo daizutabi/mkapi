@@ -74,6 +74,7 @@ class Page:
 
         for name in names:
             uris[name] = self.src_uri
+            # uris.setdefault(name, self.src_uri)  # overwrite or not?
 
     def convert_markdown(self, markdown: str, anchors: dict[str, str]) -> str:
         if self.is_api_page():
@@ -94,8 +95,8 @@ class Page:
 
                 return False
 
-            # if kind == TemplateKind.OBJECT and parser.name == self.name:
-            #     return False
+            if kind == TemplateKind.OBJECT and parser.name == self.name:
+                return False
 
             return kind != TemplateKind.SOURCE
 
