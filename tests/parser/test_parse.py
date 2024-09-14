@@ -330,9 +330,13 @@ def test_parsr_doc_summary_modules():
     parser = Parser.create(name)
     assert parser
     doc = parser.parse_doc()
-    assert len(doc.sections) == 1
-    assert doc.sections[0].name == "Modules"
-    assert doc.sections[0].items[0].name == "[styles][__mkapi__.example._styles]"
+    assert len(doc.sections) == 3
+    assert doc.sections[0].name == "Classes"
+    assert doc.sections[0].items[0].name == "[ClassA][__mkapi__.example.ClassA]"
+    assert doc.sections[1].name == "Functions"
+    assert doc.sections[1].items[0].name == "[func\\_a][__mkapi__.example.func_a]"
+    assert doc.sections[2].name == "Modules"
+    assert doc.sections[2].items[0].name == "[mod\\_a][__mkapi__.example.mod_a]"
 
 
 def test_parsr_doc_summary_classes():

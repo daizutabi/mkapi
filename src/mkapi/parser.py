@@ -793,7 +793,6 @@ def create_modules_from_module(module: str) -> Section | None:
     items = []
     for name in iter_modules_from_module(module):
         if item := create_summary_item(name, module):
-            print("SDD", item)
             items.append(item)
 
     return Section("Modules", None, "", items) if items else None
