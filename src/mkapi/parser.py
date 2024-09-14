@@ -101,7 +101,7 @@ class Parser:
     """The object to parse."""
 
     @staticmethod
-    def create(name: str) -> Parser | None:
+    def create(name: str, module: str | None = None) -> Parser | None:
         """Create a `Parser` instance from a given name.
 
         Args:
@@ -111,10 +111,12 @@ class Parser:
             Parser | None: A `Parser` instance if the object is valid,
             otherwise None.
         """
-        if not (name_module := split_module_name(name)):
-            return None
+        if not module:
+            if not (name_module := split_module_name(name)):
+                return None
 
-        name, module = name_module
+            name, module = name_module
+
         obj = get_object(name, module)
 
         if not isinstance(obj, (Attribute, Class, Function, Module, Property)):

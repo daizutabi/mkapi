@@ -1,6 +1,7 @@
 import inspect
 
 from mkapi.node import iter_module_members, parse_module
+from mkapi.object import get_object
 from mkapi.utils import list_exported_names
 
 
@@ -82,3 +83,8 @@ def test_iter_module_members_names():
     assert "mod_c_alias" in names
     assert "os" not in names
     assert "sub" in names
+
+
+def test_iter_module_members_get_object():
+    for name, _ in iter_module_members("example"):
+        assert get_object(name, "example")

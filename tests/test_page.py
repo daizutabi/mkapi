@@ -53,9 +53,9 @@ def test_generate_module_markdown():
 
     m, names = generate_module_markdown("mkapi.doc")
     assert m.startswith("# ::: mkapi.doc\n")
-    assert "\n## ::: mkapi.doc.Item\n" in m
-    assert "\n### ::: mkapi.doc.Item.clone\n" in m
-    assert "\n## ::: mkapi.doc.merge\n" in m
+    assert "\n## ::: Item mkapi.doc\n" in m
+    assert "\n### ::: Item.clone mkapi.doc\n" in m
+    assert "\n## ::: merge mkapi.doc\n" in m
 
     assert "mkapi.doc" in names
     assert "mkapi.doc.Item" in names
@@ -68,8 +68,8 @@ def test_generate_module_markdown_export():
 
     m, names = generate_module_markdown("jinja2")
     assert m.startswith("# ::: jinja2\n")
-    assert "\n## ::: jinja2.Template\n" in m
-    assert "\n### ::: jinja2.Template.render\n" in m
+    assert "\n## ::: Template jinja2\n" in m
+    assert "\n### ::: Template.render jinja2\n" in m
 
 
 def test_generate_module_markdown_alias():
@@ -77,8 +77,8 @@ def test_generate_module_markdown_alias():
 
     m, names = generate_module_markdown("example._styles")
     assert m.startswith("# ::: example._styles\n")
-    assert "\n## ::: example._styles.ExampleClassGoogle\n" in m
-    assert "\n## ::: example._styles.ExampleClassNumPy\n" in m
+    assert "\n## ::: ExampleClassGoogle example._styles\n" in m
+    assert "\n## ::: ExampleClassNumPy example._styles\n" in m
 
     assert "example._styles" in names
     assert "example._styles.ExampleClassGoogle" in names
@@ -199,9 +199,9 @@ def test_page_convert_object_page():
     assert p
     p.generate_markdown()
 
-    assert p.markdown.startswith("# ::: mkapi.page")
-    assert "## ::: mkapi.page.Page" in p.markdown
-    assert "### ::: mkapi.page.Page.generate_markdown" in p.markdown
+    assert p.markdown.startswith("# ::: mkapi.page\n")
+    assert "## ::: Page mkapi.page\n" in p.markdown
+    assert "### ::: Page.generate_markdown mkapi.page\n" in p.markdown
     assert "mkapi.page" in URIS["object"]
     assert URIS["object"]["mkapi.page.Page"] == "a/b.md"
 

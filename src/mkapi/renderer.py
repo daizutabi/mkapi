@@ -68,6 +68,7 @@ class TemplateKind(Enum):
 
 def render(
     name: str,
+    module: str | None,
     level: int,
     namespace: str,
     predicate: Callable[[Parser, TemplateKind], bool] | None = None,
@@ -92,7 +93,10 @@ def render(
     Returns:
         str: The rendered markdown string.
     """
-    if not (parser := Parser.create(name)):
+    if not (parser := Parser.create(name, module)):
+        if module:
+            return f"!!! failure\n\n    {name!r} not found in {module!r}."
+
         return f"!!! failure\n\n    {name!r} not found."
 
     markdowns = []

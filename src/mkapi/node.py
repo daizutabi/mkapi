@@ -497,10 +497,10 @@ def _iter_module_members(
     for name, obj in members:
         if isinstance(obj, Module):
             name_ = _get_module_member_from_module(name, module)
-            if name_ and _is_exported_obj(obj, module):
+            if name_ and _is_exported_obj(name_, obj, module):
                 yield name_, obj
 
-        elif isinstance(obj, Definition) and _is_exported_obj(obj, module):
+        elif isinstance(obj, Definition) and _is_exported_obj(name, obj, module):
             yield name, obj
             if not child_only and isinstance(obj.node, ast.ClassDef):
                 yield from _iter_children_from_definition(obj, name)
@@ -519,7 +519,11 @@ def _get_module_member_from_module(name: str, module: str) -> str | None:
     return name
 
 
-def _is_exported_obj(obj: Module | Definition, module: str) -> bool:
+def _is_exported_obj(name: str, obj: Module | Definition, module: str) -> bool:
+    exported_names = list_exported_names(module)
+    if exported_names and name not in exported_names:
+        return False
+
     name = obj.name if isinstance(obj, Module) else obj.module
 
     if is_package(module):
