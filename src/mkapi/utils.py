@@ -1,5 +1,5 @@
 """
-Utility functions.
+Utility functions for the application.
 
 Contain a collection of utility functions that provide various
 helper functionalities for the application. These functions are designed to
