@@ -240,7 +240,7 @@ def _link_source(match: re.Match, src_uri: str, namespace: str, anchor: str) -> 
 
 
 def _heading(match: re.Match) -> str:
-    # if match.group(1) == "1":
-    #     return match.group()
+    if match.group(1) == "1":
+        return match.group()
 
     return ""
