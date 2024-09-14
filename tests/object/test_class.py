@@ -53,7 +53,7 @@ def test_class_parameters():
     from mkapi.object import Class, create_module
     from mkapi.utils import find_item_by_name
 
-    module = create_module("example._styles.google")
+    module = create_module("examples._styles.google")
     assert module
     cls = module.get("ExampleClass")
     assert isinstance(cls, Class)
@@ -105,7 +105,7 @@ def test_iter_dataclass_parameters():
 def test_iter_attributes_from_function():
     from mkapi.object import Class, create_module
 
-    module = create_module("example._styles.google")
+    module = create_module("examples._styles.google")
     assert module
     cls = module.get("ExampleClass")
     assert isinstance(cls, Class)
@@ -116,7 +116,7 @@ def test_iter_attributes_from_function():
 def test_type():
     from mkapi.object import Attribute, Class, Property, create_module
 
-    module = create_module("example._styles.google")
+    module = create_module("examples._styles.google")
     assert module
     cls = module.get("ExampleClass")
     assert isinstance(cls, Class)
@@ -133,7 +133,7 @@ def test_type():
 def test_merge_init_doc():
     from mkapi.object import Class, create_module
 
-    module = create_module("example._styles.google")
+    module = create_module("examples._styles.google")
     assert module
     cls = module.get("ExampleClass")
     assert isinstance(cls, Class)

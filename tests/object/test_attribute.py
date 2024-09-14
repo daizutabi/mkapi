@@ -40,7 +40,7 @@ def test_merge_attributes_comment():
 def test_create_attribute_module():
     from mkapi.object import Attribute, create_module
 
-    module = create_module("example._styles.google")
+    module = create_module("examples._styles.google")
     assert module
     a = module.get("module_level_variable1")
     assert isinstance(a, Attribute)
@@ -73,7 +73,7 @@ def test_iter_init_attributes(get):
 def test_attribute_doc():
     from mkapi.object import Class, create_module
 
-    module = create_module("example._styles.google")
+    module = create_module("examples._styles.google")
     assert module
     attr = module.get("module_level_variable2")
     assert attr

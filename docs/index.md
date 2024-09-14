@@ -9,6 +9,13 @@ for developers to maintain and share their API documentation.
 MkAPI supports two popular styles of docstrings: Google style and NumPy style,
 allowing developers to choose the format that best fits their project's needs.
 
+- Google Style: [Example Google Style Python Docstrings][google]
+- NumPy Style: [Example NumPy Style Python Docstrings][numpy]
+
+<!-- [napoleon]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/ -->
+[google]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html
+[numpy]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html
+
 MkAPI is equipped with several key features that enhance the documentation
 experience:
 

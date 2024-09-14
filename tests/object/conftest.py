@@ -8,7 +8,7 @@ from mkapi.utils import get_module_node
 
 @pytest.fixture(scope="module")
 def google():
-    return get_module_node("example._styles.google")
+    return get_module_node("examples._styles.google")
 
 
 @pytest.fixture(scope="module")

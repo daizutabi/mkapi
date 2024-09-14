@@ -23,12 +23,12 @@ def test_load_templates():
 def test_render_heading_module():
     from mkapi.renderer import render_heading
 
-    parser = Parser.create("example._styles.google")
+    parser = Parser.create("examples._styles.google")
     assert parser
     name_set = parser.parse_name_set()
     m = render_heading(name_set, 1)
-    assert '<h1 class="mkapi-heading" id="example._styles.google" markdown="1">' in m
-    assert ">example.\\_styles.google</h1>" in m
+    assert '<h1 class="mkapi-heading" id="examples._styles.google" markdown="1">' in m
+    assert ">examples.\\_styles.google</h1>" in m
 
 
 def test_render_heading_export():
@@ -44,23 +44,23 @@ def test_render_heading_export():
 def test_render_heading_alias():
     from mkapi.renderer import render_heading
 
-    parser = Parser.create("example._styles.ExampleClassGoogle")
+    parser = Parser.create("examples._styles.ExampleClassGoogle")
     assert parser
     name_set = parser.parse_name_set()
     m = render_heading(name_set, 1)
-    assert 'id="example._styles.ExampleClassGoogle"' in m
-    assert ">example.\\_styles.ExampleClassGoogle</h1>" in m
+    assert 'id="examples._styles.ExampleClassGoogle"' in m
+    assert ">examples.\\_styles.ExampleClassGoogle</h1>" in m
 
 
 def test_render_object_module():
     from mkapi.renderer import render_object
 
-    parser = Parser.create("example._styles")
+    parser = Parser.create("examples._styles")
     assert parser
     name_set = parser.parse_name_set()
     m = render_object(name_set, 1, "object", [], ["A", "B"])
-    assert '<p class="mkapi-object" id="example._styles" markdown="1">' in m
-    x = 'class="mkapi-object-link">[object][__mkapi__.__object__.example._styles]'
+    assert '<p class="mkapi-object" id="examples._styles" markdown="1">' in m
+    x = 'class="mkapi-object-link">[object][__mkapi__.__object__.examples._styles]'
     assert x in m
     assert '<span class="mkapi-object-base">A</span>' in m
     assert '<span class="mkapi-object-base">B</span>' in m

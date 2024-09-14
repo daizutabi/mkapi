@@ -233,7 +233,7 @@ def test_iter_identifiers():
 def test_list_exported_names():
     from mkapi.utils import list_exported_names
 
-    x = list_exported_names("example._styles")
+    x = list_exported_names("examples._styles")
     assert "ExampleClassNumPy" in x
     assert "ExampleClassGoogle" in x
 
@@ -242,7 +242,7 @@ def test_get_object():
     from mkapi.utils import get_object_from_module
 
     name = "ExampleClass"
-    module = "example._styles.google"
+    module = "examples._styles.google"
     obj = get_object_from_module(name, module)
     assert obj.__name__ == name  # type: ignore
     assert obj.__module__ == module
@@ -252,10 +252,10 @@ def test_get_object_asname():
     from mkapi.utils import get_object_from_module
 
     name_ = "ExampleClassGoogle"
-    module_ = "example._styles"
+    module_ = "examples._styles"
     obj = get_object_from_module(name_, module_)
     assert obj.__name__ == "ExampleClass"  # type: ignore
-    assert obj.__module__ == "example._styles.google"
+    assert obj.__module__ == "examples._styles.google"
 
 
 def test_get_base_classes():
@@ -292,8 +292,8 @@ def test_split_module_name_class():
 def test_split_module_name_asname():
     from mkapi.utils import split_module_name
 
-    x = split_module_name("example._styles.ExampleClassGoogle")
-    assert x == ("ExampleClassGoogle", "example._styles")
+    x = split_module_name("examples._styles.ExampleClassGoogle")
+    assert x == ("ExampleClassGoogle", "examples._styles")
 
 
 def test_split_module_name_none():

@@ -43,7 +43,7 @@ plugins:
       enabled: true
       config: config.py
       # exclude:
-      #   - examples._usage
+      #   - example
       debug: true
 markdown_extensions:
   - pymdownx.magiclink

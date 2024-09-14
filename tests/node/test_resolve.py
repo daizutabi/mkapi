@@ -4,34 +4,34 @@ import pytest
 def test_resolve_module():
     from mkapi.node import resolve
 
-    x = resolve("example._styles.google")
-    assert x == ("example._styles.google", None)
+    x = resolve("examples._styles.google")
+    assert x == ("examples._styles.google", None)
 
 
 def test_resolve_class():
     from mkapi.node import resolve
 
-    x = resolve("example._styles.google.ExampleClass")
-    assert x == ("ExampleClass", "example._styles.google")
+    x = resolve("examples._styles.google.ExampleClass")
+    assert x == ("ExampleClass", "examples._styles.google")
 
 
 def test_resolve_asname():
     from mkapi.node import resolve
 
-    x = resolve("example._styles.ExampleClassGoogle")
-    assert x == ("ExampleClass", "example._styles.google")
+    x = resolve("examples._styles.ExampleClassGoogle")
+    assert x == ("ExampleClass", "examples._styles.google")
 
 
 def test_resolve_attribute():
     from mkapi.node import resolve
 
-    assert not resolve("example._styles.ExampleClassGoogle.attr1")
+    assert not resolve("examples._styles.ExampleClassGoogle.attr1")
 
 
 def test_resolve_unknown():
     from mkapi.node import resolve
 
-    assert not resolve("example._styles.ExampleClassGoogle.attrX")
+    assert not resolve("examples._styles.ExampleClassGoogle.attrX")
 
 
 def test_resolve_none():
@@ -125,7 +125,7 @@ def attr(request):
 def test_get_fullname_qualname(attr):
     from mkapi.node import get_fullname_from_module
 
-    module = "example._styles.google"
+    module = "examples._styles.google"
     name = f"ExampleClass{attr}"
     assert get_fullname_from_module(name, module) == f"{module}.{name}"
 
@@ -133,7 +133,7 @@ def test_get_fullname_qualname(attr):
 def test_get_fullname_qualname_alias(attr):
     from mkapi.node import get_fullname_from_module
 
-    module = "example._styles"
+    module = "examples._styles"
     name = f"ExampleClassGoogle{attr}"
     x = get_fullname_from_module(name, module)
     assert x == f"{module}.google.{name}".replace("Google", "")

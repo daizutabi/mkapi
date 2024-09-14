@@ -40,8 +40,10 @@ from mkapi.object import (
 )
 from mkapi.utils import (
     find_item_by_name,
+    find_submodule_names,
     is_enum,
     is_identifier,
+    is_package,
     iter_attribute_names,
     iter_identifiers,
     split_module_name,
@@ -227,13 +229,23 @@ class Parser:
 
     def _iter_summary_sections(self) -> Iterator[Section]:
         if isinstance(self.obj, Module):
+            created = False
+
             if section := create_classes_from_module(self.name):
+                created = True
                 yield section
 
             if section := create_functions_from_module(self.name):
+                created = True
                 yield section
 
             if section := create_modules_from_module(self.name):
+                created = True
+                yield section
+
+            elif not created and (
+                section := create_modules_from_module_file(self.name)
+            ):
                 yield section
 
         if isinstance(self.obj, Class) and self.module:
@@ -698,7 +710,7 @@ def merge_sections(
         merge_returns(sections, obj.node.returns)
 
 
-def create_summary_item(name: str, module: str) -> Item | None:
+def create_summary_item(name: str, module: str | None) -> Item | None:
     """
     Create a summary item for the given name in the given module.
 
@@ -783,6 +795,36 @@ def create_modules_from_module(module: str) -> Section | None:
     items = []
     for name in iter_modules_from_module(module):
         if item := create_summary_item(name, module):
+            items.append(item)
+
+    return Section("Modules", None, "", items) if items else None
+
+
+def create_modules_from_module_file(module: str) -> Section | None:
+    """
+    Create a Modules section from the given module.
+
+    Take a module name, check if it is a package,
+    and iterate over the submodules in the module. For each submodule,
+    create a summary item and add it to the Modules section.
+
+    Args:
+        module (str): The name of the module.
+
+    Returns:
+        Section | None: The Modules section if created, otherwise None.
+    """
+    if not is_package(module):
+        return None
+
+    items = []
+    for name in find_submodule_names(module):
+        # skip private submodules
+        # TODO: add config for this
+        if name.split(".")[-1].startswith("_"):
+            continue
+
+        if item := create_summary_item(name, None):
             items.append(item)
 
     return Section("Modules", None, "", items) if items else None

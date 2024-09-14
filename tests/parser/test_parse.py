@@ -169,13 +169,13 @@ def test_parse_name_set_export():
 def test_parse_name_set_alias():
     from mkapi.parser import Parser
 
-    name = "example._styles.ExampleClassGoogle"
+    name = "examples._styles.ExampleClassGoogle"
     parser = Parser.create(name)
     assert parser
     name = parser.parse_name_set()
-    assert name.id == "example._styles.ExampleClassGoogle"
-    assert name.obj_id == "example._styles.google.ExampleClass"
-    assert name.fullname == "example.\\_styles.ExampleClassGoogle"
+    assert name.id == "examples._styles.ExampleClassGoogle"
+    assert name.obj_id == "examples._styles.google.ExampleClass"
+    assert name.fullname == "examples.\\_styles.ExampleClassGoogle"
 
 
 def test_parse_signature():
@@ -201,7 +201,7 @@ def test_parse_signature():
 def doc_func():
     from mkapi.parser import Parser
 
-    name = "example._usage.func"
+    name = "examples._usage.func"
     parser = Parser.create(name)
     assert parser
     return parser.parse_doc()
@@ -234,7 +234,7 @@ def test_parse_doc_function_returns(doc_func: Doc):
 def doc_class():
     from mkapi.parser import Parser
 
-    name = "example._usage.A"
+    name = "examples._usage.A"
     parser = Parser.create(name)
     assert parser
     return parser.parse_doc()
@@ -286,32 +286,32 @@ def test_parse_signature_empty():
 def test_parsr_doc_summary_modules():
     from mkapi.parser import Parser
 
-    name = "example"
+    name = "examples"
     parser = Parser.create(name)
     assert parser
     doc = parser.parse_doc()
     assert len(doc.sections) == 3
     assert doc.sections[0].name == "Classes"
-    assert doc.sections[0].items[0].name == "[ClassA][__mkapi__.example.ClassA]"
+    assert doc.sections[0].items[0].name == "[ClassA][__mkapi__.examples.ClassA]"
     assert doc.sections[1].name == "Functions"
-    assert doc.sections[1].items[0].name == "[func\\_a][__mkapi__.example.func_a]"
+    assert doc.sections[1].items[0].name == "[func\\_a][__mkapi__.examples.func_a]"
     assert doc.sections[2].name == "Modules"
-    assert doc.sections[2].items[0].name == "[mod\\_a][__mkapi__.example.mod_a]"
+    assert doc.sections[2].items[0].name == "[mod\\_a][__mkapi__.examples.mod_a]"
 
 
 def test_parsr_doc_summary_classes():
     from mkapi.parser import Parser
     from mkapi.utils import find_item_by_name
 
-    name = "example._styles"
+    name = "examples._styles"
     parser = Parser.create(name)
     assert parser
     doc = parser.parse_doc()
     section = find_item_by_name(doc.sections, "Classes")
     assert section
-    x = "[ExampleClassGoogle][__mkapi__.example._styles.ExampleClassGoogle]"
+    x = "[ExampleClassGoogle][__mkapi__.examples._styles.ExampleClassGoogle]"
     assert section.items[0].name == x
-    x = "[ExampleClassNumPy][__mkapi__.example._styles.ExampleClassNumPy]"
+    x = "[ExampleClassNumPy][__mkapi__.examples._styles.ExampleClassNumPy]"
     assert section.items[1].name == x
 
 
@@ -319,7 +319,7 @@ def test_parsr_doc_summary_functions():
     from mkapi.parser import Parser
     from mkapi.utils import find_item_by_name
 
-    name = "example._styles.google"
+    name = "examples._styles.google"
     parser = Parser.create(name)
     assert parser
     doc = parser.parse_doc()

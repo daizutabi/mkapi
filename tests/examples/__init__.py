@@ -3,9 +3,9 @@
 import collections.abc  # noqa: F401
 import os  # noqa: F401
 
-import example.mod_a
-import example.sub.mod_b
-import example.sub.subsub.mod_d
+import examples.mod_a
+import examples.sub.mod_b
+import examples.sub.subsub.mod_d
 
 from .mod_a import ClassA, func_a
 from .sub import mod_b
@@ -18,7 +18,7 @@ __all__ = [
     "ClassA",
     "ClassB",
     "ClassCAlias",
-    "example",
+    "examples",
     "func_a",
     "func_b",
     "func_c_alias",

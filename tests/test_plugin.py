@@ -208,12 +208,12 @@
 # #     page = pages["api/examples/styles/README.md"]
 # #     m = page.convert_markdown("", {"object": "ABC", "source": "DEF"})
 # #     assert '[example](../README.md#examples "examples")' in m
-# #     assert "[[ABC]](../../../src/examples/styles.md#example._styles" in m
-# #     assert "[ExampleClassGoogle](google.md#example._styles.ExampleClassGoogle" in m
+# #     assert "[[ABC]](../../../src/examples/styles.md#examples._styles" in m
+# #     assert "[ExampleClassGoogle](google.md#examples._styles.ExampleClassGoogle" in m
 # #     page = pages["src/examples/styles/google.md"]
 # #     m = page.markdown
-# #     assert "## ::: example._styles.google.ExampleError|__mkapi__" in m
-# #     assert ":example._styles.google.ExampleError=152" in m
+# #     assert "## ::: examples._styles.google.ExampleError|__mkapi__" in m
+# #     assert ":examples._styles.google.ExampleError=152" in m
 # #     m = page.convert_markdown("", {"object": "ABC", "source": "DEF"})
 # #     assert "class ExamplePEP526Class:## __mkapi__.example" in m
 # #     assert 'ExampleClass.__special__" markdown="1">' in m
