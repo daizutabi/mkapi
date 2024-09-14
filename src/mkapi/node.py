@@ -495,19 +495,37 @@ def _iter_module_members(
     members = parse_module(module)
 
     for name, obj in members:
-        if is_package(module):  # module?
-            if isinstance(obj, Module) and obj.name.startswith(module):
-                yield name, obj
+        if isinstance(obj, Module):
+            name_ = _get_module_member_from_module(name, module)
+            if name_ and _is_exported_obj(obj, module):
+                yield name_, obj
 
-            elif isinstance(obj, Definition) and obj.module.startswith(module):
-                yield name, obj
-                if not child_only:
-                    yield from _iter_children_from_definition(obj, name)
-
-        elif isinstance(obj, Definition) and obj.module == module:
+        elif isinstance(obj, Definition) and _is_exported_obj(obj, module):
             yield name, obj
             if not child_only and isinstance(obj.node, ast.ClassDef):
                 yield from _iter_children_from_definition(obj, name)
+
+
+def _get_module_member_from_module(name: str, module: str) -> str | None:
+    if name == module:
+        return None
+
+    if name.startswith(f"{module}."):
+        return name.split(".")[1]
+
+    elif "." in name:
+        return None
+
+    return name
+
+
+def _is_exported_obj(obj: Module | Definition, module: str) -> bool:
+    name = obj.name if isinstance(obj, Module) else obj.module
+
+    if is_package(module):
+        return name.startswith(module)
+
+    return name == module
 
 
 def _iter_children_from_definition(

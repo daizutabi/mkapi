@@ -63,7 +63,7 @@ nav:
       - usage/config.md
   - Reference:
       - $api:src/mkapi.***
-  - Examples: $api:src/examples.***
+  - Example: $api:src/example.***
   # - Jinja2:
   #     - $api:src/jinja2.***
   # - Schemdraw:

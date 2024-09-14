@@ -2,11 +2,11 @@
 
 
 class ClassC:
-    """ClassC."""
+    """Class C."""
 
     def method_c(self):
-        """method_c."""
+        """Method C."""
 
 
 def func_c():
-    """func_c."""
+    """Function C."""
