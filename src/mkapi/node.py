@@ -520,16 +520,15 @@ def _get_module_member_from_module(name: str, module: str) -> str | None:
 
 
 def _is_exported_obj(name: str, obj: Module | Definition, module: str) -> bool:
-    exported_names = list_exported_names(module)
-    if exported_names and name not in exported_names:
-        return False
+    module_name = obj.name if isinstance(obj, Module) else obj.module
 
-    name = obj.name if isinstance(obj, Module) else obj.module
+    if is_package(module) and module_name.startswith(module):
+        return True
 
-    if is_package(module):
-        return name.startswith(module)
+    if module_name == module:
+        return True
 
-    return name == module
+    return name in list_exported_names(module)
 
 
 def _iter_children_from_definition(
@@ -579,6 +578,25 @@ def iter_functions_from_module(
         if isinstance(obj, Definition):
             if isinstance(obj.node, ast.FunctionDef | ast.AsyncFunctionDef):
                 yield name
+
+
+def iter_modules_from_module(
+    module: str, private: bool = False, special: bool = False
+) -> Iterator[str]:
+    """Iterate over the modules in the given module.
+
+    Traverse the Abstract Syntax Tree (AST) and yield the names of the
+    modules in the given module.
+
+    Args:
+        module (str): The name of the module to iterate over.
+
+    Yields:
+        str: The names of the modules in the given module.
+    """
+    for name, obj in iter_module_members(module, private, special, child_only=True):
+        if isinstance(obj, Module):
+            yield name
 
 
 def iter_methods_from_class(

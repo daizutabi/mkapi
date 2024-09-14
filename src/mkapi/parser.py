@@ -26,6 +26,7 @@ from mkapi.node import (
     iter_classes_from_module,
     iter_functions_from_module,
     iter_methods_from_class,
+    iter_modules_from_module,
 )
 from mkapi.object import (
     Attribute,
@@ -708,9 +709,9 @@ def merge_sections(
         merge_returns(sections, obj.node.returns)
 
 
-def create_summary_item(name: str) -> Item | None:
+def create_summary_item(name: str, module: str) -> Item | None:
     """
-    Create a summary item for the given name.
+    Create a summary item for the given name in the given module.
 
     Take a fully qualified name, create a parser for it,
     and extract the name set and summary from the parser.
@@ -718,11 +719,12 @@ def create_summary_item(name: str) -> Item | None:
 
     Args:
         name (str): The fully qualified name of the object.
+        module (str): The name of the module.
 
     Returns:
         Item | None: The summary item if created, otherwise None.
     """
-    if not (parser := Parser.create(name)):
+    if not (parser := Parser.create(name, module)):
         return None
 
     name_set = parser.parse_name_set()
@@ -747,7 +749,7 @@ def create_classes_from_module(module: str) -> Section | None:
     """
     items = []
     for name in iter_classes_from_module(module):
-        if item := create_summary_item(f"{module}.{name}"):
+        if item := create_summary_item(name, module):
             items.append(item)
 
     return Section("Classes", None, "", items) if items else None
@@ -768,7 +770,7 @@ def create_functions_from_module(module: str) -> Section | None:
     """
     items = []
     for name in iter_functions_from_module(module):
-        if item := create_summary_item(f"{module}.{name}"):
+        if item := create_summary_item(name, module):
             items.append(item)
 
     return Section("Functions", None, "", items) if items else None
@@ -788,23 +790,13 @@ def create_modules_from_module(module: str) -> Section | None:
     Returns:
         Section | None: The Modules section if created, otherwise None.
     """
-    if not is_package(module):
-        return None
+    items = []
+    for name in iter_modules_from_module(module):
+        if item := create_summary_item(name, module):
+            print("SDD", item)
+            items.append(item)
 
-    # FIXME: use actual members
-
-    return None
-    # items = []
-    # for name in find_submodule_names(module):
-    #     # skip private submodules
-    #     # TODO: add config for this
-    #     if name.split(".")[-1].startswith("_"):
-    #         continue
-
-    #     if item := create_summary_item(name):
-    #         items.append(item)
-
-    # return Section("Modules", None, "", items) if items else None
+    return Section("Modules", None, "", items) if items else None
 
 
 def create_methods_from_class(name: str, module: str) -> Section | None:
@@ -823,7 +815,7 @@ def create_methods_from_class(name: str, module: str) -> Section | None:
     """
     items = []
     for method in iter_methods_from_class(name, module):
-        if item := create_summary_item(f"{module}.{name}.{method}"):
+        if item := create_summary_item(f"{name}.{method}", module):
             items.append(item)
 
     return Section("Methods", None, "", items) if items else None
