@@ -93,7 +93,10 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
                 src_uri = file.src_uri
                 self.pages[src_uri] = Page.create_documentation(src_uri, content)
 
-        for file in _collect_stylesheets(config, self):
+        for file in _collect_css(config, self):
+            files.append(file)
+
+        for file in _collect_javascript(config, self):
             files.append(file)
 
         return files
@@ -247,33 +250,6 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
         mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
 
 
-def _collect_stylesheets(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]:
-    root = Path(mkapi.__file__).parent / "stylesheets"
-
-    docs_dir = config.docs_dir
-    config.docs_dir = root.as_posix()
-    stylesheet_files = get_files(config)
-    config.docs_dir = docs_dir
-
-    theme_name = config.theme.name or "mkdocs"
-
-    files: list[File] = []
-    css: list[str] = []
-    for file in stylesheet_files:
-        path = Path(file.src_path).as_posix()
-
-        if path.endswith("mkapi-common.css"):
-            files.insert(0, file)
-            css.insert(0, path)
-
-        elif path.endswith(f"mkapi-{theme_name}.css"):
-            files.append(file)
-            css.append(path)
-
-    config.extra_css = [*css, *config.extra_css]
-    return files
-
-
 def _replace_toc(
     toc: TableOfContents | list[AnchorLink],
     title: Callable[[str, int], str] | None = None,
@@ -288,6 +264,51 @@ def _replace_toc(
             link.title = link.title.split(".")[-1]  # Remove prefix.
 
         _replace_toc(link.children, title, depth + 1)
+
+
+def _collect_css(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]:
+    root = Path(mkapi.__file__).parent / "css"
+
+    if not root.exists():
+        return []
+
+    docs_dir = config.docs_dir
+    config.docs_dir = root.as_posix()
+
+    theme_name = config.theme.name or "mkdocs"
+
+    files = []
+    css = []
+    for file in get_files(config):
+        if file.src_uri == "mkapi-common.css":
+            files.insert(0, file)
+            css.insert(0, file.src_uri)
+
+        elif file.src_uri == f"mkapi-{theme_name}.css":
+            files.append(file)
+            css.append(file.src_uri)
+
+    config.extra_css = [*css, *config.extra_css]
+    config.docs_dir = docs_dir
+    return files
+
+
+def _collect_javascript(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]:
+    root = Path(mkapi.__file__).parent / "javascript"
+
+    if not root.exists():
+        return []
+
+    docs_dir = config.docs_dir
+    config.docs_dir = root.as_posix()
+
+    files = []
+    for file in get_files(config):
+        files.append(file)
+        config.extra_javascript.append(file.src_uri)
+
+    config.docs_dir = docs_dir
+    return files
 
 
 def generate_file(config: MkDocsConfig, src_uri: str, name: str) -> File:

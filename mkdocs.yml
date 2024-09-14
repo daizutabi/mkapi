@@ -44,7 +44,7 @@ plugins:
       config: config.py
       # exclude:
       #   - example
-      debug: true
+      # debug: true
 markdown_extensions:
   - pymdownx.magiclink
   - pymdownx.highlight:
@@ -73,5 +73,6 @@ nav:
 extra_css:
   - stylesheets/extra.css
 watch:
-  - src/mkapi/stylesheets
+  - src/mkapi/css
+  - src/mkapi/javascript
   - src/mkapi/templates
