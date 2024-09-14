@@ -31,7 +31,7 @@ let's explore the unique features of MkAPI.
 One of the unique features of MkAPI is that it does not introduce its
 own syntax within docstrings.
 For example, to reference objects, you do not need to use Markdown link
-syntax like `` [`object`](package.module.object) `` or `` [`object`][] ``.
+syntax like `` [`object`][package.module.object] ``.
 Simply writing the inline code is sufficient like `` `object` ``.
 
 ### Why Not Use Markdown Link Syntax?
