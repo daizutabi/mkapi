@@ -1,5 +1,5 @@
 """
-Processing and managing docstrings.
+Process and manage docstrings.
 
 Provide functionality for parsing, organizing, and manipulating
 docstrings in various formats, specifically Google and NumPy styles.
