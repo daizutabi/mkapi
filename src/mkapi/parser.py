@@ -653,17 +653,16 @@ def merge_attributes(
         if ignore_names and attr.name in ignore_names:
             continue
 
+        if attr.name.startswith("_"):
+            continue
+
         if find_item_by_name(items, attr.name):
             continue
 
         type_ = attr.type or attr.doc.type
-        if attr.doc.sections and attr.doc.text:
+        if attr.doc.text or not ignore_empty:
             text = attr.doc.text.split("\n\n")[0]  # summary line
             item = Item(attr.name, type_, text)
-            items.append(item)
-
-        elif attr.doc.text or not ignore_empty:
-            item = Item(attr.name, type_, attr.doc.text)
             items.append(item)
 
     if items and created:

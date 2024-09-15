@@ -1,9 +1,11 @@
 import ast
 
+from mkapi.doc import Item, Section
+from mkapi.object import Class, Function, Type, create_module, get_object
+from mkapi.utils import find_item_by_name
+
 
 def _get_func_type_annotations():
-    from mkapi.object import Function, create_module
-
     module = create_module("examples._styles.google")
     assert module
     func = module.get("function_with_pep484_type_annotations")
@@ -13,7 +15,6 @@ def _get_func_type_annotations():
 
 def test_merge_parameters_type_annotations():
     from mkapi.parser import merge_parameters
-    from mkapi.utils import find_item_by_name
 
     func = _get_func_type_annotations()
     merge_parameters(func.doc.sections, func.parameters)
@@ -29,7 +30,6 @@ def test_merge_parameters_type_annotations():
 
 def test_merge_returns_type_annotations():
     from mkapi.parser import merge_returns
-    from mkapi.utils import find_item_by_name
 
     func = _get_func_type_annotations()
     merge_returns(func.doc.sections, func.node.returns)
@@ -41,9 +41,7 @@ def test_merge_returns_type_annotations():
 
 
 def test_merge_raises():
-    from mkapi.doc import Section
     from mkapi.parser import merge_raises
-    from mkapi.utils import find_item_by_name
 
     sections = []
     expr = ast.parse("ValueError").body[0]
@@ -57,9 +55,7 @@ def test_merge_raises():
 
 
 def test_merge_raises_duplicate():
-    from mkapi.doc import Item, Section
     from mkapi.parser import merge_raises
-    from mkapi.utils import find_item_by_name
 
     sections = [Section("Raises", None, "", [Item("ValueError", None, "")])]
     expr = ast.parse("ValueError").body[0]
@@ -74,10 +70,7 @@ def test_merge_raises_duplicate():
 
 
 def test_merge_attribute_module():
-    from mkapi.doc import Section
-    from mkapi.object import Type, create_module
     from mkapi.parser import merge_attributes
-    from mkapi.utils import find_item_by_name
 
     module = create_module("examples._styles.google")
     assert module
@@ -91,10 +84,7 @@ def test_merge_attribute_module():
 
 
 def test_merge_attribute_class():
-    from mkapi.doc import Section
-    from mkapi.object import Class, Type, get_object
     from mkapi.parser import merge_attributes
-    from mkapi.utils import find_item_by_name
 
     cls = get_object("examples._styles.google.ExampleClass")
     assert isinstance(cls, Class)
@@ -115,10 +105,7 @@ def test_merge_attribute_class():
 
 
 def test_merge_attribute_enum():
-    from mkapi.doc import Section
-    from mkapi.object import Class, Type, get_object
     from mkapi.parser import merge_attributes
-    from mkapi.utils import find_item_by_name
 
     cls = get_object("mkapi.page.PageKind")
     assert isinstance(cls, Class)
@@ -131,3 +118,63 @@ def test_merge_attribute_enum():
     assert isinstance(section, Section)
     items = section.items
     assert len(items) == 3
+
+
+def test_merge_attribute_private():
+    from mkapi.parser import merge_attributes
+
+    cls = get_object("examples.parser.PrivateAttribute")
+    assert isinstance(cls, Class)
+    attrs = [x for _, x in cls.get_children(Type)]
+    assert len(attrs) == 2
+    assert attrs[0].name == "x"
+    assert attrs[1].name == "_y"
+    sections = cls.doc.sections
+    merge_attributes(sections, attrs)
+    section = find_item_by_name(sections, "Attributes")
+    assert isinstance(section, Section)
+    items = section.items
+    assert len(items) == 1
+    assert items[0].name == "x"
+
+
+def test_merge_attribute_docstring():
+    from mkapi.parser import merge_attributes
+
+    cls = get_object("examples.parser.DocstringAttribute")
+    assert isinstance(cls, Class)
+    attrs = [x for _, x in cls.get_children(Type)]
+    assert len(attrs) == 3
+    assert attrs[0].name == "x"
+    assert attrs[1].name == "y"
+    assert attrs[2].name == "z"
+    assert attrs[2].doc.text == "attribute z\n\nsecond paragraph"
+    sections = cls.doc.sections
+    doc_section = find_item_by_name(sections, "Attributes")
+    assert doc_section
+    assert len(doc_section.items) == 2
+    merge_attributes(sections, attrs)
+    section = find_item_by_name(sections, "Attributes")
+    assert isinstance(section, Section)
+    assert doc_section is section
+    items = section.items
+    assert len(items) == 3
+    assert items[0].name == "x"
+    assert items[0].type == "integer"
+    assert items[0].text == "attribute X"
+    assert items[1].name == "y"
+    assert isinstance(items[2].type, ast.expr)
+    assert ast.unparse(items[2].type) == "int"
+    assert items[1].text == "attribute Y"
+    assert items[2].name == "z"
+    assert isinstance(items[2].type, ast.expr)
+    assert ast.unparse(items[2].type) == "int"
+    assert items[2].text == "attribute z"
+
+
+def test_merge_attribute_empty():
+    from mkapi.parser import merge_attributes
+
+    sections = []
+    merge_attributes(sections, [])
+    assert sections == []
