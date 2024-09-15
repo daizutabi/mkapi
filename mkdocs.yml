@@ -42,9 +42,9 @@ plugins:
   - mkapi:
       enabled: true
       config: config.py
-      # exclude:
-      #   - example
-      # debug: true
+      debug: true
+      exclude:
+        - _example
 markdown_extensions:
   - pymdownx.magiclink
   - pymdownx.highlight:
