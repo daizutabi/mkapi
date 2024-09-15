@@ -16,19 +16,6 @@ import mkapi
 from mkapi.plugin import MkApiConfig, MkApiPlugin
 from mkapi.utils import get_module_path
 
-# from mkapi.plugin import (
-#     MkAPIConfig,
-#     MkAPIPlugin,
-#     _build_apinav,
-#     _collect_stylesheets,
-#     _get_function,
-#     _update_extensions,
-#     _update_nav,
-#     _update_templates,
-# )
-# from mkapi.renderer import templates
-# from mkapi.utils import get_module_path, module_cache
-
 
 @pytest.fixture(scope="module")
 def config_file():
@@ -180,12 +167,21 @@ def test_on_config(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
     assert "src/example/sub/mod_b.md" in plugin.pages
 
 
-def test_collect_stylesheets(config: MkDocsConfig):
+def test_collect_css(config: MkDocsConfig):
     from mkapi.plugin import _collect_css
 
     plugin = config.plugins["mkapi"]
     assert isinstance(plugin, MkApiPlugin)
     files = Files(_collect_css(config, plugin))
+    assert files.media_files()
+
+
+def test_collect_javascript(config: MkDocsConfig):
+    from mkapi.plugin import _collect_javascript
+
+    plugin = config.plugins["mkapi"]
+    assert isinstance(plugin, MkApiPlugin)
+    files = Files(_collect_javascript(config, plugin))
     assert files.media_files()
 
 

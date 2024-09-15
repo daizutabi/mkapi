@@ -303,10 +303,12 @@ def _collect_javascript(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]
     config.docs_dir = root.as_posix()
 
     files = []
+    js = []
     for file in get_files(config):
         files.append(file)
-        config.extra_javascript.append(file.src_uri)
+        js.append(file.src_uri)
 
+    config.extra_javascript = [*js, *config.extra_javascript]
     config.docs_dir = docs_dir
     return files
 

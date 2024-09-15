@@ -61,11 +61,12 @@ class NameSet:
 
     kind: str
     name: str
-    qualname: str
+    parent: str | None
     module: str | None
     fullname: str
     id: str
     obj_id: str
+    parent_id: str | None
 
 
 @dataclass
@@ -148,18 +149,35 @@ class Parser:
         """
         qualname = self.name.replace("_", "\\_")
         obj_id = self.obj.fullname
+        parent = None
+        parent_id = None
 
         if self.module:
             module = self.module.replace("_", "\\_")
-            name = qualname.split(".")[-1]
             fullname = f"{module}.{qualname}"
             id_ = f"{self.module}.{self.name}"
+
+            if "." in qualname:
+                parent, name = qualname.rsplit(".", 1)
+                parent_id = id_.rsplit(".", 1)[0]
+            else:
+                name = qualname
+
         else:
             name = fullname = qualname
             module = None
             id_ = self.name
 
-        return NameSet(self.obj.kind, name, qualname, module, fullname, id_, obj_id)
+        return NameSet(
+            self.obj.kind,
+            name,
+            parent,
+            module,
+            fullname,
+            id_,
+            obj_id,
+            parent_id,
+        )
 
     def parse_signature(self) -> list[tuple[str, str]]:
         """Parse the signature.
