@@ -10,7 +10,8 @@
   font-style: italic;
 }
 
-.mkapi-parent-toggle {
+.mkapi-parent-toggle,
+.mkapi-section-toggle {
   cursor: pointer;
 }
 
