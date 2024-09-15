@@ -1,11 +1,11 @@
 .mkapi-object {
-  margin-block-start: 2em;
+  margin-block-start: 20px;
   background-color: var(--mkapi-object-bg-color);
   padding: 4px 8px;
 }
 
 h1 + .mkapi-object {
-  margin-block-start: 0em;
+  margin-block-start: 0px;
 }
 
 .mkapi-object-kind {
