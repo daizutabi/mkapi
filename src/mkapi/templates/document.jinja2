@@ -1,12 +1,21 @@
 <div class="mkapi-document" markdown="1">
 {{ doc.text|safe }}
 
+{%- if bases -%}
+<p class="mkapi-object-bases" markdown="1">Bases :
+{% for base in bases %}<span class="mkapi-object-base">{{ base|safe }}</span>
+{%- if not loop.last %}<span class="mkapi-comma">, </span>{% endif -%}
+{%- endfor -%}
+</p>
+{%- endif %}
+
 {% for section in doc.sections -%}
 {% if section.name and not section.kind -%}
 <p class="mkapi-section">
-<span class="mkapi-section-name mkapi-section-toggle" title="Show/hide {{ section.name|lower }}">
-{{ section.name|safe }}
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle {{ section.name|lower }}">[-]</span>
 </span>
+<span class="mkapi-section-name">{{ section.name|safe }}</span>
 </p>
 {%- endif %}
 <div class="mkapi-section-content" markdown="1">

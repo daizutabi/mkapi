@@ -89,13 +89,13 @@ class Page:
             if kind == TemplateKind.HEADING:
                 return True
 
+            if kind == TemplateKind.OBJECT and parser.name == self.name:
+                return True
+
             if self.is_source_page():
-                if self.name == parser.name and kind == TemplateKind.SOURCE:
+                if kind == TemplateKind.SOURCE and self.name == parser.name:
                     return True
 
-                return False
-
-            if kind == TemplateKind.OBJECT and parser.name == self.name:
                 return False
 
             return kind != TemplateKind.SOURCE
@@ -206,7 +206,7 @@ def _link(
 
 
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
-HEADING_PATTERN = re.compile(r"<h(\d).+?mkapi-heading.+?</h\d>\n?")
+HEADING_PATTERN = re.compile(r"<h(\d).+?mkapi-heading.+?>(.+?)</h\d>\n?")
 
 
 def convert_html(html: str, src_uri: str, namespace: str, anchor: str) -> str:
@@ -241,6 +241,7 @@ def _link_source(match: re.Match, src_uri: str, namespace: str, anchor: str) -> 
 
 def _heading(match: re.Match) -> str:
     if match.group(1) == "1":
-        return match.group()
+        name = match.group(2)
+        return f'<h1 style="display: none;">{name}</h1>'
 
     return ""
