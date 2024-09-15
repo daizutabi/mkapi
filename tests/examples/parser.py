@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import collections.abc
+from collections.abc import Generator
 from dataclasses import dataclass
 
 
@@ -30,3 +34,21 @@ class PrivateAttribute:
 
     _y: int
     """private attribute y"""
+
+
+def iterator(a: int) -> collections.abc.Iterator[int]:
+    """iterator.
+
+    Yields:
+        the value of a.
+    """
+    yield a
+
+
+def generator(a: int) -> Generator[list[PrivateAttribute], None, None]:
+    """generator.
+
+    Yields:
+        the value of a.
+    """
+    yield [PrivateAttribute(x=a, _y=a)]

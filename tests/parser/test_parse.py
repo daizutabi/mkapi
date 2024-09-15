@@ -144,7 +144,7 @@ def test_parse_name_set_function():
     parser = Parser.create(name)
     assert parser
     name_set = parser.parse_name_set()
-    assert name_set.kind == "function"
+    assert name_set.kind == ""
     assert name_set.name == "get\\_assign\\_name"
     assert name_set.parent is None
     assert name_set.module == "mkapi.ast"

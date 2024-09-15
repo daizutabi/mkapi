@@ -168,8 +168,12 @@ class Parser:
             module = None
             id_ = self.name
 
+        # TODO: config
+        kind = self.obj.kind.replace("async function", "async")
+        kind = kind.replace("function", "")
+
         return NameSet(
-            self.obj.kind,
+            kind,
             name,
             parent,
             module,
@@ -594,7 +598,9 @@ def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
         section.items.append(Item("", raise_, ""))
 
 
-def merge_returns(sections: list[Section], returns: ast.expr | None) -> None:
+def merge_returns(
+    sections: list[Section], returns: ast.expr | None, module: str
+) -> None:
     """
     Merge the return type from the given sections and returns expression.
 
@@ -614,11 +620,28 @@ def merge_returns(sections: list[Section], returns: ast.expr | None) -> None:
     if not (section := find_item_by_name(sections, ("Returns", "Yields"))):
         return
 
-    if len(section.items) == 1:
-        item = section.items[0]
+    if len(section.items) != 1:
+        return
 
-        if not item.type and returns:
-            item.type = returns
+    item = section.items[0]
+
+    if item.type or not returns:
+        return
+
+    if section.name == "Returns":
+        item.type = returns
+
+    elif isinstance(returns, ast.Subscript):
+        ident = next(mkapi.ast.iter_identifiers(returns))
+        ident = get_fullname_from_module(ident, module)
+        iters = ["collections.abc.Generator", "collections.abc.Iterator"]
+
+        if ident in iters and isinstance(returns, ast.Subscript):
+            if isinstance(returns.slice, ast.Tuple):
+                item.type = returns.slice.elts[0]
+
+            else:
+                item.type = returns.slice
 
 
 def merge_attributes(
@@ -725,7 +748,7 @@ def merge_sections(
         merge_raises(sections, obj.raises)
 
     if isinstance(obj, Function | Property):
-        merge_returns(sections, obj.node.returns)
+        merge_returns(sections, obj.node.returns, obj.module)
 
 
 def create_summary_item(name: str, module: str | None) -> Item | None:
