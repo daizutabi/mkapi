@@ -126,10 +126,15 @@ def test_parse_name_set_module():
     name = "mkapi.ast"
     parser = Parser.create(name)
     assert parser
-    name = parser.parse_name_set()
-    assert name.id == "mkapi.ast"
-    assert name.obj_id == "mkapi.ast"
-    assert name.fullname == "mkapi.ast"
+    name_set = parser.parse_name_set()
+    assert name_set.kind == "module"
+    assert name_set.name == "mkapi.ast"
+    assert name_set.parent is None
+    assert name_set.module is None
+    assert name_set.fullname == "mkapi.ast"
+    assert name_set.id == "mkapi.ast"
+    assert name_set.obj_id == "mkapi.ast"
+    assert name_set.parent_id is None
 
 
 def test_parse_name_set_function():
@@ -138,20 +143,32 @@ def test_parse_name_set_function():
     name = "mkapi.ast.get_assign_name"
     parser = Parser.create(name)
     assert parser
-    name = parser.parse_name_set()
-    assert name.id == "mkapi.ast.get_assign_name"
-    assert name.obj_id == "mkapi.ast.get_assign_name"
+    name_set = parser.parse_name_set()
+    assert name_set.kind == "function"
+    assert name_set.name == "get\\_assign\\_name"
+    assert name_set.parent is None
+    assert name_set.module == "mkapi.ast"
+    assert name_set.fullname == "mkapi.ast.get\\_assign\\_name"
+    assert name_set.id == "mkapi.ast.get_assign_name"
+    assert name_set.obj_id == "mkapi.ast.get_assign_name"
+    assert name_set.parent_id is None
 
 
-def test_parse_name_set_method():
+def test_parse_name_set_staticmethod():
     from mkapi.parser import Parser
 
     name = "mkapi.parser.Parser.create"
     parser = Parser.create(name)
     assert parser
-    name = parser.parse_name_set()
-    assert name.id == "mkapi.parser.Parser.create"
-    assert name.fullname == "mkapi.parser.Parser.create"
+    name_set = parser.parse_name_set()
+    assert name_set.kind == "staticmethod"
+    assert name_set.name == "create"
+    assert name_set.parent == "Parser"
+    assert name_set.module == "mkapi.parser"
+    assert name_set.fullname == "mkapi.parser.Parser.create"
+    assert name_set.id == "mkapi.parser.Parser.create"
+    assert name_set.obj_id == "mkapi.parser.Parser.create"
+    assert name_set.parent_id == "mkapi.parser.Parser"
 
 
 def test_parse_name_set_export():
@@ -160,10 +177,10 @@ def test_parse_name_set_export():
     name = "jinja2.Template.render"
     parser = Parser.create(name)
     assert parser
-    name = parser.parse_name_set()
-    assert name.id == "jinja2.Template.render"
-    assert name.obj_id == "jinja2.environment.Template.render"
-    assert name.fullname == "jinja2.Template.render"
+    name_set = parser.parse_name_set()
+    assert name_set.id == "jinja2.Template.render"
+    assert name_set.obj_id == "jinja2.environment.Template.render"
+    assert name_set.fullname == "jinja2.Template.render"
 
 
 def test_parse_name_set_alias():

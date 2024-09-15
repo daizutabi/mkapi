@@ -168,10 +168,12 @@ def render_object(
     return templates["object"].render(
         kind=name_set.kind,
         name=name_set.name,
+        parent=name_set.parent,
         module=name_set.module,
         fullname=name_set.fullname,
         id=name_set.id,
         obj_id=name_set.obj_id,
+        parent_id=name_set.parent_id,
         level=level,
         namespace=namespace,
         signature=signature,

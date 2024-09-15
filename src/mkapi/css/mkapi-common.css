@@ -10,13 +10,19 @@
   font-style: italic;
 }
 
-.mkapi-object-name {
+.mkapi-parent-toggle {
+  cursor: pointer;
+}
+
+.mkapi-object-name,
+.mkapi-object-parent {
   color: var(--mkapi-object-name-color);
   font-family: var(--mkapi-object-name-font-family);
   font-weight: bold;
 }
 
-.mkapi-object-name a {
+.mkapi-object-name a,
+.mkapi-object-parent a {
   color: var(--mkapi-object-name-color);
   text-decoration: none;
 }

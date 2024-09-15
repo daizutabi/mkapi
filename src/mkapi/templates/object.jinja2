@@ -1,8 +1,12 @@
 <p class="mkapi-object" id="{{ id }}" markdown="1">
 <span class="mkapi-object-link">[{{ namespace }}][__mkapi__.__{{ namespace }}__.{{ obj_id }}]</span>
 {%- if kind not in ("function") -%}
-<span class="mkapi-object-kind">{{ kind }}</span>
+<span class="mkapi-object-kind{% if parent %} mkapi-parent-toggle{% endif %}">{{ kind }}</span>
 {%- endif %}
+{% if parent -%}
+<span class="mkapi-object-parent">
+[{{ parent }}][__mkapi__.{{ parent_id }}]<span class="mkapi-dot">.</span></span>
+{%- endif -%}
 <span class="mkapi-object-name">[{{ name }}][__mkapi__.{{ obj_id }}]</span>
 {%- if signature -%}
 <span class="mkapi-signature">
