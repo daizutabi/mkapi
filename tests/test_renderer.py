@@ -84,7 +84,7 @@ def test_render_source_module():
     parser = Parser.create("mkapi.ast")
     assert parser
     m = render_source(parser.obj)
-    assert m.startswith("``` {.python .mkapi-source}\n")
+    assert m.startswith('``` {.python .mkapi-source linenums="1"}\n')
     assert "Iterator[AST]:## __mkapi__.mkapi.ast.iter_child_nodes" in m
     assert "def _iter_assign_nodes(## __mkapi__.mkapi.ast._iter_assign_nodes" in m
 

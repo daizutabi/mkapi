@@ -140,37 +140,42 @@ theme:
 
 </div>
 
-1. **Material Theme**: Using the
+1. **Material theme**: Using the
 [Material theme](https://squidfunk.github.io/mkdocs-material/getting-started/)
 provides a sleek and modern interface for your documentation.
 
-2. **Tooltips**: With the `content.tooltips` feature, MkAPI displays object
+2. **Improved tooltips**: With the `content.tooltips` feature, MkAPI displays object
 full names as tooltips, enhancing user experience by providing
 additional context without cluttering the interface. See
-[Improved Tooltips](https://squidfunk.github.io/mkdocs-material/reference/tooltips/?h=too#improved-tooltips)
+[Improved tooltips](https://squidfunk.github.io/mkdocs-material/reference/tooltips/?h=too#improved-tooltips)
 for more information.
 
-3. **Navigation Expansion**: The `navigation.expand` feature automatically
+3. **Navigation expansion**: The `navigation.expand` feature automatically
 expands subpackages or submodules, making it easier for users to
 navigate through your documentation. Learn more about
-[Navigation Expansion](https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/?h=navigation#navigation-expansion).
+[Navigation expansion](https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/?h=navigation#navigation-expansion).
 
-4. **Section Index Pages**: The `navigation.indexes` feature allows package
+4. **Section index pages**: The `navigation.indexes` feature allows package
 sections to have their own summary or overview pages, providing a
 clearer structure. Check out
-[Section Index Pages](https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/?h=navigation#section-index-pages)
+[Section index pages](https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/?h=navigation#section-index-pages)
 for details.
 
-5. **Navigation Sections**: With the `navigation.sections` feature,
+5. **Navigation sections**: With the `navigation.sections` feature,
 packages are rendered as groups in the sidebar, improving
 organization and accessibility. More information can be found in
-[Navigation Sections](https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/?h=navigation#navigation-sections).
+[Navigation sections](https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/?h=navigation#navigation-sections).
 
-6. **Navigation Tabs**: The `navigation.tabs` feature allows the API
+6. **Navigation tabs**: The `navigation.tabs` feature allows the API
 section to be placed in a menu layer, making it easily accessible.
 Discover more about
-[Navigation Tabs](https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/?h=navigation#navigation-tabs).
+[Navigation tabs](https://squidfunk.github.io/mkdocs-material/setup/setting-up-navigation/?h=navigation#navigation-tabs).
 
 By considering these features, you can create a more intuitive
 and visually appealing documentation experience that encourages
 users to explore and utilize your library effectively.
+
+!!! warning "Instant loading"
+    Enabling the `navigation.instant` feature will cause the navigation
+    to source pages and the "Show/hide class names" functionality to
+    not work.

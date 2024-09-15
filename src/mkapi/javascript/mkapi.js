@@ -8,9 +8,5 @@ buttons.forEach((button) => {
     elements.forEach((element) => {
       element.style.display = isVisible ? "none" : "inline";
     });
-
-    buttons.forEach((btn) => {
-      btn.title = isVisible ? "Show Class Name" : "Hide Class Name";
-    });
   });
 });

@@ -1,5 +1,3 @@
-``` {.python .mkapi-source{% if attr %} {{ attr }}{% endif %}}
+``` {.python .mkapi-source{% if attr %} {{ attr|safe }}{% endif %}}
 {{ source|safe }}
 ```
-
-{# {{ source|safe }} #}

@@ -216,6 +216,8 @@ def render_source(obj: Object, attr: str = "") -> str:
 
     if source := _get_source(obj):
         source = source.rstrip()
+        start = 1 if isinstance(obj, Module) else obj.node.lineno
+        attr = f'linenums="{start}"'
         return templates["source"].render(source=source, attr=attr) + "\n"
 
     return ""

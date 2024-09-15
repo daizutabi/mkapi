@@ -2,7 +2,7 @@
 <span class="mkapi-object-link">[{{ namespace }}][__mkapi__.__{{ namespace }}__.{{ obj_id }}]</span>
 {%- if kind not in ("function") -%}
 <span class="mkapi-object-kind{% if parent %} mkapi-parent-toggle{% endif %}"
-{%- if parent %} title="Show Class Name"{% endif -%}
+{%- if parent %} title="Show/hide class names"{% endif -%}
 >{{ kind }}</span>
 {%- endif %}
 {% if parent -%}
