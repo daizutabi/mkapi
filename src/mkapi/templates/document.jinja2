@@ -17,7 +17,7 @@
 {% if item.type -%}
 <span class="mkapi-item-type">{{ item.type|safe }}</span>
 {%- endif -%}
-{%- if item.text %}{% if item.name or item.type %} &mdash;{% endif %}
+{%- if item.text %}{% if item.name or item.type %} <span class="mkapi-dash">&mdash;</span>{% endif %}
 {{ item.text|safe }}
 {% endif -%}
 </li>

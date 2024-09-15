@@ -31,11 +31,8 @@
   text-decoration: none;
 }
 
-.mkapi-prefix {
-  color: var(--mkapi-prefix-color);
-}
-
-.mkapi-dot {
+.mkapi-dot,
+.mkapi-dash {
   color: var(--mkapi-punctuation-color);
 }
 
