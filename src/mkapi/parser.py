@@ -126,7 +126,8 @@ class Parser:
         Returns:
             str | None: The full name if the name is valid, otherwise None.
         """
-        return get_fullname_from_module(name, self.module or self.name)
+        module = self.obj.module or self.obj.name
+        return get_fullname_from_module(name, module)
 
     def replace_from_object(self, name: str) -> str | None:
         """Replace the name with the full name from the object.
