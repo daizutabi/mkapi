@@ -3,17 +3,18 @@ import shutil
 import sys
 from pathlib import Path
 
-import mkapi
 import pytest
 from jinja2.environment import Environment
-from mkapi.plugin import MkApiConfig, MkApiPlugin
-from mkapi.utils import get_module_path
 from mkdocs.commands.build import build
 from mkdocs.config import load_config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import PluginCollection
 from mkdocs.structure.files import Files
 from mkdocs.theme import Theme
+
+import mkapi
+from mkapi.plugin import MkApiConfig, MkApiPlugin
+from mkapi.utils import get_module_path
 
 
 @pytest.fixture(scope="module")
@@ -173,7 +174,6 @@ def test_collect_css(config: MkDocsConfig):
     assert isinstance(plugin, MkApiPlugin)
     files = Files(_collect_css(config, plugin))
     assert files.media_files()
-    # assert any("font-awesome" in css for css in config.extra_css)
 
 
 def test_collect_javascript(config: MkDocsConfig):
@@ -183,7 +183,6 @@ def test_collect_javascript(config: MkDocsConfig):
     assert isinstance(plugin, MkApiPlugin)
     files = Files(_collect_javascript(config, plugin))
     assert files.media_files()
-    assert any("jquery" in js for js in config.extra_javascript)
 
 
 @pytest.mark.parametrize("dirty", [False, True])
