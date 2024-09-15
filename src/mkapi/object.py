@@ -753,13 +753,18 @@ def get_object_kind(obj: Object) -> str:
         return "dataclass" if is_dataclass(obj.name, obj.module) else "class"
 
     if isinstance(obj, Function):
+        if isinstance(obj.node, ast.AsyncFunctionDef):
+            prefix = "async "
+        else:
+            prefix = ""
+
         if is_classmethod(obj.node):
-            return "classmethod"
+            return f"{prefix}classmethod"
 
         if is_staticmethod(obj.node):
-            return "staticmethod"
+            return f"{prefix}staticmethod"
 
-        return "method" if obj.parent else "function"
+        return f"{prefix}method" if obj.parent else f"{prefix}function"
 
     return obj.__class__.__name__.lower()
 

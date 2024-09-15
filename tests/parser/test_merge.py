@@ -32,7 +32,7 @@ def test_merge_returns_type_annotations():
     from mkapi.parser import merge_returns
 
     func = _get_func_type_annotations()
-    merge_returns(func.doc.sections, func.node.returns)
+    merge_returns(func.doc.sections, func.node.returns, "dummy")
     section = find_item_by_name(func.doc.sections, "Returns")
     assert section
     items = section.items
