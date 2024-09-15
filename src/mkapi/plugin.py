@@ -288,11 +288,6 @@ def _collect_css(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]:
             files.append(file)
             css.append(file.src_uri)
 
-    # if all("font-awesome" not in css for css in config.extra_css):
-    #     name = "font-awesome/6.4.0/css/all.min.css"
-    #     url = f"https://cdnjs.cloudflare.com/ajax/libs/{name}"
-    #     css.append(url)
-
     config.extra_css = [*css, *config.extra_css]
     config.docs_dir = docs_dir
     return files
@@ -312,11 +307,6 @@ def _collect_javascript(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]
     for file in get_files(config):
         files.append(file)
         js.append(file.src_uri)
-
-    if all("jquery" not in js for js in config.extra_javascript):
-        name = "jquery/3.7.1/jquery.min.js"
-        url = f"https://ajax.googleapis.com/ajax/libs/{name}"
-        js.insert(0, url)
 
     config.extra_javascript = [*js, *config.extra_javascript]
     config.docs_dir = docs_dir

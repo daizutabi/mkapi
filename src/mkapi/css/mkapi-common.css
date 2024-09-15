@@ -21,6 +21,10 @@
   font-weight: bold;
 }
 
+.mkapi-object-parent {
+  display: none;
+}
+
 .mkapi-object-name a,
 .mkapi-object-parent a {
   color: var(--mkapi-object-name-color);

@@ -3,18 +3,17 @@ import shutil
 import sys
 from pathlib import Path
 
+import mkapi
 import pytest
 from jinja2.environment import Environment
+from mkapi.plugin import MkApiConfig, MkApiPlugin
+from mkapi.utils import get_module_path
 from mkdocs.commands.build import build
 from mkdocs.config import load_config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import PluginCollection
 from mkdocs.structure.files import Files
 from mkdocs.theme import Theme
-
-import mkapi
-from mkapi.plugin import MkApiConfig, MkApiPlugin
-from mkapi.utils import get_module_path
 
 
 @pytest.fixture(scope="module")
