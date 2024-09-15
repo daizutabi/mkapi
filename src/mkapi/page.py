@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 import mkapi.markdown
 import mkapi.renderer
-from mkapi.node import iter_module_members
+from mkapi.node import get_module_members
 from mkapi.renderer import TemplateKind
 from mkapi.utils import get_module_node
 
@@ -118,7 +118,7 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     markdowns = [f"# ::: {module}"]
     names = [module]
 
-    for name, _ in iter_module_members(module, private=False, special=False):
+    for name, _ in get_module_members(module, private=False, special=False):
         level = name.count(".") + 2
         markdown = f"{'#' * level} ::: {name} {module}"
         markdowns.append(markdown)

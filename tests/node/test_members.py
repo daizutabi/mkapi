@@ -138,3 +138,18 @@ def test_iter_methods_from_class_property():
 
     methods = list(iter_methods_from_class("Object", "mkapi.object"))
     assert not methods
+
+
+def test_get_module_members():
+    from mkapi.node import get_module_members, iter_module_members
+
+    x = list(iter_module_members("examples"))
+    y = get_module_members("examples")
+    assert len(x) == len(y)
+    assert x[0][0] == "mod_a"
+    assert y[0][0] == "ClassA"
+    assert y[1][0] == "ClassA.method_a"
+    assert y[2][0] == "ClassB"
+    assert y[3][0] == "ClassB.method_b"
+    assert y[-2][0] == "mod_c_alias"
+    assert y[-1][0] == "sub"

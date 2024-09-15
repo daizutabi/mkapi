@@ -434,6 +434,47 @@ def get_node(
     return dict(parse_module(module)).get(name)
 
 
+def get_module_members(
+    module: str,
+    private: bool = False,
+    special: bool = False,
+    *,
+    child_only: bool = False,
+) -> list[tuple[str, Module | Definition]]:
+    """Get the members of the given module.
+
+    Traverse the Abstract Syntax Tree (AST) and return the names and objects of
+    the members of the given module.
+    If `__all__` is defined, the members are sorted by the order of the names
+    in `__all__`.
+
+    Args:
+        module (str): The name of the module to iterate over.
+        private (bool): Whether to include private members.
+        special (bool): Whether to include special members.
+        child_only (bool): Whether to include only the child nodes.
+
+    Returns:
+        list[tuple[str, Module | Definition]]: The names and objects of the members of
+        the given module.
+    """
+    members = list(iter_module_members(module, private, special, child_only=child_only))
+
+    if not (exported_names := list_exported_names(module)):
+        return members
+
+    def get_index(qualname: str) -> int:
+        name = qualname.split(".")[0]
+        if name in exported_names:
+            return exported_names.index(name)
+
+        return len(exported_names)
+
+    members.sort(key=lambda x: get_index(x[0]))
+
+    return members
+
+
 def iter_module_members(
     module: str,
     private: bool = False,
@@ -446,13 +487,11 @@ def iter_module_members(
     Traverse the Abstract Syntax Tree (AST) and yield the names and objects of
     the members of the given module.
 
-    The first element returned in the tuple is the `name`.
-    When `import module`, `eval(f"{module}.{name}")` should be evaluable.
-
     Args:
         module (str): The name of the module to iterate over.
         private (bool): Whether to include private members.
         special (bool): Whether to include special members.
+        child_only (bool): Whether to include only the child nodes.
 
     Yields:
         tuple[str, Module | Definition]: The names and objects of the members of
@@ -554,7 +593,7 @@ def iter_classes_from_module(
     Yields:
         str: The names of the classes in the given module.
     """
-    for name, obj in iter_module_members(module, private, special, child_only=True):
+    for name, obj in get_module_members(module, private, special, child_only=True):
         if isinstance(obj, Definition):
             if isinstance(obj.node, ast.ClassDef):
                 yield name
@@ -574,7 +613,7 @@ def iter_functions_from_module(
     Yields:
         str: The names of the functions in the given module.
     """
-    for name, obj in iter_module_members(module, private, special, child_only=True):
+    for name, obj in get_module_members(module, private, special, child_only=True):
         if isinstance(obj, Definition):
             if isinstance(obj.node, ast.FunctionDef | ast.AsyncFunctionDef):
                 yield name
@@ -594,7 +633,7 @@ def iter_modules_from_module(
     Yields:
         str: The names of the modules in the given module.
     """
-    for name, obj in iter_module_members(module, private, special, child_only=True):
+    for name, obj in get_module_members(module, private, special, child_only=True):
         if isinstance(obj, Module):
             yield name
 
