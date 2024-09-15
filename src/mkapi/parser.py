@@ -653,6 +653,9 @@ def merge_attributes(
         if ignore_names and attr.name in ignore_names:
             continue
 
+        if attr.name.startswith("_"):
+            continue
+
         if find_item_by_name(items, attr.name):
             continue
 
