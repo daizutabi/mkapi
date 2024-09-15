@@ -3,8 +3,13 @@
 
 {% for section in doc.sections -%}
 {% if section.name and not section.kind -%}
-<p class="mkapi-section"><span class="mkapi-section-name">{{ section.name|safe }}</span></p>
+<p class="mkapi-section">
+<span class="mkapi-section-name mkapi-section-toggle" title="Show/hide {{ section.name|lower }}">
+{{ section.name|safe }}
+</span>
+</p>
 {%- endif %}
+<div class="mkapi-section-content" markdown="1">
 {{ section.text|safe }}
 {% if section.items -%}
 <ul class="mkapi-item-list" markdown="1">
@@ -23,6 +28,7 @@
 </li>
 {% endfor -%}
 </ul>
-{% endif %}
+{% endif -%}
+</div>
 {% endfor %}
 </div>
