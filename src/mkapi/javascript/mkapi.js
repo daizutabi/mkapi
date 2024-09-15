@@ -1,3 +1,25 @@
+const documentButtons = document.querySelectorAll(".mkapi-document-toggle");
+
+documentButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const element = button.parentElement.parentElement.nextElementSibling;
+    let isInvisible = element.style.display === "none";
+    element.style.display = isInvisible ? "block" : "none";
+    button.textContent = isInvisible ? "[-]" : "[+]";
+  });
+});
+
+const sectionButtons = document.querySelectorAll(".mkapi-section-toggle");
+
+sectionButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const element = button.parentElement.parentElement.nextElementSibling;
+    let isInvisible = element.style.display === "none";
+    element.style.display = isInvisible ? "block" : "none";
+    button.textContent = isInvisible ? "[-]" : "[+]";
+  });
+});
+
 const parentButtons = document.querySelectorAll(".mkapi-parent-toggle");
 
 parentButtons.forEach((button) => {
@@ -8,15 +30,5 @@ parentButtons.forEach((button) => {
     elements.forEach((element) => {
       element.style.display = isVisible ? "none" : "inline";
     });
-  });
-});
-
-const itemsButtons = document.querySelectorAll(".mkapi-section-toggle");
-
-itemsButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    const element = button.parentElement.nextElementSibling;
-    let isInvisible = element.style.display === "none";
-    element.style.display = isInvisible ? "block" : "none";
   });
 });

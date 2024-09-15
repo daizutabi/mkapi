@@ -107,12 +107,12 @@ def render(
 
     if not predicate or predicate(parser, TemplateKind.OBJECT):
         signature = parser.parse_signature()
-        bases = parser.parse_bases()
-        markdowns.append(render_object(name_set, level, namespace, signature, bases))
+        markdowns.append(render_object(name_set, level, namespace, signature))
 
     if not predicate or predicate(parser, TemplateKind.DOCUMENT):
         doc = parser.parse_doc()
-        markdowns.append(render_document(doc))
+        bases = parser.parse_bases()
+        markdowns.append(render_document(doc, bases))
 
     if not predicate or predicate(parser, TemplateKind.SOURCE):
         markdowns.append(render_source(parser.obj))
@@ -147,7 +147,6 @@ def render_object(
     level: int,
     namespace: str,
     signature: list[tuple[str, str]],
-    bases: list[str],
 ) -> str:
     """
     Render an object entry using the specified parameters.
@@ -160,7 +159,6 @@ def render_object(
         name_set (NameSet): The name set containing the object's ID and fullname.
         namespace (str): The namespace to use for rendering objects.
         signature (list[tuple[str, str]]): The signature of the object.
-        bases (list[str]): The bases of the object.
 
     Returns:
         str: The rendered object entry as a markdown string.
@@ -177,11 +175,10 @@ def render_object(
         level=level,
         namespace=namespace,
         signature=signature,
-        bases=bases,
     )
 
 
-def render_document(doc: Doc) -> str:
+def render_document(doc: Doc, bases: list[str]) -> str:
     """
     Render a document using the specified parameters.
 
@@ -190,11 +187,12 @@ def render_document(doc: Doc) -> str:
 
     Args:
         doc (Doc): The document to render.
+        bases (list[str]): The bases of the object.
 
     Returns:
         str: The rendered document as a markdown string.
     """
-    return templates["document"].render(doc=doc)
+    return templates["document"].render(doc=doc, bases=bases)
 
 
 def render_source(obj: Object, attr: str = "") -> str:

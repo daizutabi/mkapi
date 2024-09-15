@@ -7,9 +7,9 @@ repo_name: daizutabi/mkapi
 edit_uri: edit/main/docs/
 theme:
   name: material
-  font:
-    text: Fira Sans
-    code: Fira Code
+  # font:
+  #   text: Fira Sans
+  #   code: Fira Code
   icon:
     repo: fontawesome/brands/github
   palette:

@@ -58,12 +58,10 @@ def test_render_object_module():
     parser = Parser.create("examples._styles")
     assert parser
     name_set = parser.parse_name_set()
-    m = render_object(name_set, 1, "object", [], ["A", "B"])
+    m = render_object(name_set, 1, "object", [])
     assert '<p class="mkapi-object" id="examples._styles" markdown="1">' in m
-    x = 'class="mkapi-object-link">[object][__mkapi__.__object__.examples._styles]'
+    x = "[object][__mkapi__.__object__.examples._styles]"
     assert x in m
-    assert '<span class="mkapi-object-base">A</span>' in m
-    assert '<span class="mkapi-object-base">B</span>' in m
 
 
 def test_render_object_object():
@@ -72,8 +70,8 @@ def test_render_object_object():
     parser = Parser.create("mkapi.node.Node")
     assert parser
     name_set = parser.parse_name_set()
-    m = render_object(name_set, 1, "source", [], [])
-    x = 'class="mkapi-object-link">[source][__mkapi__.__source__.mkapi'
+    m = render_object(name_set, 1, "source", [])
+    x = "[source][__mkapi__.__source__.mkapi"
     assert x in m
     assert "[Node][__mkapi__.mkapi.node.Node]" in m
 
