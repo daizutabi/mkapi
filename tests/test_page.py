@@ -92,7 +92,6 @@ def convert_markdown():
 
     load_templates()
 
-    anchors = {"object": "O", "source": "S"}
     uri = "a/b.md"
     namespaces = ("object", "source")
     URIS["object"] = {}
@@ -102,7 +101,7 @@ def convert_markdown():
         def predicate(parser, kind_) -> bool:
             return kind_ == kind
 
-        return convert_markdown(markdown, uri, namespaces, anchors, predicate)
+        return convert_markdown(markdown, uri, namespaces, predicate)
 
     return covert
 
@@ -125,17 +124,17 @@ def test_generate_module_markdown_failure():
 def test_link():
     from mkapi.page import LINK_PATTERN, URIS, _link
 
-    URIS["N"] = {"b.c": "y/B.md"}
+    URIS["source"] = {"b.c": "y/B.md"}
 
     m = LINK_PATTERN.match("[A][__mkapi__.__a__.b.c]")
     assert m
-    m = _link(m, "x/a.md", "N", {"N": "nn", "source": "S"})
+    m = _link(m, "x/a.md", "N")
     assert m == ""
 
-    m = LINK_PATTERN.match("[A][__mkapi__.__N__.b.c]")
+    m = LINK_PATTERN.match("[A][__mkapi__.__source__.b.c]")
     assert m
-    m = _link(m, "y/a.md", "N", {"N": "nn", "source": "S"})
-    assert m == '[[nn]](B.md#b.c "b.c")'
+    m = _link(m, "y/a.md", "N")
+    assert m == '[[source]](B.md#b.c "b.c")'
 
 
 def test_link_not_from_mkapi():
@@ -144,7 +143,7 @@ def test_link_not_from_mkapi():
     URIS["N"] = {"x.y": "z/a/c.md"}
     m = LINK_PATTERN.match("[A][x.y]")
     assert m
-    m = _link(m, "y/a.md", "N", {"N": "nn", "source": "S"})
+    m = _link(m, "y/a.md", "N")
     assert m == '[A](../z/a/c.md#x.y "x.y")'
 
 
@@ -154,7 +153,7 @@ def test_link_not_from_mkapi_invalid():
     URIS["N"] = {}
     m = LINK_PATTERN.match("[A][x.y]")
     assert m
-    m = _link(m, "y/a.md", "N", {"N": "nn", "source": "S"})
+    m = _link(m, "y/a.md", "N")
     assert m == "[A][x.y]"
 
 
@@ -164,7 +163,7 @@ def test_link_backticks():
     URIS["N"] = {"x.y": "p/B.md"}
     m = LINK_PATTERN.match("[`A`][x.y]")
     assert m
-    m = _link(m, "q/r/a.md", "N", {"N": "nn", "source": "S"})
+    m = _link(m, "q/r/a.md", "N")
     assert m == '[`A`](../../p/B.md#x.y "x.y")'
 
 
@@ -174,7 +173,7 @@ def test_link_without_fullname():
     URIS["N"] = {"x.y": "q/r/a.md"}
     m = LINK_PATTERN.match("[x.y][]")
     assert m
-    m = _link(m, "q/r/a.md", "N", {"N": "nn", "source": "S"})
+    m = _link(m, "q/r/a.md", "N")
     assert m == '[x.y](a.md#x.y "x.y")'
 
 
@@ -184,7 +183,7 @@ def test_link_without_fullname_backticks():
     URIS["N"] = {"x.y": "q/s/a.md"}
     m = LINK_PATTERN.match("[`x.y`][]")
     assert m
-    m = _link(m, "q/r/a.md", "N", {"N": "nn", "source": "S"})
+    m = _link(m, "q/r/a.md", "N")
     assert m == '[`x.y`](../s/a.md#x.y "x.y")'
 
 
@@ -205,7 +204,7 @@ def test_page_convert_object_page():
     assert "mkapi.page" in URIS["object"]
     assert URIS["object"]["mkapi.page.Page"] == "a/b.md"
 
-    m = p.convert_markdown("", {"source": "S", "object": "O"})
+    m = p.convert_markdown("")
     assert "mkapi.page.Page.is_documentation_page" in m
 
 
@@ -219,5 +218,5 @@ def test_page_convert_source_page():
     p = Page.create_source("a/b.md", "mkapi.page")
     assert p
     p.generate_markdown()
-    m = p.convert_markdown("", {"source": "S", "object": "O"})
+    m = p.convert_markdown("")
     assert "class Page:## __mkapi__.mkapi.page.Page" in m

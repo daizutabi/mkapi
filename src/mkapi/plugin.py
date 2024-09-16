@@ -48,9 +48,10 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
 
         mkapi.renderer.load_templates()
 
-        _build_apinav(config, self)
-        _update_nav(config, self)
-        _update_extensions(config, self)
+        _update_extensions(config)
+
+        _build_apinav(config)
+        _update_nav(config, self.pages)
 
         if after_on_config := get_function("after_on_config"):
             after_on_config(config, self)
@@ -97,13 +98,12 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         src_uri = page.file.src_uri
-        anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
 
         if self.progress and self.task_id is not None:
             self.progress.update(self.task_id, description=src_uri)
 
         try:
-            return self.pages[src_uri].convert_markdown(markdown, anchors)
+            return self.pages[src_uri].convert_markdown(markdown)
         except Exception as e:
             if self.config.debug:
                 raise
@@ -112,36 +112,32 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
             logger.warning(msg)
             return markdown
 
-    def on_page_content(
-        self, html: str, page: MkDocsPage, config: MkDocsConfig, **kwargs
-    ) -> str:
+    def on_page_content(self, html: str, page: MkDocsPage, *args, **kwargs) -> str:
         src_uri = page.file.src_uri
         page_ = self.pages[src_uri]
 
         if page_.is_api_page():
             _replace_toc(page.toc)
 
-        anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
-
-        html = page_.convert_html(html, anchors)
+        html = page_.convert_html(html)
 
         if self.progress and self.task_id is not None:
             self.progress.update(self.task_id, description=src_uri, advance=1)
 
         return html
 
-    def on_post_build(self, config: MkDocsConfig, **kwargs) -> None:
+    def on_post_build(self, *args, **kwargs) -> None:
         if self.progress is not None:
             self.progress.stop()
 
 
-def _update_extensions(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
+def _update_extensions(config: MkDocsConfig) -> None:
     for name in ["admonition", "attr_list", "md_in_html", "pymdownx.superfences"]:
         if name not in config.markdown_extensions:
             config.markdown_extensions.append(name)
 
 
-def _build_apinav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
+def _build_apinav(config: MkDocsConfig) -> None:
     if not config.nav:
         return
 
@@ -157,7 +153,7 @@ def _build_apinav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     mkapi.nav.build_apinav(config.nav, watch_directory)
 
 
-def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
+def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> None:
     if not (nav := config.nav):
         return
 
@@ -178,7 +174,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
         TextColumn("{task.description}"),
     ]
     with Progress(*columns, transient=True) as progress:
-        task_id = progress.add_task("", total=len(plugin.pages) or None)
+        task_id = progress.add_task("", total=len(pages) or None)
 
         def create_page(name: str, path: str) -> str:
             uri = name.replace(".", "/")
@@ -186,18 +182,18 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
             if ":" in path:
                 object_path, source_path = path.split(":", maxsplit=1)
             else:
-                object_path, source_path = path, get_config().src_dir
+                object_path, source_path = path, "src"
 
             suffix = "/README.md" if is_package(name) else ".md"
             object_uri = f"{object_path}/{uri}{suffix}"
-            if object_uri not in plugin.pages:
-                plugin.pages[object_uri] = Page.create_object(object_uri, name)
+            if object_uri not in pages:
+                pages[object_uri] = Page.create_object(object_uri, name)
 
             progress.update(task_id, description=object_uri, advance=1)
 
             source_uri = f"{source_path}/{uri}.md"
-            if source_uri not in plugin.pages:
-                plugin.pages[source_uri] = Page.create_source(source_uri, name)
+            if source_uri not in pages:
+                pages[source_uri] = Page.create_source(source_uri, name)
 
             progress.update(task_id, description=source_uri, advance=1)
 

@@ -115,20 +115,18 @@ def config(config_plugin):
     return config_plugin[0]
 
 
-def test_update_extensions(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
+def test_update_extensions(config: MkDocsConfig):
     from mkapi.plugin import _update_extensions
 
-    config, plugin = config_plugin
-    _update_extensions(config, plugin)
+    _update_extensions(config)
     for x in ["admonition", "md_in_html"]:
         assert x in config.markdown_extensions
 
 
-def test_build_apinav(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
+def test_build_apinav(config: MkDocsConfig):
     from mkapi.plugin import _build_apinav
 
-    config, plugin = config_plugin
-    _build_apinav(config, plugin)
+    _build_apinav(config)
 
     assert str(get_module_path("mkapi").parent) in config.watch  # type: ignore
 

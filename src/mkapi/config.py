@@ -17,9 +17,6 @@ if TYPE_CHECKING:
 class MkApiConfig(Config):
     config = config_options.Type(str, default="")
     exclude = config_options.Type(list, default=[])
-    src_dir = config_options.Type(str, default="src")
-    docs_anchor = config_options.Type(str, default="docs")
-    src_anchor = config_options.Type(str, default="source")
     debug = config_options.Type(bool, default=False)
 
 
