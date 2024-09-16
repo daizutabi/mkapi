@@ -1,7 +1,7 @@
 .mkapi-object {
   margin-block-start: 20px;
   background-color: var(--mkapi-object-bg-color);
-  padding: 4px 8px;
+  padding: 8px;
 }
 
 h1 + .mkapi-object {
