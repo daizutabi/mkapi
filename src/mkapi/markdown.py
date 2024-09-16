@@ -267,16 +267,15 @@ def _convert_examples(examples: list[doctest.Example]) -> str:
     Returns:
         str: The Markdown representation of the provided examples.
     """
-    attr = ".python .mkapi-example-"
     prefix = " " * examples[0].indent
-    lines = [f"{prefix}```{{{attr}input}}"]
+    lines = [f"{prefix}```{{.python .mkapi-example-input}}"]
 
     lines.extend(textwrap.indent(e.source.rstrip(), prefix) for e in examples)
     lines.append(f"{prefix}```\n")
 
     if want := examples[-1].want:
         want = textwrap.indent(want.rstrip(), prefix)
-        output = f"{prefix}```{{{attr}output}}\n"
+        output = f"{prefix}```{{.text .mkapi-example-output}}\n"
         output = f"{output}{want}\n{prefix}```\n"
         lines.append(output)
 
