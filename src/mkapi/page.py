@@ -29,6 +29,7 @@ class PageKind(Enum):
 
 
 URIS: dict[str, dict[str, str]] = {}
+# anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
 
 
 @dataclass

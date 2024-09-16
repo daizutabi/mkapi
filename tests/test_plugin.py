@@ -115,16 +115,6 @@ def config(config_plugin):
     return config_plugin[0]
 
 
-def test_update_templates(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
-    from mkapi.plugin import _update_templates
-    from mkapi.renderer import templates
-
-    config, plugin = config_plugin
-    _update_templates(config, plugin)
-    for x in ["document", "heading", "object", "source"]:
-        assert x in templates
-
-
 def test_update_extensions(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
     from mkapi.plugin import _update_extensions
 

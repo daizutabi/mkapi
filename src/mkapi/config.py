@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from mkdocs.config import Config, config_options
 
+from mkapi.utils import cache
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -33,6 +35,7 @@ def get_config() -> MkApiConfig:
     return _config
 
 
+@cache
 def get_function(name: str) -> Callable | None:
     config = get_config()
     if not (path_str := config.config):

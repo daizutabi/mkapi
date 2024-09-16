@@ -17,13 +17,11 @@ from rich.progress import (
 import mkapi
 import mkapi.nav
 import mkapi.renderer
-from mkapi.config import MkApiConfig, get_function, set_config
+from mkapi.config import MkApiConfig, get_config, get_function, set_config
 from mkapi.page import Page
 from mkapi.utils import cache_clear, get_module_path, is_package
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from mkdocs.config.defaults import MkDocsConfig
     from mkdocs.structure.files import Files
     from mkdocs.structure.pages import Page as MkDocsPage
@@ -44,10 +42,6 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         cache_clear()
         set_config(self.config)
-
-        self.page_title = get_function("page_title")
-        self.section_title = get_function("section_title")
-        self.toc_title = get_function("toc_title")
 
         if before_on_config := get_function("before_on_config"):
             before_on_config(config, self)
@@ -125,7 +119,7 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
         page_ = self.pages[src_uri]
 
         if page_.is_api_page():
-            _replace_toc(page.toc, self.toc_title)
+            _replace_toc(page.toc)
 
         anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
 
@@ -167,17 +161,14 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
     if not (nav := config.nav):
         return
 
-    section_title = plugin.section_title
-    page_title = plugin.page_title
-
     def predicate(name: str) -> bool:
         if name.split(".")[-1].startswith("_"):
             return False
 
-        if not plugin.config.exclude:
+        if not (exclude := get_config().exclude):
             return True
 
-        return not any(fnmatch.fnmatch(name, ex) for ex in plugin.config.exclude)
+        return not any(fnmatch.fnmatch(name, ex) for ex in exclude)
 
     columns = [
         SpinnerColumn(),
@@ -195,7 +186,7 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
             if ":" in path:
                 object_path, source_path = path.split(":", maxsplit=1)
             else:
-                object_path, source_path = path, plugin.config.src_dir
+                object_path, source_path = path, get_config().src_dir
 
             suffix = "/README.md" if is_package(name) else ".md"
             object_uri = f"{object_path}/{uri}{suffix}"
@@ -212,21 +203,22 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
 
             return object_uri
 
+        page_title = get_function("page_title")
+        section_title = get_function("section_title")
+
         mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
 
 
-def _replace_toc(
-    toc: TableOfContents | list[AnchorLink],
-    title: Callable[[str, int], str] | None = None,
-    depth: int = 0,
-) -> None:
+def _replace_toc(toc: TableOfContents | list[AnchorLink], depth: int = 0) -> None:
+    toc_title = get_function("toc_title")
+
     for link in toc:
-        if title:
-            link.title = title(link.title, depth)
+        if toc_title:
+            link.title = toc_title(link.title, depth)
         else:
             link.title = link.title.split(".")[-1]
 
-        _replace_toc(link.children, title, depth + 1)
+        _replace_toc(link.children, depth + 1)
 
 
 def _read(uri: str) -> str:
