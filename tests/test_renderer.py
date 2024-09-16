@@ -59,7 +59,8 @@ def test_render_object_module():
     assert parser
     name_set = parser.parse_name_set()
     m = render_object(name_set, 1, "object", [])
-    assert '<p class="mkapi-object" id="examples._styles" markdown="1">' in m
+    x = '<p class="mkapi-object mkapi-page-object" id="examples._styles" markdown="1">'
+    assert x in m
     x = "[object][__mkapi__.__object__.examples._styles]"
     assert x in m
 
