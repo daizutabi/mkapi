@@ -7,14 +7,11 @@ meet your specific documentation needs. -->
 
 ## Excluding Modules
 
-You can skip the generation of documentation for
+You can exclude the generation of documentation for
 specific modules using the plugin's `exclude` setting.
 This feature is particularly useful for omitting
 test modules, unnecessary components, or large modules
 that may clutter your documentation.
-
-You can skip generation of documentation for some
-specific modules with the plugin's `exclude` setting:
 
 ```yaml title="mkdocs.yml"
 plugins:
@@ -176,6 +173,6 @@ and visually appealing documentation experience that encourages
 users to explore and utilize your library effectively.
 
 !!! warning "Instant loading"
-    Enabling the `navigation.instant` feature will cause the navigation
-    to source pages and the "Show/hide class names" functionality to
-    not work.
+    Enabling the `navigation.instant` feature will cause links to source
+    pages to function improperly, and the **[-]**/**[+]** buttons will
+    be disabled.
