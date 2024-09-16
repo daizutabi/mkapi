@@ -36,13 +36,24 @@ Simply writing the inline code is sufficient like `` `object` ``.
 
 ### Why Not Use Markdown Link Syntax?
 
-Docstrings are often read directly in the source code by users and are also
-displayed as popups in IDE (Integrated Development Environment)
-like Visual Studio Code.
-Unnecessary syntax can make the text difficult to read and distracting.
-MkAPI takes this into consideration and generates readable
-documentation without introducing special syntax within docstrings.
-This keeps the docstrings clean and easy to understand.
+#### From a user's perspective
+
+Avoiding Markdown link syntax in docstrings makes the documentation easier to
+read and understand. Users often read docstrings directly in the source code
+or as popups in IDEs like Visual Studio Code.
+Introducing unnecessary syntax can make the text cluttered and distracting.
+MkAPI addresses this by generating clean and readable documentation without
+special syntax, ensuring that users can quickly grasp the information they need.
+
+#### From a developer's perspective
+
+Using Markdown link syntax can be problematic, especially after refactoring
+the code. Every time the code is refactored,
+all the docstrings need to be updated to reflect the changes in the links.
+MkAPI's approach of automatically generating links from inline code eliminates
+this issue. It recognizes the context in which the docstring is written and
+resolves the names accurately, reducing the maintenance burden on developers
+and ensuring that the documentation remains up-to-date and relevant.
 
 ### How Automatic Link Generation Works
 
