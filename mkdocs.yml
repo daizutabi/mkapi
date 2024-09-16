@@ -1,15 +1,12 @@
 site_name: MkAPI
-site_url: https://daizutabi.github.io/mkapi/
-site_description: API documentation with MkDocs.
 site_author: daizutabi
+site_description: API documentation with MkDocs.
+site_url: https://daizutabi.github.io/mkapi/
 repo_url: https://github.com/daizutabi/mkapi/
 repo_name: daizutabi/mkapi
 edit_uri: edit/main/docs/
 theme:
   name: material
-  # font:
-  #   text: Fira Sans
-  #   code: Fira Code
   icon:
     repo: fontawesome/brands/github
   palette:

@@ -2,8 +2,8 @@
 {{ doc.text|safe }}
 
 {%- if bases -%}
-<p class="mkapi-object-bases" markdown="1">Bases :
-{% for base in bases %}<span class="mkapi-object-base">{{ base|safe }}</span>
+<p class="mkapi-bases" markdown="1">Bases :
+{% for base in bases %}<span class="mkapi-base">{{ base|safe }}</span>
 {%- if not loop.last %}<span class="mkapi-comma">, </span>{% endif -%}
 {%- endfor -%}
 </p>

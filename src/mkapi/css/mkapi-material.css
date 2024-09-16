@@ -8,7 +8,7 @@
   --mkapi-arg-color: var(--md-code-hl-name-color);
   --mkapi-punctuation-color: var(--md-code-hl-punctuation-color);
   --mkapi-variable-color: var(--md-code-hl-variable-color);
-  --mkapi-object-bases-color: var(--md-default-fg-color--light);
+  --mkapi-bases-color: var(--md-default-fg-color--light);
   --mkapi-section-name-color: var(--md-default-fg-color);
   --mkapi-section-border-color: var(--md-default-fg-color--light);
   --mkapi-type-color: var(--md-code-hl-variable-color);

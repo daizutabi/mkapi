@@ -14,17 +14,8 @@ h1 + .mkapi-object {
   font-style: italic;
 }
 
-.mkapi-document-toggle,
-.mkapi-section-toggle {
-  cursor: pointer;
-  color: var(--mkapi-punctuation-color);
-  font-family: var(--mkapi-object-name-font-family);
-  font-size: 0.95em;
-  letter-spacing: -0.2em; /
-}
-
-.mkapi-parent-toggle {
-  cursor: pointer;
+.mkapi-object-parent {
+  display: none;
 }
 
 .mkapi-object-name,
@@ -32,10 +23,6 @@ h1 + .mkapi-object {
   color: var(--mkapi-object-name-color);
   font-family: var(--mkapi-object-name-font-family);
   font-weight: bold;
-}
-
-.mkapi-object-parent {
-  display: none;
 }
 
 .mkapi-object-name a,
@@ -90,8 +77,8 @@ h1 + .mkapi-object {
   margin-left: 16px;
 }
 
-.mkapi-object-bases {
-  color: var(--mkapi-object-bases-color);
+.mkapi-bases {
+  color: var(--mkapi-bases-color);
   font-size: 0.85em;
 }
 
@@ -149,4 +136,17 @@ ul.mkapi-item-list {
   font-size: 0.85em;
   margin-left: 1.2em;
   vertical-align: baseline;
+}
+
+.mkapi-document-toggle,
+.mkapi-section-toggle {
+  cursor: pointer;
+  color: var(--mkapi-punctuation-color);
+  font-family: var(--mkapi-object-name-font-family);
+  font-size: 0.95em;
+  letter-spacing: -0.2em; /
+}
+
+.mkapi-parent-toggle {
+  cursor: pointer;
 }

@@ -43,6 +43,7 @@ def func_a(x: int) -> int:
 
     See Also:
         - `ClassA.method_a`
+        - `ClassB.method_b`
         - [`func_b`][example.sub.mod_b.func_b]
     """
     return 2 * x

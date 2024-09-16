@@ -37,9 +37,10 @@ Simply writing the inline code is sufficient like `` `object` ``.
 ### Why Not Use Markdown Link Syntax?
 
 Docstrings are often read directly in the source code by users and are also
-displayed as popups in IDEs like VSCode.
+displayed as popups in IDE (Integrated Development Environment)
+like Visual Studio Code.
 Unnecessary syntax can make the text difficult to read and distracting.
-MkAPI takes this into consideration and generates simple and readable
+MkAPI takes this into consideration and generates readable
 documentation without introducing special syntax within docstrings.
 This keeps the docstrings clean and easy to understand.
 
@@ -47,11 +48,12 @@ This keeps the docstrings clean and easy to understand.
 
 MkAPI can automatically generate links from inline code.
 It recognizes the context in which the docstring is written.
-In a module's docstring, it resolves names by referencing the namespace
-within the module's scope.
 
-In functions and classes, MkAPI can resolve the names of children,
+In a module's docstring, MkAPI resolves the names by referencing
+the namespace within the module's scope.
+In functions and classes, MkAPI resolves the names of children,
 parent, and sibling objects.
+
 This feature allows for more accurate and context-aware documentation generation.
 When a docstring references an object, MkAPI will look up the hierarchy
 to find the correct child, parent, or sibling, ensuring that the generated links
@@ -67,19 +69,14 @@ This automatic resolution of parent and sibling names enhances the usability
 and accuracy of the generated documentation, making it easier for users to
 navigate and understand the relationships between different parts of your code.
 
-This feature ensures that references are accurate and relevant to the
-specific context of the docstring, enhancing the overall quality and
-usability of the generated documentation.
+### Automatic Link Generation for Types
 
-### Automatic Link Generation for Type Hints and Parameters Section
+MkAPI automatically generates links for type hints in class and
+function definitions, and types written in the docstring sections.
 
-MkAPI automatically generates links for type hints in function definitions
-and types written in the Parameters section of docstrings.
 Even when the types are outside the library and cannot be linked,
 a tooltip with the full name is displayed.
-This allows users to verify the actual type by hovering over it,
-balancing the reduction of displayed characters with the provision
-of information to the user.
+This allows users to verify the actual type by hovering over it.
 
 ### Importance of the Summary Line
 
@@ -94,21 +91,16 @@ to find and understand the structure of your code.
 By using the `mkdocs serve` command, you can view your API documentation
 in real-time while editing your source code and docstrings.
 This feature allows you to see the changes immediately,
-ensuring that your documentation is always up-to-date with your latest code modifications.
+ensuring that your documentation is always up-to-date with your
+latest code modifications.
 
-Additionally, by using the `--dirty` mode, only the modified modules are reloaded.
-This means that even if your library grows large, you won't have to wait
-for the entire page to refresh.
-This efficient reloading process saves time and enhances your productivity,
-making it easier to maintain accurate and current documentation.
-
-Using these features, you can ensure that your documentation is always
-in sync with your code, providing a seamless and efficient workflow
-for developers and documentation writers alike.
+Additionally, by using the `--dirty` mode, only the modified modules
+are reloaded. This means that even if your library grows large,
+you won't have to wait for the entire documentation to refresh.
+This efficient reloading process saves time and enhances your productivity.
 
 ## Summary
 
 This guide has provided an overview of how to write effective docstrings
 using MkAPI's features. By following the structure and guidelines provided,
-you can create clear and informative documentation that enhances the
-usability and accessibility of your code.
+you can create clear and informative documentation.
