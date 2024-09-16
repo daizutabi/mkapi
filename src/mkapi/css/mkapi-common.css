@@ -150,3 +150,16 @@ ul.mkapi-item-list {
 .mkapi-parent-toggle {
   cursor: pointer;
 }
+
+.mkapi-page-object {
+  margin-block-end: 0px;
+  border-bottom: 1px solid var(--mkapi-object-border-color);
+}
+
+.mkapi-source {
+  margin-top: 0px !important;
+}
+
+.mkapi-source > table.highlighttable {
+  margin-top: 0px !important;
+}
