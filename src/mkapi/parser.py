@@ -280,15 +280,27 @@ PREFIX = "__mkapi__."
 
 
 def get_markdown_link(name: str, ref: str | None, *, in_code: bool = False) -> str:
-    """Return markdown links.
+    """Return a Markdown link.
+
+    Generate a Markdown formatted link for a given object name and its reference.
+    It can format the link differently based on whether it is intended to be
+    displayed in code or not.
 
     Args:
         name (str): The name of the object to link.
-        ref (str | None): The reference of the object.
-        in_code (bool): Whether the link is in code.
+        ref (str | None): The reference of the object, which is used to
+            create the link target.
+        in_code (bool): Whether the link is in code. If True, the link will
+            be formatted for inline code. Defaults to False.
 
     Returns:
-        str: The markdown link.
+        str: A Markdown formatted string that represents the link.
+
+    Examples:
+        >>> get_markdown_link("foo", "bar")
+        '[foo][__mkapi__.bar]'
+        >>> get_markdown_link("foo", "bar", in_code=True)
+        '[`foo`][__mkapi__.bar]'
     """
     if not in_code:
         name = name.replace("_", "\\_")
@@ -303,7 +315,32 @@ Replace: TypeAlias = Callable[[str], str | None] | None
 
 
 def get_markdown_name(fullname: str, replace: Replace = None) -> str:
-    """Return a markdown link from the fullname."""
+    """Return a Markdown formatted string from the fullname.
+
+    Take a fully qualified name (e.g., "foo.bar") and generate
+    a Markdown formatted link for each component of the name.
+    It splits the fullname into its constituent parts and creates links
+    for each part using the `get_markdown_link` function.
+    If a replacement function is provided, it will be applied to each
+    reference before generating the links.
+
+    Args:
+        fullname (str): The fully qualified name of the object, formatted as
+            a dot-separated string (e.g., "foo.bar").
+        replace (Replace, optional): A function that takes a string and returns
+            a modified string. This function is applied to each reference
+            before generating the Markdown links. Defaults to None.
+
+    Returns:
+        str: A Markdown formatted string that represents the links for each
+            component of the fullname.
+
+    Examples:
+        >>> get_markdown_name("foo.bar")
+        '[foo][__mkapi__.foo].[bar][__mkapi__.foo.bar]'
+        >>> get_markdown_name("foo.bar", lambda x: x.replace("bar", "baz"))
+        '[foo][__mkapi__.foo].[bar][__mkapi__.foo.baz]'
+    """
     names = fullname.split(".")
     refs = iter_attribute_names(fullname)
 
@@ -314,15 +351,59 @@ def get_markdown_name(fullname: str, replace: Replace = None) -> str:
     return ".".join(get_markdown_link(*names) for names in it)
 
 
-def get_markdown_str(type_string: str, replace: Replace) -> str:
-    """Return markdown links from string-type."""
-    it = iter_identifiers(type_string)
+def get_markdown_str(type_str: str, replace: Replace = None) -> str:
+    """Return a Markdown formatted string from the type string.
+
+    Take a type string (e.g., "foo[bar]" or "foo, bar") and generate
+    a Markdown formatted representation of the string.
+
+    Args:
+        type_str (str): The type string to be converted into Markdown format.
+        replace (Replace, optional): A function that takes a string and returns
+            a modified string. This function is applied to each reference
+            before generating the Markdown links. Defaults to None.
+
+    Returns:
+        str: A Markdown formatted string that represents the type string with
+            appropriate links for its components.
+
+    Examples:
+        >>> get_markdown_str("foo[bar]",None)
+        '[foo][__mkapi__.foo][[bar][__mkapi__.bar]]'
+        >>> get_markdown_str("foo, bar", lambda x: x.replace("bar", "baz"))
+        '[foo][__mkapi__.foo], [bar][__mkapi__.baz]'
+    """
+    it = iter_identifiers(type_str)
     markdowns = (get_markdown_name(name, replace) if is_ else name for name, is_ in it)
     return "".join(markdowns)
 
 
 def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
-    """Set Markdown text with link."""
+    """Return a Markdown formatted string from an AST expression.
+
+    Take an Abstract Syntax Tree (AST) expression and generate
+    a Markdown formatted representation of the expression.
+    It handles different types of expressions, such as constants
+    and subscripted values.
+
+    Args:
+        expr (ast.expr): The AST expression to be converted into Markdown format.
+        replace (Replace, optional): A function that takes a string and returns
+            a modified string. This function is applied to each reference
+            before generating the Markdown links. Defaults to None.
+
+    Returns:
+        str: A Markdown formatted string that represents the AST expression.
+
+    Examples:
+        >>> import ast
+        >>> expr = ast.parse("foo[bar]").body[0].value
+        >>> assert isinstance(expr, ast.Subscript)
+        >>> get_markdown_expr(expr)
+        '[foo][__mkapi__.foo][[bar][__mkapi__.bar]]'
+        >>> get_markdown_expr(expr, lambda x: x.replace("bar", "baz"))
+        '[foo][__mkapi__.foo][[bar][__mkapi__.baz]]'
+    """
     if isinstance(expr, ast.Constant):
         value = expr.value
 
@@ -341,7 +422,23 @@ def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
 
 
 def get_markdown_type(type_: str | ast.expr | None, replace: Replace) -> str:
-    """Return a markdown link from the type."""
+    """Return a Markdown formatted string from a type or AST expression.
+
+    Take a type, which can be a string, an AST expression, or None,
+    and generate a Markdown formatted representation.
+    If the input is None, it returns an empty string.
+
+    Args:
+        type_ (str | ast.expr | None): The type or AST expression to be converted
+            into Markdown format. Can be a string, an AST expression, or None.
+        replace (Replace): A function that takes a string and returns
+            a modified string. This function is applied to each reference
+            before generating the Markdown links.
+
+    Returns:
+        str: A Markdown formatted string representing the type or AST expression.
+            Returns an empty string if the input is None.
+    """
     if type_ is None:
         return ""
 
@@ -355,7 +452,25 @@ CODE_PATTERN = re.compile(r"(?P<pre>`+)(?P<name>.+?)(?P=pre)")
 
 
 def get_markdown_text(text: str, replace: Replace) -> str:
-    """Return markdown links from docstring text."""
+    """Return a Markdown formatted string from the input text.
+
+    Process the input text to convert specific patterns into
+    Markdown formatted links. It uses a regular expression to identify code
+    segments and applies a replacement function if provided.
+
+    Args:
+        text (str): The input text to be converted into Markdown format.
+        replace (Replace): A function that takes a string and returns
+            a modified string. This function is applied to each identifier
+            before generating the Markdown links.
+
+    Returns:
+        str: A Markdown formatted string with appropriate links for identifiers.
+
+    Examples:
+        >>> get_markdown_text("Use `foo.bar`.", lambda x: x.replace("bar", "baz"))
+        'Use [`foo.bar`][__mkapi__.foo.baz].'
+    """
 
     def _replace(match: re.Match) -> str:
         if len(match.group("pre")) != 1:
@@ -372,11 +487,22 @@ def get_markdown_text(text: str, replace: Replace) -> str:
 
 
 def set_markdown_doc(doc: Doc, replace: Replace) -> None:
-    """Set markdown for the doc.
+    """Set Markdown formatting for the given document.
+
+    Update the text and type of the provided `Doc` object
+    and its sections and items to be Markdown formatted.
+    It uses the `get_markdown_text` and `get_markdown_type` functions
+    to convert the text and type of the document, sections, and items.
 
     Args:
-        doc (Doc): The doc to set markdown for.
-        replace (Replace): The replace function.
+        doc (Doc): The document object to be updated with Markdown formatting.
+        replace (Replace): A function that takes a string and returns
+            a modified string. This function is applied to each identifier
+            before generating the Markdown links.
+
+    Returns:
+        None: This function does not return a value; it modifies the `Doc`
+        object in place.
     """
     doc.text = get_markdown_text(doc.text, replace)
     doc.type = get_markdown_type(doc.type, replace)
