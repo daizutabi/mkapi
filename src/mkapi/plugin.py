@@ -3,7 +3,6 @@ from __future__ import annotations
 import fnmatch
 import importlib
 import os
-import re
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -11,7 +10,7 @@ from typing import TYPE_CHECKING
 from mkdocs.config import Config, config_options
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin, get_plugin_logger
-from mkdocs.structure.files import File, InclusionLevel, get_files
+from mkdocs.structure.files import File, InclusionLevel
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
@@ -93,10 +92,10 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
                 src_uri = file.src_uri
                 self.pages[src_uri] = Page.create_documentation(src_uri, content)
 
-        for file in _collect_css(config, self):
+        for file in _collect_css(config):
             files.append(file)
 
-        for file in _collect_javascript(config, self):
+        for file in _collect_javascript(config):
             files.append(file)
 
         return files
@@ -115,15 +114,13 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         src_uri = page.file.src_uri
-        page_ = self.pages[src_uri]
-
         anchors = {"object": self.config.docs_anchor, "source": self.config.src_anchor}
 
         if self.progress and self.task_id is not None:
             self.progress.update(self.task_id, description=src_uri)
 
         try:
-            return page_.convert_markdown(markdown, anchors)
+            return self.pages[src_uri].convert_markdown(markdown, anchors)
         except Exception as e:
             if self.config.debug:
                 raise
@@ -238,11 +235,13 @@ def _update_nav(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
             object_uri = f"{object_path}/{uri}{suffix}"
             if object_uri not in plugin.pages:
                 plugin.pages[object_uri] = Page.create_object(object_uri, name)
+
             progress.update(task_id, description=object_uri, advance=1)
 
             source_uri = f"{source_path}/{uri}.md"
             if source_uri not in plugin.pages:
                 plugin.pages[source_uri] = Page.create_source(source_uri, name)
+
             progress.update(task_id, description=source_uri, advance=1)
 
             return object_uri
@@ -256,61 +255,29 @@ def _replace_toc(
     depth: int = 0,
 ) -> None:
     for link in toc:
-        link.title = re.sub(r"\s+\[.+?\]", "", link.title)  # Remove source link.
-
         if title:
             link.title = title(link.title, depth)
         else:
-            link.title = link.title.split(".")[-1]  # Remove prefix.
+            link.title = link.title.split(".")[-1]
 
         _replace_toc(link.children, title, depth + 1)
 
 
-def _collect_css(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]:
-    root = Path(mkapi.__file__).parent / "css"
-
-    if not root.exists():
-        return []
-
-    docs_dir = config.docs_dir
-    config.docs_dir = root.as_posix()
-
-    theme_name = config.theme.name or "mkdocs"
-
-    files = []
-    css = []
-    for file in get_files(config):
-        if file.src_uri == "mkapi-common.css":
-            files.insert(0, file)
-            css.insert(0, file.src_uri)
-
-        elif file.src_uri == f"mkapi-{theme_name}.css":
-            files.append(file)
-            css.append(file.src_uri)
-
-    config.extra_css = [*css, *config.extra_css]
-    config.docs_dir = docs_dir
-    return files
+def _read(uri: str) -> str:
+    root = Path(mkapi.__file__).parent
+    return (root / uri).read_text()
 
 
-def _collect_javascript(config: MkDocsConfig, plugin: MkApiPlugin) -> list[File]:
-    root = Path(mkapi.__file__).parent / "javascript"
+def _collect_css(config: MkDocsConfig) -> list[File]:
+    uris = ["css/mkapi-common.css", "css/mkapi-material.css"]
+    config.extra_css = [*uris, *config.extra_css]
+    return [File.generated(config, uri, content=_read(uri)) for uri in uris]
 
-    if not root.exists():
-        return []
 
-    docs_dir = config.docs_dir
-    config.docs_dir = root.as_posix()
-
-    files = []
-    js = []
-    for file in get_files(config):
-        files.append(file)
-        js.append(file.src_uri)
-
-    config.extra_javascript = [*js, *config.extra_javascript]
-    config.docs_dir = docs_dir
-    return files
+def _collect_javascript(config: MkDocsConfig) -> list[File]:
+    uris = ["javascript/mkapi.js"]
+    config.extra_javascript = [*uris, *config.extra_javascript]
+    return [File.generated(config, uri, content=_read(uri)) for uri in uris]
 
 
 def generate_file(config: MkDocsConfig, src_uri: str, name: str) -> File:

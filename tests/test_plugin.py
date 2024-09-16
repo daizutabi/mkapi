@@ -9,7 +9,6 @@ from mkdocs.commands.build import build
 from mkdocs.config import load_config
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import PluginCollection
-from mkdocs.structure.files import Files
 from mkdocs.theme import Theme
 
 import mkapi
@@ -167,32 +166,17 @@ def test_on_config(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
     assert "src/example/sub/mod_b.md" in plugin.pages
 
 
-def test_collect_css(config: MkDocsConfig):
-    from mkapi.plugin import _collect_css
-
-    plugin = config.plugins["mkapi"]
-    assert isinstance(plugin, MkApiPlugin)
-    files = Files(_collect_css(config, plugin))
-    assert files.media_files()
-
-
-def test_collect_javascript(config: MkDocsConfig):
-    from mkapi.plugin import _collect_javascript
-
-    plugin = config.plugins["mkapi"]
-    assert isinstance(plugin, MkApiPlugin)
-    files = Files(_collect_javascript(config, plugin))
-    assert files.media_files()
-
-
 @pytest.mark.parametrize("dirty", [False, True])
-def test_build(config: MkDocsConfig, dirty):
+def test_build(config: MkDocsConfig, dirty: bool):
     config.plugins.on_startup(command="build", dirty=dirty)
     plugin = config.plugins["mkapi"]
     assert isinstance(plugin, MkApiPlugin)
     assert not plugin.pages
 
     build(config, dirty=dirty)
+
+    assert len(config.extra_css) == 2
+    assert len(config.extra_javascript) == 1
 
     pages = plugin.pages
     assert pages["usage/object.md"].is_documentation_page()
