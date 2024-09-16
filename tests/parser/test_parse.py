@@ -279,7 +279,7 @@ def test_parse_bases():
     assert len(bases) == 1
     base = bases[0]
     assert base.startswith("[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]")
-    assert base.endswith("[[MkApiConfig][__mkapi__.mkapi.plugin.MkApiConfig]]")
+    assert base.endswith("[[MkApiConfig][__mkapi__.mkapi.config.MkApiConfig]]")
 
 
 def test_parse_bases_empty():

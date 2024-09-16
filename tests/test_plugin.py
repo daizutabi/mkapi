@@ -86,16 +86,6 @@ def test_mkapi_config(mkapi_config: MkApiConfig):
     assert config.exclude == ["_example"]
 
 
-def test_get_function(mkapi_plugin):
-    from mkapi.plugin import _get_function
-
-    assert _get_function("before_on_config", mkapi_plugin)
-    assert _get_function("after_on_config", mkapi_plugin)
-    assert _get_function("page_title", mkapi_plugin)
-    assert _get_function("section_title", mkapi_plugin)
-    assert _get_function("toc_title", mkapi_plugin)
-
-
 @pytest.fixture
 def config_plugin(tmp_path):
     dest = Path(tmp_path)
@@ -125,30 +115,18 @@ def config(config_plugin):
     return config_plugin[0]
 
 
-def test_update_templates(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
-    from mkapi.plugin import _update_templates
-    from mkapi.renderer import templates
-
-    config, plugin = config_plugin
-    _update_templates(config, plugin)
-    for x in ["document", "heading", "object", "source"]:
-        assert x in templates
-
-
-def test_update_extensions(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
+def test_update_extensions(config: MkDocsConfig):
     from mkapi.plugin import _update_extensions
 
-    config, plugin = config_plugin
-    _update_extensions(config, plugin)
+    _update_extensions(config)
     for x in ["admonition", "md_in_html"]:
         assert x in config.markdown_extensions
 
 
-def test_build_apinav(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
+def test_build_apinav(config: MkDocsConfig):
     from mkapi.plugin import _build_apinav
 
-    config, plugin = config_plugin
-    _build_apinav(config, plugin)
+    _build_apinav(config)
 
     assert str(get_module_path("mkapi").parent) in config.watch  # type: ignore
 
@@ -168,12 +146,20 @@ def test_on_config(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
 
 @pytest.mark.parametrize("dirty", [False, True])
 def test_build(config: MkDocsConfig, dirty: bool):
+    from mkapi.config import get_config, get_function
+
     config.plugins.on_startup(command="build", dirty=dirty)
     plugin = config.plugins["mkapi"]
     assert isinstance(plugin, MkApiPlugin)
     assert not plugin.pages
 
     build(config, dirty=dirty)
+
+    assert get_function("before_on_config")
+    assert get_function("after_on_config")
+    assert get_function("page_title")
+    assert get_function("section_title")
+    assert get_function("toc_title")
 
     assert len(config.extra_css) == 2
     assert len(config.extra_javascript) == 1
@@ -182,3 +168,9 @@ def test_build(config: MkDocsConfig, dirty: bool):
     assert pages["usage/object.md"].is_documentation_page()
     assert pages["api/mkapi/object.md"].is_object_page()
     assert pages["src/mkapi/object.md"].is_source_page()
+
+    assert plugin.config.debug is True
+
+    mkapi_config = get_config()
+    assert mkapi_config is plugin.config
+    assert mkapi_config.debug is True

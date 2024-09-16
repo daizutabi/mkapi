@@ -97,7 +97,7 @@ def test_get_node_class(name: str):
         ("mkapi.renderer", "Module('mkapi.renderer')"),
         ("jinja2.Template", "Definition('Template', 'jinja2.environment')"),
         ("mkapi.doc.Item", "Definition('Item', 'mkapi.doc')"),
-        ("mkapi.plugin.sys", "Import('sys')"),
+        ("mkapi.config.sys", "Import('sys')"),
     ],
 )
 def test_node_repr(name: str, expected_repr: str):

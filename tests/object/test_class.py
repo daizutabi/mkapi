@@ -68,17 +68,29 @@ def test_class_parameters():
     assert find_item_by_name(cls.parameters, "parent")
 
 
-def test_inherit_base_classes():
+def test_inherit_base_classes_config():
     from mkapi.object import Class, create_module
 
-    module = create_module("mkapi.plugin")
+    module = create_module("mkapi.config")
     assert module
     cls = module.get("MkApiConfig")
     assert isinstance(cls, Class)
     assert cls.get("config_file_path")
+
+
+def test_inherit_base_classes_plugin():
+    from mkapi.object import Class, create_module
+
+    module = create_module("mkapi.plugin")
+    assert module
     cls = module.get("MkApiPlugin")
     assert isinstance(cls, Class)
     assert cls.get("on_page_read_source")
+
+
+def test_inherit_base_classes_ast():
+    from mkapi.object import Class, create_module
+
     module = create_module("mkapi.ast")
     assert module
     cls = module.get("Parameter")

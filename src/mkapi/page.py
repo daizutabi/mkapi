@@ -1,5 +1,3 @@
-"""Page class that works with other converter."""
-
 from __future__ import annotations
 
 import os.path
@@ -29,6 +27,7 @@ class PageKind(Enum):
 
 
 URIS: dict[str, dict[str, str]] = {}
+ANCHORS = {"object": "docs", "source": "source"}
 
 
 @dataclass
@@ -76,7 +75,7 @@ class Page:
             uris[name] = self.src_uri
             # uris.setdefault(name, self.src_uri)  # overwrite or not?
 
-    def convert_markdown(self, markdown: str, anchors: dict[str, str]) -> str:
+    def convert_markdown(self, markdown: str) -> str:
         if self.is_api_page():
             markdown = self.markdown
 
@@ -100,14 +99,12 @@ class Page:
 
             return kind != TemplateKind.SOURCE
 
-        return convert_markdown(markdown, self.src_uri, namespaces, anchors, predicate)
+        return convert_markdown(markdown, self.src_uri, namespaces, predicate)
 
-    def convert_html(self, html: str, anchors: dict[str, str]) -> str:
+    def convert_html(self, html: str) -> str:
         """Return converted html."""
         namespace = "object" if self.is_source_page() else "source"
-        anchor = anchors[namespace]
-
-        return convert_html(html, self.src_uri, namespace, anchor)
+        return convert_html(html, self.src_uri, namespace)
 
 
 def generate_module_markdown(module: str) -> tuple[str, list[str]]:
@@ -135,14 +132,13 @@ def convert_markdown(
     markdown: str,
     src_uri: str,
     namespaces: tuple[str, str],
-    anchors: dict[str, str],
     predicate: Callable[[Parser, TemplateKind], bool] | None = None,
 ) -> str:
     """Return converted markdown."""
     render = partial(_render, namespace=namespaces[1], predicate=predicate)
     markdown = mkapi.markdown.sub(OBJECT_PATTERN, render, markdown)
 
-    link = partial(_link, src_uri=src_uri, namespace=namespaces[0], anchors=anchors)
+    link = partial(_link, src_uri=src_uri, namespace=namespaces[0])
     return mkapi.markdown.sub(LINK_PATTERN, link, markdown)
 
 
@@ -166,9 +162,7 @@ def _render(
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
 
 
-def _link(
-    match: re.Match, src_uri: str, namespace: str, anchors: dict[str, str]
-) -> str:
+def _link(match: re.Match, src_uri: str, namespace: str) -> str:
     name, fullname = match.groups()
     if not fullname:
         fullname = name
@@ -180,8 +174,8 @@ def _link(
     if m := OBJECT_LINK_PATTERN.match(fullname):
         namespace, fullname = m.groups()
 
-        if namespace in anchors and namespace in URIS:
-            name = f"[{anchors[namespace]}]"
+        if namespace in ANCHORS and namespace in URIS:
+            name = f"[{ANCHORS[namespace]}]"
         else:
             return ""
 
@@ -209,16 +203,16 @@ SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
 HEADING_PATTERN = re.compile(r"<h(\d).+?mkapi-heading.+?>(.+?)</h\d>\n?")
 
 
-def convert_html(html: str, src_uri: str, namespace: str, anchor: str) -> str:
+def convert_html(html: str, src_uri: str, namespace: str) -> str:
     """Convert HTML for source pages."""
-
-    link = partial(_link_source, src_uri=src_uri, namespace=namespace, anchor=anchor)
+    link = partial(_link_source, src_uri=src_uri, namespace=namespace)
     html = SOURCE_LINK_PATTERN.sub(link, html)
 
     return HEADING_PATTERN.sub(_heading, html)
 
 
-def _link_source(match: re.Match, src_uri: str, namespace: str, anchor: str) -> str:
+def _link_source(match: re.Match, src_uri: str, namespace: str) -> str:
+    anchor = ANCHORS[namespace]
     open_tag, name, close_tag = match.groups()
 
     if uri := URIS[namespace].get(name):
