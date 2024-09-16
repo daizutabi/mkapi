@@ -24,7 +24,6 @@ dependencies = [
   "jinja2",
   "mkdocs-material",
   "mkdocs>=1.6.0",
-  "omegaconf",
   "rich",
   "tomli>=1.1.0; python_version<'3.11'",
 ]

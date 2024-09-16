@@ -1,14 +1,9 @@
 from __future__ import annotations
 
 import fnmatch
-import importlib
-import os
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mkdocs.config import Config, config_options
-from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel
 from rich.progress import (
@@ -21,7 +16,8 @@ from rich.progress import (
 
 import mkapi
 import mkapi.nav
-from mkapi import renderer
+import mkapi.renderer
+from mkapi.config import MkApiConfig, get_function, set_config
 from mkapi.page import Page
 from mkapi.utils import cache_clear, get_module_path, is_package
 
@@ -37,15 +33,6 @@ if TYPE_CHECKING:
 logger = get_plugin_logger("MkAPI")
 
 
-class MkApiConfig(Config):
-    config = config_options.Type(str, default="")
-    exclude = config_options.Type(list, default=[])
-    src_dir = config_options.Type(str, default="src")
-    docs_anchor = config_options.Type(str, default="docs")
-    src_anchor = config_options.Type(str, default="source")
-    debug = config_options.Type(bool, default=False)
-
-
 class MkApiPlugin(BasePlugin[MkApiConfig]):
     pages: dict[str, Page]
 
@@ -56,20 +43,22 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         cache_clear()
+        set_config(self.config)
 
-        self.page_title = _get_function("page_title", self)
-        self.section_title = _get_function("section_title", self)
-        self.toc_title = _get_function("toc_title", self)
+        self.page_title = get_function("page_title")
+        self.section_title = get_function("section_title")
+        self.toc_title = get_function("toc_title")
 
-        if before_on_config := _get_function("before_on_config", self):
+        if before_on_config := get_function("before_on_config"):
             before_on_config(config, self)
 
-        _update_templates(config, self)
+        mkapi.renderer.load_templates()
+
         _build_apinav(config, self)
         _update_nav(config, self)
         _update_extensions(config, self)
 
-        if after_on_config := _get_function("after_on_config", self):
+        if after_on_config := get_function("after_on_config"):
             after_on_config(config, self)
 
         return config
@@ -150,29 +139,6 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
     def on_post_build(self, config: MkDocsConfig, **kwargs) -> None:
         if self.progress is not None:
             self.progress.stop()
-
-
-def _get_function(name: str, plugin: MkApiPlugin) -> Callable | None:
-    if not (path_str := plugin.config.config):
-        return None
-
-    if not path_str.endswith(".py"):
-        module = importlib.import_module(path_str)
-    else:
-        path = Path(path_str)
-        if not path.is_absolute():
-            path = Path(plugin.config.config_file_path).parent / path
-
-        directory = os.path.normpath(path.parent)
-        sys.path.insert(0, directory)
-        module = importlib.import_module(path.stem)
-        del sys.path[0]
-
-    return getattr(module, name, None)
-
-
-def _update_templates(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
-    renderer.load_templates()
 
 
 def _update_extensions(config: MkDocsConfig, plugin: MkApiPlugin) -> None:

@@ -68,8 +68,7 @@ def test_resolve_mkapi_class():
     assert x == ("ClassDef", "ast")
 
 
-def test_resolve_mkapi_module():
-    import mkapi.plugin
+def test_resolve_mkapi_module_plugin():
     from mkapi.node import resolve
 
     module = "mkapi.plugin"
@@ -77,12 +76,19 @@ def test_resolve_mkapi_module():
     assert x == ("MkApiPlugin", module)
     x = resolve("MkDocsConfig", module)
     assert x == ("MkDocsConfig", "mkdocs.config.defaults")
+
+
+def test_resolve_mkapi_module_config():
+    import mkapi.config
+    from mkapi.node import resolve
+
+    module = "mkapi.config"
     x = resolve("Config", module)
     assert x == ("Config", "mkdocs.config.base")
     x = resolve("config_options", module)
     assert x == ("mkdocs.config.config_options", None)
     assert x
-    assert x[0] == mkapi.plugin.config_options.__name__
+    assert x[0] == mkapi.config.config_options.__name__
 
 
 @pytest.mark.parametrize(
@@ -151,23 +157,29 @@ def test_get_fullname_unknown():
     from mkapi.node import get_fullname_from_module
 
     assert not get_fullname_from_module("xxx", "mkapi.plugin")
-    assert not get_fullname_from_module("jinja2.xxx", "mkdocs.plugins")
+    assert not get_fullname_from_module("jinja2.unknown", "mkdocs.plugins")
 
 
-def test_get_fullname_other():
+def test_get_fullname_plugin():
     from mkapi.node import get_fullname_from_module
 
     module = "mkapi.plugin"
     x = get_fullname_from_module("MkDocsConfig", module)
     assert x == "mkdocs.config.defaults.MkDocsConfig"
+    x = get_fullname_from_module("get_plugin_logger", module)
+    assert x == "mkdocs.plugins.get_plugin_logger"
+
+
+def test_get_fullname_config():
+    from mkapi.node import get_fullname_from_module
+
+    module = "mkapi.config"
     x = get_fullname_from_module("Config", module)
     assert x == "mkdocs.config.base.Config"
     x = get_fullname_from_module("config_options", module)
     assert x == "mkdocs.config.config_options"
     x = get_fullname_from_module("config_options.Type", module)
     assert x == "mkdocs.config.config_options.Type"
-    x = get_fullname_from_module("get_plugin_logger", module)
-    assert x == "mkdocs.plugins.get_plugin_logger"
 
 
 def test_get_fullname_nested():
