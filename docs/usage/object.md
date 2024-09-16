@@ -51,13 +51,13 @@ In the above example,
 the object type (*package*) and its name (`example`) are displayed.
 This section serves as the *heading* of the object documentation.
 
-At the right end of the heading, **[source]** button is provided.
+At the right end of the heading, a **[source]** button is provided.
 Clicking this button will navigate to the source code of the object.
-Next to the **[source]** button, **[-]** button is provided.
-Clicking this button will hide the documentation to save space and
-the button will be changed to **[+]** button.
+Next to the **[source]** button, a **[-]** button is provided.
+Clicking this button will hide the documentation to save space, and
+the button will change to a **[+]** button.
 When you click the **[+]** button again, the documentation will be
-shown again.
+shown once more.
 
 Following the heading, the main content of the documentation is rendered.
 The content of the `example` package is simply a one-line summary:
@@ -67,17 +67,20 @@ The content of the `example` package is simply a one-line summary:
 ```
 
 The `example` package contains a `example.sub` subpackage and a `example.mod_a` module.
-A **Modules** section is automatically generated and the `example.sub` subpackage
+A <span class="mkapi-section-name">Modules</span>
+section is automatically generated and the `example.sub` subpackage
 and `example.mod_a` module are listed in this section.
 
 !!! note
     This is because the `example` package does not define or import any members.
     If there are members, they will take precedence.
 
-Like the heading, the **Modules** section also contains a **[-]**/**[+]** button.
-The behavior of this button is the same as the heading.
+Like the heading, the
+<span class="mkapi-section-name">Modules</span>
+section also contains a **[-]**/**[+]** button.
+The behavior of this button is the same as that of the heading.
 All sections of the object documentation are collapsible,
-as you can see in the following example.
+as shown in the following example.
 
 ## Package with Members
 
@@ -99,10 +102,10 @@ Check the output:
 In the above example, the documentation for the `example.sub`
 package includes:
 
-- A **Classes** section including two classes:
-  `ClassA` and `ClassB`.
-- A **Functions** section including two functions:
-  `func_a` and `func_b`.
+- A <span class="mkapi-section-name">Classes</span> section
+  including two classes: `ClassA` and `ClassB`.
+- A <span class="mkapi-section-name">Functions</span> section
+  including two functions: `func_a` and `func_b`.
 
 These names link to the object documentation for easy navigation
 if the objects are defined in the current MkDocs project.
@@ -151,7 +154,8 @@ function name `func_a` in the example above.
 This feature is helpful for quickly identifying the object,
 keeping the documentation concise.
 
-You can find a **See also** section at the bottom of the documentation.
+You can find a <span class="mkapi-section-name">See also</span>
+section at the bottom of the documentation.
 This section contains links to the documentation of listed objects.
 Again, hovering your mouse cursor over the links will display a tooltip
 with the full name of each object.
@@ -171,7 +175,8 @@ named `ClassA`. You can embed it in the same way as functions.
 </div>
 
 A class has its own members like modules.
-You can find **Attributes** and **Methods** sections
+You can find <span class="mkapi-section-name">Attributes</span> and
+<span class="mkapi-section-name">Methods</span> sections
 as the TOC.
 When a class has many members, you can hide and show
 the members by clicking the **[-]**/**[+]** button
