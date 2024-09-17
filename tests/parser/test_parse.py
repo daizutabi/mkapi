@@ -161,7 +161,7 @@ def test_parse_name_set_staticmethod():
     parser = Parser.create(name)
     assert parser
     name_set = parser.parse_name_set()
-    assert name_set.kind == "staticmethod"
+    assert name_set.kind == "classmethod"
     assert name_set.name == "create"
     assert name_set.parent == "Parser"
     assert name_set.module == "mkapi.parser"

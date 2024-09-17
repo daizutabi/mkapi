@@ -91,8 +91,8 @@ class Parser:
     obj: Attribute | Class | Function | Module | Property
     """The object to parse."""
 
-    @staticmethod
-    def create(name: str, module: str | None = None) -> Parser | None:
+    @classmethod
+    def create(cls, name: str, module: str | None = None) -> Parser | None:
         """Create a `Parser` instance from a given name.
 
         Args:
@@ -113,7 +113,7 @@ class Parser:
         if not isinstance(obj, (Attribute, Class, Function, Module, Property)):
             return None
 
-        return Parser(name, module, obj)
+        return cls(name, module, obj)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r}, {self.module!r})"
