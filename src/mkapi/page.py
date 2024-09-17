@@ -39,17 +39,17 @@ class Page:
     markdown: str
     kind: PageKind
 
-    @staticmethod
-    def create_object(src_uri: str, name: str) -> Page:
-        return Page(src_uri, name, "", PageKind.OBJECT)
+    @classmethod
+    def create_object(cls, src_uri: str, name: str) -> Page:
+        return cls(src_uri, name, "", PageKind.OBJECT)
 
-    @staticmethod
-    def create_source(src_uri: str, name: str) -> Page:
-        return Page(src_uri, name, "", PageKind.SOURCE)
+    @classmethod
+    def create_source(cls, src_uri: str, name: str) -> Page:
+        return cls(src_uri, name, "", PageKind.SOURCE)
 
-    @staticmethod
-    def create_documentation(src_uri: str, content: str) -> Page:
-        return Page(src_uri, "", content, PageKind.DOCUMENTATION)
+    @classmethod
+    def create_documentation(cls, src_uri: str, content: str) -> Page:
+        return cls(src_uri, "", content, PageKind.DOCUMENTATION)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.src_uri!r})"
