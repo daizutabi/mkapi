@@ -13,7 +13,9 @@
 {% if section.name and not section.kind -%}
 <p class="mkapi-section">
 <span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle {{ section.name|lower }}">[-]</span>
+<span class="mkapi-section-toggle" title="Toggle {{ section.name|lower }}">
+<i class="fa-regular fa-square-minus"></i>
+</span>
 </span>
 <span class="mkapi-section-name">{{ section.name|safe }}</span>
 </p>

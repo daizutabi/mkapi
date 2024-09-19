@@ -5,7 +5,12 @@ documentButtons.forEach((button) => {
     const element = button.parentElement.parentElement.nextElementSibling;
     let isInvisible = element.style.display === "none";
     element.style.display = isInvisible ? "block" : "none";
-    button.textContent = isInvisible ? "[-]" : "[+]";
+    const icon = button.querySelector("i");
+    if (icon) {
+      icon.className = isInvisible
+        ? "fa-regular fa-square-minus"
+        : "fa-regular fa-square-plus";
+    }
   });
 });
 
@@ -16,7 +21,12 @@ sectionButtons.forEach((button) => {
     const element = button.parentElement.parentElement.nextElementSibling;
     let isInvisible = element.style.display === "none";
     element.style.display = isInvisible ? "block" : "none";
-    button.textContent = isInvisible ? "[-]" : "[+]";
+    const icon = button.querySelector("i");
+    if (icon) {
+      icon.className = isInvisible
+        ? "fa-regular fa-square-minus"
+        : "fa-regular fa-square-plus";
+    }
   });
 });
 

@@ -224,7 +224,8 @@ def _read(uri: str) -> str:
 
 def _collect_css(config: MkDocsConfig) -> list[File]:
     uris = ["css/mkapi-common.css", "css/mkapi-material.css"]
-    config.extra_css = [*uris, *config.extra_css]
+    fa = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    config.extra_css = [*uris, *config.extra_css, fa]
     return [File.generated(config, uri, content=_read(uri)) for uri in uris]
 
 

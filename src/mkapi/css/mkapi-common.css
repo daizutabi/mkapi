@@ -142,9 +142,6 @@ ul.mkapi-item-list {
 .mkapi-section-toggle {
   cursor: pointer;
   color: var(--mkapi-punctuation-color);
-  font-family: var(--mkapi-object-name-font-family);
-  font-size: 0.95em;
-  letter-spacing: -0.2em; /
 }
 
 .mkapi-parent-toggle {
