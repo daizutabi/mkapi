@@ -40,5 +40,15 @@ parentButtons.forEach((button) => {
     elements.forEach((element) => {
       element.style.display = isVisible ? "none" : "inline";
     });
+
+    const buttons = document.querySelectorAll(".mkapi-parent-toggle");
+    buttons.forEach((button) => {
+      const icon = button.querySelector("i");
+      if (icon) {
+        icon.className = isVisible
+          ? "fa-solid fa-square-plus"
+          : "fa-solid fa-square-xmark";
+      }
+    });
   });
 });

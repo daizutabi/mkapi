@@ -1,14 +1,17 @@
 <p class="mkapi-object mkapi-page-{{ namespace }}" id="{{ id }}" markdown="1">
 <span class="mkapi-object-link">
+{% if parent -%}
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+{%- endif %}
 [{{ namespace }}][__mkapi__.__{{ namespace }}__.{{ obj_id }}]
 <span class="mkapi-document-toggle" title="Toggle all docs">
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span>
 {%- if kind  -%}
-<span class="mkapi-object-kind{% if parent %} mkapi-parent-toggle{% endif %}"
-{%- if parent %} title="Toggle class names"{% endif -%}
->{{ kind }}</span>
+<span class="mkapi-object-kind">{{ kind }}</span>
 {%- endif %}
 {% if parent -%}
 <span class="mkapi-object-parent">
