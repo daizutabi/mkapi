@@ -5,10 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "mkapi"
 version = "3.0.14"
+authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 description = "A plugin for MkDocs to generate API documentation"
 readme = "README.md"
 license = "MIT"
-authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: MkDocs",
@@ -28,9 +28,6 @@ dependencies = [
   "tomli>=1.1.0; python_version<'3.11'",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest-clarity", "pytest-cov", "pytest-randomly", "pytest-xdist"]
-
 [project.urls]
 Documentation = "https://daizutabi.github.io/mkapi/"
 Source = "https://github.com/daizutabi/mkapi"
@@ -38,6 +35,14 @@ Issues = "https://github.com/daizutabi/mkapi/issues"
 
 [project.entry-points."mkdocs.plugins"]
 mkapi = "mkapi.plugin:MkApiPlugin"
+
+[tool.uv]
+dev-dependencies = [
+  "pytest-clarity",
+  "pytest-cov",
+  "pytest-randomly",
+  "pytest-xdist",
+]
 
 [tool.hatch.build.targets.sdist]
 exclude = ["/.github", "/docs"]
