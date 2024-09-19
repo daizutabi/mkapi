@@ -29,10 +29,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install package
-        run: pip install -e . pytest-clarity pytest-cov pytest-randomly pytest-xdist
+      - name: Install uv
+        run: pip install uv
+      - name: Install the project
+        run: uv sync
       - name: Run test
-        run: pytest -n 8 --junitxml=junit.xml
+        run: uv run pytest -n 8 --junitxml=junit.xml
       - name: Upload Codecov Results
         if: success()
         uses: codecov/codecov-action@v4
