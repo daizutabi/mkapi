@@ -161,7 +161,7 @@ def test_build(config: MkDocsConfig, dirty: bool):
     assert get_function("section_title")
     assert get_function("toc_title")
 
-    assert len(config.extra_css) == 2
+    assert len(config.extra_css) == 3
     assert len(config.extra_javascript) == 1
 
     pages = plugin.pages
