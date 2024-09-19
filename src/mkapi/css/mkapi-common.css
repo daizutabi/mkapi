@@ -139,13 +139,10 @@ ul.mkapi-item-list {
 }
 
 .mkapi-document-toggle,
+.mkapi-parent-toggle,
 .mkapi-section-toggle {
   cursor: pointer;
   color: var(--mkapi-punctuation-color);
-}
-
-.mkapi-parent-toggle {
-  cursor: pointer;
 }
 
 .mkapi-page-object {

@@ -207,8 +207,10 @@ by its qualified name.
 The heading of a method's documentation
 contains a tooltip displaying the full name of the method
 along with the class to which the method belongs.
-You can also click the prefix *method* to display the
-qualified names of all methods on the current page.
+You can also click the
+<i class="fa-solid fa-square-plus"></i>
+button to display the qualified names of all methods
+on the current page.
 
 ## Source Code
 
