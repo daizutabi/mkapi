@@ -174,5 +174,6 @@ users to explore and utilize your library effectively.
 
 !!! warning "Instant loading"
     Enabling the `navigation.instant` feature will cause links to source
-    pages to function improperly, and the **[-]**/**[+]** buttons will
-    be disabled.
+    pages to function improperly, and the
+    <i class="fa-regular fa-square-minus"></i>/<i class="fa-regular fa-square-plus"></i>
+    buttons will be disabled.

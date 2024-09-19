@@ -53,10 +53,16 @@ This section serves as the *heading* of the object documentation.
 
 At the right end of the heading, a **[source]** button is provided.
 Clicking this button will navigate to the source code of the object.
-Next to the **[source]** button, a **[-]** button is provided.
+Next to the **[source]** button, a
+<i class="fa-regular fa-square-minus"></i>
+button is provided.
 Clicking this button will hide the documentation to save space, and
-the button will change to a **[+]** button.
-When you click the **[+]** button again, the documentation will be
+the button will change to a
+<i class="fa-regular fa-square-plus"></i>
+button.
+When you click the
+<i class="fa-regular fa-square-plus"></i>
+button again, the documentation will be
 shown once more.
 
 Following the heading, the main content of the documentation is rendered.
@@ -77,7 +83,9 @@ and `example.mod_a` module are listed in this section.
 
 Like the heading, the
 <span class="mkapi-section-name">Modules</span>
-section also contains a **[-]**/**[+]** button.
+section also contains a
+<i class="fa-regular fa-square-minus"></i>/<i class="fa-regular fa-square-plus"></i>
+button.
 The behavior of this button is the same as that of the heading.
 All sections of the object documentation are collapsible,
 as shown in the following example.
@@ -179,8 +187,9 @@ You can find <span class="mkapi-section-name">Attributes</span> and
 <span class="mkapi-section-name">Methods</span> sections
 as the TOC.
 When a class has many members, you can hide and show
-the members by clicking the **[-]**/**[+]** button
-in these sections of the class documentation.
+the members by clicking the
+<i class="fa-regular fa-square-minus"></i>/<i class="fa-regular fa-square-plus"></i>
+button in these sections of the class documentation.
 
 ## Method
 
