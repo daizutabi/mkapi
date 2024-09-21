@@ -91,7 +91,7 @@ def test_get_node_class(name: str):
 
 
 @pytest.mark.parametrize(
-    "name, expected_repr",
+    ("name", "expected_repr"),
     [
         ("mkapi.node", "Module('mkapi.node')"),
         ("mkapi.renderer", "Module('mkapi.renderer')"),

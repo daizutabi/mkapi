@@ -159,7 +159,6 @@ def test_children_order():
     cls = get_object("mkapi.node.Import")
     assert isinstance(cls, Class)
     names = list(cls.children.keys())
-    print(names)
     assert names[0] == "name"
     assert names[1] == "node"
     assert names[-1] == "fullname"

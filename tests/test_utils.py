@@ -100,44 +100,6 @@ def test_get_module_node():
     assert not get_module_node("sys")
 
 
-# def test_module_cache(tmp_path: Path):
-#     from mkapi.utils import (
-#         get_module_node_source,
-#         get_module_path,
-#         is_module_cache_dirty,
-#         module_cache,
-#     )
-
-#     module_cache.clear()
-#     assert not is_module_cache_dirty("a")
-
-#     sys.path.insert(0, str(tmp_path))
-
-#     path = tmp_path / "a.py"
-#     source = "1\n"
-#     with path.open("w") as f:
-#         f.write(source)
-#     get_module_path.cache_clear()
-#     path_ = get_module_path("a")
-#     assert path_
-#     assert is_module_cache_dirty("a")
-#     x = get_module_node_source("a")
-#     assert x
-#     assert x[1] == source
-#     assert "a" in module_cache
-#     assert not is_module_cache_dirty("a")
-#     y = get_module_node_source("a")
-#     assert y
-#     assert x[0] is y[0]
-#     time.sleep(0.01)
-#     source = "2\n"
-#     with path.open("w") as f:
-#         f.write(source)
-#     assert is_module_cache_dirty("a")
-
-#     sys.path.pop(0)
-
-
 def test_find_item_by_name():
     from mkapi.utils import find_item_by_name
 
@@ -351,12 +313,6 @@ def test_is_package_none():
 
     assert is_package("mkapi")
     assert not is_package("non_existent_module")
-
-
-# def test_is_module_cache_dirty():
-#     from mkapi.utils import is_module_cache_dirty
-
-#     assert not is_module_cache_dirty("non_existent_module")
 
 
 def test_get_object_from_module():

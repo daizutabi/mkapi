@@ -71,9 +71,24 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
-exclude = ["google.py", "numpy.py"]
+target-version = "py310"
+exclude = ["tests/examples/*.py", "example/*.py"]
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I"]
-unfixable = ["F401", "RUF100"]
+select = ["ALL"]
+ignore = [
+  "ANN002",
+  "ANN003",
+  "ARG001",
+  "ARG002",
+  "D",
+  "FBT001",
+  "FBT002",
+  "PERF401",
+  "PGH003",
+  "PLR2004",
+  "SIM102",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN", "ARG", "PLR", "RUF", "S"]

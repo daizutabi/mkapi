@@ -92,7 +92,7 @@ def test_resolve_mkapi_module_config():
 
 
 @pytest.mark.parametrize(
-    "name", ["mkapi", "mkapi.ast", "mkapi.ast.AST", "mkapi.ast.XXX"]
+    "name", ["mkapi", "mkapi.ast", "mkapi.ast.AST", "mkapi.ast.XXX"],
 )
 def test_get_fullname_module(name):
     from mkapi.node import get_fullname_from_module

@@ -73,7 +73,6 @@ class Page:
 
         for name in names:
             uris[name] = self.src_uri
-            # uris.setdefault(name, self.src_uri)  # overwrite or not?
 
     def convert_markdown(self, markdown: str) -> str:
         if self.is_api_page():
@@ -92,10 +91,7 @@ class Page:
                 return True
 
             if self.is_source_page():
-                if kind == TemplateKind.SOURCE and self.name == parser.name:
-                    return True
-
-                return False
+                return bool(kind == TemplateKind.SOURCE and self.name == parser.name)
 
             return kind != TemplateKind.SOURCE
 
@@ -124,7 +120,7 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     return "\n".join(markdowns), names
 
 
-OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.M)
+OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.MULTILINE)
 LINK_PATTERN = re.compile(r"(?<!`)\[([^[\]\s]+?)\]\[([^[\]\s]*?)\]")
 
 

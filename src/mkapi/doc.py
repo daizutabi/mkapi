@@ -332,7 +332,7 @@ def _split_sections(text: str, style: Style) -> Iterator[str]:
 # In Numpy style, if a section is indented, then a section break is
 # created by resuming unindented text.
 def _subsplit(text: str, style: Style) -> list[str]:
-    if style == "google" or len(lines := text.splitlines()) < 3:  # noqa: PLR2004
+    if style == "google" or len(lines := text.splitlines()) < 3:
         return [text]
 
     if not lines[2].startswith(" "):  # 2 == after '----' line.
@@ -455,7 +455,7 @@ def split_section(text: str, style: Style) -> tuple[str, str]:
         ('Returns', 'str: The output string.')
     """
     lines = text.splitlines()
-    if len(lines) < 2:  # noqa: PLR2004
+    if len(lines) < 2:
         return "", text
 
     if style == "google" and re.match(r"^([A-Za-z0-9][^:]*):$", lines[0]):
@@ -722,10 +722,7 @@ def create_doc(text: str | None, style: Style | None = None) -> Doc:
         return Doc("Doc", "", "", [])
 
     style = style or get_style(text)
-
     text = mkapi.markdown.convert_code_block(text)
-    # text = mkapi.markdown.replace(text, ["<", ">"], ["&lt;", "&gt;"])
-
     sections = list(iter_sections(text, style))
 
     if sections and not sections[0].name:
@@ -897,7 +894,7 @@ def merge_sections(a: Section, b: Section) -> Section:
     return Section(a.name, type_, text, list(items))
 
 
-def iter_merged_sections(a: list[Section], b: list[Section]) -> Iterator[Section]:
+def iter_merged_sections(a: list[Section], b: list[Section]) -> Iterator[Section]:  # noqa: C901
     """Yield merged `Section` instances from two lists of `Section`.
 
     Take two lists of `Section` instances and yield merged

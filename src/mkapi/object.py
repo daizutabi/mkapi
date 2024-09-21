@@ -107,7 +107,7 @@ class Object:
     doc: Doc = field(init=False)
     """The documentation associated with the object."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize the qualified and full names of the object."""
         self.qualname = _qualname(self.name, self.parent)
         self.fullname = _fullname(self.name, self.module, self.parent)
@@ -188,7 +188,7 @@ class Type(Object):
     """The AST expression representing the type, or None
     if the type is not specified."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__post_init__()
         split_type(self.doc)
 
@@ -401,7 +401,7 @@ class Definition(Parent):
     """A list of expressions representing the exceptions that may be
     raised by the definition."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__post_init__()
 
         for obj in iter_child_objects(self.node, self.module, self):
@@ -424,10 +424,6 @@ class Class(Definition):
 
     node: ast.ClassDef
     """The actual AST node associated with this class definition."""
-
-    # @property
-    # def attributes(self) -> list[Type]:
-    #     return [x for _, x in self.get_children(Type)]
 
 
 @dataclass(repr=False)
@@ -554,7 +550,8 @@ def get_base_classes(name: str, module: str) -> list[Class]:
 
 
 def iter_attributes_from_function(
-    func: Function, parent: Parent
+    func: Function,
+    parent: Parent,
 ) -> Iterator[Attribute]:
     """Iterate over attributes from a function.
 
@@ -658,7 +655,7 @@ class Module(Parent):
     parent: None = field(default=None, init=False)
     """A placeholder for the parent object, initialized to None."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__post_init__()
 
         for obj in iter_child_objects(self.node, self.name, None):
@@ -724,7 +721,7 @@ def _create_doc_comment(node: AST, lines: list[str]) -> Doc | None:
     return None
 
 
-def get_object_kind(obj: Object) -> str:
+def get_object_kind(obj: Object) -> str:  # noqa: PLR0911
     """Return the kind of the given object.
 
     Determine the kind of the provided object and return a string representation
@@ -753,10 +750,7 @@ def get_object_kind(obj: Object) -> str:
         return "dataclass" if is_dataclass(obj.name, obj.module) else "class"
 
     if isinstance(obj, Function):
-        if isinstance(obj.node, ast.AsyncFunctionDef):
-            prefix = "async "
-        else:
-            prefix = ""
+        prefix = "async " if isinstance(obj.node, ast.AsyncFunctionDef) else ""
 
         if is_classmethod(obj.node):
             return f"{prefix}classmethod"
@@ -851,7 +845,7 @@ def get_object(name: str, module: str | None = None) -> Object | None:
     return objects.get(fullname)
 
 
-def get_fullname_from_object(name: str, obj: Object) -> str | None:
+def get_fullname_from_object(name: str, obj: Object) -> str | None:  # noqa: PLR0911
     """Return the fully qualified name for `name` relative to the
     given `Object` instance.
 

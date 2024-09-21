@@ -32,7 +32,6 @@ def test_parse_module():
 
 def test_parse_module_names():
     names = [name for name, _ in parse_module("examples")]
-    print(names)
     assert "ClassA" in names
     assert "ClassB" in names
     assert "ClassCAlias" in names

@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
-from mkapi.doc import Doc
 from mkapi.object import (
     Attribute,
     Class,
@@ -24,6 +23,7 @@ from mkapi.parser import Parser
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from mkapi.doc import Doc
     from mkapi.object import Object
     from mkapi.parser import NameSet
 
@@ -209,7 +209,7 @@ def render_source(obj: Object, attr: str = "") -> str:
     Returns:
         str: The rendered source code as a markdown string.
     """
-    if not isinstance(obj, (Module, Class, Function, Attribute, Property)):
+    if not isinstance(obj, Module | Class | Function | Attribute | Property):
         return ""
 
     if source := _get_source(obj):
@@ -233,8 +233,6 @@ def _get_source(
     start = 1 if isinstance(obj, Module) else obj.node.lineno
     module = obj.name if isinstance(obj, Module) else obj.module
 
-    # if isinstance(obj, Module) and "## __mkapi__." not in lines[0]:
-    #     lines[0] = f"{lines[0]}## __mkapi__.{module}"
     names = set()
     for child in iter_objects(obj):
         if child.fullname in names:
@@ -242,19 +240,22 @@ def _get_source(
 
         names.add(child.fullname)
 
-        if not isinstance(child, (Class, Function, Attribute, Property)):
+        if not isinstance(child, Class | Function | Attribute | Property):
             continue
 
-        if skip_self and child is obj or isinstance(obj, Attribute) or not child.node:
+        if (
+            skip_self
+            and child is obj
+            or isinstance(obj, Attribute)
+            or not child.node
+            or child != obj
+            and (not is_child(child, obj) or child.module is not module)
+        ):
             continue
 
-        elif child != obj and (not is_child(child, obj) or child.module is not module):
-            continue
+        index = child.node.lineno - start
 
-        else:
-            index = child.node.lineno - start
-
-        if len(lines[index]) > 76 and index:
+        if len(lines[index]) > 72 and index:
             index -= 1
 
         line = lines[index]

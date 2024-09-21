@@ -74,13 +74,3 @@ def test_return_type_generator_doc():
     item = section.items[0]
     t = "list[[PrivateAttribute][__mkapi__.examples.parser.PrivateAttribute]]"
     assert item.type == t
-
-
-#     obj = get_object("examples.object.iterator")
-#     # obj.node.
-#     # assert obj.kind == "function"
-
-
-# def test_kind_generator():
-#     obj = get_object("examples.object.generator")
-#     assert obj.kind == "function"

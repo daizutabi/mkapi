@@ -306,7 +306,8 @@ def get_child_nodes(node: AST, module: str) -> list[Definition | Assign | Import
         else:
             nodes = node_dict[child.name]
             if not isinstance(nodes[-1], Definition) or not isinstance(
-                child, Definition
+                child,
+                Definition,
             ):
                 nodes.clear()
 
@@ -351,7 +352,8 @@ def iter_nodes(fullname: str) -> Iterator[Module | Definition | Assign | Import]
 
 @cache
 def parse_node(
-    node: AST, module: str
+    node: AST,
+    module: str,
 ) -> list[tuple[str, Module | Definition | Assign | Import]]:
     """Parse the given AST node and return a list of tuples.
 
@@ -402,7 +404,8 @@ def parse_module(
 
 @cache
 def get_node(
-    name: str, module: str | None = None
+    name: str,
+    module: str | None = None,
 ) -> Module | Definition | Assign | Import | None:
     """Retrieve a node corresponding to the given name and module.
 
@@ -521,15 +524,12 @@ def _is_private(name: str) -> bool:
 
 
 def _is_special(name: str) -> bool:
-    for name_ in name.split("."):
-        if name_.startswith("__"):
-            return True
-
-    return False
+    return any(name_.startswith("__") for name_ in name.split("."))
 
 
 def _iter_module_members(
-    module: str, child_only: bool = False
+    module: str,
+    child_only: bool = False,
 ) -> Iterator[tuple[str, Module | Definition]]:
     members = parse_module(module)
 
@@ -552,7 +552,7 @@ def _get_module_member_from_module(name: str, module: str) -> str | None:
     if name.startswith(f"{module}."):
         return name.split(".")[1]
 
-    elif "." in name:
+    if "." in name:
         return None
 
     return name
@@ -580,7 +580,9 @@ def _iter_children_from_definition(
 
 
 def iter_classes_from_module(
-    module: str, private: bool = False, special: bool = False
+    module: str,
+    private: bool = False,
+    special: bool = False,
 ) -> Iterator[str]:
     """Iterate over the classes in the given module.
 
@@ -600,7 +602,9 @@ def iter_classes_from_module(
 
 
 def iter_functions_from_module(
-    module: str, private: bool = False, special: bool = False
+    module: str,
+    private: bool = False,
+    special: bool = False,
 ) -> Iterator[str]:
     """Iterate over the functions in the given module.
 
@@ -620,7 +624,9 @@ def iter_functions_from_module(
 
 
 def iter_modules_from_module(
-    module: str, private: bool = False, special: bool = False
+    module: str,
+    private: bool = False,
+    special: bool = False,
 ) -> Iterator[str]:
     """Iterate over the modules in the given module.
 
@@ -639,7 +645,10 @@ def iter_modules_from_module(
 
 
 def iter_methods_from_class(
-    name: str, module: str, private: bool = False, special: bool = False
+    name: str,
+    module: str,
+    private: bool = False,
+    special: bool = False,
 ) -> Iterator[str]:
     """Iterate over the methods in the given class.
 
@@ -679,8 +688,9 @@ def iter_methods_from_class(
 
 
 @cache
-def resolve(
-    name: str, module: str | None = None
+def resolve(  # noqa: C901, PLR0911, PLR0912
+    name: str,
+    module: str | None = None,
 ) -> tuple[str | None, str | None] | None:
     """Resolve the given name and return a tuple of the name and module.
 

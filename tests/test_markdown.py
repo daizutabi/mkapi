@@ -339,7 +339,7 @@ def test_convert_example_new_line():
 def test_finditer():
     from mkapi.markdown import _finditer, convert_code_block
 
-    pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.M)
+    pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.MULTILINE)
     src = """
     ```
     # ::: a
@@ -357,7 +357,6 @@ def test_finditer():
     src = inspect.cleandoc(src)
     src = convert_code_block(src)
     x = list(_finditer(pattern, src))
-    print(x)
     assert isinstance(x[2], re.Match)
     assert isinstance(x[4], re.Match)
 
@@ -365,7 +364,7 @@ def test_finditer():
 def test_sub():
     from mkapi.markdown import convert_code_block, sub
 
-    pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.M)
+    pattern = re.compile(r"^(?P<pre>#* *)(?P<name>:::.*)$", re.MULTILINE)
     src = """
     ```
     # ::: a

@@ -85,7 +85,6 @@ def test_get_markdown_expr():
     assert isinstance(expr, ast.expr)
     x = get_markdown_expr(expr, replace)
     assert x.startswith("[re][__mkapi__.re].[Match][__mkapi__.re.Match]")
-    print(x)
     assert "[[finditer][__mkapi__.mkapi.markdown.finditer]]" in x
     assert x.endswith("([sub][__mkapi__.mkapi.markdown.sub])")
 

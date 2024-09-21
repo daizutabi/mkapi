@@ -140,6 +140,5 @@ def test_update_nav():
 
     nav = yaml.safe_load(src)
     update_nav(nav, create_page, page_title=page_title)
-    print(nav)
     assert "MKAPI.OBJECT.0" in nav[1]
     assert nav[1]["MKAPI.OBJECT.0"] == "api1/mkapi.object.md"
