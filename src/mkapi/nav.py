@@ -189,7 +189,7 @@ def update_apinav(
     except StopIteration:
         return
     while True:
-        if is_section:  # noqa: SIM108
+        if is_section:
             value = section(name, depth) if section else name
         else:
             value = page(name, depth)

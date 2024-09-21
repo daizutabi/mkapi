@@ -32,7 +32,7 @@ from ast import (
     Raise,
 )
 from dataclasses import dataclass
-from inspect import Parameter as P
+from inspect import Parameter as P  # noqa: N817
 from inspect import cleandoc
 from typing import TYPE_CHECKING, TypeGuard
 
@@ -72,7 +72,8 @@ def iter_child_nodes(node: AST) -> Iterator[AST]:
 
     for child in it:
         if isinstance(
-            child, Import | ImportFrom | ClassDef | FunctionDef | AsyncFunctionDef
+            child,
+            Import | ImportFrom | ClassDef | FunctionDef | AsyncFunctionDef,
         ):
             yield child
 
@@ -637,7 +638,10 @@ def iter_identifiers(node: AST) -> Iterator[str]:
 
 
 def _unparse(
-    node: AST, callback: Callable[[str], str], *, is_type: bool = True
+    node: AST,
+    callback: Callable[[str], str],
+    *,
+    is_type: bool = True,
 ) -> Iterator[str]:
     trans = StringTransformer() if is_type else Transformer()
     source = trans.unparse(node)

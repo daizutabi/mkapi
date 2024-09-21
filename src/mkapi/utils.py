@@ -197,10 +197,9 @@ def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
     if path.is_dir() and "__init__.py" in it:
         return True
 
-    if path.is_file() and not path.stem.startswith("__") and path.suffix == ".py":
-        return True
-
-    return False
+    return bool(
+        path.is_file() and not path.stem.startswith("__") and path.suffix == ".py",
+    )
 
 
 def is_package(name: str) -> bool:
@@ -418,7 +417,7 @@ def iter_attribute_names(name: str, *, reverse: bool = False) -> Iterator[str]:
 T = TypeVar("T")
 
 
-def _is_equal(item, name: str, attr: str = "name") -> bool:
+def _is_equal(item: object, name: str, attr: str = "name") -> bool:
     return getattr(item, attr) == name
 
 
@@ -445,7 +444,9 @@ def iter_by_name(items: Iterable[T], name: str, attr: str = "name") -> Iterator[
 
 
 def find_item_by_name(
-    items: Iterable[T], name: str | Iterable[str], attr: str = "name"
+    items: Iterable[T],
+    name: str | Iterable[str],
+    attr: str = "name",
 ) -> T | None:
     """Find the first item with a specified name from an iterable of items.
 

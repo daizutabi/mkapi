@@ -110,7 +110,7 @@ class Parser:
 
         obj = get_object(name, module)
 
-        if not isinstance(obj, (Attribute, Class, Function, Module, Property)):
+        if not isinstance(obj, Attribute | Class | Function | Module | Property):
             return None
 
         return cls(name, module, obj)
@@ -168,7 +168,6 @@ class Parser:
             module = None
             id_ = self.name
 
-        # TODO: config
         kind = self.obj.kind.replace("async function", "async")
         kind = kind.replace("function", "")
 
@@ -197,7 +196,7 @@ class Parser:
             if isinstance(part.name, ast.expr):
                 name = get_markdown_expr(part.name, self.replace_from_module)
 
-            elif part._kind in [PartKind.ANN, PartKind.RETURN]:
+            elif part._kind in [PartKind.ANN, PartKind.RETURN]:  # noqa: SLF001
                 name = get_markdown_str(part.name, self.replace_from_module)
 
             else:
@@ -725,7 +724,9 @@ def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
 
 
 def merge_returns(
-    sections: list[Section], returns: ast.expr | None, module: str
+    sections: list[Section],
+    returns: ast.expr | None,
+    module: str,
 ) -> None:
     """
     Merge the return type from the given sections and returns expression.
@@ -770,7 +771,7 @@ def merge_returns(
                 item.type = returns.slice
 
 
-def merge_attributes(
+def merge_attributes(  # noqa: C901
     sections: list[Section],
     attrs: list[Type],
     ignore_names: list[str] | None = None,
@@ -838,7 +839,8 @@ def merge_attributes(
 
 
 def merge_sections(
-    sections: list[Section], obj: Attribute | Class | Function | Module | Property
+    sections: list[Section],
+    obj: Attribute | Class | Function | Module | Property,
 ) -> None:
     """
     Merge sections of documentation for a given object.
@@ -897,7 +899,6 @@ def create_summary_item(name: str, module: str | None) -> Item | None:
 
     name_set = parser.parse_name_set()
     summary = parser.parse_summary()
-    # name = f"[{name_set.node.names[-1]}][{PREFIX}{name_set.node.id}]"
     name = f"[{name_set.name}][{PREFIX}{name_set.id}]"
     return Item(name, None, summary)
 
@@ -986,8 +987,6 @@ def create_modules_from_module_file(module: str) -> Section | None:
 
     items = []
     for name in find_submodule_names(module):
-        # skip private submodules
-        # TODO: add config for this
         if name.split(".")[-1].startswith("_"):
             continue
 

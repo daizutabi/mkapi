@@ -241,7 +241,7 @@ def test_parameter_repr():
     from mkapi.ast import Parameter
 
     param = Parameter(
-        name="arg1", type=None, default=None, kind=_ParameterKind.POSITIONAL_OR_KEYWORD
+        name="arg1", type=None, default=None, kind=_ParameterKind.POSITIONAL_OR_KEYWORD,
     )
     assert repr(param) == "Parameter('arg1')"
 

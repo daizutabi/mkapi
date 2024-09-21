@@ -141,7 +141,7 @@ def _build_apinav(config: MkDocsConfig) -> None:
     if not config.nav:
         return
 
-    def watch_directory(name: str, *arg):
+    def watch_directory(name: str, *args) -> list:
         name, depth = mkapi.nav.split_name_depth(name)
         if path := get_module_path(name):
             path = str(path.parent if depth else path)

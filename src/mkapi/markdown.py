@@ -24,7 +24,10 @@ if TYPE_CHECKING:
 
 
 def _iter(
-    pattern: re.Pattern, text: str, pos: int = 0, endpos: int | None = None
+    pattern: re.Pattern,
+    text: str,
+    pos: int = 0,
+    endpos: int | None = None,
 ) -> Iterator[re.Match[str] | tuple[int, int]]:
     """Iterate over matches of a regex pattern in the given text.
 
@@ -77,18 +80,20 @@ def _iter(
         yield cursor, endpos
 
 
-FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)", re.M | re.S)
+FENCED_CODE = re.compile(r"^(?P<pre> *[~`]{3,}).*?^(?P=pre)", re.MULTILINE | re.DOTALL)
 
 
 def _iter_fenced_codes(
-    text: str, pos: int = 0, endpos: int | None = None
+    text: str,
+    pos: int = 0,
+    endpos: int | None = None,
 ) -> Iterator[re.Match[str] | tuple[int, int]]:
     return _iter(FENCED_CODE, text, pos, endpos)
 
 
-DOCTEST = re.compile(r" *#+ *doctest:.*$", re.M)
-PROMPT_ONLY = re.compile(r"^(?P<pre> *\>\>\> *)$", re.M)
-COMMENT_ONLY = re.compile(r"^(?P<pre> *\>\>\> )(?P<comment>#.*)$", re.M)
+DOCTEST = re.compile(r" *#+ *doctest:.*$", re.MULTILINE)
+PROMPT_ONLY = re.compile(r"^(?P<pre> *\>\>\> *)$", re.MULTILINE)
+COMMENT_ONLY = re.compile(r"^(?P<pre> *\>\>\> )(?P<comment>#.*)$", re.MULTILINE)
 
 
 def _add_example_escape(text: str) -> str:
@@ -283,8 +288,11 @@ def _convert_examples(examples: list[doctest.Example]) -> str:
 
 
 _ = r"^(?P<suffix>(?P<pre> *)(?P<prev>\S.*)\n{2,})(?P=pre) {4}\S"
-FOURINDENT = re.compile(_, re.M)
-DIRECTIVE = re.compile(r"^(?P<pre> *)\.\. *(?P<name>[\w\-]+):: *(?P<attr>.*)$", re.M)
+FOURINDENT = re.compile(_, re.MULTILINE)
+DIRECTIVE = re.compile(
+    r"^(?P<pre> *)\.\. *(?P<name>[\w\-]+):: *(?P<attr>.*)$",
+    re.MULTILINE,
+)
 
 
 def _iter_literal_block(text: str) -> Iterator[str]:
@@ -496,7 +504,10 @@ def convert_code_block(text: str) -> str:
 
 
 def _finditer(
-    pattern: re.Pattern, text: str, pos: int = 0, endpos: int | None = None
+    pattern: re.Pattern,
+    text: str,
+    pos: int = 0,
+    endpos: int | None = None,
 ) -> Iterator[re.Match[str] | tuple[int, int]]:
     for match in _iter_fenced_codes(text, pos, endpos):
         if isinstance(match, re.Match):
@@ -507,7 +518,10 @@ def _finditer(
 
 
 def finditer(
-    pattern: re.Pattern, text: str, pos: int = 0, endpos: int | None = None
+    pattern: re.Pattern,
+    text: str,
+    pos: int = 0,
+    endpos: int | None = None,
 ) -> Iterator[re.Match[str]]:
     """Find all matches of a regex pattern in the provided text.
 

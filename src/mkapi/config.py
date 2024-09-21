@@ -23,8 +23,8 @@ class MkApiConfig(Config):
 _config: MkApiConfig = MkApiConfig()  # type: ignore
 
 
-def set_config(config: MkApiConfig):
-    global _config
+def set_config(config: MkApiConfig) -> None:
+    global _config  # noqa: PLW0603
     _config = config
 
 
