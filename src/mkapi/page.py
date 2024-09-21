@@ -160,6 +160,7 @@ def _render(
 
 # Link for [source] or [docs]
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
+DEFINITION_LINK_TEXT = "mkapi_definition_mkapi"
 
 
 def _link(match: re.Match, src_uri: str, namespace: str) -> str:
@@ -174,7 +175,11 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
     if m := OBJECT_LINK_PATTERN.match(fullname):
         namespace, fullname = m.groups()
 
-        if namespace in ANCHORS and namespace in URIS:
+        if namespace == "definition" and "object" in URIS:
+            name = DEFINITION_LINK_TEXT
+            namespace = "object"
+
+        elif namespace in ANCHORS and namespace in URIS:
             name = f"[{ANCHORS[namespace]}]"
         else:
             return ""
@@ -191,9 +196,10 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
     if uri := URIS[namespace].get(fullname):
         uri = os.path.relpath(uri, PurePath(src_uri).parent)
         uri = uri.replace("\\", "/")  # Normalize for Windows
-        return f'[{name}]({uri}#{fullname} "{fullname}")'
+        title = "Go to definition" if name == DEFINITION_LINK_TEXT else fullname
+        return f'[{name}]({uri}#{fullname} "{title}")'
 
-    if from_mkapi:
+    if from_mkapi and name != DEFINITION_LINK_TEXT:
         return f'<span class="mkapi-tooltip" title="{fullname}">{name}</span>'
 
     return asname
@@ -205,6 +211,8 @@ HEADING_PATTERN = re.compile(r"<h(\d).+?mkapi-heading.+?>(.+?)</h\d>\n?")
 
 def convert_html(html: str, src_uri: str, namespace: str) -> str:
     """Convert HTML for source pages."""
+    def_icon = '<i class="fa-solid fa-square-arrow-up-right"></i>'
+    html = html.replace(DEFINITION_LINK_TEXT, def_icon)
     link = partial(_link_source, src_uri=src_uri, namespace=namespace)
     html = SOURCE_LINK_PATTERN.sub(link, html)
 

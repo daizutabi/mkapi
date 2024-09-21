@@ -5,6 +5,9 @@
 <i class="fa-solid fa-square-plus"></i>
 </span>
 {%- endif %}
+{% if id != obj_id -%}
+<span class="mkapi-definition-link">[def][__mkapi__.__definition__.{{ obj_id }}]</span>
+{%- endif %}
 [{{ namespace }}][__mkapi__.__{{ namespace }}__.{{ obj_id }}]
 <span class="mkapi-document-toggle" title="Toggle all docs">
 <i class="fa-regular fa-square-minus"></i>
@@ -17,7 +20,7 @@
 <span class="mkapi-object-parent">
 [{{ parent }}][__mkapi__.{{ parent_id }}]<span class="mkapi-dot">.</span></span>
 {%- endif -%}
-<span class="mkapi-object-name">[{{ name }}][__mkapi__.{{ obj_id }}]</span>
+<span class="mkapi-object-name">[{{ name }}][__mkapi__.{{ id }}]</span>
 {%- if signature -%}
 <span class="mkapi-signature">
 {%- for name, kind in signature -%}

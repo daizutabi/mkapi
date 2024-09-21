@@ -130,6 +130,7 @@ ul.mkapi-item-list {
   font-family: var(--mkapi-docs-link-font-family);
   display: block;
   float: right;
+  user-select: none;
 }
 
 .mkapi-object-link {
@@ -143,6 +144,17 @@ ul.mkapi-item-list {
 .mkapi-section-toggle {
   cursor: pointer;
   color: var(--mkapi-punctuation-color);
+}
+
+.mkapi-document-toggle:hover,
+.mkapi-parent-toggle:hover,
+.mkapi-section-toggle:hover {
+  color: var(--mkapi-object-name-color);
+}
+
+.mkapi-definition-link a {
+  color: var(--mkapi-punctuation-color);
+  text-decoration: none;
 }
 
 .mkapi-page-object {
