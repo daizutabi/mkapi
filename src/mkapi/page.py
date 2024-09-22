@@ -27,7 +27,6 @@ class PageKind(Enum):
 
 
 URIS: dict[str, dict[str, str]] = {}
-ANCHORS = {"object": "docs", "source": "source"}
 
 
 @dataclass
@@ -154,9 +153,17 @@ def _render(
     return mkapi.renderer.render(name, module, level, namespace, predicate)
 
 
-# Link for [source] or [docs]
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
-DEFINITION_LINK_TEXT = "mkapi_definition_mkapi"
+ANCHOR_PLACEHOLDERS = {
+    "object": "mkapi_object_mkapi",
+    "source": "mkapi_source_mkapi",
+    "definition": "mkapi_definition_mkapi",
+}
+ANCHOR_TITLES = {
+    "object": "Go to docs",
+    "source": "Go to source",
+    "definition": "Go to definition",
+}
 
 
 def _link(match: re.Match, src_uri: str, namespace: str) -> str:
@@ -172,11 +179,11 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
         namespace, fullname = m.groups()
 
         if namespace == "definition" and "object" in URIS:
-            name = DEFINITION_LINK_TEXT
+            name = ANCHOR_PLACEHOLDERS["definition"]
             namespace = "object"
 
-        elif namespace in ANCHORS and namespace in URIS:
-            name = f"[{ANCHORS[namespace]}]"
+        elif namespace in ANCHOR_PLACEHOLDERS and namespace in URIS:
+            name = ANCHOR_PLACEHOLDERS[namespace]
         else:
             return ""
 
@@ -192,10 +199,10 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
     if uri := URIS[namespace].get(fullname):
         uri = os.path.relpath(uri, PurePath(src_uri).parent)
         uri = uri.replace("\\", "/")  # Normalize for Windows
-        title = "Go to definition" if name == DEFINITION_LINK_TEXT else fullname
+        title = ANCHOR_TITLES[namespace]
         return f'[{name}]({uri}#{fullname} "{title}")'
 
-    if from_mkapi and name != DEFINITION_LINK_TEXT:
+    if from_mkapi and name != ANCHOR_PLACEHOLDERS["definition"]:
         return f'<span class="mkapi-tooltip" title="{fullname}">{name}</span>'
 
     return asname
@@ -204,11 +211,18 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
 SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
 HEADING_PATTERN = re.compile(r"<h(\d).+?mkapi-heading.+?>(.+?)</h\d>\n?")
 
+ANCHOR_TEXTS = {
+    "object": "docs",
+    "source": "source",
+    "definition": '<i class="fa-solid fa-square-arrow-up-right"></i>',
+}
+
 
 def convert_html(html: str, src_uri: str, namespace: str) -> str:
     """Convert HTML for source pages."""
-    def_icon = '<i class="fa-solid fa-square-arrow-up-right"></i>'
-    html = html.replace(DEFINITION_LINK_TEXT, def_icon)
+    for name, anchor in ANCHOR_TEXTS.items():
+        html = html.replace(ANCHOR_PLACEHOLDERS[name], anchor)
+
     link = partial(_link_source, src_uri=src_uri, namespace=namespace)
     html = SOURCE_LINK_PATTERN.sub(link, html)
 
@@ -216,7 +230,7 @@ def convert_html(html: str, src_uri: str, namespace: str) -> str:
 
 
 def _link_source(match: re.Match, src_uri: str, namespace: str) -> str:
-    anchor = ANCHORS[namespace]
+    anchor = ANCHOR_TEXTS[namespace]
     open_tag, name, close_tag = match.groups()
 
     if uri := URIS[namespace].get(name):
@@ -225,7 +239,8 @@ def _link_source(match: re.Match, src_uri: str, namespace: str) -> str:
         uri = uri.replace("/README", "")  # Remove `/README`
 
         href = f"{uri}/#{name}"
-        link = f'<a href="{href}">[{anchor}]</a>'
+        title = ANCHOR_TITLES[namespace]
+        link = f'<a href="{href}" title="{title}">{anchor}</a>'
         # https://github.com/daizutabi/mkapi/issues/123: <span> -> <div>
         link = f'<div class="mkapi-source-link" id="{name}">{link}</div>'
     else:
