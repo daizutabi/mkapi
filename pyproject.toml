@@ -76,6 +76,7 @@ exclude = ["tests/examples/*.py", "example/*.py"]
 
 [tool.ruff.lint]
 select = ["ALL"]
+unfixable = ["F401"]
 ignore = [
   "ANN002",
   "ANN003",
