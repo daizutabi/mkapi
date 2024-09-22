@@ -134,57 +134,57 @@ def test_link():
     m = LINK_PATTERN.match("[A][__mkapi__.__source__.b.c]")
     assert m
     m = _link(m, "y/a.md", "N")
-    assert m == '[[source]](B.md#b.c "b.c")'
+    assert m == '[mkapi_source_mkapi](B.md#b.c "Go to source")'
 
 
 def test_link_not_from_mkapi():
     from mkapi.page import LINK_PATTERN, URIS, _link
 
-    URIS["N"] = {"x.y": "z/a/c.md"}
+    URIS["definition"] = {"x.y": "z/a/c.md"}
     m = LINK_PATTERN.match("[A][x.y]")
     assert m
-    m = _link(m, "y/a.md", "N")
-    assert m == '[A](../z/a/c.md#x.y "x.y")'
+    m = _link(m, "y/a.md", "definition")
+    assert m == '[A](../z/a/c.md#x.y "Go to definition")'
 
 
 def test_link_not_from_mkapi_invalid():
     from mkapi.page import LINK_PATTERN, URIS, _link
 
-    URIS["N"] = {}
+    URIS["object"] = {}
     m = LINK_PATTERN.match("[A][x.y]")
     assert m
-    m = _link(m, "y/a.md", "N")
+    m = _link(m, "y/a.md", "object")
     assert m == "[A][x.y]"
 
 
 def test_link_backticks():
     from mkapi.page import LINK_PATTERN, URIS, _link
 
-    URIS["N"] = {"x.y": "p/B.md"}
+    URIS["source"] = {"x.y": "p/B.md"}
     m = LINK_PATTERN.match("[`A`][x.y]")
     assert m
-    m = _link(m, "q/r/a.md", "N")
-    assert m == '[`A`](../../p/B.md#x.y "x.y")'
+    m = _link(m, "q/r/a.md", "source")
+    assert m == '[`A`](../../p/B.md#x.y "Go to source")'
 
 
 def test_link_without_fullname():
     from mkapi.page import LINK_PATTERN, URIS, _link
 
-    URIS["N"] = {"x.y": "q/r/a.md"}
+    URIS["object"] = {"x.y": "q/r/a.md"}
     m = LINK_PATTERN.match("[x.y][]")
     assert m
-    m = _link(m, "q/r/a.md", "N")
-    assert m == '[x.y](a.md#x.y "x.y")'
+    m = _link(m, "q/r/a.md", "object")
+    assert m == '[x.y](a.md#x.y "Go to docs")'
 
 
 def test_link_without_fullname_backticks():
     from mkapi.page import LINK_PATTERN, URIS, _link
 
-    URIS["N"] = {"x.y": "q/s/a.md"}
+    URIS["source"] = {"x.y": "q/s/a.md"}
     m = LINK_PATTERN.match("[`x.y`][]")
     assert m
-    m = _link(m, "q/r/a.md", "N")
-    assert m == '[`x.y`](../s/a.md#x.y "x.y")'
+    m = _link(m, "q/r/a.md", "source")
+    assert m == '[`x.y`](../s/a.md#x.y "Go to source")'
 
 
 def test_page_convert_object_page():

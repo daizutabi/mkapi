@@ -1,6 +1,4 @@
 <div class="mkapi-document" markdown="1">
-{{ doc.text|safe }}
-
 {%- if bases -%}
 <p class="mkapi-bases" markdown="1">Bases :
 {% for base in bases %}<span class="mkapi-base">{{ base|safe }}</span>
@@ -8,6 +6,8 @@
 {%- endfor -%}
 </p>
 {%- endif %}
+
+{{ doc.text|safe }}
 
 {% for section in doc.sections -%}
 {% if section.name and not section.kind -%}
