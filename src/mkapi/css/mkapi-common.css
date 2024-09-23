@@ -136,14 +136,15 @@ ul.mkapi-item-list {
 .mkapi-object-link {
   font-size: 0.85em;
   margin-left: 1.2em;
-  vertical-align: baseline;
 }
 
 .mkapi-document-toggle,
 .mkapi-parent-toggle,
-.mkapi-section-toggle {
+.mkapi-section-toggle,
+.mkapi-definition-link {
   cursor: pointer;
   color: var(--mkapi-punctuation-color);
+  font-size: 0.85em;
 }
 
 .mkapi-document-toggle:hover,

@@ -176,6 +176,7 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
     asname = ""
 
     if m := OBJECT_LINK_PATTERN.match(fullname):
+        is_object_link = True
         namespace, fullname = m.groups()
 
         if namespace == "definition" and "object" in URIS:
@@ -188,6 +189,7 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
             return ""
 
     else:
+        is_object_link = False
         asname = match.group()
 
     if fullname.startswith("__mkapi__."):
@@ -199,7 +201,7 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
     if uri := URIS[namespace].get(fullname):
         uri = os.path.relpath(uri, PurePath(src_uri).parent)
         uri = uri.replace("\\", "/")  # Normalize for Windows
-        title = ANCHOR_TITLES[namespace]
+        title = ANCHOR_TITLES[namespace] if is_object_link else fullname
         return f'[{name}]({uri}#{fullname} "{title}")'
 
     if from_mkapi and name != ANCHOR_PLACEHOLDERS["definition"]:
