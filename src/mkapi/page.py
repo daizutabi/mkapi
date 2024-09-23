@@ -173,16 +173,16 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
         if name.startswith("`") and name.endswith("`"):
             fullname = name[1:-1]
 
-    asname = ""
+    asname = title = ""
 
     if m := OBJECT_LINK_PATTERN.match(fullname):
         is_object_link = True
         namespace, fullname = m.groups()
 
         if namespace == "definition" and "object" in URIS:
-            name = ANCHOR_PLACEHOLDERS["definition"]
+            name = ANCHOR_PLACEHOLDERS[namespace]
+            title = ANCHOR_TITLES[namespace]
             namespace = "object"
-
         elif namespace in ANCHOR_PLACEHOLDERS and namespace in URIS:
             name = ANCHOR_PLACEHOLDERS[namespace]
         else:
@@ -201,7 +201,8 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
     if uri := URIS[namespace].get(fullname):
         uri = os.path.relpath(uri, PurePath(src_uri).parent)
         uri = uri.replace("\\", "/")  # Normalize for Windows
-        title = ANCHOR_TITLES[namespace] if is_object_link else fullname
+        if not title:
+            title = ANCHOR_TITLES[namespace] if is_object_link else fullname
         return f'[{name}]({uri}#{fullname} "{title}")'
 
     if from_mkapi and name != ANCHOR_PLACEHOLDERS["definition"]:
