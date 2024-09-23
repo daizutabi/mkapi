@@ -144,7 +144,7 @@ def test_link_not_from_mkapi():
     m = LINK_PATTERN.match("[A][x.y]")
     assert m
     m = _link(m, "y/a.md", "definition")
-    assert m == '[A](../z/a/c.md#x.y "Go to definition")'
+    assert m == '[A](../z/a/c.md#x.y "x.y")'
 
 
 def test_link_not_from_mkapi_invalid():
@@ -164,7 +164,7 @@ def test_link_backticks():
     m = LINK_PATTERN.match("[`A`][x.y]")
     assert m
     m = _link(m, "q/r/a.md", "source")
-    assert m == '[`A`](../../p/B.md#x.y "Go to source")'
+    assert m == '[`A`](../../p/B.md#x.y "x.y")'
 
 
 def test_link_without_fullname():
@@ -174,7 +174,7 @@ def test_link_without_fullname():
     m = LINK_PATTERN.match("[x.y][]")
     assert m
     m = _link(m, "q/r/a.md", "object")
-    assert m == '[x.y](a.md#x.y "Go to docs")'
+    assert m == '[x.y](a.md#x.y "x.y")'
 
 
 def test_link_without_fullname_backticks():
@@ -184,7 +184,7 @@ def test_link_without_fullname_backticks():
     m = LINK_PATTERN.match("[`x.y`][]")
     assert m
     m = _link(m, "q/r/a.md", "source")
-    assert m == '[`x.y`](../s/a.md#x.y "Go to source")'
+    assert m == '[`x.y`](../s/a.md#x.y "x.y")'
 
 
 def test_page_convert_object_page():
