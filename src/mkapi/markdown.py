@@ -1,5 +1,4 @@
-"""
-Provide functions for processing and converting Markdown text.
+"""Provide functions for processing and converting Markdown text.
 
 Include utilities for handling code blocks, links, and examples
 within Markdown content. The functions are designed to facilitate the extraction,
@@ -29,7 +28,7 @@ def _iter(
     pos: int = 0,
     endpos: int | None = None,
 ) -> Iterator[re.Match[str] | tuple[int, int]]:
-    """Iterate over matches of a regex pattern in the given text.
+    r"""Iterate over matches of a regex pattern in the given text.
 
     Search for all occurrences of the specified regex pattern
     in the provided text. Yield the segments of text between matches
@@ -39,6 +38,8 @@ def _iter(
     Args:
         pattern (re.Pattern): The compiled regex pattern to search for in the text.
         text (str): The text to search for matches.
+        pos (int): The starting position in the text to search for matches.
+        endpos (int | None): The ending position in the text to search for matches.
 
     Yields:
         re.Match | tuple[int, int]: Segments of text and match objects. The segments
@@ -47,7 +48,7 @@ def _iter(
 
     Examples:
         >>> import re
-        >>> pattern = re.compile(r'\\d+')
+        >>> pattern = re.compile(r'\d+')
         >>> text = "There are 2 apples and 3 oranges."
         >>> matches = list(_iter(pattern, text))
         >>> matches[0]
@@ -60,6 +61,7 @@ def _iter(
         <re.Match object; span=(23, 24), match='3'>
         >>> matches[4]
         (24, 33)
+
     """
     if endpos is None:
         endpos = len(text)
@@ -97,7 +99,7 @@ COMMENT_ONLY = re.compile(r"^(?P<pre> *\>\>\> )(?P<comment>#.*)$", re.MULTILINE)
 
 
 def _add_example_escape(text: str) -> str:
-    """Escape specific patterns in the provided text for processing.
+    r"""Escape specific patterns in the provided text for processing.
 
     Modify the input text by escaping certain patterns to prevent them from
     being processed as regular content. Specifically, replace prompt lines
@@ -111,7 +113,7 @@ def _add_example_escape(text: str) -> str:
         str: The modified text with escaped patterns.
 
     Examples:
-        >>> text = ">>>\\n>>> print('Hello, World!')\\n>>> # This is a comment\\n"
+        >>> text = ">>>\n>>> print('Hello, World!')\n>>> # This is a comment\n"
         >>> x = _add_example_escape(text).splitlines()
         >>> x[0]
         '>>> MKAPI_BLANK_LINE'
@@ -119,6 +121,7 @@ def _add_example_escape(text: str) -> str:
         ">>> print('Hello, World!')"
         >>> x[2]
         '>>> __mkapi__# This is a comment'
+
     """
     text = PROMPT_ONLY.sub(r"\g<pre> MKAPI_BLANK_LINE", text)
     text = COMMENT_ONLY.sub(r"\g<pre>__mkapi__\g<comment>", text)
@@ -126,7 +129,7 @@ def _add_example_escape(text: str) -> str:
 
 
 def _delete_example_escape(text: str) -> str:
-    """Remove escaped patterns from the provided text.
+    r"""Remove escaped patterns from the provided text.
 
     Reverse the escaping applied to specific patterns in the input text.
     Remove the placeholder for blank lines and the special marker for comments
@@ -139,16 +142,17 @@ def _delete_example_escape(text: str) -> str:
         str: The modified text with escaped patterns removed.
 
     Examples:
-        >>> text = " MKAPI_BLANK_LINE\\n__mkapi__# This is a comment\\n"
+        >>> text = " MKAPI_BLANK_LINE\n__mkapi__# This is a comment\n"
         >>> _delete_example_escape(text)
-        ' \\n# This is a comment\\n'
+        ' \n# This is a comment\n'
+
     """
     text = text.replace("MKAPI_BLANK_LINE", "")
     return text.replace("__mkapi__", "")
 
 
 def _iter_examples(text: str) -> Iterator[doctest.Example | str]:
-    """Iterate over examples in the provided text.
+    r"""Iterate over examples in the provided text.
 
     Scan the input text for examples formatted in doctest style.
     Escape specific patterns in the text to prevent them from being
@@ -164,10 +168,11 @@ def _iter_examples(text: str) -> Iterator[doctest.Example | str]:
         segments of text that are not part of any example.
 
     Examples:
-        >>> text = ">>> print('Hello')\\n'Hello'\\n>>> print('World')\\n'World'\\n"
+        >>> text = ">>> print('Hello')\n'Hello'\n>>> print('World')\n'World'\n"
         >>> examples = list(_iter_examples(text))
         >>> len(examples)
         2
+
     """
     if "\n" not in text:
         yield text
@@ -206,7 +211,7 @@ def _iter_examples(text: str) -> Iterator[doctest.Example | str]:
 
 
 def _iter_example_lists(text: str) -> Iterator[list[doctest.Example] | str]:
-    """Iterate over lists of examples in the provided text.
+    r"""Iterate over lists of examples in the provided text.
 
     Process the input text to extract groups of examples formatted
     in doctest style. Utilize the `_iter_examples` function to yield individual
@@ -222,14 +227,15 @@ def _iter_example_lists(text: str) -> Iterator[list[doctest.Example] | str]:
         or segments of text that are not part of any example.
 
     Examples:
-        >>> text = ">>> print('Hello')\\n'Hello'\\n>>> print('World')\\n'World'\\n"
+        >>> text = ">>> print('Hello')\n'Hello'\n>>> print('World')\n'World'\n"
         >>> example_lists = list(_iter_example_lists(text))
         >>> len(example_lists)
         2
         >>> example_lists[0][0].source
-        "print('Hello')\\n"
+        "print('Hello')\n"
         >>> example_lists[1][0].want
-        "'World'\\n"
+        "'World'\n"
+
     """
     examples: list[doctest.Example] = []
     for example in _iter_examples(text):
@@ -271,6 +277,7 @@ def _convert_examples(examples: list[doctest.Example]) -> str:
 
     Returns:
         str: The Markdown representation of the provided examples.
+
     """
     prefix = " " * examples[0].indent
     lines = [f"{prefix}```{{.python .mkapi-example-input}}"]
@@ -296,7 +303,7 @@ DIRECTIVE = re.compile(
 
 
 def _iter_literal_block(text: str) -> Iterator[str]:
-    """Iterate over literal blocks in the provided text.
+    r"""Iterate over literal blocks in the provided text.
 
     Scan the input text for literal blocks that are indented
     and formatted according to specific rules. Identify blocks of code
@@ -312,12 +319,13 @@ def _iter_literal_block(text: str) -> Iterator[str]:
         or segments of text that are not part of any literal block.
 
     Examples:
-        >>> text = " x\\n a\\n\\n\\n     b\\n\\n     c\\n\\nd\\n"
+        >>> text = " x\n a\n\n\n     b\n\n     c\n\nd\n"
         >>> blocks = list(_iter_literal_block(text))
         >>> len(blocks)
         3
         >>> blocks[1]
-        ' ```\\n b\\n\\n c\\n ```\\n'
+        ' ```\n b\n\n c\n ```\n'
+
     """
     if match := FOURINDENT.search(text):
         prefix = match.group("pre")
@@ -365,6 +373,7 @@ def _split_block(text: str, indent: int) -> tuple[str, str]:
         tuple[str, str]: A tuple where the first element is a string containing
         the indented blocks, and the second element is a string containing
         the non-indented segments.
+
     """
     subs = {True: [], False: []}
 
@@ -390,6 +399,7 @@ def _iter_blocks(text: str, indent: int) -> Iterator[tuple[str, bool]]:
         tuple[str, bool]: A tuple where the first element is a string
         containing the block of text, and the second element is a boolean
         indicating whether the block is indented (True) or not (False).
+
     """
     lines = text.splitlines()
     rests = []
@@ -437,6 +447,7 @@ def _get_indent(line: str) -> int:
         -1
         >>> _get_indent("")
         -1
+
     """
     for k, c in enumerate(line):
         if c != " ":
@@ -446,7 +457,7 @@ def _get_indent(line: str) -> int:
 
 
 def _iter_code_blocks(text: str) -> Iterator[str]:
-    """Iterate over code blocks in the provided text.
+    r"""Iterate over code blocks in the provided text.
 
     Scan the input text for both fenced code blocks and
     example lists. Yield each code block as a string, converting
@@ -462,10 +473,11 @@ def _iter_code_blocks(text: str) -> Iterator[str]:
         Markdown code block.
 
     Examples:
-        >>> text = "```\\nprint('Hello')\\n```\\n>>> print('World')\\n'World'\\n"
+        >>> text = "```\nprint('Hello')\n```\n>>> print('World')\n'World'\n"
         >>> code_blocks = list(_iter_code_blocks(text))
         >>> len(code_blocks)
         3
+
     """
     for match in _iter_fenced_codes(text):
         if isinstance(match, re.Match):
@@ -499,6 +511,7 @@ def convert_code_block(text: str) -> str:
 
     Returns:
         str: The modified text with code blocks converted to Markdown format.
+
     """
     return "".join(_iter_code_blocks(text))
 
@@ -536,6 +549,7 @@ def finditer(
 
     Yields:
         re.Match: Each match found in the text.
+
     """
     for match in _finditer(pattern, text, pos, endpos):
         if isinstance(match, re.Match):
@@ -566,6 +580,7 @@ def sub(
     Returns:
         str: The modified text with all matches of the pattern replaced by the
         result of the callable.
+
     """
     subs = (
         text[m[0] : m[1]] if isinstance(m, tuple) else rel(m)
@@ -596,6 +611,7 @@ def create_admonition(name: str, title: str, text: str) -> str:
         >>> print(create_admonition(name, title, text))
         !!! warning "Caution"
             This is a warning message.
+
     """
     lines = [f'!!! {name} "{title}"']
     lines.extend("    " + line if line else "" for line in text.splitlines())

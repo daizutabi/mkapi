@@ -67,6 +67,7 @@ def iter_child_nodes(node: AST) -> Iterator[AST]:
         >>> for child in iter_child_nodes(tree):
         ...     print(type(child))
         <class 'ast.FunctionDef'>
+
     """
     it = ast.iter_child_nodes(node)
 
@@ -98,6 +99,7 @@ def _get_pseudo_docstring(node: AST) -> str | None:
 
     Returns:
         str | None: The cleaned pseudo docstring if found, otherwise None.
+
     """
     if isinstance(node, Expr) and isinstance(node.value, Constant):
         doc = node.value.value
@@ -125,6 +127,7 @@ def _iter_assign_nodes(
 
     Yields:
         AST: The assignment nodes found in the AST.
+
     """
     node.__doc__ = None
 
@@ -170,6 +173,7 @@ def get_assign_name(node: AnnAssign | Assign | TypeAlias) -> str | None:  # type
         >>> node = ast.parse("y: int = 2").body[0]
         >>> get_assign_name(node)
         'y'
+
     """
     if isinstance(node, Assign):
         name = node.targets[0]
@@ -214,6 +218,7 @@ def get_assign_type(node: AnnAssign | Assign | TypeAlias) -> ast.expr | None:  #
         >>> node = ast.parse("y = 2").body[0]
         >>> get_assign_type(node) is None
         True
+
     """
     if isinstance(node, AnnAssign):
         return node.annotation
@@ -260,6 +265,7 @@ def _iter_parameters(
         ('c', <ast.Name object at 0x...>, <_ParameterKind.KEYWORD_ONLY: 3>)
         >>> args[4]
         ('d', None, <_ParameterKind.KEYWORD_ONLY: 3>)
+
     """
     args = node.args
     for arg in args.posonlyargs:
@@ -296,6 +302,7 @@ def _iter_defaults(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr | 
         >>> node = ast.parse(src).body[0]
         >>> list(_iter_defaults(node))  # doctest: +ELLIPSIS
         [None, <ast.Constant object at 0x...>, <ast.Constant object at 0x...>]
+
     """
     args = node.args
     num_positional = len(args.posonlyargs) + len(args.args)
@@ -323,6 +330,7 @@ class Parameter:
             a default value.
         kind (_ParameterKind): The kind of the parameter, indicating whether it is
             positional-only, positional-or-keyword, keyword-only, or variable.
+
     """
 
     name: str
@@ -366,6 +374,7 @@ def iter_parameters(node: FunctionDef | AsyncFunctionDef) -> Iterator[Parameter]
         True
         >>> params[4].default.value
         5
+
     """
     it = _iter_defaults(node)
     for name, type_, kind in _iter_parameters(node):
@@ -398,6 +407,7 @@ def iter_raises(node: FunctionDef | AsyncFunctionDef) -> Iterator[ast.expr]:
         1
         >>> ast.unparse(raises[0])
         'ValueError'
+
     """
     names = []
     for child in ast.walk(node):
@@ -448,6 +458,7 @@ def create_ast_expr(name: str) -> ast.expr:
         ''
         >>> create_ast_expr("42").value
         '42'
+
     """
     if _is_identifier(name):
         try:
@@ -479,12 +490,14 @@ class Transformer(NodeTransformer):
         >>> node = ast.parse("x = 1")
         >>> transformer.unparse(node)
         '__mkapi__.x = 1'
+
     """
 
     def _rename(self, name: str) -> Name:
         return Name(id=f"{PREFIX}{name}")
 
     def visit_Name(self, node: Name) -> Name:  # noqa: N802
+        """Visit a `Name` node and rename it if it is not already renamed."""
         return self._rename(node.id)
 
     def unparse(self, node: AST) -> str:
@@ -508,6 +521,7 @@ class Transformer(NodeTransformer):
             >>> node = ast.parse("a.b.c")
             >>> transformer.unparse(node)
             '__mkapi__.a.b.c'
+
         """
         # copy node for avoiding in-place rename.
         node_ = ast.parse(ast.unparse(node))
@@ -525,8 +539,7 @@ class StringTransformer(Transformer):
     """
 
     def visit_Constant(self, node: Constant) -> Constant | Name:  # noqa: N802
-        """
-        Visit a `Constant` node and rename it if its value is a string.
+        """Visit a `Constant` node and rename it if its value is a string.
 
         Override the `visit_Constant` method from the `Transformer`
         class. Check if the value of the `Constant` node is a string,
@@ -545,6 +558,7 @@ class StringTransformer(Transformer):
             >>> node = ast.parse('"hello"')
             >>> transformer.unparse(node)
             '__mkapi__.hello'
+
         """
         if isinstance(node.value, str):
             return self._rename(node.value)
@@ -582,6 +596,7 @@ def _iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
         ('c', True)
         >>> x[4]
         ('], y', False)
+
     """
     start = 0
     while start < len(source):
@@ -630,6 +645,7 @@ def iter_identifiers(node: AST) -> Iterator[str]:
         >>> identifiers = list(iter_identifiers(node))
         >>> identifiers
         ['a']
+
     """
     source = StringTransformer().unparse(node)
     for code, isidentifier in _iter_identifiers(source):
@@ -680,12 +696,13 @@ def unparse(node: AST, callback: Callable[[str], str], *, is_type: bool = True) 
         >>> node = ast.parse(src)
         >>> unparse(node, transform)
         '<a> + <b>'
+
     """
     return "".join(_unparse(node, callback, is_type=is_type))
 
 
 def has_decorator(node: AST, name: str, index: int = 0) -> bool:
-    """Check if a class or function has a specific decorator.
+    r"""Check if a class or function has a specific decorator.
 
     Check whether the given Abstract Syntax Tree (AST) node,
     which can be a class definition or a function definition (synchronous or
@@ -706,12 +723,13 @@ def has_decorator(node: AST, name: str, index: int = 0) -> bool:
 
     Examples:
         >>> import ast
-        >>> src = "@my_decorator\\ndef func():\\n pass"
+        >>> src = "@my_decorator\ndef func():\n pass"
         >>> node = ast.parse(src).body[0]
         >>> has_decorator(node, "my_decorator")
         True
         >>> has_decorator(node, "other_decorator")
         False
+
     """
     if not isinstance(node, ClassDef | FunctionDef | AsyncFunctionDef):
         return False
@@ -744,12 +762,13 @@ def is_function_def(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
         >>> node = ast.parse(src).body[0]
         >>> is_function_def(node)
         True
+
     """
     return isinstance(node, FunctionDef | AsyncFunctionDef)
 
 
 def is_property(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
-    """Check if the AST node is a property.
+    r"""Check if the AST node is a property.
 
     Determine whether the given AST node is a function definition
     and has a decorator named "property".
@@ -762,16 +781,17 @@ def is_property(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 
     Examples:
         >>> import ast
-        >>> src = "@property\\ndef func(self): pass"
+        >>> src = "@property\ndef func(self): pass"
         >>> node = ast.parse(src).body[0]
         >>> is_property(node)
         True
+
     """
     return is_function_def(node) and has_decorator(node, "property")
 
 
 def is_setter(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
-    """Check if the AST node is a setter.
+    r"""Check if the AST node is a setter.
 
     Determine whether the given AST node is a function definition
     and has a decorator named "setter" at the specified index.
@@ -784,16 +804,17 @@ def is_setter(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 
     Examples:
         >>> import ast
-        >>> src = "@func.setter\\ndef func(self, value): pass"
+        >>> src = "@func.setter\ndef func(self, value): pass"
         >>> node = ast.parse(src).body[0]
         >>> is_setter(node)
         True
+
     """
     return is_function_def(node) and has_decorator(node, "setter", 1)
 
 
 def has_overload(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
-    """Check if the AST node has an overload decorator.
+    r"""Check if the AST node has an overload decorator.
 
     Determine whether the given Abstract Syntax Tree (AST) node
     is a function definition and has a decorator named "overload".
@@ -806,16 +827,17 @@ def has_overload(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 
     Examples:
         >>> import ast
-        >>> src = "@overload\\ndef func(self): pass"
+        >>> src = "@overload\ndef func(self): pass"
         >>> node = ast.parse(src).body[0]
         >>> has_overload(node)
         True
+
     """
     return is_function_def(node) and has_decorator(node, "overload")
 
 
 def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
-    """Check if the AST node is a regular function definition.
+    r"""Check if the AST node is a regular function definition.
 
     Determine whether the given Abstract Syntax Tree (AST)
     node is a function definition and ensures that it is not a property,
@@ -833,10 +855,11 @@ def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
         >>> node = ast.parse(src).body[0]
         >>> is_function(node)
         True
-        >>> src = "@property\\ndef func(self): pass"
+        >>> src = "@property\ndef func(self): pass"
         >>> node = ast.parse(src).body[0]
         >>> is_function(node)
         False
+
     """
     if not is_function_def(node):
         return False
@@ -845,7 +868,7 @@ def is_function(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 
 
 def is_classmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
-    """Check if the AST node is a class method.
+    r"""Check if the AST node is a class method.
 
     Determine whether the given Abstract Syntax Tree (AST) node
     is a function definition and has a decorator named "classmethod".
@@ -858,16 +881,17 @@ def is_classmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 
     Examples:
         >>> import ast
-        >>> src = "@classmethod\\ndef func(cls): pass"
+        >>> src = "@classmethod\ndef func(cls): pass"
         >>> node = ast.parse(src).body[0]
         >>> is_classmethod(node)
         True
+
     """
     return is_function_def(node) and has_decorator(node, "classmethod")
 
 
 def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
-    """Check if the AST node is a static method.
+    r"""Check if the AST node is a static method.
 
     Determine whether the given Abstract Syntax Tree (AST) node
     is a function definition and has a decorator named "staticmethod".
@@ -880,10 +904,11 @@ def is_staticmethod(node: AST) -> TypeGuard[FunctionDef | AsyncFunctionDef]:
 
     Examples:
         >>> import ast
-        >>> src = "@staticmethod\\ndef func(): pass"
+        >>> src = "@staticmethod\ndef func(): pass"
         >>> node = ast.parse(src).body[0]
         >>> is_staticmethod(node)
         True
+
     """
     return is_function_def(node) and has_decorator(node, "staticmethod")
 
@@ -907,5 +932,6 @@ def is_assign(node: AST) -> TypeGuard[ast.AnnAssign | ast.Assign | TypeAlias]:  
         >>> node = ast.parse(src).body[0]
         >>> is_assign(node)
         True
+
     """
     return isinstance(node, ast.AnnAssign | ast.Assign | TypeAlias)

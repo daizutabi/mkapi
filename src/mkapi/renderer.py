@@ -1,3 +1,5 @@
+"""Render documentation for Python objects."""
+
 from __future__ import annotations
 
 import os
@@ -31,8 +33,7 @@ templates: dict[str, Template] = {}
 
 
 def load_templates(path: Path | None = None) -> None:
-    """
-    Load Jinja2 templates from the specified directory.
+    """Load Jinja2 templates from the specified directory.
 
     Initialize the `templates` dictionary with Jinja2 templates
     loaded from the given directory path. If no path is provided, it defaults
@@ -45,6 +46,7 @@ def load_templates(path: Path | None = None) -> None:
 
     Returns:
         None
+
     """
     if not path:
         path = Path(mkapi.__file__).parent / "templates"
@@ -73,8 +75,7 @@ def render(
     namespace: str,
     predicate: Callable[[Parser, TemplateKind], bool] | None = None,
 ) -> str:
-    """
-    Render a template with the given parameters.
+    """Render a template with the given parameters.
 
     Render a template based on the provided name, level, namespace,
     and an optional predicate function. Process the template using the
@@ -83,6 +84,7 @@ def render(
 
     Args:
         name (str): The name of the object to render.
+        module (str | None): The module of the object to render.
         level (int): The heading level to use for rendering headings.
         namespace (str): The namespace to use for rendering objects.
         predicate (Callable[[Parser, TemplateKind], bool] | None, optional):
@@ -92,6 +94,7 @@ def render(
 
     Returns:
         str: The rendered markdown string.
+
     """
     if not (parser := Parser.create(name, module)):
         if module:
@@ -121,19 +124,18 @@ def render(
 
 
 def render_heading(name_set: NameSet, level: int) -> str:
-    """
-    Render a heading for the specified object.
+    """Render a heading for the specified object.
 
     Render a heading for the specified object using the provided ID, fullname,
     and level. Use the "heading" template to generate the heading.
 
     Args:
-        id_ (str): The ID of the object.
-        fullname (str): The fullname of the object.
+        name_set (NameSet): The name set containing the object's ID and fullname.
         level (int): The heading level to use for rendering headings.
 
     Returns:
         str: The rendered heading as a markdown string.
+
     """
     return templates["heading"].render(
         id=name_set.id,
@@ -148,20 +150,20 @@ def render_object(
     namespace: str,
     signature: list[tuple[str, str]],
 ) -> str:
-    """
-    Render an object entry using the specified parameters.
+    """Render an object entry using the specified parameters.
 
     Render an object entry using the provided object, name set, namespace,
     signature, and bases. Use the "object" template to generate the object entry.
 
     Args:
-        obj (Object): The object to render.
         name_set (NameSet): The name set containing the object's ID and fullname.
+        level (int): The heading level to use for rendering headings.
         namespace (str): The namespace to use for rendering objects.
         signature (list[tuple[str, str]]): The signature of the object.
 
     Returns:
         str: The rendered object entry as a markdown string.
+
     """
     return templates["object"].render(
         kind=name_set.kind,
@@ -179,8 +181,7 @@ def render_object(
 
 
 def render_document(doc: Doc, bases: list[str]) -> str:
-    """
-    Render a document using the specified parameters.
+    """Render a document using the specified parameters.
 
     Render a document using the provided document. Use the "document" template
     to generate the document.
@@ -191,13 +192,13 @@ def render_document(doc: Doc, bases: list[str]) -> str:
 
     Returns:
         str: The rendered document as a markdown string.
+
     """
     return templates["document"].render(doc=doc, bases=bases)
 
 
 def render_source(obj: Object, attr: str = "") -> str:
-    """
-    Render the source code for the specified object.
+    """Render the source code for the specified object.
 
     Render the source code for the specified object using the provided object
     and attribute name. Use the "source" template to generate the source code.
@@ -208,6 +209,7 @@ def render_source(obj: Object, attr: str = "") -> str:
 
     Returns:
         str: The rendered source code as a markdown string.
+
     """
     if not isinstance(obj, Module | Class | Function | Attribute | Property):
         return ""

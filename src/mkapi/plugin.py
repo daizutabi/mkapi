@@ -250,6 +250,7 @@ def generate_file(config: MkDocsConfig, src_uri: str, name: str) -> File:
 
     Returns:
         File: A `File` instance representing the generated file.
+
     """
     file = File.generated(config, src_uri, content=name)
 

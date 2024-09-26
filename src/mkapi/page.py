@@ -1,3 +1,5 @@
+"""Page class."""
+
 from __future__ import annotations
 
 import os.path
@@ -21,6 +23,8 @@ if TYPE_CHECKING:
 
 
 class PageKind(Enum):
+    """Enum representing different types of pages."""
+
     OBJECT = "object"
     SOURCE = "source"
     DOCUMENTATION = "documentation"
@@ -31,7 +35,7 @@ URIS: dict[str, dict[str, str]] = {}
 
 @dataclass
 class Page:
-    """Page class"""
+    """Page class."""
 
     src_uri: str
     name: str
@@ -40,32 +44,40 @@ class Page:
 
     @classmethod
     def create_object(cls, src_uri: str, name: str) -> Page:
+        """Create an object page."""
         return cls(src_uri, name, "", PageKind.OBJECT)
 
     @classmethod
     def create_source(cls, src_uri: str, name: str) -> Page:
+        """Create a source page."""
         return cls(src_uri, name, "", PageKind.SOURCE)
 
     @classmethod
     def create_documentation(cls, src_uri: str, content: str) -> Page:
+        """Create a documentation page."""
         return cls(src_uri, "", content, PageKind.DOCUMENTATION)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.src_uri!r})"
 
     def is_object_page(self) -> bool:
+        """Check if the page is an object page."""
         return self.kind is PageKind.OBJECT
 
     def is_source_page(self) -> bool:
+        """Check if the page is a source page."""
         return self.kind is PageKind.SOURCE
 
     def is_api_page(self) -> bool:
+        """Check if the page is an API page."""
         return self.is_object_page() or self.is_source_page()
 
     def is_documentation_page(self) -> bool:
+        """Check if the page is a documentation page."""
         return not self.is_api_page()
 
     def generate_markdown(self) -> None:
+        """Generate markdown for the page."""
         self.markdown, names = generate_module_markdown(self.name)
         namespace = "source" if self.is_source_page() else "object"
         uris = URIS.setdefault(namespace, {})
@@ -74,6 +86,7 @@ class Page:
             uris[name] = self.src_uri
 
     def convert_markdown(self, markdown: str) -> str:
+        """Convert markdown for the page."""
         if self.is_api_page():
             markdown = self.markdown
 

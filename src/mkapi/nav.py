@@ -48,6 +48,7 @@ def get_apinav(
         list: A list of module names or a nested structure of module names
         based on the specified depth. Return an empty list if the module
         path is invalid.
+
     """
     if not get_module_path(name):
         return []
@@ -130,6 +131,7 @@ def gen_apinav(
         moduleA False 1
         sectionA True 1
         moduleB False 2
+
     """
     for k, page in enumerate(nav):
         if isinstance(page, str):
@@ -182,6 +184,7 @@ def update_apinav(
         >>> update_apinav(nav_structure, page_title, section_title)
         >>> print(nav_structure)
         ['MODULE1.0', {'Section: section1': ['MODULE2.1']}]
+
     """
     it = gen_apinav(nav)
     try:
@@ -229,6 +232,7 @@ def build_apinav(
         >>> updated_nav = build_apinav(nav_structure, create_apinav)
         >>> print(updated_nav)
         ['module1.md', {'section1': ['module2.md']}]
+
     """
     nav_ = []
     for item in nav:
@@ -321,6 +325,7 @@ def update_nav(
     Returns:
         None: This function modifies the `nav` list in place and does not
             return a value.
+
     """
 
     def _create_apinav(name: str, path: str) -> list:

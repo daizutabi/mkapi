@@ -1,5 +1,4 @@
-"""
-Utility functions for the application.
+"""Utility functions for the application.
 
 Contain a collection of utility functions that provide various
 helper functionalities for the application. These functions are designed to
@@ -69,6 +68,7 @@ def cache(obj: Callable[..., T] | dict | list) -> Callable[..., T] | dict | list
         >>> cached_dict = cache(my_dict)
         >>> cached_dict['key']
         'value'
+
     """
     if callable(obj):
         cached = functools.cache(obj)
@@ -88,6 +88,7 @@ def cache_clear() -> None:
 
     Returns:
         None: This function does not return any value.
+
     """
     for obj in cached_objects:
         if callable(obj):
@@ -121,6 +122,7 @@ def get_module_path(name: str) -> Path | None:
         >>> path = get_module_path("non_existent_module")
         >>> path is None
         True
+
     """
     try:
         spec = find_spec(name)
@@ -161,6 +163,7 @@ def get_module_name(module: str) -> str:
 
         >>> get_module_name("")
         ''
+
     """
     if not module:
         return ""
@@ -187,6 +190,7 @@ def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
 
     Returns:
         bool: True if the path is a module; otherwise, False.
+
     """
     path_str = path.as_posix()
     for pattern in exclude_patterns:
@@ -215,6 +219,7 @@ def is_package(name: str) -> bool:
 
     Returns:
         bool: True if the name is a package; otherwise, False.
+
     """
     try:
         spec = find_spec(name)
@@ -240,6 +245,7 @@ def iter_submodule_names(name: str) -> Iterator[str]:
 
     Yields:
         str: The full names of the submodules found under the specified module.
+
     """
     spec = find_spec(name)
     if not spec or not spec.submodule_search_locations:
@@ -269,6 +275,7 @@ def find_submodule_names(
     Returns:
         list[str]: A list of the submodule names that satisfy the predicate, or all
         submodule names if no predicate is provided.
+
     """
     predicate = predicate or (lambda _: True)
     names = [name for name in iter_submodule_names(name) if predicate(name)]
@@ -306,6 +313,7 @@ def get_module_node_source(name: str) -> tuple[ast.Module, str] | None:
 
         >>> get_module_node_source("non_existent_module") is None
         True
+
     """
     if path := get_module_path(name):
         with path.open("r", encoding="utf-8") as f:
@@ -347,6 +355,7 @@ def get_module_node(name: str) -> ast.Module | None:
 
         >>> get_module_node("non_existent_module") is None
         True
+
     """
     if node_source := get_module_node_source(name):
         return node_source[0]
@@ -376,6 +385,7 @@ def get_module_source(name: str) -> str | None:
 
         >>> get_module_source("non_existent_module") is None
         True
+
     """
     if node_source := get_module_node_source(name):
         return node_source[1]
@@ -407,6 +417,7 @@ def iter_attribute_names(name: str, *, reverse: bool = False) -> Iterator[str]:
         ['a', 'a.b', 'a.b.c', 'a.b.c.d']
         >>> list(iter_attribute_names("a.b.c.d", reverse=True))
         ['a.b.c.d', 'a.b.c', 'a.b', 'a']
+
     """
     names = name.split(".")
     it = range(len(names), 0, -1) if reverse else range(1, len(names) + 1)
@@ -437,6 +448,7 @@ def iter_by_name(items: Iterable[T], name: str, attr: str = "name") -> Iterator[
 
     Yields:
         T: The items that match the specified name.
+
     """
     for item in items:
         if _is_equal(item, name, attr):
@@ -467,6 +479,7 @@ def find_item_by_name(
     Returns:
         T | None: The first item that matches the specified name, or None
         if no matching item is found.
+
     """
     if not isinstance(name, str):
         for name_ in name:
@@ -495,6 +508,7 @@ def find_item_by_kind(items: Iterable[T], kind: str) -> T | None:
     Returns:
         T | None: The first item that matches the specified kind, or None
         if no matching item is found.
+
     """
     for item in iter_by_name(items, kind, attr="kind"):
         return item
@@ -516,6 +530,7 @@ def find_item_by_type(items: Iterable, type_: type[T]) -> T | None:
     Returns:
         T | None: The first item that matches the specified type, or None
         if no matching item is found.
+
     """
     for item in items:
         if isinstance(item, type_):
@@ -540,6 +555,7 @@ def delete_item_by_name(items: list[T], name: str, attr: str = "name") -> None:
 
     Returns:
         None: This function does not return any value.
+
     """
     for k, item in enumerate(items):
         if _is_equal(item, name, attr):
@@ -564,6 +580,7 @@ def merge_unique_names(a: Iterable, b: Iterable, attr: str = "name") -> list[str
 
     Returns:
         list[str]: A list of unique names collected from both iterables.
+
     """
     names = [getattr(x, attr) for x in a]
     for x in b:
@@ -597,6 +614,7 @@ def split_filters(name: str) -> tuple[str, list[str]]:
         ('', ['upper', 'strict'])
         >>> split_filters("")
         ('', [])
+
     """
     index = name.find("|")
     if index == -1:
@@ -632,6 +650,7 @@ def update_filters(org: list[str], update: list[str]) -> list[str]:
         ['short']
         >>> update_filters(["short"], ["long"])
         ['long']
+
     """
     filters = org + update
     for x, y in [["lower", "upper"], ["long", "short"]]:
@@ -674,6 +693,7 @@ def is_identifier(name: str) -> bool:
         False
         >>> is_identifier("valid.identifier.with.dots")
         True
+
     """
     return name != "" and all(x.isidentifier() for x in name.split("."))
 
@@ -707,6 +727,7 @@ def iter_identifiers(source: str) -> Iterator[tuple[str, bool]]:
         [('"quoted string"', False)]
         >>> list(iter_identifiers("a.b.c"))
         [('a.b.c', True)]
+
     """
     start = stop = 0
     while start < len(source):
@@ -772,6 +793,7 @@ def list_exported_names(module: str) -> list[str]:
 
         >>> list_exported_names("non_existent_module")
         []
+
     """
     try:
         members = importlib.import_module(module).__dict__
@@ -811,6 +833,7 @@ def get_object_from_module(name: str, module: str) -> object | None:
         >>> non_existent = get_object_from_module("NonExistent", "my_module")
         >>> non_existent is None
         True
+
     """
     try:
         obj = importlib.import_module(module or name)
@@ -846,6 +869,7 @@ def is_dataclass(name: str, module: str) -> bool:
 
         >>> is_dataclass("is_dataclass", "mkapi.utils")
         False
+
     """
     obj = get_object_from_module(name, module)
     return dataclasses.is_dataclass(obj)
@@ -866,6 +890,7 @@ def is_enum(name: str, module: str) -> bool:
 
     Returns:
         bool: True if the object is an enum, otherwise False.
+
     """
     obj = get_object_from_module(name, module)
     return isinstance(obj, type) and issubclass(obj, Enum)
@@ -898,6 +923,7 @@ def get_base_classes(name: str, module: str) -> list[tuple[str, str]]:
         >>> base_classes = get_base_classes("NonExistentClass", "my_module")
         >>> base_classes
         []
+
     """
     obj = get_object_from_module(name, module)
 
@@ -949,6 +975,7 @@ def split_module_name(name: str) -> tuple[str, str | None] | None:
 
         >>> split_module_name("invalid.module") is None
         True
+
     """
     modulename = None
     for module in iter_attribute_names(name):

@@ -84,6 +84,7 @@ class Object:
         doc (Doc): The `Doc` instance of documentation associated with
             the object, extracted from the AST node or the object's
             docstring.
+
     """
 
     name: str
@@ -153,6 +154,7 @@ def iter_child_objects(
     Yields:
         Object: The instances of `Object` representing each recognized child
         node, such as a class, function, property, or attribute.
+
     """
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.ClassDef):
@@ -182,6 +184,7 @@ class Type(Object):
             or None if the type is not specified. This can include type
             annotations, type hints, or other expressions that define the
             type of an object.
+
     """
 
     type: ast.expr | None
@@ -209,6 +212,7 @@ class Attribute(Type):
         type (ast.expr | None): The AST expression representing the type,
             or None if the type is not specified.
         default (ast.expr | None): The default value of the attribute, if any.
+
     """
 
     node: ast.AnnAssign | ast.Assign | TypeAlias
@@ -233,6 +237,7 @@ class Property(Type):
         parent (Parent | None): The parent object of this property, if any.
         type (ast.expr | None): The AST expression representing the type,
             or None if the type is not specified.
+
     """
 
     node: ast.FunctionDef | ast.AsyncFunctionDef
@@ -263,6 +268,7 @@ def create_attribute(
         Attribute: An instance of the `Attribute` class representing the
         specified attribute, including its name, node, module, parent, and
         any associated type information.
+
     """
     type_ = get_assign_type(node)
     default = None if TypeAlias and isinstance(node, TypeAlias) else node.value
@@ -292,6 +298,7 @@ def create_property(
         Property: An instance of the `Property` class representing the
         specified property, including its name, node, module, parent, and
         any associated type information.
+
     """
     return Property(node.name, node, module, parent, node.returns)
 
@@ -313,6 +320,7 @@ class Parent(Object):
         children (dict[str, Object]): A dictionary that stores child
             objects, where the keys are the names of the children and
             the values are instances of `Object`.
+
     """
 
     children: dict[str, Object] = field(default_factory=dict, init=False)
@@ -329,6 +337,7 @@ class Parent(Object):
         Returns:
             T | None: The child object if found and of the specified type,
             otherwise None.
+
         """
         child = self.children.get(name)
 
@@ -344,19 +353,17 @@ class Parent(Object):
             list[tuple[str, T]]: A list of tuples, where each tuple contains
             the name and the child object, ensuring the object is of the
             specified type.
+
         """
         it = self.children.items()
         return [(name, obj) for (name, obj) in it if isinstance(obj, type_)]
 
 
 def iter_objects(obj: Object, type_: type[T] = Object) -> Iterator[T]:
-    """Iterate over the child objects of the given object,
-    ensuring they are of the specified type.
+    """Iterate over the child objects of the given object.
 
-    Recursively traverse the children of the provided
-    object and yields objects that match the specified type.
-    Ensure that all objects in the hierarchy are of the desired type,
-    allowing for consistent processing and analysis of the AST structure.
+    Recursively traverse the children of the provided object and yields objects
+    that match the specified type.
 
     Args:
         obj (Object): The object whose children are to be iterated over.
@@ -364,6 +371,7 @@ def iter_objects(obj: Object, type_: type[T] = Object) -> Iterator[T]:
 
     Yields:
         T: The objects that are children of the object and matches the specified type.
+
     """
     if not isinstance(obj, Parent):
         return
@@ -391,6 +399,7 @@ class Definition(Parent):
             functions or methods.
         raises (list[ast.expr]): A list of expressions representing
             the exceptions that may be raised by the definition.
+
     """
 
     parameters: list[Parameter]
@@ -420,6 +429,7 @@ class Class(Definition):
         node (ast.ClassDef): The actual AST node associated with this class
             definition, which contains the structure and properties of the
             class as defined in the source code.
+
     """
 
     node: ast.ClassDef
@@ -438,6 +448,7 @@ class Function(Definition):
         node (ast.FunctionDef | ast.AsyncFunctionDef): The actual AST node
             associated with this function definition, which contains the structure
             and properties of the function as defined in the source code.
+
     """
 
     node: ast.FunctionDef | ast.AsyncFunctionDef
@@ -459,6 +470,7 @@ def create_class(node: ast.ClassDef, module: str, parent: Parent | None) -> Clas
     Returns:
         Class: An instance of the `Class` class representing the specified class,
         including its name, node, module, parent, and any associated attributes.
+
     """
     fullname = _fullname(node.name, module, parent)
     if (cls := objects.get(fullname)) and isinstance(cls, Class):
@@ -509,6 +521,7 @@ def create_class_by_name(name: str, module: str, parent: Parent | None) -> Class
         Class | None: An instance of the `Class` class representing the specified
         class, including its name, node, module, parent, and any associated
         attributes, or None if the class cannot be created.
+
     """
     if node := get_module_node(module):
         for child in ast.iter_child_nodes(node):
@@ -535,6 +548,7 @@ def get_base_classes(name: str, module: str) -> list[Class]:
     Returns:
         list[Class]: A list of the `Class` instances representing the base classes
         of the specified class.
+
     """
     bases = []
 
@@ -566,6 +580,7 @@ def iter_attributes_from_function(
 
     Yields:
         Attribute: `Attribute` instances of the function.
+
     """
     self = func.parameters[0].name
 
@@ -589,6 +604,7 @@ def iter_parameters_from_dataclass(cls: Class) -> Iterator[Parameter]:
 
     Yields:
         Parameter: `Parameter` instances of the dataclass.
+
     """
     obj = get_object_from_module(cls.name, cls.module)
 
@@ -624,6 +640,7 @@ def create_function(
         Function: An instance of the `Function` class representing the specified
         function, including its name, node, module, parent, and any associated
         attributes.
+
     """
     params = list(iter_parameters(node))
     raises = list(iter_raises(node))
@@ -644,6 +661,7 @@ class Module(Parent):
         node (ast.Module): The actual AST node associated with this module.
         module (None): A placeholder for the module name, initialized to None.
         parent (None): A placeholder for the parent object, initialized to None.
+
     """
 
     node: ast.Module
@@ -686,6 +704,7 @@ def create_module(
         Module | None: An instance of the `Module` class representing the specified
         module, including its name, node, and any associated attributes. Returns
         None if the module cannot be created.
+
     """
     if not node:
         if node_source := get_module_node_source(name):
@@ -739,6 +758,7 @@ def get_object_kind(obj: Object) -> str:  # noqa: PLR0911
         - class, dataclass, enum
         - function, method, classmethod, staticmethod
         - property
+
     """
     if isinstance(obj, Module):
         return "package" if is_package(obj.name) else "module"
@@ -778,6 +798,7 @@ def get_source(obj: Object) -> str | None:
     Returns:
         str | None: The source code of the object as a string if available,
         or None if the source code cannot be retrieved.
+
     """
     if isinstance(obj, Module):
         return get_module_source(obj.name)
@@ -798,6 +819,7 @@ def is_child(obj: Object, parent: Object | None) -> bool:
     Args:
         obj (Object): The object to check if it is a child.
         parent (Object | None): The parent object to compare against.
+
     """
     if parent is None or isinstance(obj, Module) or isinstance(parent, Module):
         return True
@@ -824,6 +846,7 @@ def get_object(name: str, module: str | None = None) -> Object | None:
     Returns:
         Object | None: The `Object` instance corresponding to the specified name
         and module, or None if the object cannot be found or created.
+
     """
     if not (fullname := get_fullname_from_module(name, module)):
         return None
@@ -846,8 +869,7 @@ def get_object(name: str, module: str | None = None) -> Object | None:
 
 
 def get_fullname_from_object(name: str, obj: Object) -> str | None:  # noqa: PLR0911
-    """Return the fully qualified name for `name` relative to the
-    given `Object` instance.
+    """Return the fully qualified name for `name` relative to the given `Object`.
 
     Construct the fully qualified name for `name` based
     on the context of the provided `Object` instance.
@@ -860,6 +882,7 @@ def get_fullname_from_object(name: str, obj: Object) -> str | None:  # noqa: PLR
     Returns:
         str | None: The fully qualified name of the specified name relative
         to the object, or None if the fullname cannot be determined.
+
     """
     if isinstance(obj, Module):
         return get_fullname_from_module(name, obj.name)

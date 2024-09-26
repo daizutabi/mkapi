@@ -1,5 +1,4 @@
-"""
-Process and manage docstrings.
+"""Process and manage docstrings.
 
 Provide functionality for parsing, organizing, and manipulating
 docstrings in various formats, specifically Google and NumPy styles.
@@ -40,7 +39,7 @@ SPLIT_NAME_TYPE_TEXT_PATTERN = re.compile(r"^\s*(\S+?)\s*\((.+?)\)\s*:\s*(.*)$")
 
 
 def _iter_items(text: str) -> Iterator[str]:
-    """Iterate over items in the provided text based on a specific pattern.
+    r"""Iterate over items in the provided text based on a specific pattern.
 
     Scan the input text for items separated by a specific
     pattern defined by `SPLIT_ITEM_PATTERN`. Yield each item found,
@@ -54,10 +53,11 @@ def _iter_items(text: str) -> Iterator[str]:
         and trailing whitespace.
 
     Examples:
-        >>> text = "Item 1\\n a\\nItem 2\\n b\\nItem 3\\n c"
+        >>> text = "Item 1\n a\nItem 2\n b\nItem 3\n c"
         >>> items = list(_iter_items(text))
         >>> items
-        ['Item 1\\n a', 'Item 2\\n b', 'Item 3\\n c']
+        ['Item 1\n a', 'Item 2\n b', 'Item 3\n c']
+
     """
     start = 0
     for m in SPLIT_ITEM_PATTERN.finditer(text):
@@ -126,6 +126,7 @@ def split_item(text: str, style: Style) -> tuple[str, str, str]:
         >>> text = "param1 (int): The first parameter."
         >>> split_item(text, "google")
         ('param1', 'int', 'The first parameter.')
+
     """
     lines = text.splitlines()
 
@@ -136,7 +137,7 @@ def split_item(text: str, style: Style) -> tuple[str, str, str]:
 
 
 def split_item_without_name(text: str, style: str) -> tuple[str, str]:
-    """Return a tuple of (type, text) for Returns or Yields section.
+    r"""Return a tuple of (type, text) for Returns or Yields section.
 
     Process the input text to extract the type and description
     for the Returns or Yields section of a docstring, based on the specified style.
@@ -157,9 +158,10 @@ def split_item_without_name(text: str, style: str) -> tuple[str, str]:
         >>> split_item_without_name(text, "google")
         ('int', 'The return value.')
 
-        >>> text = "str\\n    The output string."
+        >>> text = "str\n    The output string."
         >>> split_item_without_name(text, "numpy")
         ('str', 'The output string.')
+
     """
     lines = text.splitlines()
 
@@ -195,6 +197,7 @@ class Item:
         'The first parameter.'
         >>> repr(item)
         "Item('param1')"
+
     """
 
     name: str
@@ -212,6 +215,7 @@ class Item:
         return f"{self.__class__.__name__}({self.name!r})"
 
     def clone(self) -> Item:
+        """Clone the current `Item` instance."""
         return self.__class__(self.name, self.type, self.text)
 
 
@@ -219,7 +223,7 @@ TYPE_STRING_PATTERN = re.compile(r"\[__mkapi__.(\S+?)\]\[\]")
 
 
 def iter_items(text: str, style: Style) -> Iterator[Item]:
-    """Yield `Item` instances from the provided text based on the specified style.
+    r"""Yield `Item` instances from the provided text based on the specified style.
 
     Process the input text to extract items formatted according
     to the specified style (either "google" or "numpy"). It iterates over the
@@ -236,7 +240,7 @@ def iter_items(text: str, style: Style) -> Iterator[Item]:
         of the items found in the text.
 
     Examples:
-        >>> text = "param1 (int): The first.\\nparam2 (str): The second."
+        >>> text = "param1 (int): The first.\nparam2 (str): The second."
         >>> items = list(iter_items(text, "google"))
         >>> len(items)
         2
@@ -246,6 +250,7 @@ def iter_items(text: str, style: Style) -> Iterator[Item]:
         'int'
         >>> items[0].text
         'The first.'
+
     """
     for item in _iter_items(text):
         name, type_, text = split_item(item, style)
@@ -254,8 +259,7 @@ def iter_items(text: str, style: Style) -> Iterator[Item]:
 
 
 def iter_items_without_name(text: str, style: Style) -> Iterator[Item]:
-    """Yield `Item` instances without a name from the provided text based
-    on the specified style.
+    """Yield `Item` instances without a name from the provided text based.
 
     Process the input text to extract items formatted according
     to the specified style (either "google" or "numpy") but does not include
@@ -280,6 +284,7 @@ def iter_items_without_name(text: str, style: Style) -> Iterator[Item]:
         'int'
         >>> items[0].text
         'The return value.'
+
     """
     name = ""
     type_, text = split_item_without_name(text, style)
@@ -312,6 +317,7 @@ def _split_sections(text: str, style: Style) -> Iterator[str]:
     Yields:
         str: Each section found in the text, stripped of leading and
         trailing whitespace.
+
     """
     pattern = SPLIT_SECTION_PATTERNS[style]
 
@@ -361,7 +367,7 @@ CURRENT_DOCSTRING_STYLE: list[Style] = ["google"]
 
 
 def get_style(text: str) -> Style:
-    """Return the docstring style based on the provided text.
+    r"""Return the docstring style based on the provided text.
 
     Analyze the input text to determine whether it follows
     the Google or NumPy style for docstrings. Check for specific section
@@ -375,16 +381,17 @@ def get_style(text: str) -> Style:
         Style: The determined style of the docstring, either "google" or "numpy".
 
     Examples:
-        >>> text = "Parameters:\\n    param1 (int): The first parameter."
+        >>> text = "Parameters:\n    param1 (int): The first parameter."
         >>> get_style(text)
         'google'
 
-        >>> text = "\\n\\nReturns\\n--------\\n    str: The output string."
+        >>> text = "\n\nReturns\n--------\n    str: The output string."
         >>> get_style(text)
         'numpy'
 
         >>> get_style("")
         'google'
+
     """
     for names in SECTION_NAMES:
         for name in names:
@@ -418,6 +425,7 @@ def _rename_section(section_name: str) -> str:
         'Parameters'
         >>> _rename_section("Unknown Section")
         'Unknown Section'
+
     """
     for section_names in SECTION_NAMES:
         if section_name in section_names:
@@ -427,7 +435,7 @@ def _rename_section(section_name: str) -> str:
 
 
 def split_section(text: str, style: Style) -> tuple[str, str]:
-    """Return a section name and its text based on the specified style.
+    r"""Return a section name and its text based on the specified style.
 
     Process the input text to extract the section name and
     its corresponding content. Identify the section name based on the
@@ -446,13 +454,14 @@ def split_section(text: str, style: Style) -> tuple[str, str]:
         an empty string is returned as the name.
 
     Examples:
-        >>> text = "Args:\\n    param1 (int): The first parameter."
+        >>> text = "Args:\n    param1 (int): The first parameter."
         >>> split_section(text, "google")
         ('Args', 'param1 (int): The first parameter.')
 
-        >>> text = "Returns\\n--------\\n    str: The output string."
+        >>> text = "Returns\n--------\n    str: The output string."
         >>> split_section(text, "numpy")
         ('Returns', 'str: The output string.')
+
     """
     lines = text.splitlines()
     if len(lines) < 2:
@@ -470,7 +479,7 @@ def split_section(text: str, style: Style) -> tuple[str, str]:
 
 
 def _iter_sections(text: str, style: Style) -> Iterator[tuple[str, str]]:
-    """Yield (section name, text) pairs by splitting a docstring.
+    r"""Yield (section name, text) pairs by splitting a docstring.
 
     Process the input text to extract sections formatted according
     to the specified style (either "google" or "numpy"). Split the text into
@@ -487,8 +496,8 @@ def _iter_sections(text: str, style: Style) -> Iterator[tuple[str, str]]:
         returned as the name.
 
     Examples:
-        >>> text = "Args:\\n    param1 (int): The first parameter.\\n\\n"
-        >>> text += "Returns:\\n    str: The output string."
+        >>> text = "Args:\n    param1 (int): The first parameter.\n\n"
+        >>> text += "Returns:\n    str: The output string."
         >>> sections = list(_iter_sections(text, "google"))
         >>> len(sections)
         2
@@ -496,6 +505,7 @@ def _iter_sections(text: str, style: Style) -> Iterator[tuple[str, str]]:
         ('Parameters', 'param1 (int): The first parameter.')
         >>> sections[1]
         ('Returns', 'str: The output string.')
+
     """
     prev_name, prev_text = "", ""
     for section in _split_sections(text, style):
@@ -546,6 +556,7 @@ class Section(Item):
         'Parameters'
         >>> section.items
         []
+
     """
 
     items: list[Item]
@@ -553,6 +564,7 @@ class Section(Item):
     representing individual parameters, return values, or exceptions."""
 
     def clone(self) -> Section:
+        """Clone the current `Section` instance."""
         items = [x.clone() for x in self.items]
         return Section(self.name, self.type, self.text, items)
 
@@ -586,6 +598,7 @@ def _create_admonition(name: str, text: str) -> str:
         >>> print(warning_admonition)
         !!! warning "Warning"
             This is a warning.
+
     """
     if name.startswith("Note"):
         kind = "note"
@@ -603,7 +616,7 @@ def _create_admonition(name: str, text: str) -> str:
 
 
 def iter_sections(text: str, style: Style) -> Iterator[Section]:
-    """Yield `Section` instances by splitting a docstring.
+    r"""Yield `Section` instances by splitting a docstring.
 
     Process the input text to extract sections formatted according
     to the specified style (either "google" or "numpy"). Split the text into
@@ -621,8 +634,8 @@ def iter_sections(text: str, style: Style) -> Iterator[Section]:
         of the sections found in the text.
 
     Examples:
-        >>> text = "Parameters:\\n    param1 (int): The first parameter.\\n\\n"
-        >>> text += "Returns:\\n    str: The output string."
+        >>> text = "Parameters:\n    param1 (int): The first parameter.\n\n"
+        >>> text += "Returns:\n    str: The output string."
         >>> sections = list(iter_sections(text, "google"))
         >>> len(sections)
         2
@@ -630,6 +643,7 @@ def iter_sections(text: str, style: Style) -> Iterator[Section]:
         'Parameters'
         >>> sections[1].name
         'Returns'
+
     """
     prev_text = ""
 
@@ -677,6 +691,7 @@ class Doc(Item):
         sections (list[Section]): A list of `Section` instances that represent
             the structured sections within the documentation, such as Parameters,
             Returns, and Examples.
+
     """
 
     sections: list[Section]
@@ -687,12 +702,13 @@ class Doc(Item):
         return f"{self.__class__.__name__}(sections={len(self.sections)})"
 
     def clone(self) -> Doc:
+        """Clone the current `Doc` instance."""
         sections = [x.clone() for x in self.sections]
         return Doc(self.name, self.type, self.text, sections)
 
 
 def create_doc(text: str | None, style: Style | None = None) -> Doc:
-    """Create and return a `Doc` instance from the provided text.
+    r"""Create and return a `Doc` instance from the provided text.
 
     Take a string representing a documentation text and an optional
     style indicator (either "google" or "numpy"). Process the input text to
@@ -710,13 +726,14 @@ def create_doc(text: str | None, style: Style | None = None) -> Doc:
         Doc: A `Doc` instance containing the structured documentation information.
 
     Examples:
-        >>> text = "Parameters:\\n    param1 (int): The first parameter.\\n\\n"
-        >>> text += "Returns:\\n    str: The output string."
+        >>> text = "Parameters:\n    param1 (int): The first parameter.\n\n"
+        >>> text += "Returns:\n    str: The output string."
         >>> doc = create_doc(text, "google")
         >>> doc.name
         'Doc'
         >>> len(doc.sections)
         2
+
     """
     if not text:
         return Doc("Doc", "", "", [])
@@ -763,6 +780,7 @@ def create_doc_comment(text: str) -> Doc:
         'The output string.'
         >>> len(doc_comment.sections)
         0
+
     """
     type_, text = split_item_without_name(text, "google")
     return Doc("Doc", type_, text, [])
@@ -791,13 +809,14 @@ def split_type(doc: Doc) -> None:
         'str'
         >>> doc.text
         'The output string.'
+
     """
     if not doc.type and doc.text:
         doc.type, doc.text = split_item_without_name(doc.text, "google")
 
 
 def merge_items(a: Item, b: Item) -> Item:
-    """Merge two `Item` instances into one `Item` instance.
+    r"""Merge two `Item` instances into one `Item` instance.
 
     Combine the attributes of two `Item` instances, taking
     the first item's name and the type from either item (if one is missing).
@@ -820,7 +839,8 @@ def merge_items(a: Item, b: Item) -> Item:
         >>> merged_item.type
         'int'
         >>> merged_item.text
-        'The first parameter.\\n\\nThe second parameter.'
+        'The first parameter.\n\nThe second parameter.'
+
     """
     type_ = a.type or b.type
     text = f"{a.text}\n\n{b.text}".strip()
@@ -828,7 +848,7 @@ def merge_items(a: Item, b: Item) -> Item:
 
 
 def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
-    """Yield merged `Item` instances from two lists of `Item`.
+    r"""Yield merged `Item` instances from two lists of `Item`.
 
     Take two lists of `Item` instances and yield merged
     `Item` instances based on their names. If an `Item` exists in both lists,
@@ -857,7 +877,8 @@ def iter_merged_items(a: list[Item], b: list[Item]) -> Iterator[Item]:
         >>> merged_items[0].type
         'int'
         >>> merged_items[0].text
-        'The first parameter.\\n\\nUpdated first parameter.'
+        'The first parameter.\n\nUpdated first parameter.'
+
     """
     for name in merge_unique_names(a, b):
         ai, bi = find_item_by_name(a, name), find_item_by_name(b, name)
@@ -887,6 +908,7 @@ def merge_sections(a: Section, b: Section) -> Section:
     Returns:
         Section: A new `Section` instance containing the merged attributes from both
         input sections.
+
     """
     type_ = a.type or b.type
     text = f"{a.text}\n\n{b.text}".strip()
@@ -909,6 +931,7 @@ def iter_merged_sections(a: list[Section], b: list[Section]) -> Iterator[Section
     Yields:
         Iterator[Section]: Each merged `Section` instance or a `Section`
         from one of the lists if it does not have a counterpart in the other list.
+
     """
     index = 0
     for ai in a:
@@ -954,6 +977,7 @@ def merge(a: Doc, b: Doc) -> Doc:
     Returns:
         Doc: A new `Doc` instance containing the merged attributes from both
         input `Doc` instances.
+
     """
     type_ = a.type or b.type
     text = f"{a.text}\n\n{b.text}".strip()
@@ -974,6 +998,7 @@ def is_empty(doc: Doc) -> bool:
 
     Returns:
         bool: True if the `Doc` instance is empty; otherwise, False.
+
     """
     if doc.text:
         return False

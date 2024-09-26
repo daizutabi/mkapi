@@ -1,5 +1,4 @@
-"""
-Parsing and managing Python objects for documentation generation.
+"""Parsing and managing Python objects for documentation generation.
 
 Provide the `Parser` class, which is responsible for parsing various
 Python objects such as modules, classes, functions, and attributes.
@@ -71,9 +70,7 @@ class NameSet:
 
 @dataclass
 class Parser:
-    """
-    Parse and manage Python objects such as modules, classes, functions,
-    and attributes for documentation generation.
+    """Parse and manage Python objects for documentation generation.
 
     Provide methods to create a parser instance from a given name,
     retrieve the full name of objects, and parse various components of the
@@ -97,10 +94,12 @@ class Parser:
 
         Args:
             name (str): The name of the object to parse.
+            module (str | None): The module of the object to parse.
 
         Returns:
             Parser | None: A `Parser` instance if the object is valid,
             otherwise None.
+
         """
         if not module:
             if not (name_module := split_module_name(name)):
@@ -126,6 +125,7 @@ class Parser:
 
         Returns:
             str | None: The full name if the name is valid, otherwise None.
+
         """
         module = self.obj.module or self.obj.name
         return get_fullname_from_module(name, module)
@@ -138,6 +138,7 @@ class Parser:
 
         Returns:
             str | None: The full name if the name is valid, otherwise None.
+
         """
         return get_fullname_from_object(name, self.obj)
 
@@ -146,6 +147,7 @@ class Parser:
 
         Returns:
             NameSet: The name set.
+
         """
         qualname = self.name.replace("_", "\\_")
         obj_id = self.obj.fullname
@@ -187,6 +189,7 @@ class Parser:
 
         Returns:
             list[tuple[str, str]]: The signature.
+
         """
         if isinstance(self.obj, Module):
             return []
@@ -211,6 +214,7 @@ class Parser:
 
         Returns:
             list[str]: The base classes.
+
         """
         if not isinstance(self.obj, Class):
             return []
@@ -227,6 +231,7 @@ class Parser:
 
         Returns:
             str: The summary.
+
         """
         summary = self.obj.doc.text.split("\n\n", maxsplit=1)[0]
         return get_markdown_text(summary, self.replace_from_object)
@@ -242,6 +247,7 @@ class Parser:
 
         Returns:
             Doc: The doc.
+
         """
         doc = self.obj.doc.clone()
         merge_sections(doc.sections, self.obj)
@@ -300,6 +306,7 @@ def get_markdown_link(name: str, ref: str | None, *, in_code: bool = False) -> s
         '[foo][__mkapi__.bar]'
         >>> get_markdown_link("foo", "bar", in_code=True)
         '[`foo`][__mkapi__.bar]'
+
     """
     if not in_code:
         name = name.replace("_", "\\_")
@@ -339,6 +346,7 @@ def get_markdown_name(fullname: str, replace: Replace = None) -> str:
         '[foo][__mkapi__.foo].[bar][__mkapi__.foo.bar]'
         >>> get_markdown_name("foo.bar", lambda x: x.replace("bar", "baz"))
         '[foo][__mkapi__.foo].[bar][__mkapi__.foo.baz]'
+
     """
     names = fullname.split(".")
     refs = iter_attribute_names(fullname)
@@ -371,6 +379,7 @@ def get_markdown_str(type_str: str, replace: Replace = None) -> str:
         '[foo][__mkapi__.foo][[bar][__mkapi__.bar]]'
         >>> get_markdown_str("foo, bar", lambda x: x.replace("bar", "baz"))
         '[foo][__mkapi__.foo], [bar][__mkapi__.baz]'
+
     """
     it = iter_identifiers(type_str)
     markdowns = (get_markdown_name(name, replace) if is_ else name for name, is_ in it)
@@ -402,6 +411,7 @@ def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
         '[foo][__mkapi__.foo][[bar][__mkapi__.bar]]'
         >>> get_markdown_expr(expr, lambda x: x.replace("bar", "baz"))
         '[foo][__mkapi__.foo][[bar][__mkapi__.baz]]'
+
     """
     if isinstance(expr, ast.Constant):
         value = expr.value
@@ -437,6 +447,7 @@ def get_markdown_type(type_: str | ast.expr | None, replace: Replace) -> str:
     Returns:
         str: A Markdown formatted string representing the type or AST expression.
             Returns an empty string if the input is None.
+
     """
     if type_ is None:
         return ""
@@ -469,6 +480,7 @@ def get_markdown_text(text: str, replace: Replace) -> str:
     Examples:
         >>> get_markdown_text("Use `foo.bar`.", lambda x: x.replace("bar", "baz"))
         'Use [`foo.bar`][__mkapi__.foo.baz].'
+
     """
 
     def _replace(match: re.Match) -> str:
@@ -502,6 +514,7 @@ def set_markdown_doc(doc: Doc, replace: Replace) -> None:
     Returns:
         None: This function does not return a value; it modifies the `Doc`
         object in place.
+
     """
     doc.text = get_markdown_text(doc.text, replace)
     doc.type = get_markdown_type(doc.type, replace)
@@ -571,8 +584,7 @@ class PartKind(Enum):
 
 
 def get_signature(obj: Class | Function | Attribute | Property) -> Signature:
-    """
-    Get the signature of the given object.
+    """Get the signature of the given object.
 
     Take an object, which can be a Class, Function, Attribute, or Property,
     and return its signature as a Signature object. The signature includes
@@ -585,6 +597,7 @@ def get_signature(obj: Class | Function | Attribute | Property) -> Signature:
 
     Returns:
         Signature: The signature of the given object.
+
     """
     if isinstance(obj, Class | Function):
         parts = [Part(value, kind) for value, kind in _iter_signature(obj)]
@@ -663,8 +676,7 @@ def _iter_param(param: Parameter) -> Iterator[tuple[ast.expr | str, PartKind]]:
 
 
 def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:
-    """
-    Merge the parameters from the given sections and parameters list.
+    """Merge the parameters from the given sections and parameters list.
 
     Update the Parameters section of the documentation by merging the
     provided parameters list. If a parameter in the section does
@@ -676,6 +688,7 @@ def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:
 
     Returns:
         None
+
     """
     if not (section := find_item_by_name(sections, "Parameters")):
         return
@@ -690,8 +703,7 @@ def merge_parameters(sections: list[Section], params: list[Parameter]) -> None:
 
 
 def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
-    """
-    Merge the raises from the given sections and raises list.
+    """Merge the raises from the given sections and raises list.
 
     Update the Raises section of the documentation by merging the
     provided raises list. If a raise in the section does
@@ -703,6 +715,7 @@ def merge_raises(sections: list[Section], raises: list[ast.expr]) -> None:
 
     Returns:
         None
+
     """
     section = find_item_by_name(sections, "Raises")
 
@@ -728,8 +741,7 @@ def merge_returns(
     returns: ast.expr | None,
     module: str,
 ) -> None:
-    """
-    Merge the return type from the given sections and returns expression.
+    """Merge the return type from the given sections and returns expression.
 
     Update the Returns or Yields section of the documentation by merging the
     provided returns expression. If the section does not exist and the returns
@@ -740,9 +752,11 @@ def merge_returns(
     Args:
         sections (list[Section]): The list of documentation sections.
         returns (ast.expr | None): The returns expression to merge.
+        module (str | None): The module of the object to render.
 
     Returns:
         None
+
     """
     if not (section := find_item_by_name(sections, ("Returns", "Yields"))):
         return
@@ -778,8 +792,7 @@ def merge_attributes(  # noqa: C901
     *,
     ignore_empty: bool = True,
 ) -> None:
-    """
-    Merge the attributes from the given sections and attributes list.
+    """Merge the attributes from the given sections and attributes list.
 
     Update the Attributes section of the documentation by merging the provided
     attributes list. If the section does not exist and the attributes list is
@@ -796,8 +809,8 @@ def merge_attributes(  # noqa: C901
 
     Returns:
         None
-    """
 
+    """
     if section := find_item_by_name(sections, "Attributes"):
         items = section.items
         created = False
@@ -842,8 +855,7 @@ def merge_sections(
     sections: list[Section],
     obj: Attribute | Class | Function | Module | Property,
 ) -> None:
-    """
-    Merge sections of documentation for a given object.
+    """Merge sections of documentation for a given object.
 
     Take a list of sections and an object, and merge the
     documentation sections for the object. Handle different types of
@@ -858,8 +870,8 @@ def merge_sections(
 
     Returns:
         None
-    """
 
+    """
     if isinstance(obj, Module | Class):
         if isinstance(obj, Class) and is_enum(obj.name, obj.module):
             ignore_names = ["name", "value"]
@@ -880,8 +892,7 @@ def merge_sections(
 
 
 def create_summary_item(name: str, module: str | None) -> Item | None:
-    """
-    Create a summary item for the given name in the given module.
+    """Create a summary item for the given name in the given module.
 
     Take a fully qualified name, create a parser for it,
     and extract the name set and summary from the parser.
@@ -893,6 +904,7 @@ def create_summary_item(name: str, module: str | None) -> Item | None:
 
     Returns:
         Item | None: The summary item if created, otherwise None.
+
     """
     if not (parser := Parser.create(name, module)):
         return None
@@ -904,8 +916,7 @@ def create_summary_item(name: str, module: str | None) -> Item | None:
 
 
 def create_classes_from_module(module: str) -> Section | None:
-    """
-    Create a Classes section from the given module.
+    """Create a Classes section from the given module.
 
     Take a module name, check if it is a package,
     and iterate over the classes in the module. For each class,
@@ -916,6 +927,7 @@ def create_classes_from_module(module: str) -> Section | None:
 
     Returns:
         Section | None: The Classes section if created, otherwise None.
+
     """
     items = []
     for name in iter_classes_from_module(module):
@@ -926,8 +938,7 @@ def create_classes_from_module(module: str) -> Section | None:
 
 
 def create_functions_from_module(module: str) -> Section | None:
-    """
-    Create a Functions section from the given module.
+    """Create a Functions section from the given module.
 
     Take a module name, and iterate over the functions in the module.
     For each function, create a summary item and add it to the Functions section.
@@ -937,6 +948,7 @@ def create_functions_from_module(module: str) -> Section | None:
 
     Returns:
         Section | None: The Functions section if created, otherwise None.
+
     """
     items = []
     for name in iter_functions_from_module(module):
@@ -947,8 +959,7 @@ def create_functions_from_module(module: str) -> Section | None:
 
 
 def create_modules_from_module(module: str) -> Section | None:
-    """
-    Create a Modules section from the given module.
+    """Create a Modules section from the given module.
 
     Take a module name, check if it is a package,
     and iterate over the submodules in the module. For each submodule,
@@ -959,6 +970,7 @@ def create_modules_from_module(module: str) -> Section | None:
 
     Returns:
         Section | None: The Modules section if created, otherwise None.
+
     """
     items = []
     for name in iter_modules_from_module(module):
@@ -969,8 +981,7 @@ def create_modules_from_module(module: str) -> Section | None:
 
 
 def create_modules_from_module_file(module: str) -> Section | None:
-    """
-    Create a Modules section from the given module.
+    """Create a Modules section from the given module.
 
     Take a module name, check if it is a package,
     and iterate over the submodules in the module. For each submodule,
@@ -981,6 +992,7 @@ def create_modules_from_module_file(module: str) -> Section | None:
 
     Returns:
         Section | None: The Modules section if created, otherwise None.
+
     """
     if not is_package(module):
         return None
@@ -997,8 +1009,7 @@ def create_modules_from_module_file(module: str) -> Section | None:
 
 
 def create_methods_from_class(name: str, module: str) -> Section | None:
-    """
-    Create a Methods section from the given class.
+    """Create a Methods section from the given class.
 
     Take a class name and module name, and iterate over the methods in the class.
     For each method, create a summary item and add it to the Methods section.
@@ -1009,6 +1020,7 @@ def create_methods_from_class(name: str, module: str) -> Section | None:
 
     Returns:
         Section | None: The Methods section if created, otherwise None.
+
     """
     items = []
     for method in iter_methods_from_class(name, module):

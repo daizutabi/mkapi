@@ -1,5 +1,4 @@
-"""
-Node representation module for Abstract Syntax Tree (AST)
+"""Node representation module for Abstract Syntax Tree (AST).
 
 Provide classes and functions for representing and manipulating
 nodes in the Abstract Syntax Tree (AST) of Python code. The AST is a
@@ -150,8 +149,8 @@ def iter_child_nodes(node: AST, module: str) -> Iterator[Definition | Assign | I
 
     Yields:
         Definition | Assign | Import: The child nodes.
-    """
 
+    """
     for child in mkapi.ast.iter_child_nodes(node):
         if isinstance(child, ast.Import):
             for name, fullname in _iter_imports(child):
@@ -188,6 +187,7 @@ def _iter_imports(node: ast.Import) -> Iterator[tuple[str, str]]:
     Yields:
         tuple[str, str]: The alias name and the fullname of the imported module
         or attribute.
+
     """
     for alias in node.names:
         if alias.asname:
@@ -211,6 +211,7 @@ def extract_import_module_name(node: ast.ImportFrom, module: str) -> str:
 
     Returns:
         str: The module name extracted from the `ast.ImportFrom` node.
+
     """
     if not node.level and node.module:
         return node.module
@@ -240,6 +241,7 @@ def _iter_imports_from(node: ast.ImportFrom, module: str) -> Iterator[tuple[str,
     Yields:
         tuple[str, str]: The alias name and the fullname of the imported module
         or attribute.
+
     """
     module = extract_import_module_name(node, module)
 
@@ -266,6 +268,7 @@ def _iter_imports_from_star(
     Yields:
         Definition | Assign | Import: The child nodes that are imported
         from the specified module.
+
     """
     module = extract_import_module_name(node, module)
 
@@ -296,6 +299,7 @@ def get_child_nodes(node: AST, module: str) -> list[Definition | Assign | Import
 
     Returns:
         list[Definition | Assign | Import]: A list of the child nodes.
+
     """
     node_dict: dict[str, list[Definition | Assign | Import]] = {}
 
@@ -328,6 +332,7 @@ def iter_nodes(fullname: str) -> Iterator[Module | Definition | Assign | Import]
 
     Yields:
         Module | Definition | Assign | Import: The node instances.
+
     """
     if node := get_module_node(fullname):
         yield Module(fullname, node)
@@ -367,6 +372,7 @@ def parse_node(
     Returns:
         list[tuple[str, Module | Definition | Assign | Import]]: A list of tuples
         containing the name and the corresponding node instance.
+
     """
     children = []
 
@@ -395,6 +401,7 @@ def parse_module(
     Returns:
         list[tuple[str, Module | Definition | Assign | Import]]: A list of tuples
         containing the name and the corresponding node.
+
     """
     if not (node := get_module_node(module)):
         return []
@@ -421,6 +428,7 @@ def get_node(
     Returns:
         Module | Definition | Assign | Import | None: The node instance
         corresponding to the given name and module, or None if not found.
+
     """
     if not module:
         if not (name_module := split_module_name(name)):
@@ -460,6 +468,7 @@ def get_module_members(
     Returns:
         list[tuple[str, Module | Definition]]: The names and objects of the members of
         the given module.
+
     """
     members = list(iter_module_members(module, private, special, child_only=child_only))
 
@@ -499,6 +508,7 @@ def iter_module_members(
     Yields:
         tuple[str, Module | Definition]: The names and objects of the members of
         the given module.
+
     """
     names = set()
     for name, obj in _iter_module_members(module, child_only):
@@ -591,9 +601,12 @@ def iter_classes_from_module(
 
     Args:
         module (str): The name of the module to iterate over.
+        private (bool): Whether to include private members.
+        special (bool): Whether to include special members.
 
     Yields:
         str: The names of the classes in the given module.
+
     """
     for name, obj in get_module_members(module, private, special, child_only=True):
         if isinstance(obj, Definition):
@@ -613,9 +626,12 @@ def iter_functions_from_module(
 
     Args:
         module (str): The name of the module to iterate over.
+        private (bool): Whether to include private members.
+        special (bool): Whether to include special members.
 
     Yields:
         str: The names of the functions in the given module.
+
     """
     for name, obj in get_module_members(module, private, special, child_only=True):
         if isinstance(obj, Definition):
@@ -635,9 +651,12 @@ def iter_modules_from_module(
 
     Args:
         module (str): The name of the module to iterate over.
+        private (bool): Whether to include private members.
+        special (bool): Whether to include special members.
 
     Yields:
         str: The names of the modules in the given module.
+
     """
     for name, obj in get_module_members(module, private, special, child_only=True):
         if isinstance(obj, Module):
@@ -658,9 +677,12 @@ def iter_methods_from_class(
     Args:
         name (str): The name of the class to iterate over.
         module (str): The name of the module to iterate over.
+        private (bool): Whether to include private members.
+        special (bool): Whether to include special members.
 
     Yields:
         str: The names of the methods in the given class.
+
     """
     cls = get_node(name, module)
     if not isinstance(cls, Definition) or not isinstance(cls.node, ast.ClassDef):
@@ -707,6 +729,7 @@ def resolve(  # noqa: C901, PLR0911, PLR0912
     Returns:
         tuple[str | None, str | None] | None: A tuple containing the name
         and module, or None if the name could not be resolved.
+
     """
     if not module:
         if not (name_module := split_module_name(name)):
@@ -761,6 +784,7 @@ def get_fullname_from_module(name: str, module: str | None = None) -> str | None
     Returns:
         str | None: The fully qualified name of the given name and module,
         or None if the name could not be resolved.
+
     """
     if not (name_module := resolve(name, module)):
         return None
