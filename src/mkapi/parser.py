@@ -524,6 +524,7 @@ def set_markdown_doc(doc: Doc, replace: Replace) -> None:
         section.type = get_markdown_type(section.type, replace)
 
         for item in section.items:
+            item.name = item.name.replace("_", "\\_")
             item.text = get_markdown_text(item.text, replace)
             item.type = get_markdown_type(item.type, replace)
 
