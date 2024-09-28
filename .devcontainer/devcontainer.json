@@ -1,5 +1,4 @@
 {
-  "name": "mkapi",
   "image": "mcr.microsoft.com/vscode/devcontainers/python:3.12",
   "features": {
     "ghcr.io/devcontainers-contrib/features/starship:1": {},
