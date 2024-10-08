@@ -197,8 +197,7 @@ def _is_module(path: Path, exclude_patterns: Iterable[str] = ()) -> bool:
         if re.search(pattern, path_str):
             return False
 
-    it = (p.name for p in path.iterdir())
-    if path.is_dir() and "__init__.py" in it:
+    if path.is_dir() and "__init__.py" in (p.name for p in path.iterdir()):
         return True
 
     return bool(
