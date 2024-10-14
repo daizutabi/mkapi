@@ -1,15 +1,16 @@
 {
-  "image": "mcr.microsoft.com/vscode/devcontainers/python:3.12",
+  "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu24.04",
   "features": {
-    "ghcr.io/devcontainers-contrib/features/starship:1": {},
-    "ghcr.io/va-h/devcontainers-features/uv:1": {}
+    "ghcr.io/devcontainers-contrib/features/starship:1": {}
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "charliermarsh.ruff",
+        "fill-labs.dependi",
         "ms-python.python",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "tamasfe.even-better-toml"
       ]
     }
   },
