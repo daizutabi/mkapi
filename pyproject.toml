@@ -8,7 +8,7 @@ version = "3.0.22"
 authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 description = "A plugin for MkDocs to generate API documentation"
 readme = "README.md"
-license = "MIT"
+license = { file = "LICENSE" }
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: MkDocs",
