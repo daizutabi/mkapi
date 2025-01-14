@@ -78,6 +78,7 @@ exclude = ["tests/examples/*.py", "example/*.py"]
 select = ["ALL"]
 unfixable = ["F401"]
 ignore = [
+  "A005",
   "ANN002",
   "ANN003",
   "ARG001",
