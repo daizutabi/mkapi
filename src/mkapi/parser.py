@@ -619,7 +619,7 @@ def _iter_signature(
     prev_kind = None
 
     for k, param in enumerate(obj.parameters):
-        if k == 0 and obj.kind in ["class", "method", "classmethod"]:
+        if k == 0 and obj.kind in ["method", "classmethod"]:
             continue
 
         yield from _iter_sep(param.kind, prev_kind)

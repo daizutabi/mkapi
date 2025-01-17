@@ -103,3 +103,13 @@ def test_get_signature_skip_self():
     s = get_signature(obj)  # type: ignore
     assert s[0].name == "("  # no self
     assert s[1].name == ")"
+
+
+def test_get_signature_dont_skip_self_class():
+    from mkapi.object import get_object
+    from mkapi.parser import get_signature
+
+    obj = get_object("example.sub.ClassA")
+    s = get_signature(obj)  # type: ignore
+    assert s[0].name == "("
+    assert s[1].name == "a"
