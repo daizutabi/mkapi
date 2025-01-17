@@ -11,10 +11,17 @@ if TYPE_CHECKING:
 
 
 class ClassA:
-    """Class A."""
 
     attr_a: str = "string"
     """Attribute A."""
+
+    def __init__(self, a: str):
+        """Class A.
+
+        Args:
+            a: A string.
+        """
+        self.attr_a = a
 
     def method_a(self, x: Iterable[str], y: ClassB) -> ClassA:
         """Method A. Return `ClassA`.
