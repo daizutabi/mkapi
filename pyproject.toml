@@ -83,10 +83,7 @@ ignore = [
   "ANN003",
   "ARG001",
   "ARG002",
-  "D105",
-  "D107",
-  "D203",
-  "D213",
+  "D",
   "FBT001",
   "FBT002",
   "PERF401",
@@ -96,5 +93,4 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ANN", "ARG", "D", "PLR", "RUF", "S"]
-"src/mkapi/plugin.py" = ["D"]
+"tests/*" = ["ANN", "ARG", "FBT", "PLR", "RUF", "S"]

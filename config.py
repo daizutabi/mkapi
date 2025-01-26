@@ -12,13 +12,13 @@ if TYPE_CHECKING:
 
 
 def before_on_config(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
-    """Called before `on_config` event of MkAPI plugin."""  # noqa: D401
+    """Called before `on_config` event of MkAPI plugin."""
     if "." not in sys.path:
         sys.path.insert(0, ".")
 
 
 def after_on_config(config: MkDocsConfig, plugin: MkApiPlugin) -> None:
-    """Called after `on_config` event of MkAPI plugin."""  # noqa: D401
+    """Called after `on_config` event of MkAPI plugin."""
 
 
 def page_title(name: str, depth: int) -> str:
