@@ -4,6 +4,7 @@ import fnmatch
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from astdoc.utils import cache_clear, get_module_path, is_package
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel
 from rich.progress import (
@@ -19,7 +20,6 @@ import mkapi.nav
 import mkapi.renderer
 from mkapi.config import MkApiConfig, get_config, get_function, set_config
 from mkapi.page import Page
-from mkapi.utils import cache_clear, get_module_path, is_package
 
 if TYPE_CHECKING:
     from mkdocs.config.defaults import MkDocsConfig

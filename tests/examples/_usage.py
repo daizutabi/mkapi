@@ -1,6 +1,6 @@
-from mkapi.doc import Item as I
-from mkapi.node import Definition as D  # noqa: F401
-from mkapi.object import Object
+from astdoc.doc import Item as I
+from astdoc.node import Definition as D  # noqa: F401
+from astdoc.object import Object
 
 
 def func(a: Object, b) -> I:

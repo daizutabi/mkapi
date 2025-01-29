@@ -77,7 +77,7 @@ def function_with_types_in_docstring(param1, param2):
     """
 
 
-def function_with_pep484_type_annotations(param1: int, param2: str) -> bool:
+def function_with_pep484_type_annotations(param1: int, param2: str) -> bool: # type: ignore
     """Example function with PEP 484 type annotations.
 
     The return type must be duplicated in the docstring to comply
@@ -293,7 +293,7 @@ class ExampleClass:
 
     @readwrite_property.setter
     def readwrite_property(self, value):
-        value
+        value # type: ignore
 
     def example_method(self, param1, param2):
         """Class methods are similar to regular functions.

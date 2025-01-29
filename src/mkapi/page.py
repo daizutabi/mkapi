@@ -10,11 +10,12 @@ from functools import partial
 from pathlib import PurePath
 from typing import TYPE_CHECKING
 
-import mkapi.markdown
+import astdoc.markdown
+from astdoc.node import get_module_members
+from astdoc.utils import get_module_node
+
 import mkapi.renderer
-from mkapi.node import get_module_members
 from mkapi.renderer import TemplateKind
-from mkapi.utils import get_module_node
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -144,10 +145,10 @@ def convert_markdown(
 ) -> str:
     """Return converted markdown."""
     render = partial(_render, namespace=namespaces[1], predicate=predicate)
-    markdown = mkapi.markdown.sub(OBJECT_PATTERN, render, markdown)
+    markdown = astdoc.markdown.sub(OBJECT_PATTERN, render, markdown)
 
     link = partial(_link, src_uri=src_uri, namespace=namespaces[0])
-    return mkapi.markdown.sub(LINK_PATTERN, link, markdown)
+    return astdoc.markdown.sub(LINK_PATTERN, link, markdown)
 
 
 def _render(
@@ -207,7 +208,7 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
 
     if fullname.startswith("__mkapi__."):
         from_mkapi = True
-        fullname = fullname[10:]
+        fullname = fullname[len("__mkapi__") + 1 :]
     else:
         from_mkapi = False
 

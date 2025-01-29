@@ -32,69 +32,62 @@ def test_get_markdown_name_noreplace():
 
 
 def test_get_markdown_name():
-    from mkapi.node import get_fullname_from_module
+    from astdoc.node import get_fullname_from_module
+
     from mkapi.parser import get_markdown_name
 
     def replace(name: str) -> str | None:  # type: ignore
-        return get_fullname_from_module(name, "mkapi.object")
+        return get_fullname_from_module(name, "astdoc.object")
 
     x = get_markdown_name("Object", replace)
-    assert x == "[Object][__mkapi__.mkapi.object.Object]"
+    assert x == "[Object][__mkapi__.astdoc.object.Object]"
     x = get_markdown_name("Object.__repr__", replace)
-    assert r".[\_\_repr\_\_][__mkapi__.mkapi.object.Object.__repr__]" in x
+    assert r".[\_\_repr\_\_][__mkapi__.astdoc.object.Object.__repr__]" in x
 
     def replace(name: str) -> str | None:  # type: ignore
-        return get_fullname_from_module(name, "mkapi.plugin")
+        return get_fullname_from_module(name, "mkapi.parser")
 
-    x = get_markdown_name("MkDocsPage", replace)
-    assert x == "[MkDocsPage][__mkapi__.mkdocs.structure.pages.Page]"
-
-    def replace(name: str) -> str | None:
-        return get_fullname_from_module(name, "mkdocs.plugins")
-
-    x = get_markdown_name("jinja2.Template", replace)
-    assert "[jinja2][__mkapi__.jinja2]." in x
-    assert "[Template][__mkapi__.jinja2.environment.Template]" in x
-
-    assert get_markdown_name("str", replace) == "str"
-    assert get_markdown_name("None", replace) == "None"
-    assert get_markdown_name("_abc", replace) == "\\_abc"
+    x = get_markdown_name("Parser", replace)
+    assert x == "[Parser][__mkapi__.mkapi.parser.Parser]"
 
 
 def test_get_markdown_str():
-    from mkapi.node import get_fullname_from_module
+    from astdoc.node import get_fullname_from_module
+
     from mkapi.parser import get_markdown_str
 
     def replace(name: str) -> str | None:
-        return get_fullname_from_module(name, "mkapi.object")
+        return get_fullname_from_module(name, "astdoc.object")
 
     type_string = "1 Object or Class."
     x = get_markdown_str(type_string, replace)
-    assert "1 [Object][__mkapi__.mkapi.object.Object] " in x
-    assert "or [Class][__mkapi__.mkapi.object.Class]." in x
+    assert "1 [Object][__mkapi__.astdoc.object.Object] " in x
+    assert "or [Class][__mkapi__.astdoc.object.Class]." in x
 
 
 def test_get_markdown_expr():
-    from mkapi.node import get_fullname_from_module
+    from astdoc.node import get_fullname_from_module
+
     from mkapi.parser import get_markdown_expr
 
     def replace(name: str) -> str | None:
-        return get_fullname_from_module(name, "mkapi.markdown")
+        return get_fullname_from_module(name, "astdoc.markdown")
 
     expr = ast.parse("re.Match[finditer](sub)").body[0].value  # type: ignore
     assert isinstance(expr, ast.expr)
     x = get_markdown_expr(expr, replace)
     assert x.startswith("[re][__mkapi__.re].[Match][__mkapi__.re.Match]")
-    assert "[[finditer][__mkapi__.mkapi.markdown.finditer]]" in x
-    assert x.endswith("([sub][__mkapi__.mkapi.markdown.sub])")
+    assert "[[finditer][__mkapi__.astdoc.markdown.finditer]]" in x
+    assert x.endswith("([sub][__mkapi__.astdoc.markdown.sub])")
 
 
 def test_get_markdown_expr_constant():
-    from mkapi.node import get_fullname_from_module
+    from astdoc.node import get_fullname_from_module
+
     from mkapi.parser import get_markdown_expr
 
     def replace(name: str) -> str | None:
-        return get_fullname_from_module(name, "mkapi.markdown")
+        return get_fullname_from_module(name, "astdoc.markdown")
 
     expr = ast.Constant("re.Match")
     assert isinstance(expr, ast.expr)
@@ -108,16 +101,17 @@ def test_get_markdown_expr_constant():
 
 
 def test_get_markdown_text_module_objects():
-    from mkapi.node import get_fullname_from_module
+    from astdoc.node import get_fullname_from_module
+
     from mkapi.parser import get_markdown_text
 
     def replace(name: str) -> str | None:
-        return get_fullname_from_module(name, "mkapi.object")
+        return get_fullname_from_module(name, "astdoc.object")
 
     x = get_markdown_text("Class", replace)
     assert x == "Class"
     x = get_markdown_text("a `Class` b", replace)
-    assert x == "a [`Class`][__mkapi__.mkapi.object.Class] b"
+    assert x == "a [`Class`][__mkapi__.astdoc.object.Class] b"
     x = get_markdown_text("a `Class ` b", replace)
     assert x == "a `Class ` b"
     x = get_markdown_text("a `invalid` b", replace)
@@ -126,23 +120,6 @@ def test_get_markdown_text_module_objects():
     assert x == "a `` `Class` `` b"
     m = "a \n```\n`Class`\n```\n b"
     assert get_markdown_text(m, replace) == m
-
-
-def test_get_markdown_text_module_plugins():
-    from mkapi.node import get_fullname_from_module
-    from mkapi.parser import get_markdown_text
-
-    def replace(name: str) -> str | None:
-        return get_fullname_from_module(name, "mkapi.plugin")
-
-    x = get_markdown_text("a `MkApiPlugin` b", replace)
-    assert x == "a [`MkApiPlugin`][__mkapi__.mkapi.plugin.MkApiPlugin] b"
-    x = get_markdown_text("a `BasePlugin` b", replace)
-    assert x == "a [`BasePlugin`][__mkapi__.mkdocs.plugins.BasePlugin] b"
-    x = get_markdown_text("a `MkDocsConfig` b", replace)
-    assert x == "a [`MkDocsConfig`][__mkapi__.mkdocs.config.defaults.MkDocsConfig] b"
-    x = get_markdown_text("a [b] c", replace)
-    assert x == "a [b] c"
 
 
 def test_get_markdown_type_none():

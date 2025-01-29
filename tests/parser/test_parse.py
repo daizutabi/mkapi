@@ -1,11 +1,10 @@
 import pytest
-
-from mkapi.doc import Doc
+from astdoc.doc import Doc
 
 
 def test_node_object():
-    from mkapi.node import Definition, get_node
-    from mkapi.object import Class, get_object
+    from astdoc.node import Definition, get_node
+    from astdoc.object import Class, get_object
 
     name = "jinja2.Template"
     obj = get_object(name)
@@ -25,23 +24,23 @@ def test_node_object():
 def test_parser_module():
     from mkapi.parser import Parser
 
-    name = "mkapi.node"
+    name = "astdoc.node"
     parser = Parser.create(name)
     assert parser
-    assert parser.name == "mkapi.node"
+    assert parser.name == "astdoc.node"
     assert parser.module is None
-    assert parser.obj.fullname == "mkapi.node"
+    assert parser.obj.fullname == "astdoc.node"
 
 
 def test_parser_class():
     from mkapi.parser import Parser
 
-    name = "mkapi.node.Module"
+    name = "astdoc.node.Module"
     parser = Parser.create(name)
     assert parser
     assert parser.name == "Module"
-    assert parser.module == "mkapi.node"
-    assert parser.obj.fullname == "mkapi.node.Module"
+    assert parser.module == "astdoc.node"
+    assert parser.obj.fullname == "astdoc.node.Module"
 
 
 def test_parser_class_alias():
@@ -58,12 +57,12 @@ def test_parser_class_alias():
 def test_parser_function():
     from mkapi.parser import Parser
 
-    name = "mkapi.node.get_node"
+    name = "astdoc.node.get_node"
     parser = Parser.create(name)
     assert parser
     assert parser.name == "get_node"
-    assert parser.module == "mkapi.node"
-    assert parser.obj.fullname == "mkapi.node.get_node"
+    assert parser.module == "astdoc.node"
+    assert parser.obj.fullname == "astdoc.node.get_node"
 
 
 def test_parser_method():
@@ -99,7 +98,7 @@ def test_parser_invalid_package():
 def test_parser_invalid_module():
     from mkapi.parser import Parser
 
-    name = "mkapi.invalid"
+    name = "astdoc.invalid"
     parser = Parser.create(name)
     assert parser is None
 
@@ -107,50 +106,50 @@ def test_parser_invalid_module():
 def test_parser_repr_module():
     from mkapi.parser import Parser
 
-    name = "mkapi.node"
+    name = "astdoc.node"
     parser = Parser.create(name)
-    assert repr(parser) == "Parser('mkapi.node', None)"
+    assert repr(parser) == "Parser('astdoc.node', None)"
 
 
 def test_parser_repr_object():
     from mkapi.parser import Parser
 
-    name = "mkapi.node.Node"
+    name = "astdoc.node.Node"
     parser = Parser.create(name)
-    assert repr(parser) == "Parser('Node', 'mkapi.node')"
+    assert repr(parser) == "Parser('Node', 'astdoc.node')"
 
 
 def test_parse_name_set_module():
     from mkapi.parser import Parser
 
-    name = "mkapi.ast"
+    name = "astdoc.ast"
     parser = Parser.create(name)
     assert parser
     name_set = parser.parse_name_set()
     assert name_set.kind == "module"
-    assert name_set.name == "mkapi.ast"
+    assert name_set.name == "astdoc.ast"
     assert name_set.parent is None
     assert name_set.module is None
-    assert name_set.fullname == "mkapi.ast"
-    assert name_set.id == "mkapi.ast"
-    assert name_set.obj_id == "mkapi.ast"
+    assert name_set.fullname == "astdoc.ast"
+    assert name_set.id == "astdoc.ast"
+    assert name_set.obj_id == "astdoc.ast"
     assert name_set.parent_id is None
 
 
 def test_parse_name_set_function():
     from mkapi.parser import Parser
 
-    name = "mkapi.ast.get_assign_name"
+    name = "astdoc.ast.get_assign_name"
     parser = Parser.create(name)
     assert parser
     name_set = parser.parse_name_set()
     assert name_set.kind == ""
     assert name_set.name == "get\\_assign\\_name"
     assert name_set.parent is None
-    assert name_set.module == "mkapi.ast"
-    assert name_set.fullname == "mkapi.ast.get\\_assign\\_name"
-    assert name_set.id == "mkapi.ast.get_assign_name"
-    assert name_set.obj_id == "mkapi.ast.get_assign_name"
+    assert name_set.module == "astdoc.ast"
+    assert name_set.fullname == "astdoc.ast.get\\_assign\\_name"
+    assert name_set.id == "astdoc.ast.get_assign_name"
+    assert name_set.obj_id == "astdoc.ast.get_assign_name"
     assert name_set.parent_id is None
 
 
@@ -186,19 +185,19 @@ def test_parse_name_set_export():
 def test_parse_name_set_alias():
     from mkapi.parser import Parser
 
-    name = "examples._styles.ExampleClassGoogle"
+    name = "examples.ExampleClassA"
     parser = Parser.create(name)
     assert parser
     name = parser.parse_name_set()
-    assert name.id == "examples._styles.ExampleClassGoogle"
-    assert name.obj_id == "examples._styles.google.ExampleClass"
-    assert name.fullname == "examples.\\_styles.ExampleClassGoogle"
+    assert name.id == "examples.ExampleClassA"
+    assert name.obj_id == "examples.a.ExampleClass"
+    assert name.fullname == "examples.ExampleClassA"
 
 
 def test_parse_signature():
     from mkapi.parser import Parser
 
-    name = "mkapi.ast._iter_parameters"
+    name = "astdoc.ast._iter_parameters"
     parser = Parser.create(name)
     assert parser
     signature = parser.parse_signature()
@@ -210,7 +209,9 @@ def test_parse_signature():
     assert signature[3][1] == "ann"
     assert signature[4] == (")", "paren")
     assert signature[5] == (" → ", "arrow")
-    assert signature[6][0].startswith("[Iterator][__mkapi__.collections.abc.Iterator][")
+    assert signature[6][0].startswith(
+        "[Iterator][__mkapi__.collections.abc.Iterator][",
+    )
     assert signature[6][1] == "return"
 
 
@@ -225,25 +226,25 @@ def doc_func():
 
 
 def test_parse_doc_function_text(doc_func: Doc):
-    assert doc_func.text == "Docstring [`D`][__mkapi__.mkapi.node.Definition]."
+    assert doc_func.text == "Docstring [`D`][__mkapi__.astdoc.node.Definition]."
 
 
 def test_parse_doc_function_args(doc_func: Doc):
     assert doc_func.sections[0].name == "Parameters"
     items = doc_func.sections[0].items
     assert items[0].name == "a"
-    assert items[0].type == "[Object][__mkapi__.mkapi.object.Object]"
+    assert items[0].type == "[Object][__mkapi__.astdoc.object.Object]"
     assert items[0].text == "A."
     assert items[1].name == "b"
-    assert items[1].text.startswith("B [`I`][__mkapi__.mkapi.doc.Item]")
-    assert items[1].text.endswith(" [`Object`][__mkapi__.mkapi.object.Object].")
+    assert items[1].text.startswith("B [`I`][__mkapi__.astdoc.doc.Item]")
+    assert items[1].text.endswith(" [`Object`][__mkapi__.astdoc.object.Object].")
 
 
 def test_parse_doc_function_returns(doc_func: Doc):
     assert doc_func.sections[1].name == "Returns"
     items = doc_func.sections[1].items
     assert items[0].name == ""
-    assert items[0].type == "[I][__mkapi__.mkapi.doc.Item]"
+    assert items[0].type == "[I][__mkapi__.astdoc.doc.Item]"
     assert items[0].text == "C."
 
 
@@ -258,34 +259,32 @@ def doc_class():
 
 
 def test_parse_doc_class_text(doc_class: Doc):
-    assert doc_class.text == "Docstring [`I`][__mkapi__.mkapi.doc.Item]."
+    assert doc_class.text == "Docstring [`I`][__mkapi__.astdoc.doc.Item]."
 
 
 def test_parse_doc_class_attrs(doc_class: Doc):
     assert doc_class.sections[0].name == "Attributes"
     items = doc_class.sections[0].items
     assert items[0].name == "x"
-    assert items[0].type == "[D][__mkapi__.mkapi.node.Definition]"
-    assert items[0].text == "Attribute [`D`][__mkapi__.mkapi.node.Definition]."
+    assert items[0].type == "[D][__mkapi__.astdoc.node.Definition]"
+    assert items[0].text == "Attribute [`D`][__mkapi__.astdoc.node.Definition]."
 
 
 def test_parse_bases():
     from mkapi.parser import Parser
 
-    name = "mkapi.plugin.MkApiPlugin"
+    name = "astdoc.object.Function"
     parser = Parser.create(name)
     assert parser
     bases = parser.parse_bases()
     assert len(bases) == 1
-    base = bases[0]
-    assert base.startswith("[BasePlugin][__mkapi__.mkdocs.plugins.BasePlugin]")
-    assert base.endswith("[[MkApiConfig][__mkapi__.mkapi.config.MkApiConfig]]")
+    assert bases[0] == "[Definition][__mkapi__.astdoc.object.Definition]"
 
 
 def test_parse_bases_empty():
     from mkapi.parser import Parser
 
-    name = "mkapi.plugin"
+    name = "mkapi.parser.Parser"
     parser = Parser.create(name)
     assert parser
     assert parser.parse_bases() == []
@@ -294,7 +293,7 @@ def test_parse_bases_empty():
 def test_parse_signature_empty():
     from mkapi.parser import Parser
 
-    name = "mkapi.plugin"
+    name = "mkapi.parser"
     parser = Parser.create(name)
     assert parser
     assert parser.parse_signature() == []
@@ -303,58 +302,58 @@ def test_parse_signature_empty():
 def test_parsr_doc_summary_modules():
     from mkapi.parser import Parser
 
-    name = "examples"
+    name = "mkapi.parser"
     parser = Parser.create(name)
     assert parser
     doc = parser.parse_doc()
-    assert len(doc.sections) == 3
+    assert len(doc.sections) == 2
     assert doc.sections[0].name == "Classes"
-    assert doc.sections[0].items[0].name == "[ClassA][__mkapi__.examples.ClassA]"
+    assert doc.sections[0].items[0].name == "[NameSet][__mkapi__.mkapi.parser.NameSet]"
     assert doc.sections[1].name == "Functions"
-    assert doc.sections[1].items[0].name == "[func\\_a][__mkapi__.examples.func_a]"
-    assert doc.sections[2].name == "Modules"
-    assert doc.sections[2].items[0].name == "[mod\\_a][__mkapi__.examples.mod_a]"
+    n = r"[get\_markdown\_link][__mkapi__.mkapi.parser.get_markdown_link]"
+    assert doc.sections[1].items[0].name == n
 
 
 def test_parsr_doc_summary_classes():
-    from mkapi.parser import Parser
-    from mkapi.utils import find_item_by_name
+    from astdoc.utils import find_item_by_name
 
-    name = "examples._styles"
+    from mkapi.parser import Parser
+
+    name = "mkapi.plugin"
     parser = Parser.create(name)
     assert parser
     doc = parser.parse_doc()
     section = find_item_by_name(doc.sections, "Classes")
     assert section
-    x = "[ExampleClassGoogle][__mkapi__.examples._styles.ExampleClassGoogle]"
+    x = "[MkApiPlugin][__mkapi__.mkapi.plugin.MkApiPlugin]"
     assert section.items[0].name == x
-    x = "[ExampleClassNumPy][__mkapi__.examples._styles.ExampleClassNumPy]"
-    assert section.items[1].name == x
 
 
 def test_parsr_doc_summary_functions():
-    from mkapi.parser import Parser
-    from mkapi.utils import find_item_by_name
+    from astdoc.utils import find_item_by_name
 
-    name = "examples._styles.google"
+    from mkapi.parser import Parser
+
+    name = "mkapi.nav"
     parser = Parser.create(name)
     assert parser
     doc = parser.parse_doc()
     section = find_item_by_name(doc.sections, "Functions")
     assert section
-    assert len(section.items) == 4
+    assert len(section.items) == 6
 
 
 def test_parsr_doc_summary_methods():
-    from mkapi.parser import Parser
-    from mkapi.utils import find_item_by_name
+    from astdoc.utils import find_item_by_name
 
-    name = "mkapi.doc.Item"
+    from mkapi.parser import Parser
+
+    name = "mkapi.parser.Parser"
     parser = Parser.create(name)
     assert parser
     doc = parser.parse_doc()
     section = find_item_by_name(doc.sections, "Methods")
     assert section
-    assert len(section.items) == 1
-    x = "[clone][__mkapi__.mkapi.doc.Item.clone]"
-    assert section.items[0].name == x
+
+    assert len(section.items) == 8
+    assert section.items[0].name == "[create][__mkapi__.mkapi.parser.Parser.create]"

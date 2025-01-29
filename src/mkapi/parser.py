@@ -16,18 +16,18 @@ from enum import Enum
 from inspect import _ParameterKind as P
 from typing import TYPE_CHECKING, TypeAlias
 
-import mkapi.ast
-import mkapi.markdown
-import mkapi.object
-from mkapi.doc import Doc, Item, Section
-from mkapi.node import (
+import astdoc.ast
+import astdoc.markdown
+import astdoc.object
+from astdoc.doc import Doc, Item, Section
+from astdoc.node import (
     get_fullname_from_module,
     iter_classes_from_module,
     iter_functions_from_module,
     iter_methods_from_class,
     iter_modules_from_module,
 )
-from mkapi.object import (
+from astdoc.object import (
     Attribute,
     Class,
     Function,
@@ -37,7 +37,7 @@ from mkapi.object import (
     get_fullname_from_object,
     get_object,
 )
-from mkapi.utils import (
+from astdoc.utils import (
     find_item_by_name,
     find_submodule_names,
     is_enum,
@@ -51,7 +51,7 @@ from mkapi.utils import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from mkapi.object import Parameter
+    from astdoc.ast import Parameter
 
 
 @dataclass
@@ -425,7 +425,7 @@ def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
         return get_markdown_name(name, replace)
 
     try:
-        return mkapi.ast.unparse(expr, get_link)
+        return astdoc.ast.unparse(expr, get_link)
     except ValueError:
         return ast.unparse(expr)
 
@@ -494,7 +494,7 @@ def get_markdown_text(text: str, replace: Replace) -> str:
 
         return match.group()
 
-    return mkapi.markdown.sub(CODE_PATTERN, _replace, text)
+    return astdoc.markdown.sub(CODE_PATTERN, _replace, text)
 
 
 def set_markdown_doc(doc: Doc, replace: Replace) -> None:
@@ -774,7 +774,7 @@ def merge_returns(
         item.type = returns
 
     elif isinstance(returns, ast.Subscript):
-        ident = next(mkapi.ast.iter_identifiers(returns))
+        ident = next(astdoc.ast.iter_identifiers(returns))
         ident = get_fullname_from_module(ident, module)
         iters = ["collections.abc.Generator", "collections.abc.Iterator"]
 

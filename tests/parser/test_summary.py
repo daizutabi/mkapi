@@ -1,11 +1,14 @@
+import pytest
+
+
 def test_classes_fom_module():
     from mkapi.parser import create_classes_from_module
 
-    name = "mkapi.node"
+    name = "astdoc.node"
     section = create_classes_from_module(name)
     assert section
     assert section.name == "Classes"
-    name = "[Node][__mkapi__.mkapi.node.Node]"
+    name = "[Node][__mkapi__.astdoc.node.Node]"
     assert section.items[0].name == name
 
 
@@ -24,30 +27,35 @@ def test_classes_from_module_alias():
 def test_functions_from_module():
     from mkapi.parser import create_functions_from_module
 
-    name = "mkapi.node"
+    name = "astdoc.node"
     section = create_functions_from_module(name)
     assert section
     assert section.name == "Functions"
     names = [i.name for i in section.items]
-    name = "[iter\\_child\\_nodes][__mkapi__.mkapi.node.iter_child_nodes]"
+    name = "[iter\\_child\\_nodes][__mkapi__.astdoc.node.iter_child_nodes]"
     assert any(name in n for n in names)
 
 
-def test_methods_from_class():
+@pytest.mark.parametrize(
+    "name",
+    [
+        "[create][__mkapi__.mkapi.parser.Parser.create]",
+        "[parse\\_name\\_set][__mkapi__.mkapi.parser.Parser.parse_name_set]",
+    ],
+)
+def test_methods_from_class(name):
     from mkapi.parser import create_methods_from_class
 
-    section = create_methods_from_class("MkApiPlugin", "mkapi.plugin")
+    section = create_methods_from_class("Parser", "mkapi.parser")
     assert section
     assert section.name == "Methods"
-    names = [i.name for i in section.items]
-    name = "[on\\_nav][__mkapi__.mkapi.plugin.MkApiPlugin.on_nav]"
-    assert any(name in n for n in names)
+    assert any(name in i.name for i in section.items)
 
 
 def test_methods_from_class_property():
     from mkapi.parser import create_methods_from_class
 
-    assert not create_methods_from_class("Object", "mkapi.object")
+    assert not create_methods_from_class("Object", "astdoc.object")
 
 
 def test_modules_from_module_file():

@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from astdoc.utils import get_module_path
 from jinja2.environment import Environment
 from mkdocs.commands.build import build
 from mkdocs.config import load_config
@@ -13,7 +14,6 @@ from mkdocs.theme import Theme
 
 import mkapi
 from mkapi.plugin import MkApiConfig, MkApiPlugin
-from mkapi.utils import get_module_path
 
 
 @pytest.fixture(scope="module")
@@ -166,8 +166,8 @@ def test_build(config: MkDocsConfig, dirty: bool):
 
     pages = plugin.pages
     assert pages["usage/object.md"].is_documentation_page()
-    assert pages["api/mkapi/object.md"].is_object_page()
-    assert pages["src/mkapi/object.md"].is_source_page()
+    assert pages["api/mkapi/page.md"].is_object_page()
+    assert pages["src/mkapi/page.md"].is_source_page()
 
     assert plugin.config.debug is True
 

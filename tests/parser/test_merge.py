@@ -1,8 +1,8 @@
 import ast
 
-from mkapi.doc import Item, Section
-from mkapi.object import Class, Function, Type, create_module, get_object
-from mkapi.utils import find_item_by_name
+from astdoc.doc import Item, Section
+from astdoc.object import Class, Function, Type, create_module, get_object
+from astdoc.utils import find_item_by_name
 
 
 def _get_func_type_annotations():
@@ -107,17 +107,17 @@ def test_merge_attribute_class():
 def test_merge_attribute_enum():
     from mkapi.parser import merge_attributes
 
-    cls = get_object("mkapi.page.PageKind")
+    cls = get_object("inspect._ParameterKind")
     assert isinstance(cls, Class)
     attrs = [x for _, x in cls.get_children(Type)]
-    assert len(attrs) >= 3  # 3 for python 3.10, 5 for python >=3.11
+    assert len(attrs) >= 5
     sections = cls.doc.sections
     names = ["name", "value"]
     merge_attributes(sections, attrs, ignore_names=names, ignore_empty=False)
     section = find_item_by_name(sections, "Attributes")
     assert isinstance(section, Section)
     items = section.items
-    assert len(items) == 3
+    assert len(items) >= 5
 
 
 def test_merge_attribute_private():

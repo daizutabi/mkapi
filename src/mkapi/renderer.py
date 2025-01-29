@@ -7,10 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from jinja2 import Environment, FileSystemLoader, Template
-
-import mkapi
-from mkapi.object import (
+from astdoc.object import (
     Attribute,
     Class,
     Function,
@@ -20,13 +17,17 @@ from mkapi.object import (
     is_child,
     iter_objects,
 )
+from jinja2 import Environment, FileSystemLoader, Template
+
+import mkapi
 from mkapi.parser import Parser
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mkapi.doc import Doc
-    from mkapi.object import Object
+    from astdoc.doc import Doc
+    from astdoc.object import Object
+
     from mkapi.parser import NameSet
 
 templates: dict[str, Template] = {}

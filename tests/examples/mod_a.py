@@ -9,6 +9,9 @@ __all__ = ["ClassBAlias", "ClassC"]
 class ClassA:
     """Class A."""
 
+    def __init__(self, a):
+        """Init."""
+
     def method_a(self):
         """Method A."""
 

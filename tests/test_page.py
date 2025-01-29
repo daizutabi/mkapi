@@ -51,16 +51,16 @@ def test_page_repr():
 def test_generate_module_markdown():
     from mkapi.page import generate_module_markdown
 
-    m, names = generate_module_markdown("mkapi.doc")
-    assert m.startswith("# ::: mkapi.doc\n")
-    assert "\n## ::: Item mkapi.doc\n" in m
-    assert "\n### ::: Item.clone mkapi.doc\n" in m
-    assert "\n## ::: merge mkapi.doc\n" in m
+    m, names = generate_module_markdown("astdoc.doc")
+    assert m.startswith("# ::: astdoc.doc\n")
+    assert "\n## ::: Item astdoc.doc\n" in m
+    assert "\n### ::: Item.clone astdoc.doc\n" in m
+    assert "\n## ::: merge astdoc.doc\n" in m
 
-    assert "mkapi.doc" in names
-    assert "mkapi.doc.Item" in names
-    assert "mkapi.doc.Item.clone" in names
-    assert "mkapi.doc.merge" in names
+    assert "astdoc.doc" in names
+    assert "astdoc.doc.Item" in names
+    assert "astdoc.doc.Item.clone" in names
+    assert "astdoc.doc.merge" in names
 
 
 def test_generate_module_markdown_export():
@@ -75,14 +75,14 @@ def test_generate_module_markdown_export():
 def test_generate_module_markdown_alias():
     from mkapi.page import generate_module_markdown
 
-    m, names = generate_module_markdown("examples._styles")
-    assert m.startswith("# ::: examples._styles\n")
-    assert "\n## ::: ExampleClassGoogle examples._styles\n" in m
-    assert "\n## ::: ExampleClassNumPy examples._styles\n" in m
+    m, names = generate_module_markdown("examples")
+    assert m.startswith("# ::: examples\n")
+    assert "\n## ::: ExampleClassA examples\n" in m
+    assert "\n## ::: ExampleClassB examples" in m
 
-    assert "examples._styles" in names
-    assert "examples._styles.ExampleClassGoogle" in names
-    assert "examples._styles.ExampleClassNumPy" in names
+    assert "examples" in names
+    assert "examples.ExampleClassA" in names
+    assert "examples.ExampleClassB" in names
 
 
 @pytest.fixture(scope="module")
@@ -107,10 +107,10 @@ def convert_markdown():
 
 
 def test_convert_markdown_module(convert_markdown):
-    m = "# ::: mkapi.doc"
+    m = "# ::: mkapi.page"
     m = convert_markdown(m, TemplateKind.HEADING)
     assert isinstance(m, str)
-    assert m.startswith('<h1 class="mkapi-heading" id="mkapi.doc" markdown="1">')
+    assert m.startswith('<h1 class="mkapi-heading" id="mkapi.page" markdown="1">')
 
 
 def test_generate_module_markdown_failure():

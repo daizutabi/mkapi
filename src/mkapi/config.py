@@ -8,9 +8,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from astdoc.utils import cache
 from mkdocs.config import Config, config_options
-
-from mkapi.utils import cache
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -1,10 +1,11 @@
 import ast
 
-from mkapi.object import Function
+import pytest
+from astdoc.object import Function
 
 
 def get(src: str) -> Function:
-    from mkapi.object import create_function
+    from astdoc.object import create_function
 
     node = ast.parse(src).body[0]
     assert isinstance(node, ast.FunctionDef)
@@ -14,12 +15,6 @@ def get(src: str) -> Function:
 def test_iter_signature_return():
     from mkapi.parser import _iter_signature
 
-    obj = get("def f(): pass")
-    x = list(_iter_signature(obj))
-    assert x[0][0] == "("
-    assert x[0][1].value == "paren"
-    assert x[-1][0] == ")"
-    assert x[-1][1].value == "paren"
     obj = get("def f()->bool: pass")
     x = list(_iter_signature(obj))
     assert x[0][0] == "("
@@ -34,6 +29,17 @@ def test_iter_signature_return():
     assert x[-1][1].value == "return"
 
 
+def test_iter_signature_return_none():
+    from mkapi.parser import _iter_signature
+
+    obj = get("def f(): pass")
+    x = list(_iter_signature(obj))
+    assert x[0][0] == "("
+    assert x[0][1].value == "paren"
+    assert x[-1][0] == ")"
+    assert x[-1][1].value == "paren"
+
+
 def sig(src: str) -> str:
     from mkapi.parser import _iter_signature
 
@@ -41,15 +47,21 @@ def sig(src: str) -> str:
     return "".join(str(x[0]).replace(" ", "") for x in _iter_signature(obj))
 
 
-def test_iter_signature_kind():
-    assert sig("x,y,z") == "(x,y,z)"
-    assert sig("x,/,y,z") == "(x,/,y,z)"
-    assert sig("x,/,*,y,z") == "(x,/,\\*,y,z)"
-    assert sig("x,/,y,*,z") == "(x,/,y,\\*,z)"
-    assert sig("x,y,z,/") == "(x,y,z,/)"
-    assert sig("*,x,y,z") == "(\\*,x,y,z)"
-    assert sig("*x,y,**z") == "(\\*x,y,\\*\\*z)"
-    assert sig("x,y,/,**z") == "(x,y,/,\\*\\*z)"
+@pytest.mark.parametrize(
+    ("src", "expected"),
+    [
+        ("x,y,z", "(x,y,z)"),
+        ("x,/,y,z", "(x,/,y,z)"),
+        ("x,/,*,y,z", "(x,/,\\*,y,z)"),
+        ("x,/,y,*,z", "(x,/,y,\\*,z)"),
+        ("x,y,z,/", "(x,y,z,/)"),
+        ("*,x,y,z", "(\\*,x,y,z)"),
+        ("*x,y,**z", "(\\*x,y,\\*\\*z)"),
+        ("x,y,/,**z", "(x,y,/,\\*\\*z)"),
+    ],
+)
+def test_iter_signature_kind(src, expected):
+    assert sig(src) == expected
 
 
 def test_get_signature():
@@ -68,8 +80,9 @@ def test_get_signature():
     assert s[-1].kind == "return"
 
 
-def test_get_signature_attribute():
-    from mkapi.object import Attribute, create_attribute
+def test_get_signature_attribute_annassign():
+    from astdoc.object import Attribute, create_attribute
+
     from mkapi.parser import get_signature
 
     src = """x:int"""
@@ -85,6 +98,20 @@ def test_get_signature_attribute():
     assert s[-1].kind == "return"
 
 
+def test_get_signature_attribute_assign():
+    from astdoc.object import Attribute, create_attribute
+
+    from mkapi.parser import Signature, get_signature
+
+    src = """x=1"""
+    node = ast.parse(src).body[0]
+    assert isinstance(node, ast.Assign)
+    attr = create_attribute("x", node, "", None)
+    assert isinstance(attr, Attribute)
+    s = get_signature(attr)
+    assert s == Signature([])
+
+
 def test_signature_len():
     from mkapi.parser import Part, PartKind, Signature
 
@@ -95,10 +122,11 @@ def test_signature_len():
 
 
 def test_get_signature_skip_self():
-    from mkapi.object import get_object
+    from astdoc.object import get_object
+
     from mkapi.parser import get_signature
 
-    obj = get_object("mkapi.doc.Item.clone")
+    obj = get_object("astdoc.doc.Item.clone")
     assert obj
     s = get_signature(obj)  # type: ignore
     assert s[0].name == "("  # no self
@@ -106,10 +134,12 @@ def test_get_signature_skip_self():
 
 
 def test_get_signature_dont_skip_self_class():
-    from mkapi.object import get_object
+    from astdoc.object import get_object
+
     from mkapi.parser import get_signature
 
-    obj = get_object("example.sub.ClassA")
+    obj = get_object("examples.a.ExampleClass")
+    assert obj
     s = get_signature(obj)  # type: ignore
     assert s[0].name == "("
     assert s[1].name == "a"

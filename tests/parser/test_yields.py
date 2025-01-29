@@ -1,8 +1,8 @@
 import ast
 
-from mkapi.ast import iter_identifiers
-from mkapi.node import get_fullname_from_module
-from mkapi.object import Function, get_object
+from astdoc.ast import iter_identifiers
+from astdoc.node import get_fullname_from_module
+from astdoc.object import Function, get_object
 
 
 def test_return_type_name():
