@@ -68,6 +68,7 @@ exclude_lines = [
   "if TYPE_CHECKING:",
   "raise NotImplementedError",
 ]
+skip_covered = true
 
 [tool.ruff]
 line-length = 88
