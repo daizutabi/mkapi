@@ -20,7 +20,7 @@ from mkapi.renderer import TemplateKind
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from astdoc.parser import Parser
+    from mkapi.parser import Parser
 
 
 class PageKind(Enum):
@@ -208,7 +208,7 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
 
     if fullname.startswith("__mkapi__."):
         from_mkapi = True
-        fullname = fullname[10:]
+        fullname = fullname[len("__mkapi__") + 1 :]
     else:
         from_mkapi = False
 

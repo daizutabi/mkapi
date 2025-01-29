@@ -75,14 +75,14 @@ def test_generate_module_markdown_export():
 def test_generate_module_markdown_alias():
     from mkapi.page import generate_module_markdown
 
-    m, names = generate_module_markdown("examples._styles")
-    assert m.startswith("# ::: examples._styles\n")
-    assert "\n## ::: ExampleClassGoogle examples._styles\n" in m
-    assert "\n## ::: ExampleClassNumPy examples._styles\n" in m
+    m, names = generate_module_markdown("examples")
+    assert m.startswith("# ::: examples\n")
+    assert "\n## ::: ExampleClassA examples\n" in m
+    assert "\n## ::: ExampleClassB examples" in m
 
-    assert "examples._styles" in names
-    assert "examples._styles.ExampleClassGoogle" in names
-    assert "examples._styles.ExampleClassNumPy" in names
+    assert "examples" in names
+    assert "examples.ExampleClassA" in names
+    assert "examples.ExampleClassB" in names
 
 
 @pytest.fixture(scope="module")

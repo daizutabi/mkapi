@@ -1,8 +1,8 @@
 import pytest
 from astdoc.node import iter_module_members
 from astdoc.object import Module, get_object
-from astdoc.parser import Parser
 
+from mkapi.parser import Parser
 from mkapi.renderer import TemplateKind
 
 
@@ -25,12 +25,12 @@ def test_load_templates():
 def test_render_heading_module():
     from mkapi.renderer import render_heading
 
-    parser = Parser.create("examples._styles.google")
+    parser = Parser.create("examples.a")
     assert parser
     name_set = parser.parse_name_set()
     m = render_heading(name_set, 1)
-    assert '<h1 class="mkapi-heading" id="examples._styles.google" markdown="1">' in m
-    assert ">examples.\\_styles.google</h1>" in m
+    assert '<h1 class="mkapi-heading" id="examples.a" markdown="1">' in m
+    assert ">examples.a</h1>" in m
 
 
 def test_render_heading_export():
@@ -46,24 +46,24 @@ def test_render_heading_export():
 def test_render_heading_alias():
     from mkapi.renderer import render_heading
 
-    parser = Parser.create("examples._styles.ExampleClassGoogle")
+    parser = Parser.create("examples.ExampleClassA")
     assert parser
     name_set = parser.parse_name_set()
     m = render_heading(name_set, 1)
-    assert 'id="examples._styles.ExampleClassGoogle"' in m
-    assert ">examples.\\_styles.ExampleClassGoogle</h1>" in m
+    assert 'id="examples.ExampleClassA"' in m
+    assert ">examples.ExampleClassA</h1>" in m
 
 
 def test_render_object_module():
     from mkapi.renderer import render_object
 
-    parser = Parser.create("examples._styles")
+    parser = Parser.create("examples")
     assert parser
     name_set = parser.parse_name_set()
     m = render_object(name_set, 1, "object", [])
-    x = '<p class="mkapi-object mkapi-page-object" id="examples._styles" markdown="1">'
+    x = '<p class="mkapi-object mkapi-page-object" id="examples" markdown="1">'
     assert x in m
-    x = "[object][__mkapi__.__object__.examples._styles]"
+    x = "[object][__mkapi__.__object__.examples]"
     assert x in m
 
 

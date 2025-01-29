@@ -17,17 +17,18 @@ from astdoc.object import (
     is_child,
     iter_objects,
 )
-from astdoc.parser import Parser
 from jinja2 import Environment, FileSystemLoader, Template
 
 import mkapi
+from mkapi.parser import Parser
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from astdoc.doc import Doc
     from astdoc.object import Object
-    from astdoc.parser import NameSet
+
+    from mkapi.parser import NameSet
 
 templates: dict[str, Template] = {}
 
