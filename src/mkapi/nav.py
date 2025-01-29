@@ -12,7 +12,7 @@ import re
 from functools import partial
 from typing import TYPE_CHECKING
 
-from mkapi.utils import find_submodule_names, get_module_path, is_package
+from astdoc.utils import find_submodule_names, get_module_path, is_package
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator

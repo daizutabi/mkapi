@@ -1,4 +1,5 @@
 import yaml
+from astdoc.utils import is_package
 
 
 def test_pattern():
@@ -59,7 +60,6 @@ def test_gen_apinav():
 
 def test_update_apinav():
     from mkapi.nav import get_apinav, update_apinav
-    from mkapi.utils import is_package
 
     def section(name: str, depth: int) -> str:
         return name.replace(".", "-" * depth)
@@ -81,7 +81,7 @@ def test_update_apinav():
 
 src = """
 - index.md
-- <api1>/mkapi.object
+- <api1>/mkapi.page
 - A:
   - 1.md
   - <api2>/mkapi.**
@@ -140,5 +140,5 @@ def test_update_nav():
 
     nav = yaml.safe_load(src)
     update_nav(nav, create_page, page_title=page_title)
-    assert "MKAPI.OBJECT.0" in nav[1]
-    assert nav[1]["MKAPI.OBJECT.0"] == "api1/mkapi.object.md"
+    assert "MKAPI.PAGE.0" in nav[1]
+    assert nav[1]["MKAPI.PAGE.0"] == "api1/mkapi.page.md"

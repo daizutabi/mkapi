@@ -1,6 +1,8 @@
 import pytest
+from astdoc.node import iter_module_members
+from astdoc.object import Module, get_object
+from astdoc.parser import Parser
 
-from mkapi.parser import Parser
 from mkapi.renderer import TemplateKind
 
 
@@ -68,24 +70,24 @@ def test_render_object_module():
 def test_render_object_object():
     from mkapi.renderer import render_object
 
-    parser = Parser.create("mkapi.node.Node")
+    parser = Parser.create("mkapi.page.Page")
     assert parser
     name_set = parser.parse_name_set()
     m = render_object(name_set, 1, "source", [])
     x = "[source][__mkapi__.__source__.mkapi"
     assert x in m
-    assert "[Node][__mkapi__.mkapi.node.Node]" in m
+    assert "[Page][__mkapi__.mkapi.page.Page]" in m
 
 
 def test_render_source_module():
     from mkapi.renderer import render_source
 
-    parser = Parser.create("mkapi.ast")
+    parser = Parser.create("astdoc.ast")
     assert parser
     m = render_source(parser.obj)
     assert m.startswith('``` {.python .mkapi-source .no-copy linenums="1"}\n')
-    assert "Iterator[AST]:## __mkapi__.mkapi.ast.iter_child_nodes" in m
-    assert "def _iter_assign_nodes(## __mkapi__.mkapi.ast._iter_assign_nodes" in m
+    assert "Iterator[AST]:## __mkapi__.astdoc.ast.iter_child_nodes" in m
+    assert "def _iter_assign_nodes(## __mkapi__.astdoc.ast._iter_assign_nodes" in m
 
 
 def test_render_source_invalid():
@@ -105,8 +107,8 @@ def test_render_module(level: int, source: bool):
 
         return kind != TemplateKind.SOURCE
 
-    m = render("mkapi.ast", None, level, "object", predicate)
-    assert f'<h{level} class="mkapi-heading" id="mkapi.ast" markdown="1">' in m
+    m = render("mkapi.nav", None, level, "object", predicate)
+    assert f'<h{level} class="mkapi-heading" id="mkapi.nav" markdown="1">' in m
 
     if source:
         assert "```" in m
@@ -125,13 +127,11 @@ def test_render_module_invalid():
 
 
 def test_get_source_id_must_be_unique():
-    from mkapi.node import iter_module_members
-    from mkapi.object import Module, get_object
     from mkapi.renderer import _get_source
 
-    obj = get_object("mkapi.object")
+    obj = get_object("mkapi.plugin")
     assert isinstance(obj, Module)
     s = _get_source(obj)
 
-    for name, _ in iter_module_members("mkapi.object"):
-        assert s.count(f"## __mkapi__.mkapi.object.{name}\n") == 1
+    for name, _ in iter_module_members("mkapi.plugin"):
+        assert s.count(f"## __mkapi__.mkapi.plugin.{name}\n") == 1
