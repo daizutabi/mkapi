@@ -5,10 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "mkapi"
 version = "4.0.0"
-authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 description = "A plugin for MkDocs to generate API documentation"
 readme = "README.md"
 license = { file = "LICENSE" }
+authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: MkDocs",
