@@ -101,7 +101,7 @@ For more details, see [Page mode](https://daizutabi.github.io/mkapi/usage/page/)
 [pypi-v-link]: https://pypi.org/project/mkapi/
 [python-v-image]: https://img.shields.io/pypi/pyversions/mkapi.svg
 [python-v-link]: https://pypi.org/project/mkapi
-[GHAction-image]: https://github.com/daizutabi/mkapi/actions/workflows/ci.yml/badge.svg?branch=main&event=push
+[GHAction-image]: https://github.com/daizutabi/mkapi/actions/workflows/ci.yaml/badge.svg?branch=main&event=push
 [GHAction-link]: https://github.com/daizutabi/mkapi/actions?query=event%3Apush+branch%3Amain
 [codecov-image]: https://codecov.io/github/daizutabi/mkapi/coverage.svg?branch=main
 [codecov-link]: https://codecov.io/github/daizutabi/mkapi?branch=main
