@@ -22,7 +22,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "astdoc>=0.2.0",
+  "astdoc>=1.0.0",
   "jinja2",
   "mkdocs-material",
   "mkdocs>=1.6.0",
@@ -46,29 +46,11 @@ dev-dependencies = [
   "pytest-xdist",
 ]
 
-[tool.hatch.build.targets.sdist]
-exclude = ["/.github", "/docs"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/mkapi"]
-
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules", "--cov=mkapi", "--cov-report=lcov:lcov.info"]
-doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
-filterwarnings = [
-  'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated:DeprecationWarning',
-  'ignore:\nPyarrow will become a required dependency:DeprecationWarning',
-]
-
-[tool.coverage.run]
-disable_warnings = ["module-not-measured"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "except ImportError",
-  "if TYPE_CHECKING:",
-  "raise NotImplementedError",
-]
+exclude_lines = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 skip_covered = true
 
 [tool.ruff]
