@@ -38,12 +38,12 @@ Issues = "https://github.com/daizutabi/mkapi/issues"
 [project.entry-points."mkdocs.plugins"]
 mkapi = "mkapi.plugin:MkApiPlugin"
 
-[tool.uv]
-dev-dependencies = [
-  "pytest-clarity",
-  "pytest-cov",
-  "pytest-randomly",
-  "pytest-xdist",
+[dependency-groups]
+dev = [
+  "pytest-clarity>=1",
+  "pytest-cov>=6",
+  "pytest-randomly>=3.16",
+  "pytest-xdist>=3.6",
 ]
 
 [tool.pytest.ini_options]
