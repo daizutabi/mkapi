@@ -18,7 +18,7 @@ from mkapi.plugin import MkApiConfig, MkApiPlugin
 
 @pytest.fixture(scope="module")
 def config_file():
-    return Path(__file__).parent.parent / "mkdocs.yml"
+    return Path(__file__).parent.parent / "mkdocs.yaml"
 
 
 def test_config_file_exists(config_file: Path):
@@ -39,7 +39,7 @@ def test_mkdocs_config(mkdocs_config: MkDocsConfig):
     config = mkdocs_config
     assert isinstance(config, MkDocsConfig)
     path = Path(config.config_file_path)
-    assert path.as_posix().endswith("mkapi/mkdocs.yml")
+    assert path.as_posix().endswith("mkapi/mkdocs.yaml")
     assert config.site_name == "MkAPI"
     assert Path(config.docs_dir) == path.parent / "docs"
     assert Path(config.site_dir) == path.parent / "site"
@@ -90,7 +90,7 @@ def test_mkapi_config(mkapi_config: MkApiConfig):
 def config_plugin(tmp_path):
     dest = Path(tmp_path)
     root = Path(__file__).parent.parent
-    config_file = root / "mkdocs.yml"
+    config_file = root / "mkdocs.yaml"
     shutil.copy(config_file, dest)
     for src in ["docs", "src", "tests"]:
         src_dir = root / src
@@ -98,7 +98,7 @@ def config_plugin(tmp_path):
     curdir = Path(os.curdir).absolute()
     os.chdir(dest)
     sys.path.insert(0, ".")
-    config = load_config("mkdocs.yml")
+    config = load_config("mkdocs.yaml")
     plugin = config.plugins["mkapi"]
     assert isinstance(plugin, MkApiPlugin)
     plugin.__init__()
