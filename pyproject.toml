@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mkapi"
-version = "4.0.1"
+version = "4.1.0"
 description = "A plugin for MkDocs to generate API documentation"
 readme = "README.md"
 license = { file = "LICENSE" }
