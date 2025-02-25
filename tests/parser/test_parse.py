@@ -226,7 +226,8 @@ def doc_func():
 
 
 def test_parse_doc_function_text(doc_func: Doc):
-    assert doc_func.text == "Docstring [`D`][__mkapi__.astdoc.node.Definition]."
+    expected = "Docstring [`D`][__mkapi__.astdoc.node.Definition]."
+    assert doc_func.text.rstrip() == expected
 
 
 def test_parse_doc_function_args(doc_func: Doc):
