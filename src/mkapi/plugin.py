@@ -4,6 +4,7 @@ import fnmatch
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from astdoc.markdown import set_example_class
 from astdoc.utils import cache_clear, get_module_path, is_package
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel
@@ -38,6 +39,7 @@ class MkApiPlugin(BasePlugin[MkApiConfig]):
         self.pages = {}
         self.progress = None
         self.task_id = None
+        set_example_class("mkapi-example-input", "mkapi-example-output")
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
         cache_clear()
