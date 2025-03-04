@@ -82,3 +82,6 @@ ignore = [
 "config.py" = ["D401"]
 "src/mkapi/plugin.py" = ["D"]
 "tests/*" = ["ANN", "ARG", "D", "FBT", "PLR", "RUF", "S"]
+
+[tool.pyright]
+include = ["src", "tests"]
