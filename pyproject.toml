@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mkapi"
-version = "4.1.2"
+version = "4.1.3"
 description = "A plugin for MkDocs to generate API documentation"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -22,7 +22,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "astdoc>=1.1.4",
+  "astdoc>=1.1.5",
   "jinja2",
   "mkdocs-material",
   "mkdocs>=1.6.0",
