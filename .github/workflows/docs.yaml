@@ -1,25 +1,29 @@
 name: Documentation
+
 on:
   push:
     branches: [main]
-    tags: ["*"]
-permissions:
-  contents: write
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
 jobs:
-  deploy:
-    name: Documentation
+  docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Configure Git Credentials
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
-      - name: Install package
-        run: pip install -e .
+          python-version: 3.13
+      - name: Install uv
+        run: pip install uv
+      - name: Install the project
+        run: uv sync --group docs
       - name: Deploy documentation
-        run: mkdocs gh-deploy --force
+        run: uv run mkdocs gh-deploy --force
