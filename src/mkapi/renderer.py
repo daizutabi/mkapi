@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -55,8 +54,8 @@ def load_templates(path: Path | None = None) -> None:
     loader = FileSystemLoader(path)
     env = Environment(loader=loader, autoescape=True)
 
-    for name in os.listdir(path):
-        templates[Path(name).stem] = env.get_template(name)
+    for name in path.iterdir():
+        templates[name.stem] = env.get_template(name.name)
 
 
 class TemplateKind(Enum):
