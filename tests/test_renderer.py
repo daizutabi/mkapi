@@ -135,3 +135,13 @@ def test_get_source_id_must_be_unique():
 
     for name, _ in iter_module_members("mkapi.plugin"):
         assert s.count(f"## __mkapi__.mkapi.plugin.{name}\n") == 1
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [("a```b``c", 3), ("abc", 0)],
+)
+def test_find_max_backticks(source: str, expected: int):
+    from mkapi.renderer import find_max_backticks
+
+    assert find_max_backticks(source) == expected
