@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -218,9 +219,29 @@ def render_source(obj: Object, attr: str = "") -> str:
         source = source.rstrip()
         start = 1 if isinstance(obj, Module) else obj.node.lineno
         attr = f'linenums="{start}"'
-        return templates["source"].render(source=source, attr=attr) + "\n"
+        backticks = "`" * max(find_max_backticks(source) + 1, 3)
+        template = templates["source"]
+        return template.render(source=source, attr=attr, backticks=backticks) + "\n"
 
     return ""
+
+
+def find_max_backticks(source_code: str) -> int:
+    """Find the maximum number of consecutive backticks in the source code.
+
+    Args:
+        source_code (str): The source code to search.
+
+    Returns:
+        int: The maximum number of consecutive backticks.
+
+    """
+    pattern = r"`+"
+    matches = re.findall(pattern, source_code)
+    if not matches:
+        return 0
+
+    return max(len(match) for match in matches)
 
 
 def _get_source(
