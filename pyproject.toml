@@ -5,13 +5,39 @@ build-backend = "hatchling.build"
 [project]
 name = "mkapi"
 version = "4.1.3"
-description = "A plugin for MkDocs to generate API documentation"
+description = "A powerful MkDocs plugin for automatic API documentation generation from Python docstrings"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
+keywords = [
+  "mkdocs",
+  "documentation",
+  "api",
+  "docstring",
+  "google-style",
+  "numpy-style",
+  "type-annotation",
+  "inheritance",
+  "toc",
+  "navigation",
+  "python",
+  "markdown",
+  "sphinx",
+  "napoleon",
+  "autodoc",
+  "apidoc",
+  "code-documentation",
+  "api-reference",
+  "documentation-generator",
+  "docstring-parser",
+]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: MkDocs",
+  "Framework :: MkDocs :: Plugin",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -19,6 +45,9 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Topic :: Documentation",
   "Topic :: Software Development :: Documentation",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Text Processing :: Markup :: Markdown",
+  "Typing :: Typed",
 ]
 requires-python = ">=3.10"
 dependencies = [
