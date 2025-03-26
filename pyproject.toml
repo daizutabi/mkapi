@@ -9,39 +9,18 @@ description = "A powerful MkDocs plugin for automatic API documentation generati
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
-keywords = [
-  "mkdocs",
-  "documentation",
-  "api",
-  "docstring",
-  "google-style",
-  "numpy-style",
-  "type-annotation",
-  "inheritance",
-  "toc",
-  "navigation",
-  "python",
-  "markdown",
-  "sphinx",
-  "napoleon",
-  "autodoc",
-  "apidoc",
-  "code-documentation",
-  "api-reference",
-  "documentation-generator",
-  "docstring-parser",
-]
+keywords = ["mkdocs", "documentation", "api", "docstring", "markdown"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: MkDocs",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
-  "Programming Language :: Python",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python",
   "Topic :: Documentation",
   "Topic :: Software Development :: Documentation",
   "Topic :: Software Development :: Libraries :: Python Modules",
