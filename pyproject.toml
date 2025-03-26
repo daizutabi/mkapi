@@ -34,7 +34,6 @@ keywords = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: MkDocs",
-  "Framework :: MkDocs :: Plugin",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
