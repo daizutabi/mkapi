@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class MkApiConfig(Config):
+class MkapiConfig(Config):
     """Configuration for MkAPI."""
 
     config = config_options.Type(str, default="")
@@ -23,16 +23,16 @@ class MkApiConfig(Config):
     debug = config_options.Type(bool, default=False)
 
 
-_config: MkApiConfig = MkApiConfig()  # type: ignore
+_config: MkapiConfig = MkapiConfig()  # type: ignore
 
 
-def set_config(config: MkApiConfig) -> None:
+def set_config(config: MkapiConfig) -> None:
     """Set the config object."""
     global _config  # noqa: PLW0603
     _config = config
 
 
-def get_config() -> MkApiConfig:
+def get_config() -> MkapiConfig:
     """Get the config object."""
     return _config
 
