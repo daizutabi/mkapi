@@ -13,7 +13,7 @@ from mkdocs.plugins import PluginCollection
 from mkdocs.theme import Theme
 
 import mkapi
-from mkapi.plugin import MkApiConfig, MkApiPlugin
+from mkapi.plugin import MkapiConfig, MkapiPlugin
 
 
 @pytest.fixture(scope="module")
@@ -45,7 +45,7 @@ def test_mkdocs_config(mkdocs_config: MkDocsConfig):
     assert Path(config.site_dir) == path.parent / "site"
     assert config.nav[0] == {"MkAPI": "index.md"}  # type: ignore
     assert isinstance(config.plugins, PluginCollection)
-    assert isinstance(config.plugins["mkapi"], MkApiPlugin)
+    assert isinstance(config.plugins["mkapi"], MkapiPlugin)
     assert config.pages is None
     assert isinstance(config.theme, Theme)
     assert config.theme.name == "material"
@@ -69,17 +69,17 @@ def mkapi_plugin(mkdocs_config: MkDocsConfig):
     return mkdocs_config.plugins["mkapi"]
 
 
-def test_mkapi_plugin(mkapi_plugin: MkApiPlugin):
-    assert isinstance(mkapi_plugin, MkApiPlugin)
-    assert isinstance(mkapi_plugin.config, MkApiConfig)
+def test_mkapi_plugin(mkapi_plugin: MkapiPlugin):
+    assert isinstance(mkapi_plugin, MkapiPlugin)
+    assert isinstance(mkapi_plugin.config, MkapiConfig)
 
 
 @pytest.fixture(scope="module")
-def mkapi_config(mkapi_plugin: MkApiPlugin):
+def mkapi_config(mkapi_plugin: MkapiPlugin):
     return mkapi_plugin.config
 
 
-def test_mkapi_config(mkapi_config: MkApiConfig):
+def test_mkapi_config(mkapi_config: MkapiConfig):
     config = mkapi_config
     assert config.config == "config.py"
     assert config.debug is True
@@ -100,7 +100,7 @@ def config_plugin(tmp_path):
     sys.path.insert(0, ".")
     config = load_config("mkdocs.yaml")
     plugin = config.plugins["mkapi"]
-    assert isinstance(plugin, MkApiPlugin)
+    assert isinstance(plugin, MkapiPlugin)
     plugin.__init__()
 
     yield config, plugin
@@ -131,7 +131,7 @@ def test_build_apinav(config: MkDocsConfig):
     assert str(get_module_path("mkapi").parent) in config.watch  # type: ignore
 
 
-def test_on_config(config_plugin: tuple[MkDocsConfig, MkApiPlugin]):
+def test_on_config(config_plugin: tuple[MkDocsConfig, MkapiPlugin]):
     config, plugin = config_plugin
     plugin.on_config(config)
     nav = config.nav
@@ -150,7 +150,7 @@ def test_build(config: MkDocsConfig, dirty: bool):
 
     config.plugins.on_startup(command="build", dirty=dirty)
     plugin = config.plugins["mkapi"]
-    assert isinstance(plugin, MkApiPlugin)
+    assert isinstance(plugin, MkapiPlugin)
     assert not plugin.pages
 
     build(config, dirty=dirty)

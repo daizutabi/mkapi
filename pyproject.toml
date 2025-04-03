@@ -43,7 +43,7 @@ Source = "https://github.com/daizutabi/mkapi"
 Issues = "https://github.com/daizutabi/mkapi/issues"
 
 [project.entry-points."mkdocs.plugins"]
-mkapi = "mkapi.plugin:MkApiPlugin"
+mkapi = "mkapi.plugin:MkapiPlugin"
 
 [dependency-groups]
 dev = [
@@ -51,6 +51,7 @@ dev = [
   "pytest-cov>=6",
   "pytest-randomly>=3.16",
   "pytest-xdist>=3.6",
+  "ruff>=0.11",
 ]
 
 [tool.pytest.ini_options]
