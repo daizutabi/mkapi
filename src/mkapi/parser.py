@@ -197,7 +197,11 @@ class Parser:
         signatures = []
         for part in get_signature(self.obj):
             if isinstance(part.name, ast.expr):
-                name = get_markdown_expr(part.name, self.replace_from_module)
+                name = get_markdown_expr(
+                    part.name,
+                    self.replace_from_module,
+                    is_type=False,
+                )
 
             elif part._kind in [PartKind.ANN, PartKind.RETURN]:  # noqa: SLF001
                 name = get_markdown_str(part.name, self.replace_from_module)
@@ -386,7 +390,12 @@ def get_markdown_str(type_str: str, replace: Replace = None) -> str:
     return "".join(markdowns)
 
 
-def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
+def get_markdown_expr(
+    expr: ast.expr,
+    replace: Replace = None,
+    *,
+    is_type: bool = True,
+) -> str:
     """Return a Markdown formatted string from an AST expression.
 
     Take an Abstract Syntax Tree (AST) expression and generate
@@ -399,6 +408,7 @@ def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
         replace (Replace, optional): A function that takes a string and returns
             a modified string. This function is applied to each reference
             before generating the Markdown links. Defaults to None.
+        is_type (bool): Whether the expression is a type. Defaults to True.
 
     Returns:
         str: A Markdown formatted string that represents the AST expression.
@@ -425,7 +435,7 @@ def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
         return get_markdown_name(name, replace)
 
     try:
-        return astdoc.ast.unparse(expr, get_link)
+        return astdoc.ast.unparse(expr, get_link, is_type=is_type)
     except ValueError:
         return ast.unparse(expr)
 
@@ -673,6 +683,7 @@ def _iter_param(param: Parameter) -> Iterator[tuple[ast.expr | str, PartKind]]:
         default = param.default
         if isinstance(default, ast.Constant) and isinstance(default.value, str):
             default = f"{default.value!r}"
+
         yield default, PartKind.DEFAULT
 
 
