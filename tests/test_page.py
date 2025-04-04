@@ -121,6 +121,37 @@ def test_generate_module_markdown_failure():
     assert not names
 
 
+def test_generate_object_markdown():
+    from mkapi.page import generate_object_markdown
+
+    m, names = generate_object_markdown("Item", "astdoc.doc")
+    assert m.startswith("# ::: Item astdoc.doc\n")
+    assert "\n## ::: Item.clone astdoc.doc" in m
+    assert "merge astdoc.doc" not in m
+
+    assert "astdoc.doc" not in names
+    assert "astdoc.doc.Item" in names
+    assert "astdoc.doc.Item.clone" in names
+    assert "astdoc.doc.merge" not in names
+
+
+def test_generate_object_markdown_failure_module():
+    from mkapi.page import generate_module_markdown
+
+    m, names = generate_module_markdown("invalid.Item")
+    assert m.startswith("!!! failure\n\n    module 'invalid' not found.\n")
+    assert not names
+
+
+def test_generate_object_markdown_failure_object():
+    from mkapi.page import generate_object_markdown
+
+    m, names = generate_object_markdown("Invalid", "astdoc.doc")
+    x = "!!! failure\n\n    object 'Invalid' not found in module 'astdoc.doc'.\n"
+    assert m.startswith(x)
+    assert not names
+
+
 def test_link():
     from mkapi.page import LINK_PATTERN, URIS, _link
 

@@ -49,6 +49,13 @@ def test_get_apinav():
     assert nav[0]["mkdocs"][1]["mkdocs.commands"][0] == "mkdocs.commands"
 
 
+def test_get_apinav_object():
+    from mkapi.nav import get_apinav
+
+    nav = get_apinav("astdoc.doc.Item", 0)
+    assert nav == ["astdoc.doc.Item"]
+
+
 def test_gen_apinav():
     from mkapi.nav import gen_apinav, get_apinav
 
