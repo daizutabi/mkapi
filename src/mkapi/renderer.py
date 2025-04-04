@@ -270,10 +270,7 @@ def _get_source(
             (skip_self and child is obj)
             or isinstance(obj, Attribute)
             or not child.node
-            or (
-                child != obj
-                and (not is_child(child, obj) or child.module is not module)
-            )
+            or (child != obj and (not is_child(child, obj) or child.module != module))
         ):
             continue
 
