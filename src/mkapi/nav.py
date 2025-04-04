@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-def get_apinav(
+def get_apinav(  # noqa: PLR0911
     name: str,
     depth: int,
     predicate: Callable[[str], bool] | None = None,
@@ -51,6 +51,8 @@ def get_apinav(
 
     """
     if not get_module_path(name):
+        if "." in name and get_module_path(name.rsplit(".", 1)[0]):
+            return [name]
         return []
 
     if not is_package(name):
@@ -258,7 +260,6 @@ def build_apinav(
 
         else:
             nav_.append(item)
-
     return nav_
 
 
