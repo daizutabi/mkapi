@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mkapi"
-version = "4.2.2"
+version = "4.2.3"
 description = "A powerful MkDocs plugin for automatic API documentation generation from Python docstrings"
 readme = "README.md"
 license = { file = "LICENSE" }
