@@ -119,6 +119,10 @@ class Page:
 def generate_module_markdown(module: str) -> tuple[str, list[str]]:
     """Create module page."""
     if not get_module_node(module):
+        if "." in module:
+            module, name = module.rsplit(".", 1)
+            return generate_object_markdown(name, module)
+
         return f"!!! failure\n\n    module {module!r} not found.\n", []
 
     markdowns = [f"# ::: {module}"]
@@ -131,6 +135,28 @@ def generate_module_markdown(module: str) -> tuple[str, list[str]]:
         names.append(f"{module}.{name}")
 
     return "\n".join(markdowns), names
+
+
+def generate_object_markdown(name: str, module: str) -> tuple[str, list[str]]:
+    """Create object page."""
+    if not get_module_node(module):
+        return f"!!! failure\n\n    module {module!r} not found.\n", []
+
+    markdowns = []
+    names = []
+
+    for name_, _ in get_module_members(module, private=False, special=False):
+        if name_ == name or name_.startswith(f"{name}."):
+            level = name_.count(".") + 1
+            markdown = f"{'#' * level} ::: {name_} {module}"
+            markdowns.append(markdown)
+            names.append(f"{module}.{name_}")
+
+    if markdowns:
+        return "\n".join(markdowns), names
+
+    m = f"!!! failure\n\n    object {name!r} not found in module {module!r}.\n"
+    return m, []
 
 
 OBJECT_PATTERN = re.compile(r"^(#*) *?::: (.+?)$", re.MULTILINE)
@@ -212,7 +238,7 @@ def _link(match: re.Match, src_uri: str, namespace: str) -> str:
     else:
         from_mkapi = False
 
-    if uri := URIS[namespace].get(fullname):
+    if namespace in URIS and (uri := URIS[namespace].get(fullname)):
         uri = os.path.relpath(uri, PurePath(src_uri).parent)
         uri = uri.replace("\\", "/")  # Normalize for Windows
         if not title:
