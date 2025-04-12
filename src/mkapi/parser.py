@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import ast
 import re
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -175,7 +176,7 @@ class Parser:
         kind = kind.replace("function", "")
 
         type_params = []
-        if isinstance(self.obj, Class | Function):
+        if isinstance(self.obj, Class | Function) and sys.version_info >= (3, 12):
             for type_param in self.obj.node.type_params:
                 type_param_name = get_markdown_expr(
                     type_param,
