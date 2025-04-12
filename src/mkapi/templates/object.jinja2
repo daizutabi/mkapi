@@ -21,6 +21,13 @@
 [{{ parent }}][__mkapi__.{{ parent_id }}]<span class="mkapi-dot">.</span></span>
 {%- endif -%}
 <span class="mkapi-object-name">[{{ name }}][__mkapi__.{{ id }}]</span>
+{%- if type_params -%}
+<span class="mkapi-object-name">[</span>
+{%- for type_param in type_params %}<span class="mkapi-object-name">{{ type_param|safe }}</span>
+{%- if not loop.last %}<span class="mkapi-comma">, </span>{% endif -%}
+{%- endfor -%}
+<span class="mkapi-object-name">]</span>
+{%- endif %}
 {%- if signature -%}
 <span class="mkapi-signature">
 {%- for name, kind in signature -%}

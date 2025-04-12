@@ -178,6 +178,7 @@ def render_object(
         level=level,
         namespace=namespace,
         signature=signature,
+        type_params=name_set.type_params,
     )
 
 

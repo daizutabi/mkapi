@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import ast
 import re
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
@@ -66,6 +67,7 @@ class NameSet:
     id: str
     obj_id: str
     parent_id: str | None
+    type_params: list[str]
 
 
 @dataclass
@@ -173,6 +175,15 @@ class Parser:
         kind = self.obj.kind.replace("async function", "async")
         kind = kind.replace("function", "")
 
+        type_params = []
+        if isinstance(self.obj, Class | Function) and sys.version_info >= (3, 12):
+            for type_param in self.obj.node.type_params:
+                type_param_name = get_markdown_expr(
+                    type_param,
+                    self.replace_from_module,
+                )
+                type_params.append(type_param_name)
+
         return NameSet(
             kind,
             name,
@@ -182,6 +193,7 @@ class Parser:
             id_,
             obj_id,
             parent_id,
+            type_params,
         )
 
     def parse_signature(self) -> list[tuple[str, str]]:
@@ -386,7 +398,7 @@ def get_markdown_str(type_str: str, replace: Replace = None) -> str:
     return "".join(markdowns)
 
 
-def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
+def get_markdown_expr(expr: ast.expr | ast.type_param, replace: Replace = None) -> str:
     """Return a Markdown formatted string from an AST expression.
 
     Take an Abstract Syntax Tree (AST) expression and generate
@@ -395,7 +407,8 @@ def get_markdown_expr(expr: ast.expr, replace: Replace = None) -> str:
     and subscripted values.
 
     Args:
-        expr (ast.expr): The AST expression to be converted into Markdown format.
+        expr (ast.expr | ast.type_param): The AST expression to be converted
+            into Markdown format.
         replace (Replace, optional): A function that takes a string and returns
             a modified string. This function is applied to each reference
             before generating the Markdown links. Defaults to None.
