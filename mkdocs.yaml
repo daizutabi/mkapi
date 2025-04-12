@@ -1,12 +1,15 @@
 site_name: MkAPI
-site_author: daizutabi
-site_description: API documentation with MkDocs.
 site_url: https://daizutabi.github.io/mkapi/
+site_description: API documentation with MkDocs.
+site_author: daizutabi
 repo_url: https://github.com/daizutabi/mkapi/
 repo_name: daizutabi/mkapi
 edit_uri: edit/main/docs/
 theme:
   name: material
+  font:
+    text: Fira Sans
+    code: Fira Code
   icon:
     repo: fontawesome/brands/github
   palette:
@@ -34,6 +37,8 @@ theme:
     - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
+    - search.highlight
+    - search.suggest
 plugins:
   - search:
   - mkapi:
@@ -50,13 +55,13 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
 nav:
-  - MkAPI: index.md
+  - Home: index.md
   - Usage:
       - Writing Docstrings: usage/writing.md
       - usage/object.md
       - usage/page.md
       - usage/config.md
-  - Reference:
+  - API Reference:
       - $api:src/mkapi.***
   - Example: $api:src/example.***
 watch:
