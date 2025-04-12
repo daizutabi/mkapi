@@ -12,7 +12,7 @@ import ast
 import re
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from inspect import _ParameterKind as P
 from typing import TYPE_CHECKING, TypeAlias
@@ -67,7 +67,7 @@ class NameSet:
     id: str
     obj_id: str
     parent_id: str | None
-    type_params: list[str] = field(default_factory=list)
+    type_params: list[str]
 
 
 @dataclass
