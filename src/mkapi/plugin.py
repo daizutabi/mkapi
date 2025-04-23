@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import fnmatch
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -8,13 +9,6 @@ from astdoc.markdown import set_example_class
 from astdoc.utils import cache_clear, get_module_path, is_package
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-)
 
 import mkapi
 import mkapi.nav
@@ -29,19 +23,19 @@ if TYPE_CHECKING:
     from mkdocs.structure.toc import AnchorLink, TableOfContents
 
 
-logger = get_plugin_logger("MkAPI")
+logger = get_plugin_logger("mkapi")
 
 
 class Plugin(BasePlugin[Config]):
     pages: dict[str, Page]
+    elapsed_time: float
 
     def __init__(self) -> None:
         self.pages = {}
-        self.progress = None
-        self.task_id = None
         set_example_class("mkapi-example-input", "mkapi-example-output")
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
+        self.elapsed_time = 0
         cache_clear()
         set_config(self.config)
 
@@ -53,7 +47,7 @@ class Plugin(BasePlugin[Config]):
         _update_extensions(config)
 
         _build_apinav(config)
-        _update_nav(config, self.pages)
+        self.elapsed_time += _update_nav(config, self.pages)
 
         if after_on_config := get_function("after_on_config"):
             after_on_config(config, self)
@@ -61,11 +55,15 @@ class Plugin(BasePlugin[Config]):
         return config
 
     def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
+        start_time = time.perf_counter()
+
         for src_uri, page in self.pages.items():
             if page.is_api_page() and src_uri not in files.src_uris:
                 file = generate_file(config, src_uri, page.name)
                 files.append(file)
                 if file.is_modified():
+                    msg = f"Generating markdown for {src_uri!r}..."
+                    logger.debug(msg)
                     page.generate_markdown()
 
         for file in files:
@@ -84,37 +82,42 @@ class Plugin(BasePlugin[Config]):
         for file in _collect_javascript(config):
             files.append(file)
 
+        elapsed_time = time.perf_counter() - start_time
+        self.elapsed_time += elapsed_time
+
+        msg = f"{len(self.pages)} pages prepared in {elapsed_time:.2f} seconds"
+        logger.info(msg)
+
         return files
 
-    def on_nav(self, *args, **kwargs) -> None:
-        columns = [
-            SpinnerColumn(),
-            TextColumn("MkAPI: Building pages"),
-            MofNCompleteColumn(),
-            BarColumn(),
-            TextColumn("{task.description}"),
-        ]
-        self.progress = Progress(*columns, transient=True)
-        self.task_id = self.progress.add_task("", total=len(self.pages))
-        self.progress.start()
-
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
+        start_time = time.perf_counter()
         src_uri = page.file.src_uri
 
-        if self.progress and self.task_id is not None:
-            self.progress.update(self.task_id, description=src_uri)
+        msg = f"Converting markdown for {src_uri!r}..."
+        logger.debug(msg)
 
         try:
-            return self.pages[src_uri].convert_markdown(markdown)
+            markdown = self.pages[src_uri].convert_markdown(markdown)
         except Exception as e:
             if self.config.debug:
                 raise
 
             msg = f"{src_uri}:{type(e).__name__}: {e}"
             logger.warning(msg)
-            return markdown
+
+        elapsed_time = time.perf_counter() - start_time
+        self.elapsed_time += elapsed_time
+
+        if elapsed_time > 0.1:
+            msg = f"Converted markdown for {src_uri!r} in {elapsed_time:.2f} seconds"
+            logger.debug(msg)
+
+        return markdown
 
     def on_page_content(self, html: str, page: MkDocsPage, *args, **kwargs) -> str:
+        start_time = time.perf_counter()
+
         src_uri = page.file.src_uri
         page_ = self.pages[src_uri]
 
@@ -123,14 +126,12 @@ class Plugin(BasePlugin[Config]):
 
         html = page_.convert_html(html)
 
-        if self.progress and self.task_id is not None:
-            self.progress.update(self.task_id, description=src_uri, advance=1)
-
+        self.elapsed_time += time.perf_counter() - start_time
         return html
 
     def on_post_build(self, *args, **kwargs) -> None:
-        if self.progress is not None:
-            self.progress.stop()
+        msg = f"{len(self.pages)} pages built in {self.elapsed_time:.2f} seconds"
+        logger.info(msg)
 
 
 def _update_extensions(config: MkDocsConfig) -> None:
@@ -155,9 +156,9 @@ def _build_apinav(config: MkDocsConfig) -> None:
     mkapi.nav.build_apinav(config.nav, watch_directory)
 
 
-def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> None:
+def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> float:
     if not (nav := config.nav):
-        return
+        return 0
 
     def predicate(name: str) -> bool:
         if name.split(".")[-1].startswith("_"):
@@ -168,43 +169,46 @@ def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> None:
 
         return not any(fnmatch.fnmatch(name, ex) for ex in exclude)
 
-    columns = [
-        SpinnerColumn(),
-        TextColumn("MkAPI: Collecting modules"),
-        MofNCompleteColumn(),
-        BarColumn(),
-        TextColumn("{task.description}"),
-    ]
-    with Progress(*columns, transient=True) as progress:
-        task_id = progress.add_task("", total=len(pages) or None)
+    def create_page(name: str, path: str) -> str:
+        uri = name.replace(".", "/")
 
-        def create_page(name: str, path: str) -> str:
-            uri = name.replace(".", "/")
+        if ":" in path:
+            object_path, source_path = path.split(":", maxsplit=1)
+        else:
+            object_path, source_path = path, "src"
 
-            if ":" in path:
-                object_path, source_path = path.split(":", maxsplit=1)
-            else:
-                object_path, source_path = path, "src"
+        suffix = "/README.md" if is_package(name) else ".md"
+        object_uri = f"{object_path}/{uri}{suffix}"
+        if object_uri not in pages:
+            pages[object_uri] = Page.create_object(object_uri, name)
+            msg = f"Registered {object_uri!r} for {name!r}"
+            logger.debug(msg)
 
-            suffix = "/README.md" if is_package(name) else ".md"
-            object_uri = f"{object_path}/{uri}{suffix}"
-            if object_uri not in pages:
-                pages[object_uri] = Page.create_object(object_uri, name)
+        source_uri = f"{source_path}/{uri}.md"
+        if source_uri not in pages:
+            pages[source_uri] = Page.create_source(source_uri, name)
+            msg = f"Registered {source_uri!r} for {name!r}"
+            logger.debug(msg)
 
-            progress.update(task_id, description=object_uri, advance=1)
+        return object_uri
 
-            source_uri = f"{source_path}/{uri}.md"
-            if source_uri not in pages:
-                pages[source_uri] = Page.create_source(source_uri, name)
+    page_title = get_function("page_title")
+    section_title = get_function("section_title")
 
-            progress.update(task_id, description=source_uri, advance=1)
+    exclude = get_config().exclude
+    msg = f"Collecting API pages with {len(exclude or [])} exclusion patterns..."
+    logger.info(msg)
 
-            return object_uri
+    start_time = time.perf_counter()
+    mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
+    elapsed_time = time.perf_counter() - start_time
 
-        page_title = get_function("page_title")
-        section_title = get_function("section_title")
+    msg = f"Navigation updated with {len(pages)} API pages"
+    if elapsed_time > 0.1:
+        msg += f" in {elapsed_time:.2f} seconds"
+    logger.info(msg)
 
-        mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
+    return elapsed_time
 
 
 def _replace_toc(toc: TableOfContents | list[AnchorLink], depth: int = 0) -> None:
