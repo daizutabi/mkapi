@@ -326,7 +326,7 @@ def test_parsr_doc_summary_classes():
     doc = parser.parse_doc()
     section = find_item_by_name(doc.sections, "Classes")
     assert section
-    x = "[MkapiPlugin][__mkapi__.mkapi.plugin.MkapiPlugin]"
+    x = "[Plugin][__mkapi__.mkapi.plugin.Plugin]"
     assert section.items[0].name == x
 
 

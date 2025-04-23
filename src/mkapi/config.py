@@ -9,13 +9,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from astdoc.utils import cache
-from mkdocs.config import Config, config_options
+from mkdocs.config import Config as BaseConfig
+from mkdocs.config import config_options
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class MkapiConfig(Config):
+class Config(BaseConfig):
     """Configuration for MkAPI."""
 
     config = config_options.Type(str, default="")
@@ -23,16 +24,16 @@ class MkapiConfig(Config):
     debug = config_options.Type(bool, default=False)
 
 
-_config: MkapiConfig = MkapiConfig()  # type: ignore
+_config: Config = Config()  # type: ignore
 
 
-def set_config(config: MkapiConfig) -> None:
+def set_config(config: Config) -> None:
     """Set the config object."""
     global _config  # noqa: PLW0603
     _config = config
 
 
-def get_config() -> MkapiConfig:
+def get_config() -> Config:
     """Get the config object."""
     return _config
 

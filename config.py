@@ -8,16 +8,16 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from mkdocs.config.defaults import MkDocsConfig
 
-    from mkapi.plugin import MkapiPlugin
+    from mkapi.plugin import Plugin
 
 
-def before_on_config(config: MkDocsConfig, plugin: MkapiPlugin) -> None:
+def before_on_config(config: MkDocsConfig, plugin: Plugin) -> None:
     """Called before `on_config` event of MkAPI plugin."""
     if "." not in sys.path:
         sys.path.insert(0, ".")
 
 
-def after_on_config(config: MkDocsConfig, plugin: MkapiPlugin) -> None:
+def after_on_config(config: MkDocsConfig, plugin: Plugin) -> None:
     """Called after `on_config` event of MkAPI plugin."""
 
 
