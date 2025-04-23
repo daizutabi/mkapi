@@ -8,13 +8,6 @@ from astdoc.markdown import set_example_class
 from astdoc.utils import cache_clear, get_module_path, is_package
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.structure.files import File, InclusionLevel
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-)
 
 import mkapi
 import mkapi.nav
@@ -37,8 +30,6 @@ class Plugin(BasePlugin[Config]):
 
     def __init__(self) -> None:
         self.pages = {}
-        self.progress = None
-        self.task_id = None
         set_example_class("mkapi-example-input", "mkapi-example-output")
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
@@ -86,23 +77,8 @@ class Plugin(BasePlugin[Config]):
 
         return files
 
-    def on_nav(self, *args, **kwargs) -> None:
-        columns = [
-            SpinnerColumn(),
-            TextColumn("MkAPI: Building pages"),
-            MofNCompleteColumn(),
-            BarColumn(),
-            TextColumn("{task.description}"),
-        ]
-        self.progress = Progress(*columns, transient=True)
-        self.task_id = self.progress.add_task("", total=len(self.pages))
-        self.progress.start()
-
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
         src_uri = page.file.src_uri
-
-        if self.progress and self.task_id is not None:
-            self.progress.update(self.task_id, description=src_uri)
 
         try:
             return self.pages[src_uri].convert_markdown(markdown)
@@ -121,16 +97,7 @@ class Plugin(BasePlugin[Config]):
         if page_.is_api_page():
             _replace_toc(page.toc)
 
-        html = page_.convert_html(html)
-
-        if self.progress and self.task_id is not None:
-            self.progress.update(self.task_id, description=src_uri, advance=1)
-
-        return html
-
-    def on_post_build(self, *args, **kwargs) -> None:
-        if self.progress is not None:
-            self.progress.stop()
+        return page_.convert_html(html)
 
 
 def _update_extensions(config: MkDocsConfig) -> None:
@@ -168,43 +135,38 @@ def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> None:
 
         return not any(fnmatch.fnmatch(name, ex) for ex in exclude)
 
-    columns = [
-        SpinnerColumn(),
-        TextColumn("MkAPI: Collecting modules"),
-        MofNCompleteColumn(),
-        BarColumn(),
-        TextColumn("{task.description}"),
-    ]
-    with Progress(*columns, transient=True) as progress:
-        task_id = progress.add_task("", total=len(pages) or None)
+    def create_page(name: str, path: str) -> str:
+        uri = name.replace(".", "/")
 
-        def create_page(name: str, path: str) -> str:
-            uri = name.replace(".", "/")
+        if ":" in path:
+            object_path, source_path = path.split(":", maxsplit=1)
+        else:
+            object_path, source_path = path, "src"
 
-            if ":" in path:
-                object_path, source_path = path.split(":", maxsplit=1)
-            else:
-                object_path, source_path = path, "src"
+        suffix = "/README.md" if is_package(name) else ".md"
+        object_uri = f"{object_path}/{uri}{suffix}"
+        if object_uri not in pages:
+            pages[object_uri] = Page.create_object(object_uri, name)
+            msg = f"Registered {object_uri!r} for {name!r}"
+            logger.debug(msg)
 
-            suffix = "/README.md" if is_package(name) else ".md"
-            object_uri = f"{object_path}/{uri}{suffix}"
-            if object_uri not in pages:
-                pages[object_uri] = Page.create_object(object_uri, name)
+        source_uri = f"{source_path}/{uri}.md"
+        if source_uri not in pages:
+            pages[source_uri] = Page.create_source(source_uri, name)
+            msg = f"Registered {source_uri!r} for {name!r}"
+            logger.debug(msg)
 
-            progress.update(task_id, description=object_uri, advance=1)
+        return object_uri
 
-            source_uri = f"{source_path}/{uri}.md"
-            if source_uri not in pages:
-                pages[source_uri] = Page.create_source(source_uri, name)
+    page_title = get_function("page_title")
+    section_title = get_function("section_title")
 
-            progress.update(task_id, description=source_uri, advance=1)
-
-            return object_uri
-
-        page_title = get_function("page_title")
-        section_title = get_function("section_title")
-
-        mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
+    exclude = get_config().exclude
+    msg = f"Collecting API pages with {len(exclude or [])} exclusion patterns..."
+    logger.info(msg)
+    mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
+    msg = f"Navigation updated: {len(pages)} API pages registered"
+    logger.info(msg)
 
 
 def _replace_toc(toc: TableOfContents | list[AnchorLink], depth: int = 0) -> None:
