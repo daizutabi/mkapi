@@ -54,8 +54,8 @@ class Plugin(BasePlugin[Config]):
 
         return config
 
-    def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:  # noqa: C901
-        start_time = time.time()
+    def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
+        start_time = time.perf_counter()
 
         for src_uri, page in self.pages.items():
             if page.is_api_page() and src_uri not in files.src_uris:
@@ -82,20 +82,16 @@ class Plugin(BasePlugin[Config]):
         for file in _collect_javascript(config):
             files.append(file)
 
-        elapsed_time = time.time() - start_time
+        elapsed_time = time.perf_counter() - start_time
         self.elapsed_time += elapsed_time
 
-        n_api = sum(1 for p in self.pages.values() if p.is_api_page())
-        n_docs = len(self.pages) - n_api
-        msg = f"MkAPI pages processed ({n_api} API pages and {n_docs} regular pages)"
-        if elapsed_time > 0.1:
-            msg += f" in {elapsed_time:.2f} seconds"
+        msg = f"{len(self.pages)} pages prepared in {elapsed_time:.2f} seconds"
         logger.info(msg)
 
         return files
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
-        start_time = time.time()
+        start_time = time.perf_counter()
         src_uri = page.file.src_uri
 
         msg = f"Converting markdown for {src_uri!r}..."
@@ -110,7 +106,7 @@ class Plugin(BasePlugin[Config]):
             msg = f"{src_uri}:{type(e).__name__}: {e}"
             logger.warning(msg)
 
-        elapsed_time = time.time() - start_time
+        elapsed_time = time.perf_counter() - start_time
         self.elapsed_time += elapsed_time
 
         if elapsed_time > 0.1:
@@ -120,7 +116,7 @@ class Plugin(BasePlugin[Config]):
         return markdown
 
     def on_page_content(self, html: str, page: MkDocsPage, *args, **kwargs) -> str:
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         src_uri = page.file.src_uri
         page_ = self.pages[src_uri]
@@ -130,11 +126,11 @@ class Plugin(BasePlugin[Config]):
 
         html = page_.convert_html(html)
 
-        self.elapsed_time += time.time() - start_time
+        self.elapsed_time += time.perf_counter() - start_time
         return html
 
     def on_post_build(self, *args, **kwargs) -> None:
-        msg = f"API build in {self.elapsed_time:.2f} seconds"
+        msg = f"{len(self.pages)} pages built in {self.elapsed_time:.2f} seconds"
         logger.info(msg)
 
 
@@ -203,9 +199,9 @@ def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> float:
     msg = f"Collecting API pages with {len(exclude or [])} exclusion patterns..."
     logger.info(msg)
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
-    elapsed_time = time.time() - start_time
+    elapsed_time = time.perf_counter() - start_time
 
     msg = f"Navigation updated with {len(pages)} API pages"
     if elapsed_time > 0.1:
