@@ -28,12 +28,14 @@ logger = get_plugin_logger("mkapi")
 
 class Plugin(BasePlugin[Config]):
     pages: dict[str, Page]
+    elapsed_time: float
 
     def __init__(self) -> None:
         self.pages = {}
         set_example_class("mkapi-example-input", "mkapi-example-output")
 
     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
+        self.elapsed_time = 0
         cache_clear()
         set_config(self.config)
 
@@ -45,7 +47,7 @@ class Plugin(BasePlugin[Config]):
         _update_extensions(config)
 
         _build_apinav(config)
-        _update_nav(config, self.pages)
+        self.elapsed_time += _update_nav(config, self.pages)
 
         if after_on_config := get_function("after_on_config"):
             after_on_config(config, self)
@@ -60,6 +62,8 @@ class Plugin(BasePlugin[Config]):
                 file = generate_file(config, src_uri, page.name)
                 files.append(file)
                 if file.is_modified():
+                    msg = f"Generating markdown for {src_uri!r}..."
+                    logger.debug(msg)
                     page.generate_markdown()
 
         for file in files:
@@ -79,8 +83,11 @@ class Plugin(BasePlugin[Config]):
             files.append(file)
 
         elapsed_time = time.time() - start_time
+        self.elapsed_time += elapsed_time
 
-        msg = f"Markdown generation completed for {len(self.pages)} pages"
+        n_api = sum(1 for p in self.pages.values() if p.is_api_page())
+        n_docs = len(self.pages) - n_api
+        msg = f"MkAPI pages processed ({n_api} API pages and {n_docs} regular pages)"
         if elapsed_time > 0.1:
             msg += f" in {elapsed_time:.2f} seconds"
         logger.info(msg)
@@ -88,26 +95,47 @@ class Plugin(BasePlugin[Config]):
         return files
 
     def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
+        start_time = time.time()
         src_uri = page.file.src_uri
 
+        msg = f"Converting markdown for {src_uri!r}..."
+        logger.debug(msg)
+
         try:
-            return self.pages[src_uri].convert_markdown(markdown)
+            markdown = self.pages[src_uri].convert_markdown(markdown)
         except Exception as e:
             if self.config.debug:
                 raise
 
             msg = f"{src_uri}:{type(e).__name__}: {e}"
             logger.warning(msg)
-            return markdown
+
+        elapsed_time = time.time() - start_time
+        self.elapsed_time += elapsed_time
+
+        if elapsed_time > 0.1:
+            msg = f"Converted markdown for {src_uri!r} in {elapsed_time:.2f} seconds"
+            logger.debug(msg)
+
+        return markdown
 
     def on_page_content(self, html: str, page: MkDocsPage, *args, **kwargs) -> str:
+        start_time = time.time()
+
         src_uri = page.file.src_uri
         page_ = self.pages[src_uri]
 
         if page_.is_api_page():
             _replace_toc(page.toc)
 
-        return page_.convert_html(html)
+        html = page_.convert_html(html)
+
+        self.elapsed_time += time.time() - start_time
+        return html
+
+    def on_post_build(self, *args, **kwargs) -> None:
+        msg = f"API build in {self.elapsed_time:.2f} seconds"
+        logger.info(msg)
 
 
 def _update_extensions(config: MkDocsConfig) -> None:
@@ -132,9 +160,9 @@ def _build_apinav(config: MkDocsConfig) -> None:
     mkapi.nav.build_apinav(config.nav, watch_directory)
 
 
-def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> None:
+def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> float:
     if not (nav := config.nav):
-        return
+        return 0
 
     def predicate(name: str) -> bool:
         if name.split(".")[-1].startswith("_"):
@@ -183,6 +211,8 @@ def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> None:
     if elapsed_time > 0.1:
         msg += f" in {elapsed_time:.2f} seconds"
     logger.info(msg)
+
+    return elapsed_time
 
 
 def _replace_toc(toc: TableOfContents | list[AnchorLink], depth: int = 0) -> None:
