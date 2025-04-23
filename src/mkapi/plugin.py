@@ -19,7 +19,7 @@ from rich.progress import (
 import mkapi
 import mkapi.nav
 import mkapi.renderer
-from mkapi.config import MkapiConfig, get_config, get_function, set_config
+from mkapi.config import Config, get_config, get_function, set_config
 from mkapi.page import Page
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 logger = get_plugin_logger("MkAPI")
 
 
-class MkapiPlugin(BasePlugin[MkapiConfig]):
+class Plugin(BasePlugin[Config]):
     pages: dict[str, Page]
 
     def __init__(self) -> None:
