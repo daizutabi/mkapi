@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import fnmatch
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from mkdocs.structure.toc import AnchorLink, TableOfContents
 
 
-logger = get_plugin_logger("MkAPI")
+logger = get_plugin_logger("mkapi")
 
 
 class Plugin(BasePlugin[Config]):
@@ -51,7 +52,9 @@ class Plugin(BasePlugin[Config]):
 
         return config
 
-    def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:
+    def on_files(self, files: Files, config: MkDocsConfig, **kwargs) -> Files:  # noqa: C901
+        start_time = time.time()
+
         for src_uri, page in self.pages.items():
             if page.is_api_page() and src_uri not in files.src_uris:
                 file = generate_file(config, src_uri, page.name)
@@ -74,6 +77,13 @@ class Plugin(BasePlugin[Config]):
 
         for file in _collect_javascript(config):
             files.append(file)
+
+        elapsed_time = time.time() - start_time
+
+        msg = f"Markdown generation completed for {len(self.pages)} pages"
+        if elapsed_time > 0.1:
+            msg += f" in {elapsed_time:.2f} seconds"
+        logger.info(msg)
 
         return files
 
@@ -164,8 +174,14 @@ def _update_nav(config: MkDocsConfig, pages: dict[str, Page]) -> None:
     exclude = get_config().exclude
     msg = f"Collecting API pages with {len(exclude or [])} exclusion patterns..."
     logger.info(msg)
+
+    start_time = time.time()
     mkapi.nav.update_nav(nav, create_page, section_title, page_title, predicate)
-    msg = f"Navigation updated: {len(pages)} API pages registered"
+    elapsed_time = time.time() - start_time
+
+    msg = f"Navigation updated with {len(pages)} API pages"
+    if elapsed_time > 0.1:
+        msg += f" in {elapsed_time:.2f} seconds"
     logger.info(msg)
 
 
