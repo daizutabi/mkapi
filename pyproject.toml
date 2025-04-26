@@ -29,7 +29,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "astdoc>=1.1.5",
+  "astdoc>=1.2.0",
   "jinja2",
   "mkdocs-material",
   "mkdocs>=1.6.0",
