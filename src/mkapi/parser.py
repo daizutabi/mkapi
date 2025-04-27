@@ -114,6 +114,10 @@ class Parser:
         if not isinstance(obj, Attribute | Class | Function | Module | Property):
             return None
 
+        for section in obj.doc.sections:
+            for item in section.items:
+                item.text = clean_item_text(item.text)
+
         return cls(name, module, obj)
 
     def __repr__(self) -> str:
@@ -1043,3 +1047,27 @@ def create_methods_from_class(name: str, module: str) -> Section | None:
             items.append(item)
 
     return Section("Methods", None, "", items) if items else None
+
+
+def clean_item_text(text: str) -> str:
+    """Clean the item text."""
+    return "\n".join(_clean_item_text(text))
+
+
+def _clean_item_text(text: str) -> Iterator[str]:
+    in_list = False
+    prev = ""
+    for line in text.splitlines():
+        if line.startswith("- ") and not in_list:
+            if prev:
+                yield ""
+            in_list = True
+        elif line and not line.startswith((" ", "- ")) and in_list:
+            if prev:
+                yield ""
+            in_list = False
+        elif not line and in_list:
+            in_list = False
+
+        yield line
+        prev = line
