@@ -34,7 +34,6 @@ def get_apinav(  # noqa: PLR0911
     Args:
         name (str): The name of the module for which to retrieve the navigation.
         depth (int): The depth level for retrieving submodules:
-
          - 1: Return the module name and its immediate submodules.
          - 2: Return a flat list of the module and its submodules,
               including deeper levels.
@@ -113,7 +112,6 @@ def gen_apinav(
 
     Yields:
         tuple[str, bool, int]: A tuple containing:
-
         - module name (str): The name of the module or section.
         - is_section (bool): True if the item is a section, False otherwise.
         - depth (int): The depth of the item in the navigation hierarchy.
