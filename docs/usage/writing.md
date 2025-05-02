@@ -34,6 +34,12 @@ For example, to reference objects, you do not need to use Markdown link
 syntax like `` [`object`][package.module.object] ``.
 Simply writing the inline code is sufficient like `` `object` ``.
 
+!!! note
+    In addition to using inline code references in docstrings, you can also
+    utilize the standard link syntax `[text][package.module.object]` to
+    create links within MkDocs markdown documents that point to the corresponding
+    objects in the API documentation.
+
 ### Why Not Use Markdown Link Syntax?
 
 #### From a user's perspective
