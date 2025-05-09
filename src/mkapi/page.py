@@ -255,7 +255,7 @@ SOURCE_LINK_PATTERN = re.compile(r"(<span[^<]+?)## __mkapi__\.(\S+?)(</span>)")
 HEADING_PATTERN = re.compile(r"<h(\d).+?mkapi-heading.+?>(.+?)</h\d>\n?")
 
 ANCHOR_TEXTS = {
-    "object": "docs",
+    "object": "[docs]",
     "source": "source",
     "definition": '<i class="fa-solid fa-square-arrow-up-right"></i>',
 }
