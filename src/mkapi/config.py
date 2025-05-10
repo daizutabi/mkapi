@@ -22,6 +22,8 @@ class Config(BaseConfig):
     config = config_options.Type(str, default="")
     exclude = config_options.Type(list, default=[])
     debug = config_options.Type(bool, default=False)
+    search_exclude = config_options.Type(bool, default=False)
+    source_search_exclude = config_options.Type(bool, default=True)
 
 
 _config: Config = Config()  # type: ignore
