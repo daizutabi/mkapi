@@ -804,7 +804,7 @@ def merge_returns(
                 item.type = returns.slice
 
 
-def merge_attributes(  # noqa: C901
+def merge_attributes(
     sections: list[Section],
     attrs: list[Type],
     ignore_names: list[str] | None = None,
