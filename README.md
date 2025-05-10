@@ -60,6 +60,7 @@ To configure MkAPI, add the following lines to your `mkdocs.yml` file:
 
 ```yaml
 plugins:
+  - search
   - mkapi
 ```
 
