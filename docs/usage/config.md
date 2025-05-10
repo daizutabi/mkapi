@@ -30,6 +30,33 @@ starting with `test_` by using the pattern `package.subpackage.test_*`.
 !!! note
     Module names starting with `_` are always excluded.
 
+## Search Exclusion
+
+You can exclude API documentation from search results using
+the `search_exclude` and `source_search_exclude` options.
+
+```yaml title="mkdocs.yml"
+plugins:
+  - mkapi:
+      search_exclude: false
+      source_search_exclude: true
+```
+
+- **`search_exclude`**: This option allows you to exclude the entire API
+  documentation from search results.
+  When set to `true`, the generated API documentation
+  will be excluded from search results.
+  The default value is `false`.
+
+- **`source_search_exclude`**: This option is used to exclude source pages
+  from search results. If a page is a source page and this option is set to `true`,
+  it will be excluded from search results.
+  The default value is `true`.
+
+These options help in customizing the search functionality to ensure
+that users can easily find the information they need without being
+overwhelmed by unnecessary results.
+
 <!--
 
 ## Configuration script

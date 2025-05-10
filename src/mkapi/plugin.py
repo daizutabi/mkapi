@@ -59,7 +59,10 @@ class Plugin(BasePlugin[Config]):
 
         for src_uri, page in self.pages.items():
             if page.is_api_page() and src_uri not in files.src_uris:
-                file = generate_file(config, src_uri, page.name)
+                se = self.config.search_exclude
+                if not se:
+                    se = page.is_source_page() and self.config.source_search_exclude
+                file = generate_file(config, src_uri, page.name, search_exclude=se)
                 files.append(file)
                 if file.is_modified():
                     msg = f"Generating markdown for {src_uri!r}..."
@@ -241,7 +244,12 @@ def _collect_javascript(config: MkDocsConfig) -> list[File]:
     return [File.generated(config, uri, content=_read(uri)) for uri in uris]
 
 
-def generate_file(config: MkDocsConfig, src_uri: str, name: str) -> File:
+def generate_file(
+    config: MkDocsConfig,
+    src_uri: str,
+    name: str,
+    search_exclude: bool = False,
+) -> File:
     """Generate a `File` instance for a given source URI and object name.
 
     Create a `File` instance representing a generated file with the specified
@@ -253,12 +261,18 @@ def generate_file(config: MkDocsConfig, src_uri: str, name: str) -> File:
         config (MkDocsConfig): The MkDocs configuration object.
         src_uri (str): The source URI of the file.
         name (str): The object name corresponding to the `src_uri`.
+        search_exclude (bool): Whether to exclude the file from search.
 
     Returns:
         File: A `File` instance representing the generated file.
 
     """
-    file = File.generated(config, src_uri, content=name)
+    if search_exclude:
+        content = f"---\nsearch:\n  exclude: true\n---\n\n{name}"
+    else:
+        content = name
+
+    file = File.generated(config, src_uri, content=content)
 
     def is_modified() -> bool:
         dest_path = Path(file.abs_dest_path)

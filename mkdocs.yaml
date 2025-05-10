@@ -39,13 +39,15 @@ theme:
     - search.highlight
     - search.suggest
 plugins:
-  - search:
+  - search
   - mkapi:
       enabled: true
       config: config.py
       debug: true
       exclude:
         - _example
+      search_exclude: false
+      source_search_exclude: true
 markdown_extensions:
   - pymdownx.highlight:
       use_pygments: true
