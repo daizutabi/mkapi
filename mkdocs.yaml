@@ -39,7 +39,7 @@ theme:
     - search.highlight
     - search.suggest
 plugins:
-  - search:
+  - search
   - mkapi:
       enabled: true
       config: config.py
