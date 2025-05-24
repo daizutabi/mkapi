@@ -58,7 +58,9 @@ class Plugin(BasePlugin[Config]):
         start_time = time.perf_counter()
 
         for src_uri, page in self.pages.items():
-            if page.is_api_page() and src_uri not in files.src_uris:
+            if page.is_api_page():
+                if src_uri in files.src_uris:
+                    files.remove(files.src_uris[src_uri])
                 se = self.config.search_exclude
                 if not se:
                     se = page.is_source_page() and self.config.source_search_exclude
@@ -93,7 +95,13 @@ class Plugin(BasePlugin[Config]):
 
         return files
 
-    def on_page_markdown(self, markdown: str, page: MkDocsPage, **kwargs) -> str:
+    def on_page_markdown(
+        self,
+        markdown: str,
+        page: MkDocsPage,
+        config: MkDocsConfig,
+        **kwargs,
+    ) -> str:
         start_time = time.perf_counter()
         src_uri = page.file.src_uri
 
@@ -115,6 +123,11 @@ class Plugin(BasePlugin[Config]):
         if elapsed_time > 0.1:
             msg = f"Converted markdown for {src_uri!r} in {elapsed_time:.2f} seconds"
             logger.debug(msg)
+
+        if self.config.save and self.pages[src_uri].is_api_page():
+            path = Path(config.docs_dir) / src_uri
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(markdown, encoding="utf-8")
 
         return markdown
 
