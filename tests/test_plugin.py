@@ -150,6 +150,7 @@ def test_build(config: MkDocsConfig, dirty: bool):
 
     config.plugins.on_startup(command="build", dirty=dirty)
     plugin = config.plugins["mkapi"]
+    plugin.config.save = True
     assert isinstance(plugin, Plugin)
     assert not plugin.pages
 
@@ -174,3 +175,6 @@ def test_build(config: MkDocsConfig, dirty: bool):
     mkapi_config = get_config()
     assert mkapi_config is plugin.config
     assert mkapi_config.debug is True
+
+    path = Path(config.docs_dir) / "api/mkapi/page.md"
+    assert path.exists()
