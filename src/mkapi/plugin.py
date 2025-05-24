@@ -127,7 +127,7 @@ class Plugin(BasePlugin[Config]):
         if self.config.save and self.pages[src_uri].is_api_page():
             path = Path(config.docs_dir) / src_uri
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(markdown)
+            path.write_text(markdown, encoding="utf-8")
 
         return markdown
 
