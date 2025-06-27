@@ -125,7 +125,11 @@ class Plugin(BasePlugin[Config]):
             logger.debug(msg)
 
         if self.config.save and self.pages[src_uri].is_api_page():
-            path = Path(config.docs_dir) / src_uri
+            if isinstance(self.config.save, str):
+                path = Path(self.config.save) / src_uri
+            else:
+                path = Path(config.docs_dir) / src_uri
+
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(markdown, encoding="utf-8")
 
