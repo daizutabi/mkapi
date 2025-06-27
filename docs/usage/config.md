@@ -82,6 +82,7 @@ When this option is enabled:
 - Markdown files for API pages (object pages and source pages) will be saved
 - If `save` is `true`, files will be saved to `docs_dir`
 - If `save` is a string, files will be saved to the specified directory
+  (relative to the current directory)
 - Files will be saved in the corresponding paths within the target directory
 
 !!! note
