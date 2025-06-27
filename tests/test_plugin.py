@@ -145,13 +145,14 @@ def test_on_config(config_plugin: tuple[MkDocsConfig, Plugin]):
 
 
 @pytest.mark.parametrize("dirty", [False, True])
-def test_build(config: MkDocsConfig, dirty: bool):
+@pytest.mark.parametrize("save", [True, "output/markdown"])
+def test_build(config: MkDocsConfig, dirty: bool, save: bool | str):
     from mkapi.config import get_config, get_function
 
     config.plugins.on_startup(command="build", dirty=dirty)
     plugin = config.plugins["mkapi"]
-    plugin.config.save = True
     assert isinstance(plugin, Plugin)
+    plugin.config.save = save
     assert not plugin.pages
 
     build(config, dirty=dirty)
@@ -176,5 +177,9 @@ def test_build(config: MkDocsConfig, dirty: bool):
     assert mkapi_config is plugin.config
     assert mkapi_config.debug is True
 
-    path = Path(config.docs_dir) / "api/mkapi/page.md"
+    if isinstance(save, str):
+        path = Path(save) / "api/mkapi/page.md"
+    else:
+        path = Path(config.docs_dir) / "api/mkapi/page.md"
+
     assert path.exists()

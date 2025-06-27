@@ -57,7 +57,38 @@ These options help in customizing the search functionality to ensure
 that users can easily find the information they need without being
 overwhelmed by unnecessary results.
 
-<!--
+## Save Option
+
+You can save the generated markdown files of API pages using the `save` option.
+This feature is useful when you want to use the generated markdown files
+with external tools.
+
+```yaml title="mkdocs.yml"
+plugins:
+  - mkapi:
+      save: true  # Save to docs_dir
+```
+
+Or specify a custom directory:
+
+```yaml title="mkdocs.yml"
+plugins:
+  - mkapi:
+      save: "output/markdown"  # Save to custom directory
+```
+
+When this option is enabled:
+
+- Markdown files for API pages (object pages and source pages) will be saved
+- If `save` is `true`, files will be saved to `docs_dir`
+- If `save` is a string, files will be saved to the specified directory
+- Files will be saved in the corresponding paths within the target directory
+
+!!! note
+    The saved markdown files contain HTML elements (like `<div>` tags and Font Awesome icons)
+    that are specific to MkDocs Material theme. When these files are used with other tools,
+    you may need to modify the HTML elements to match your target documentation system's
+    requirements.
 
 ## Configuration script
 
@@ -134,8 +165,6 @@ def toc_title(name: str, depth: int) -> str:
     """Return a toc title."""
     return name.split(".")[-1]  # Remove prefix. Default behavior.
 ```
-
--->
 
 ## Features setting
 
