@@ -49,8 +49,8 @@ dev = [
   "pytest-clarity>=1",
   "pytest-cov>=6",
   "pytest-randomly>=3.16",
-  "pytest-xdist>=3.6",
-  "ruff>=0.11",
+  "pytest-xdist>=3.7",
+  "ruff>=0.12",
 ]
 
 [tool.pytest.ini_options]
@@ -82,6 +82,7 @@ ignore = [
   "FBT002",
   "PERF401",
   "PGH003",
+  "PLC0415",
   "PLR2004",
   "SIM102",
 ]
