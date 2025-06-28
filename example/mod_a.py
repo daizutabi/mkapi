@@ -54,3 +54,23 @@ def func_a(x: int) -> int:
         - [`func_b`][example.sub.mod_b.func_b]
     """
     return 2 * x
+
+
+def sum_and_product(x, y):
+    """Computes the sum and product of two integers
+
+    Parameters
+    ----------
+    x : int
+
+    y : int
+
+
+    Returns
+    -------
+    s : int
+      sum of x and y
+    p : int
+      product of x and y
+    """
+    return x+y, x*y
