@@ -29,7 +29,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "astdoc>=1.2.0",
+  "astdoc>=1.3.0",
   "jinja2",
   "mkdocs-material",
   "mkdocs>=1.6.0",
@@ -83,6 +83,7 @@ ignore = [
   "PERF401",
   "PGH003",
   "PLC0415",
+  "PLR0912",
   "PLR2004",
   "SIM102",
 ]
