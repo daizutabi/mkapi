@@ -780,28 +780,34 @@ def merge_returns(
     if not (section := find_item_by_name(sections, ("Returns", "Yields"))):
         return
 
-    if len(section.items) != 1:
+    if not returns:
         return
 
-    item = section.items[0]
+    # Handle single return value (existing behavior)
+    if len(section.items) == 1:
+        item = section.items[0]
+        if not item.type:
+            if section.name == "Returns":
+                item.type = returns
+            elif isinstance(returns, ast.Subscript):
+                ident = next(astdoc.ast.iter_identifiers(returns))
+                ident = get_fullname_from_module(ident, module)
+                iters = ["collections.abc.Generator", "collections.abc.Iterator"]
 
-    if item.type or not returns:
+                if ident in iters and isinstance(returns, ast.Subscript):
+                    if isinstance(returns.slice, ast.Tuple):
+                        item.type = returns.slice.elts[0]
+                    else:
+                        item.type = returns.slice
         return
 
-    if section.name == "Returns":
-        item.type = returns
+    if section.name != "Returns":
+        return
 
-    elif isinstance(returns, ast.Subscript):
-        ident = next(astdoc.ast.iter_identifiers(returns))
-        ident = get_fullname_from_module(ident, module)
-        iters = ["collections.abc.Generator", "collections.abc.Iterator"]
-
-        if ident in iters and isinstance(returns, ast.Subscript):
-            if isinstance(returns.slice, ast.Tuple):
-                item.type = returns.slice.elts[0]
-
-            else:
-                item.type = returns.slice
+    if isinstance(returns, ast.Subscript) and isinstance(returns.slice, ast.Tuple):
+        for i, item in enumerate(section.items):
+            if not item.type and i < len(returns.slice.elts):
+                item.type = returns.slice.elts[i]
 
 
 def merge_attributes(

@@ -52,3 +52,23 @@ def generator(a: int) -> Generator[list[PrivateAttribute], None, None]:
         the value of a.
     """
     yield [PrivateAttribute(x=a, _y=a)]
+
+
+def sum_and_product(x, y) -> tuple[int, int]:
+    """Computes the sum and product of two integers
+
+    Parameters
+    ----------
+    x : int
+
+    y : int
+
+
+    Returns
+    -------
+    s
+      sum of x and y
+    p
+      product of x and y
+    """
+    return x+y, x*y
