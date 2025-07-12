@@ -1,7 +1,7 @@
 {
   "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu24.04",
   "features": {
-    "ghcr.io/devcontainers-contrib/features/starship:1": {}
+    "ghcr.io/devcontainers-extra/features/starship:1": {}
   },
   "customizations": {
     "vscode": {
