@@ -20,6 +20,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python",
   "Topic :: Documentation",
   "Topic :: Software Development :: Documentation",
@@ -95,6 +96,7 @@ ignore = [
 
 [tool.pyright]
 include = ["src", "tests"]
+reportIncompatibleMethodOverride = false
 strictDictionaryInference = true
 strictListInference = true
 strictSetInference = true
