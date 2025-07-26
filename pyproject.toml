@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "mkapi"
-version = "4.4.4"
+version = "4.4.5"
 description = "MkDocs plugin for automatic API documentation generation from Python docstrings"
 readme = "README.md"
 license = { file = "LICENSE" }
