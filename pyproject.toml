@@ -51,7 +51,6 @@ dev = [
   "pytest-cov>=6",
   "pytest-randomly>=3.16",
   "pytest-xdist>=3.7",
-  "ruff>=0.12",
 ]
 
 [tool.pytest.ini_options]
