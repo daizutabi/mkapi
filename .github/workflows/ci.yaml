@@ -30,13 +30,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - name: Install uv and ruff
-        run: pip install uv ruff
+      - name: Install uv
+        run: pip install uv
       - name: Install the project
         run: uv sync
       - name: Ruff check
-        run: ruff check
-      - name: Run test
+        run: uvx ruff check
+      - name: Run tests
         run: uv run pytest -n 8 --junitxml=junit.xml
       - name: Upload Codecov Results
         if: success()
