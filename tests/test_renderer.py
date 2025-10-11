@@ -108,6 +108,7 @@ def test_render_module(level: int, source: bool):
         return kind != TemplateKind.SOURCE
 
     m = render("mkapi.nav", None, level, "object", predicate)
+    assert m
     assert f'<h{level} class="mkapi-heading" id="mkapi.nav" markdown="1">' in m
 
     if source:
@@ -122,8 +123,7 @@ def test_render_module_invalid():
     from mkapi.renderer import render
 
     m = render("mkapi.invalid", None, 1, "object", None)
-    assert "!!! failure" in m
-    assert "'mkapi.invalid' not found." in m
+    assert m is None
 
 
 def test_get_source_id_must_be_unique():
