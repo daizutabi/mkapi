@@ -190,7 +190,10 @@ def _render(
         module = None
 
     level = len(heading)
-    return mkapi.renderer.render(name, module, level, namespace, predicate)
+    if markdown := mkapi.renderer.render(name, module, level, namespace, predicate):
+        return markdown
+
+    return match.group(0)
 
 
 OBJECT_LINK_PATTERN = re.compile(r"^__mkapi__\.__(.+)__\.(.+)$")
