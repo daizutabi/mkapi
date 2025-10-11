@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # GitHub Actionsの更新をチェック
+  - package-ecosystem: "github-actions" # GitHub Actionsを指定
+    directory: "/"                       # リポジトリのルートディレクトリからチェック
+    schedule:
+      interval: "weekly"                 # 週に一度チェック
