@@ -251,3 +251,11 @@ def test_page_convert_source_page():
     p.generate_markdown()
     m = p.convert_markdown("")
     assert "class Page:## __mkapi__.mkapi.page.Page" in m
+
+
+def test_convert_markdown_failure():
+    from mkapi.page import convert_markdown
+
+    m = "::: a-b-c\n   abc"
+    x = convert_markdown(m, "a", ("object", "source"))
+    assert x == m
