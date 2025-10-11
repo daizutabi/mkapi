@@ -75,7 +75,7 @@ def render(
     level: int,
     namespace: str,
     predicate: Callable[[Parser, TemplateKind], bool] | None = None,
-) -> str:
+) -> str | None:
     """Render a template with the given parameters.
 
     Render a template based on the provided name, level, namespace,
@@ -94,14 +94,12 @@ def render(
             corresponding template section. Defaults to None.
 
     Returns:
-        str: The rendered markdown string.
+        str | None: The rendered markdown string. Returns None if the name
+        could not be found.
 
     """
     if not (parser := Parser.create(name, module)):
-        if module:
-            return f"!!! failure\n\n    {name!r} not found in {module!r}."
-
-        return f"!!! failure\n\n    {name!r} not found."
+        return None
 
     markdowns = []
 
