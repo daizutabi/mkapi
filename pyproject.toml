@@ -47,10 +47,11 @@ mkapi = "mkapi.plugin:Plugin"
 
 [dependency-groups]
 dev = [
+  "pytest>=9.0.1",
   "pytest-clarity>=1",
-  "pytest-cov>=6",
-  "pytest-randomly>=3.16",
-  "pytest-xdist>=3.7",
+  "pytest-cov>=7",
+  "pytest-randomly>=4",
+  "pytest-xdist>=3.8",
 ]
 
 [tool.pytest.ini_options]
